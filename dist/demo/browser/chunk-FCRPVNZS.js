@@ -1,0 +1,1 @@
+function r(t){let i=String(t?.backendId??"").trim();if(i)return i;let n=Number(t?.id);return Number.isFinite(n)?String(Math.trunc(n)):"0"}function e(t){return{prospectId:r(t),clientNit:String(t?.nit??"").trim(),clientName:String(t?.compania??"").trim()}}export{r as a,e as b};

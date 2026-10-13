@@ -1,0 +1,26 @@
+package database
+
+func migrationStatements() []string {
+	statements := make([]string, 0, 64)
+	statements = append(statements, migrationStatementsACLAndSecurity()...)
+	statements = append(statements, migrationStatementsHR()...)
+	statements = append(statements, migrationStatementsCRMCatalogsAndProspects()...)
+	statements = append(statements, migrationStatementsCRMEquipmentAndQuotes()...)
+	statements = append(statements, migrationStatementsCRMEquipmentProspectIDText()...)
+	statements = append(statements, migrationStatementsCRMClients()...)
+	statements = append(statements, migrationStatementsCRMBranches()...)
+	statements = append(statements, migrationStatementsFinanceAndCalendar()...)
+	statements = append(statements, migrationStatementsCRMContacts()...)
+	statements = append(statements, migrationStatementsCRMFollowups()...)
+	statements = append(statements, migrationStatementsCRMAttachments()...)
+	statements = append(statements, migrationStatementsCRMClientContacts()...)
+	statements = append(statements, migrationStatementsAuthFlows()...)
+	statements = append(statements, migrationStatementsProjects()...)
+	statements = append(statements, migrationStatementsInventory()...)
+	statements = append(statements, migrationStatementsSuppliers()...)
+	statements = append(statements, migrationStatementsComprasGaps()...)
+	statements = append(statements, migrationStatementsPurchaseLinesFields()...)
+	statements = append(statements, migrationStatementsPurchaseLinesEquipment()...)
+	statements = append(statements, migrationStatementsRemissions()...)
+	return statements
+}

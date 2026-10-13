@@ -1,0 +1,418 @@
+[33m>[39m Building...
+[32m√[39m Building...
+[1mInitial chunk files[22m                        [2m | [22m[1mNames[22m                          [2m | [22m [1mRaw size[22m
+[32mstyles.css[39m                                 [2m | [22m[2mstyles[22m                         [2m | [22m[36m748.69 kB[39m[2m | [22m
+[32mscripts.js[39m                                 [2m | [22m[2mscripts[22m                        [2m | [22m[36m294.48 kB[39m[2m | [22m
+[32mchunk-DYCGFAEI.js[39m                          [2m | [22m[2m-[22m                              [2m | [22m  [36m8.83 kB[39m[2m | [22m
+[32mmain.js[39m                                    [2m | [22m[2mmain[22m                           [2m | [22m  [36m7.54 kB[39m[2m | [22m
+[32mchunk-EVSPGG2W.js[39m                          [2m | [22m[2m-[22m                              [2m | [22m  [36m1.64 kB[39m[2m | [22m
+[32mpolyfills.js[39m                               [2m | [22m[2mpolyfills[22m                      [2m | [22m [36m95 bytes[39m[2m | [22m
+
+[1m [22m                                          [2m | [22m[1mInitial total[22m                  [2m | [22m  [1m1.06 MB[22m
+
+[1mLazy chunk files[22m                           [2m | [22m[1mNames[22m                          [2m | [22m [1mRaw size[22m
+[32mnetwork-smart-home.component-JLN7XIMH.js[39m   [2m | [22m[2mnetwork-smart-home-component[22m   [2m | [22m[36m373.03 kB[39m[2m | [22m
+[32minternal-layout.routes-AHMDRNX6.js[39m         [2m | [22m[2minternal-layout-routes[22m         [2m | [22m[36m359.57 kB[39m[2m | [22m
+[32mwork-projects.component-AM7UJRVT.js[39m        [2m | [22m[2mwork-projects-component[22m        [2m | [22m[36m339.73 kB[39m[2m | [22m
+[32mnetwork-dashboard.component-7VFHXSQV.js[39m    [2m | [22m[2mnetwork-dashboard-component[22m    [2m | [22m[36m277.78 kB[39m[2m | [22m
+[32mfinance-wallet.component-CNXVW44Z.js[39m       [2m | [22m[2mfinance-wallet-component[22m       [2m | [22m[36m251.75 kB[39m[2m | [22m
+[32mlearning-courses.component-6TCZX7DS.js[39m     [2m | [22m[2mlearning-courses-component[22m     [2m | [22m[36m249.56 kB[39m[2m | [22m
+[32mlearning-institutions.component-HGJ2LC52.js[39m[2m | [22m[2mlearning-institutions-component[22m[2m | [22m[36m236.26 kB[39m[2m | [22m
+[32mfinance-crypto.component-M5SW3VPD.js[39m       [2m | [22m[2mfinance-crypto-component[22m       [2m | [22m[36m230.18 kB[39m[2m | [22m
+[32mfinance-banks.component-WKPY225R.js[39m        [2m | [22m[2mfinance-banks-component[22m        [2m | [22m[36m209.88 kB[39m[2m | [22m
+[32mfinance-dashboard.component-UTBJMW23.js[39m    [2m | [22m[2mfinance-dashboard-component[22m    [2m | [22m[36m202.94 kB[39m[2m | [22m
+[32mchunk-JWETPROH.js[39m                          [2m | [22m[2m-[22m                              [2m | [22m[36m185.26 kB[39m[2m | [22m
+[32mdashboard.component-GITZGK6B.js[39m            [2m | [22m[2mdashboard-component[22m            [2m | [22m[36m180.60 kB[39m[2m | [22m
+[32mlearning-dashboard.component-Z435ZRRZ.js[39m   [2m | [22m[2mlearning-dashboard-component[22m   [2m | [22m[36m179.99 kB[39m[2m | [22m
+[32mproject-dashboard.component-VHAE4CK7.js[39m    [2m | [22m[2mproject-dashboard-component[22m    [2m | [22m[36m175.82 kB[39m[2m | [22m
+[32msocial-schedular.component-INLBTMKA.js[39m     [2m | [22m[2msocial-schedular-component[22m     [2m | [22m[36m167.63 kB[39m[2m | [22m
+[2m...and 133 more lazy chunks files. Use "--verbose" to show all the files.[22m
+
+Application bundle generation complete. [18.654 seconds] - 2026-04-19T18:54:30.504Z
+
+Watch mode enabled. Watching for file changes...
+NOTE: Raw file sizes do not reflect development server per-request transformations.
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://127.0.0.1:[1m4200[22m/[39m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [10.716 seconds] - 2026-04-19T19:20:40.861Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'activeTab' does not exist on type 'InventoryStockWorkbenchComponent'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/app/inventory/inventory-stock-workbench.component.ts:69:69:
+[37m      69 │ ..."nav-link" [class.active]="[32mactiveTab[37m === 'crear'" (click)="acti...
+         ╵                               [32m~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'activeTab' does not exist on type 'InventoryStockWorkbenchComponent'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/app/inventory/inventory-stock-workbench.component.ts:69:101:
+[37m      69 │ ...ass.active]="activeTab === 'crear'" (click)="[32mactiveTab[37m = 'crear'">
+         ╵                                                 [32m~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'activeTab' does not exist on type 'InventoryStockWorkbenchComponent'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/app/inventory/inventory-stock-workbench.component.ts:74:69:
+[37m      74 │ ..."nav-link" [class.active]="[32mactiveTab[37m === 'entrada'" (click)="ac...
+         ╵                               [32m~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'activeTab' does not exist on type 'InventoryStockWorkbenchComponent'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/app/inventory/inventory-stock-workbench.component.ts:74:103:
+[37m      74 │ ...active]="activeTab === 'entrada'" (click)="[32mactiveTab[37m = 'entrada'">
+         ╵                                               [32m~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'activeTab' does not exist on type 'InventoryStockWorkbenchComponent'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/app/inventory/inventory-stock-workbench.component.ts:82:41:
+[37m      82 │                     <ng-container *ngIf="[32mactiveTab[37m === 'crear'">
+         ╵                                          [32m~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'showAdvancedCreate' does not exist on type 'InventoryStockWorkbenchComponent'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/app/inventory/inventory-stock-workbench.component.ts:139:100:
+[37m      139 │ ...type="button" (click)="[32mshowAdvancedCreate[37m = !showAdvancedCreate">
+          ╵                           [32m~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'showAdvancedCreate' does not exist on type 'InventoryStockWorkbenchComponent'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/app/inventory/inventory-stock-workbench.component.ts:139:122:
+[37m      139 │ ...type="button" (click)="showAdvancedCreate = ![32mshowAdvancedCreate[37m">
+          ╵                                                 [32m~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'showAdvancedCreate' does not exist on type 'InventoryStockWorkbenchComponent'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/app/inventory/inventory-stock-workbench.component.ts:140:57:
+[37m      140 │ ...class="bi" [ngClass]="[32mshowAdvancedCreate[37m ? 'bi-chevron-up' : '...
+          ╵                          [32m~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'showAdvancedCreate' does not exist on type 'InventoryStockWorkbenchComponent'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/app/inventory/inventory-stock-workbench.component.ts:144:36:
+[37m      144 │ ...          <div *ngIf="[32mshowAdvancedCreate[37m" class="row gx-3 gy-2...
+          ╵                          [32m~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'activeTab' does not exist on type 'InventoryStockWorkbenchComponent'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/app/inventory/inventory-stock-workbench.component.ts:170:41:
+[37m      170 │                     <ng-container *ngIf="[32mactiveTab[37m === 'entrada'">
+          ╵                                          [32m~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'onEntryReferenceChange' does not exist on type 'InventoryStockWorkbenchComponent'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/app/inventory/inventory-stock-workbench.component.ts:175:112:
+[37m      175 │ ...raft.reference" (ngModelChange)="[32monEntryReferenceChange[37m($event)">
+          ╵                                     [32m~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [0.737 seconds] - 2026-04-19T19:20:44.008Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'onEntryReferenceChange' does not exist on type 'InventoryStockWorkbenchComponent'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/app/inventory/inventory-stock-workbench.component.ts:175:112:
+[37m      175 │ ...raft.reference" (ngModelChange)="[32monEntryReferenceChange[37m($event)">
+          ╵                                     [32m~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'internalCode' does not exist on type '{ reference: string; manufacturerReference: string; family: string; brand: string; designation: string; unitMeasure: string; compatibleEquipment: string; criticality: "media" | "alta" | "baja"; ... 5 more ...; location: string; }'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/app/inventory/inventory-stock-workbench.component.ts:391:43:
+[37m      391 │             internalCode: this.draftCreate.[32minternalCode[37m,
+          ╵                                            [32m~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2551: Property 'subfamily' does not exist on type '{ reference: string; manufacturerReference: string; family: string; brand: string; designation: string; unitMeasure: string; compatibleEquipment: string; criticality: "media" | "alta" | "baja"; ... 5 more ...; location: string; }'. Did you mean 'family'?[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/app/inventory/inventory-stock-workbench.component.ts:395:40:
+[37m      395 │             subfamily: this.draftCreate.[32msubfamily[37m,
+          ╵                                         [32m~~~~~~~~~[0m
+
+  'family' is declared here.
+
+    src/app/pages/app/inventory/inventory-stock-workbench.component.ts:285:8:
+[37m      285 │         [32mfamily: ""[37m,
+          ╵         [32m~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'leadTimeDays' does not exist on type '{ reference: string; manufacturerReference: string; family: string; brand: string; designation: string; unitMeasure: string; compatibleEquipment: string; criticality: "media" | "alta" | "baja"; ... 5 more ...; location: string; }'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/app/inventory/inventory-stock-workbench.component.ts:403:50:
+[37m      403 │             leadTimeDays: Number(this.draftCreate.[32mleadTimeDays[37m),
+          ╵                                                   [32m~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'targetStock' does not exist on type '{ reference: string; manufacturerReference: string; family: string; brand: string; designation: string; unitMeasure: string; compatibleEquipment: string; criticality: "media" | "alta" | "baja"; ... 5 more ...; location: string; }'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/app/inventory/inventory-stock-workbench.component.ts:406:49:
+[37m      406 │             targetStock: Number(this.draftCreate.[32mtargetStock[37m),
+          ╵                                                  [32m~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'batchOrSerial' does not exist on type '{ reference: string; quantity: number; location: string; supplierId: number | null; supplierName: string; supplierCode: string; documentType: string; documentNumber: string; }'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/app/inventory/inventory-stock-workbench.component.ts:425:43:
+[37m      425 │             batchOrSerial: this.entryDraft.[32mbatchOrSerial[37m,
+          ╵                                            [32m~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'unitCost' does not exist on type '{ reference: string; quantity: number; location: string; supplierId: number | null; supplierName: string; supplierCode: string; documentType: string; documentNumber: string; }'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/app/inventory/inventory-stock-workbench.component.ts:426:45:
+[37m      426 │             unitCost: Number(this.entryDraft.[32munitCost[37m),
+          ╵                                              [32m~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'receivedBy' does not exist on type '{ reference: string; quantity: number; location: string; supplierId: number | null; supplierName: string; supplierCode: string; documentType: string; documentNumber: string; }'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/app/inventory/inventory-stock-workbench.component.ts:427:40:
+[37m      427 │             receivedBy: this.entryDraft.[32mreceivedBy[37m,
+          ╵                                         [32m~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'receivedAt' does not exist on type '{ reference: string; quantity: number; location: string; supplierId: number | null; supplierName: string; supplierCode: string; documentType: string; documentNumber: string; }'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/app/inventory/inventory-stock-workbench.component.ts:428:40:
+[37m      428 │             receivedAt: this.entryDraft.[32mreceivedAt[37m,
+          ╵                                         [32m~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2353: Object literal may only specify known properties, and 'internalCode' does not exist in type '{ reference: string; manufacturerReference: string; family: string; brand: string; designation: string; unitMeasure: string; compatibleEquipment: string; criticality: "media" | "alta" | "baja"; ... 5 more ...; location: string; }'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/app/inventory/inventory-stock-workbench.component.ts:441:12:
+[37m      441 │             [32minternalCode[37m: "",
+          ╵             [32m~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2353: Object literal may only specify known properties, and 'batchOrSerial' does not exist in type '{ reference: string; quantity: number; location: string; supplierId: number | null; supplierName: string; supplierCode: string; documentType: string; documentNumber: string; }'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/app/inventory/inventory-stock-workbench.component.ts:471:12:
+[37m      471 │             [32mbatchOrSerial[37m: "",
+          ╵             [32m~~~~~~~~~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [0.721 seconds] - 2026-04-19T19:21:04.316Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'batchOrSerial' does not exist on type '{ reference: string; quantity: number; location: string; supplierId: number | null; supplierName: string; supplierCode: string; documentType: string; documentNumber: string; }'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/app/inventory/inventory-stock-workbench.component.ts:444:43:
+[37m      444 │             batchOrSerial: this.entryDraft.[32mbatchOrSerial[37m,
+          ╵                                            [32m~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'unitCost' does not exist on type '{ reference: string; quantity: number; location: string; supplierId: number | null; supplierName: string; supplierCode: string; documentType: string; documentNumber: string; }'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/app/inventory/inventory-stock-workbench.component.ts:445:45:
+[37m      445 │             unitCost: Number(this.entryDraft.[32munitCost[37m),
+          ╵                                              [32m~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'receivedBy' does not exist on type '{ reference: string; quantity: number; location: string; supplierId: number | null; supplierName: string; supplierCode: string; documentType: string; documentNumber: string; }'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/app/inventory/inventory-stock-workbench.component.ts:446:40:
+[37m      446 │             receivedBy: this.entryDraft.[32mreceivedBy[37m,
+          ╵                                         [32m~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'receivedAt' does not exist on type '{ reference: string; quantity: number; location: string; supplierId: number | null; supplierName: string; supplierCode: string; documentType: string; documentNumber: string; }'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/app/inventory/inventory-stock-workbench.component.ts:447:40:
+[37m      447 │             receivedAt: this.entryDraft.[32mreceivedAt[37m,
+          ╵                                         [32m~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2353: Object literal may only specify known properties, and 'internalCode' does not exist in type '{ reference: string; manufacturerReference: string; family: string; brand: string; designation: string; unitMeasure: string; compatibleEquipment: string; criticality: "media" | "alta" | "baja"; ... 5 more ...; location: string; }'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/app/inventory/inventory-stock-workbench.component.ts:460:12:
+[37m      460 │             [32minternalCode[37m: "",
+          ╵             [32m~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2353: Object literal may only specify known properties, and 'batchOrSerial' does not exist in type '{ reference: string; quantity: number; location: string; supplierId: number | null; supplierName: string; supplierCode: string; documentType: string; documentNumber: string; }'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/app/inventory/inventory-stock-workbench.component.ts:490:12:
+[37m      490 │             [32mbatchOrSerial[37m: "",
+          ╵             [32m~~~~~~~~~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [0.594 seconds] - 2026-04-19T19:21:12.043Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2353: Object literal may only specify known properties, and 'internalCode' does not exist in type '{ reference: string; manufacturerReference: string; family: string; brand: string; designation: string; unitMeasure: string; compatibleEquipment: string; criticality: "media" | "alta" | "baja"; ... 5 more ...; location: string; }'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/app/inventory/inventory-stock-workbench.component.ts:460:12:
+[37m      460 │             [32minternalCode[37m: "",
+          ╵             [32m~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2353: Object literal may only specify known properties, and 'batchOrSerial' does not exist in type '{ reference: string; quantity: number; location: string; supplierId: number | null; supplierName: string; supplierCode: string; documentType: string; documentNumber: string; }'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/app/inventory/inventory-stock-workbench.component.ts:490:12:
+[37m      490 │             [32mbatchOrSerial[37m: "",
+          ╵             [32m~~~~~~~~~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [0.598 seconds] - 2026-04-19T19:21:17.910Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2353: Object literal may only specify known properties, and 'batchOrSerial' does not exist in type '{ reference: string; quantity: number; location: string; supplierId: number | null; supplierName: string; supplierCode: string; documentType: string; documentNumber: string; }'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/app/inventory/inventory-stock-workbench.component.ts:486:12:
+[37m      486 │             [32mbatchOrSerial[37m: "",
+          ╵             [32m~~~~~~~~~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[1mInitial chunk files[22m                        [2m | [22m[1mNames[22m                          [2m | [22m [1mRaw size[22m
+[32mstyles.css[39m                                 [2m | [22m[2mstyles[22m                         [2m | [22m[36m748.69 kB[39m[2m | [22m
+[32mscripts.js[39m                                 [2m | [22m[2mscripts[22m                        [2m | [22m[36m294.48 kB[39m[2m | [22m
+[32mchunk-DYCGFAEI.js[39m                          [2m | [22m[2m-[22m                              [2m | [22m  [36m8.83 kB[39m[2m | [22m
+[32mmain.js[39m                                    [2m | [22m[2mmain[22m                           [2m | [22m  [36m7.54 kB[39m[2m | [22m
+[32mchunk-EVSPGG2W.js[39m                          [2m | [22m[2m-[22m                              [2m | [22m  [36m1.64 kB[39m[2m | [22m
+[32mpolyfills.js[39m                               [2m | [22m[2mpolyfills[22m                      [2m | [22m [36m95 bytes[39m[2m | [22m
+
+[1m [22m                                          [2m | [22m[1mInitial total[22m                  [2m | [22m  [1m1.06 MB[22m
+
+[1mLazy chunk files[22m                           [2m | [22m[1mNames[22m                          [2m | [22m [1mRaw size[22m
+[32mnetwork-smart-home.component-JLN7XIMH.js[39m   [2m | [22m[2mnetwork-smart-home-component[22m   [2m | [22m[36m373.03 kB[39m[2m | [22m
+[32minternal-layout.routes-GAQKTVHF.js[39m         [2m | [22m[2minternal-layout-routes[22m         [2m | [22m[36m359.57 kB[39m[2m | [22m
+[32mwork-projects.component-AM7UJRVT.js[39m        [2m | [22m[2mwork-projects-component[22m        [2m | [22m[36m339.73 kB[39m[2m | [22m
+[32mnetwork-dashboard.component-7VFHXSQV.js[39m    [2m | [22m[2mnetwork-dashboard-component[22m    [2m | [22m[36m277.78 kB[39m[2m | [22m
+[32mfinance-wallet.component-CNXVW44Z.js[39m       [2m | [22m[2mfinance-wallet-component[22m       [2m | [22m[36m251.75 kB[39m[2m | [22m
+[32mlearning-courses.component-6TCZX7DS.js[39m     [2m | [22m[2mlearning-courses-component[22m     [2m | [22m[36m249.56 kB[39m[2m | [22m
+[32mlearning-institutions.component-HGJ2LC52.js[39m[2m | [22m[2mlearning-institutions-component[22m[2m | [22m[36m236.26 kB[39m[2m | [22m
+[32mfinance-crypto.component-M5SW3VPD.js[39m       [2m | [22m[2mfinance-crypto-component[22m       [2m | [22m[36m230.18 kB[39m[2m | [22m
+[32mfinance-banks.component-WKPY225R.js[39m        [2m | [22m[2mfinance-banks-component[22m        [2m | [22m[36m209.88 kB[39m[2m | [22m
+[32mfinance-dashboard.component-UTBJMW23.js[39m    [2m | [22m[2mfinance-dashboard-component[22m    [2m | [22m[36m202.94 kB[39m[2m | [22m
+[32mchunk-JWETPROH.js[39m                          [2m | [22m[2m-[22m                              [2m | [22m[36m185.26 kB[39m[2m | [22m
+[32mdashboard.component-GITZGK6B.js[39m            [2m | [22m[2mdashboard-component[22m            [2m | [22m[36m180.60 kB[39m[2m | [22m
+[32mlearning-dashboard.component-Z435ZRRZ.js[39m   [2m | [22m[2mlearning-dashboard-component[22m   [2m | [22m[36m179.99 kB[39m[2m | [22m
+[32mproject-dashboard.component-VHAE4CK7.js[39m    [2m | [22m[2mproject-dashboard-component[22m    [2m | [22m[36m175.82 kB[39m[2m | [22m
+[32msocial-schedular.component-INLBTMKA.js[39m     [2m | [22m[2msocial-schedular-component[22m     [2m | [22m[36m167.63 kB[39m[2m | [22m
+[2m...and 133 more lazy chunks files. Use "--verbose" to show all the files.[22m
+
+Application bundle generation complete. [0.768 seconds] - 2026-04-19T19:21:22.862Z
+
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[1mInitial chunk files[22m                      [2m | [22m[1mNames[22m                        [2m | [22m [1mRaw size[22m
+[32mmain.js[39m                                  [2m | [22m[2mmain[22m                         [2m | [22m  [36m7.54 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m                         [2m | [22m[1mNames[22m                        [2m | [22m [1mRaw size[22m
+[32minternal-layout.routes-TA2QIBQR.js[39m       [2m | [22m[2minternal-layout-routes[22m       [2m | [22m[36m359.57 kB[39m[2m | [22m
+[32minventory-movements.component-UUFAICDN.js[39m[2m | [22m[2minventory-movements-component[22m[2m | [22m [36m62.36 kB[39m[2m | [22m
+
+Application bundle generation complete. [0.960 seconds] - 2026-04-19T19:21:59.996Z
+
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[1mInitial chunk files[22m                          [2m | [22m[1mNames[22m                            [2m | [22m [1mRaw size[22m
+[32mmain.js[39m                                      [2m | [22m[2mmain[22m                             [2m | [22m  [36m7.54 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m                             [2m | [22m[1mNames[22m                            [2m | [22m [1mRaw size[22m
+[32minternal-layout.routes-YG64UWLL.js[39m           [2m | [22m[2minternal-layout-routes[22m           [2m | [22m[36m359.57 kB[39m[2m | [22m
+[32mwork-projects.component-ASQSJYFZ.js[39m          [2m | [22m[2mwork-projects-component[22m          [2m | [22m[36m339.77 kB[39m[2m | [22m
+[32mchunk-UDYTNTRI.js[39m                            [2m | [22m[2m-[22m                                [2m | [22m[36m185.30 kB[39m[2m | [22m
+[32mwork-tasks.component-UNBLT3AB.js[39m             [2m | [22m[2mwork-tasks-component[22m             [2m | [22m[36m115.36 kB[39m[2m | [22m
+[32mwork-test-batches.component-YZXBFGQ5.js[39m      [2m | [22m[2mwork-test-batches-component[22m      [2m | [22m [36m63.98 kB[39m[2m | [22m
+[32minventory-movements.component-CATA2Y44.js[39m    [2m | [22m[2minventory-movements-component[22m    [2m | [22m [36m63.84 kB[39m[2m | [22m
+[32mwork-teams.component-SNC5GB3W.js[39m             [2m | [22m[2mwork-teams-component[22m             [2m | [22m [36m60.67 kB[39m[2m | [22m
+[32mchunk-FO7LUI7A.js[39m                            [2m | [22m[2m-[22m                                [2m | [22m [36m57.26 kB[39m[2m | [22m
+[32mcompany-projects-config.component-6BO5TEGX.js[39m[2m | [22m[2mcompany-projects-config-component[22m[2m | [22m [36m48.38 kB[39m[2m | [22m
+[32mcrm-prospects.component-VMN3PQ2R.js[39m          [2m | [22m[2mcrm-prospects-component[22m          [2m | [22m [36m46.15 kB[39m[2m | [22m
+[32mwork-workload.component-EDJN6JSO.js[39m          [2m | [22m[2mwork-workload-component[22m          [2m | [22m [36m37.91 kB[39m[2m | [22m
+[32mchunk-LKK4XDSH.js[39m                            [2m | [22m[2m-[22m                                [2m | [22m  [36m8.94 kB[39m[2m | [22m
+
+Application bundle generation complete. [0.891 seconds] - 2026-04-19T19:24:07.541Z
+
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[1mInitial chunk files[22m                            [2m | [22m[1mNames[22m                              [2m | [22m [1mRaw size[22m
+[32mmain.js[39m                                        [2m | [22m[2mmain[22m                               [2m | [22m  [36m7.54 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m                               [2m | [22m[1mNames[22m                              [2m | [22m [1mRaw size[22m
+[32minternal-layout.routes-BMUVTCBL.js[39m             [2m | [22m[2minternal-layout-routes[22m             [2m | [22m[36m359.57 kB[39m[2m | [22m
+[32mwork-projects.component-3EYRA5XL.js[39m            [2m | [22m[2mwork-projects-component[22m            [2m | [22m[36m339.77 kB[39m[2m | [22m
+[32minventory-stock-workbench.component-XLZIPQLO.js[39m[2m | [22m[2minventory-stock-workbench-component[22m[2m | [22m [36m66.32 kB[39m[2m | [22m
+[32minventory-replenishment.component-C5CVYOPZ.js[39m  [2m | [22m[2minventory-replenishment-component[22m  [2m | [22m [36m65.09 kB[39m[2m | [22m
+[32minventory-movements.component-Y654KQXV.js[39m      [2m | [22m[2minventory-movements-component[22m      [2m | [22m [36m63.84 kB[39m[2m | [22m
+[32mchunk-VXDKLI37.js[39m                              [2m | [22m[2m-[22m                                  [2m | [22m [36m54.56 kB[39m[2m | [22m
+[32minventory-reconciliation.component-GEP3CIS5.js[39m [2m | [22m[2minventory-reconciliation-component[22m [2m | [22m [36m50.69 kB[39m[2m | [22m
+[32minventory-reservations.component-KUS4L6C5.js[39m   [2m | [22m[2minventory-reservations-component[22m   [2m | [22m [36m42.88 kB[39m[2m | [22m
+
+Application bundle generation complete. [2.368 seconds] - 2026-04-19T19:24:40.409Z
+
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [1.686 seconds] - 2026-04-19T19:24:53.657Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2551: Property 'consumeMaterialReservation' does not exist on type 'KanbanViewComponent'. Did you mean 'materialReservations'?[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/app/projects/kanban-view.component.ts:614:33:
+[37m      614 │ ...             (click)="[32mconsumeMaterialReservation[37m(reservation.id)"
+          ╵                          [32m~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[1mInitial chunk files[22m                        [2m | [22m[1mNames[22m                          [2m | [22m [1mRaw size[22m
+[32mstyles.css[39m                                 [2m | [22m[2mstyles[22m                         [2m | [22m[36m748.69 kB[39m[2m | [22m
+[32mscripts.js[39m                                 [2m | [22m[2mscripts[22m                        [2m | [22m[36m294.48 kB[39m[2m | [22m
+[32mchunk-DYCGFAEI.js[39m                          [2m | [22m[2m-[22m                              [2m | [22m  [36m8.83 kB[39m[2m | [22m
+[32mmain.js[39m                                    [2m | [22m[2mmain[22m                           [2m | [22m  [36m7.54 kB[39m[2m | [22m
+[32mchunk-EVSPGG2W.js[39m                          [2m | [22m[2m-[22m                              [2m | [22m  [36m1.64 kB[39m[2m | [22m
+[32mpolyfills.js[39m                               [2m | [22m[2mpolyfills[22m                      [2m | [22m [36m95 bytes[39m[2m | [22m
+
+[1m [22m                                          [2m | [22m[1mInitial total[22m                  [2m | [22m  [1m1.06 MB[22m
+
+[1mLazy chunk files[22m                           [2m | [22m[1mNames[22m                          [2m | [22m [1mRaw size[22m
+[32mnetwork-smart-home.component-JLN7XIMH.js[39m   [2m | [22m[2mnetwork-smart-home-component[22m   [2m | [22m[36m373.03 kB[39m[2m | [22m
+[32minternal-layout.routes-L3NQBSEY.js[39m         [2m | [22m[2minternal-layout-routes[22m         [2m | [22m[36m359.57 kB[39m[2m | [22m
+[32mwork-projects.component-5BNVSZ3K.js[39m        [2m | [22m[2mwork-projects-component[22m        [2m | [22m[36m341.46 kB[39m[2m | [22m
+[32mnetwork-dashboard.component-7VFHXSQV.js[39m    [2m | [22m[2mnetwork-dashboard-component[22m    [2m | [22m[36m277.78 kB[39m[2m | [22m
+[32mfinance-wallet.component-CNXVW44Z.js[39m       [2m | [22m[2mfinance-wallet-component[22m       [2m | [22m[36m251.75 kB[39m[2m | [22m
+[32mlearning-courses.component-6TCZX7DS.js[39m     [2m | [22m[2mlearning-courses-component[22m     [2m | [22m[36m249.56 kB[39m[2m | [22m
+[32mlearning-institutions.component-HGJ2LC52.js[39m[2m | [22m[2mlearning-institutions-component[22m[2m | [22m[36m236.26 kB[39m[2m | [22m
+[32mfinance-crypto.component-M5SW3VPD.js[39m       [2m | [22m[2mfinance-crypto-component[22m       [2m | [22m[36m230.18 kB[39m[2m | [22m
+[32mfinance-banks.component-WKPY225R.js[39m        [2m | [22m[2mfinance-banks-component[22m        [2m | [22m[36m209.88 kB[39m[2m | [22m
+[32mfinance-dashboard.component-UTBJMW23.js[39m    [2m | [22m[2mfinance-dashboard-component[22m    [2m | [22m[36m202.94 kB[39m[2m | [22m
+[32mchunk-UDYTNTRI.js[39m                          [2m | [22m[2m-[22m                              [2m | [22m[36m185.30 kB[39m[2m | [22m
+[32mdashboard.component-GITZGK6B.js[39m            [2m | [22m[2mdashboard-component[22m            [2m | [22m[36m180.60 kB[39m[2m | [22m
+[32mlearning-dashboard.component-Z435ZRRZ.js[39m   [2m | [22m[2mlearning-dashboard-component[22m   [2m | [22m[36m179.99 kB[39m[2m | [22m
+[32mproject-dashboard.component-VHAE4CK7.js[39m    [2m | [22m[2mproject-dashboard-component[22m    [2m | [22m[36m175.82 kB[39m[2m | [22m
+[32msocial-schedular.component-INLBTMKA.js[39m     [2m | [22m[2msocial-schedular-component[22m     [2m | [22m[36m167.63 kB[39m[2m | [22m
+[2m...and 134 more lazy chunks files. Use "--verbose" to show all the files.[22m
+
+Application bundle generation complete. [1.967 seconds] - 2026-04-19T19:25:05.108Z
+
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[1mInitial chunk files[22m               [2m | [22m[1mNames[22m                 [2m | [22m [1mRaw size[22m
+[32mmain.js[39m                           [2m | [22m[2mmain[22m                  [2m | [22m  [36m7.54 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m                  [2m | [22m[1mNames[22m                 [2m | [22m [1mRaw size[22m
+[32minternal-layout.routes-D5BUX322.js[39m[2m | [22m[2minternal-layout-routes[22m[2m | [22m[36m359.37 kB[39m[2m | [22m
+
+Application bundle generation complete. [0.612 seconds] - 2026-04-19T19:25:17.723Z
+
+Page reload sent to client(s).

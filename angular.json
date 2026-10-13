@@ -1,0 +1,74 @@
+{
+  "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
+  "cli": {
+    "analytics": ""
+  },
+  "newProjectRoot": "projects",
+  "projects": {
+    "demo": {
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:application",
+          "configurations": {
+            "development": {
+              "extractLicenses": false,
+              "namedChunks": true,
+              "optimization": false,
+              "sourceMap": true
+            },
+            "production": {
+              "aot": true,
+              "extractLicenses": true,
+              "namedChunks": false,
+              "optimization": true,
+              "outputHashing": "all",
+              "sourceMap": false
+            }
+          },
+          "options": {
+            "index": "src/index.html",
+            "browser": "src/main.ts",
+            "outputPath": "dist/demo",
+            "assets": [
+              "src/assets"
+            ],
+            "polyfills": [
+              "zone.js"
+            ],
+            "scripts": [
+              "./node_modules/bootstrap/dist/js/bootstrap.bundle.min.js",
+              "./node_modules/spotlight.js/dist/js/spotlight.min.js",
+              "./node_modules/jsvectormap/dist/jsvectormap.min.js",
+              "./node_modules/jsvectormap/dist/maps/world.js",
+              "./node_modules/dragula/dist/dragula.min.js"
+            ],
+            "styles": [
+              "src/global_styles.scss",
+              "./node_modules/spotlight.js/dist/css/spotlight.min.css",
+              "./node_modules/dragula/dist/dragula.min.css"
+            ],
+            "tsConfig": "tsconfig.app.json"
+          }
+        },
+        "serve": {
+          "builder": "@angular-devkit/build-angular:dev-server",
+          "configurations": {
+            "development": {
+              "buildTarget": "demo:build:development"
+            },
+            "production": {
+              "buildTarget": "demo:build:production"
+            }
+          },
+          "defaultConfiguration": "development"
+        }
+      },
+      "prefix": "app",
+      "projectType": "application",
+      "root": "",
+      "schematics": {},
+      "sourceRoot": "src"
+    }
+  },
+  "version": 1
+}

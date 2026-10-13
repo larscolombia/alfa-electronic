@@ -1,0 +1,55 @@
+.zooming-circles1,
+.zooming-circles2,
+.zooming-circles3,
+.zooming-circles4
+{
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    height: 0;
+    width: 0;
+    transform: translate(-50%, -50%);
+    border: 1px dashed var(--adminuiux-theme-accent-1);
+    background: radial-gradient(rgba(var(--adminuiux-theme-accent-1-rgb), 0), rgba(var(--adminuiux-theme-accent-1-rgb), 0.35));
+    border-radius: 50%;
+    animation: zoomcircle linear 2s infinite;
+    z-index: 0;
+    opacity: 0;
+}
+
+.zooming-circles1
+{
+    animation-delay: 0s;
+}
+
+.zooming-circles2
+{
+    animation-delay: 0.5s;
+}
+
+.zooming-circles3
+{
+    animation-delay: 1s;
+}
+
+.zooming-circles4
+{
+    animation-delay: 1.5s;
+}
+
+@keyframes zoomcircle
+{
+    0%
+    {
+        height: 0px;
+        width: 0px;
+        opacity: 1;
+    }
+
+    100%
+    {
+        height: 800px;
+        width: 800px;
+        opacity: 0;
+    }
+}

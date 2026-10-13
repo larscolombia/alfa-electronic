@@ -1,0 +1,36 @@
+                                                 Table "public.crm_equipment_records"
+      Column      |           Type           | Collation | Nullable |         Default          | Storage  | Stats target | Description 
+------------------+--------------------------+-----------+----------+--------------------------+----------+--------------+-------------
+ company_id       | text                     |           | not null |                          | extended |              | 
+ id               | text                     |           | not null |                          | extended |              | 
+ prospect_id      | bigint                   |           | not null | 0                        | plain    |              | 
+ prospect_name    | character varying(180)   |           | not null | ''::character varying    | extended |              | 
+ reception_day    | character varying(2)     |           | not null | ''::character varying    | extended |              | 
+ reception_month  | character varying(2)     |           | not null | ''::character varying    | extended |              | 
+ reception_year   | character varying(4)     |           | not null | ''::character varying    | extended |              | 
+ company_name     | character varying(180)   |           | not null | ''::character varying    | extended |              | 
+ nit              | character varying(80)    |           | not null | ''::character varying    | extended |              | 
+ phone            | character varying(40)    |           | not null | ''::character varying    | extended |              | 
+ address          | text                     |           | not null | ''::text                 | extended |              | 
+ city             | character varying(120)   |           | not null | ''::character varying    | extended |              | 
+ contact_name     | character varying(180)   |           | not null | ''::character varying    | extended |              | 
+ contact_role     | character varying(120)   |           | not null | ''::character varying    | extended |              | 
+ cellphone        | character varying(40)    |           | not null | ''::character varying    | extended |              | 
+ email            | character varying(180)   |           | not null | ''::character varying    | extended |              | 
+ client_signature | text                     |           | not null | ''::text                 | extended |              | 
+ pika_signature   | text                     |           | not null | ''::text                 | extended |              | 
+ items_json       | jsonb                    |           | not null | '[]'::jsonb              | extended |              | 
+ archived         | boolean                  |           | not null | false                    | plain    |              | 
+ archived_at      | timestamp with time zone |           |          |                          | plain    |              | 
+ source_context   | character varying(10)    |           | not null | 'crm'::character varying | extended |              | 
+ assigned_to      | character varying(160)   |           | not null | ''::character varying    | extended |              | 
+ created_at       | timestamp with time zone |           | not null | now()                    | plain    |              | 
+ updated_at       | timestamp with time zone |           | not null | now()                    | plain    |              | 
+Indexes:
+    "crm_equipment_records_pkey" PRIMARY KEY, btree (company_id, id)
+    "idx_crm_equipment_records_company_archived" btree (company_id, archived)
+    "idx_crm_equipment_records_company_prospect" btree (company_id, prospect_id)
+Check constraints:
+    "crm_equipment_records_source_context_check" CHECK (source_context::text = ANY (ARRAY['crm'::character varying, 'work'::character varying]::text[]))
+Access method: heap
+

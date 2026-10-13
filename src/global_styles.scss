@@ -1,0 +1,142 @@
+/* Import Bootstrap CSS */
+@use 'bootstrap/dist/css/bootstrap.min';
+/* Import Bootstrap Icons */
+@use 'bootstrap-icons/font/bootstrap-icons';
+/* Import Swiper CSS */
+@use 'swiper/css/bundle';
+/* Import dataTable.net-dt css */
+@use 'datatables.net-dt/css/dataTables.dataTables.min.css';
+@use 'datatables.net-responsive-dt/css/responsive.dataTables.min.css';
+/* Import choices js */
+@use "choices.js/src/styles/choices";
+/* Import js vector map css */
+@use "jsvectormap/dist/jsvectormap.min.css";
+/* dropzone css */
+@use "dropzone/dist/dropzone.css";
+/* Import Adminuiux customize styles */
+@use 'assets/scss/style';
+/* Add your custom styles below */
+app-internal-layout, app-root, app-auth-layout {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+app-date-picker-inline ngx-daterangepicker-bootstrap {
+    margin: 0 auto;
+    display: inline-block;
+    .card {
+        box-shadow: none;
+        border: 0;
+        background-color: transparent;
+        margin: 0 auto;
+        z-index: 0;
+        .calendar {
+            z-index: 0;
+        }
+    }
+}
+.choices + label {
+    transform: scale(0.85) translateY(-0.85rem) translateX(0.15rem) !important;
+}
+.choices__list--dropdown, .choices__list[aria-expanded] {
+    z-index: 4;
+}
+.NgxEditor__Wrapper {
+    --ngx-editor-background-color: var(--bs-body-bg);
+    --ngx-editor-menubar-bg-color: var(--bs-body-bg);
+    --ngx-editor-text-color: var(--bs-body-color);
+    --ngx-editor-wrapper-border-color: var(--bs-border-color);
+    --ngx-editor-seperator-color: var(--bs-border-color);
+    --ngx-editor-border-color: var(--bs-border-color);
+    --ngx-editor-border-radius: var(--bs-border-radius);
+    --ngx-editor-icon-size: 25px;
+}
+
+.app-confirm-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1080;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: radial-gradient(circle at 20% 10%, rgba(13, 110, 253, 0.08) 0%, rgba(0, 0, 0, 0) 40%), rgba(17, 24, 39, 0.38);
+    backdrop-filter: blur(2px);
+}
+
+.app-confirm-modal {
+    width: min(100%, 520px);
+    border-radius: 1rem;
+    overflow: hidden;
+    background: var(--bs-body-bg);
+    border: 1px solid var(--bs-border-color);
+    box-shadow: 0 1.5rem 3rem rgba(15, 23, 42, 0.28);
+}
+
+.app-confirm-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+    color: #fff;
+    background: linear-gradient(135deg, #dc3545 0%, #9f1239 100%);
+}
+
+.app-confirm-header[data-variant="warning"] {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.app-confirm-header[data-variant="primary"] {
+    background: linear-gradient(135deg, #0d6efd 0%, #2563eb 100%);
+}
+
+.app-confirm-icon {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.app-confirm-body {
+    padding: 1.25rem;
+}
+
+.app-confirm-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding: 0 1.25rem 1.25rem;
+}
+
+.app-confirm-primary-btn {
+    border: none;
+    color: #fff;
+    background: linear-gradient(135deg, #dc3545 0%, #be123c 100%);
+}
+
+.app-confirm-primary-btn[data-variant="warning"] {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.app-confirm-primary-btn[data-variant="primary"] {
+    background: linear-gradient(135deg, #0d6efd 0%, #2563eb 100%);
+}
+
+.app-confirm-primary-btn:hover,
+.app-confirm-primary-btn:focus {
+    color: #fff;
+    filter: brightness(0.95);
+}
+
+@media (max-width: 576px) {
+    .app-confirm-actions {
+        flex-direction: column-reverse;
+    }
+
+    .app-confirm-actions .btn {
+        width: 100%;
+    }
+}

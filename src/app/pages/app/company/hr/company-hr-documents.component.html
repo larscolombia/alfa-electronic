@@ -1,0 +1,243 @@
+<div class="container-fluid py-3">
+    <div class="row gx-3 gx-lg-4 align-items-center page-title">
+        <div class="col col-sm mb-3 mb-sm-0">
+            <h5 class="mb-0">RRHH - Documentos</h5>
+            <p class="text-secondary small mb-0">Control de hoja de vida y soportes por empleado</p>
+        </div>
+        <div class="col-12 col-sm-auto text-sm-end">
+            <a class="btn btn-outline-secondary" routerLink="/app/profile-professional" [queryParams]="{ source: 'hr-documents' }">Ver ficha</a>
+        </div>
+    </div>
+
+    <nav aria-label="breadcrumb" class="breadcrumb-theme mt-3 rounded">
+        <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item bi"><a routerLink="/app/dashboard"><i class="bi bi-house-door me-2"></i>AdminUX</a></li>
+            <li class="breadcrumb-item bi"><a routerLink="/app/company-hr-dashboard">Recursos Humanos</a></li>
+            <li class="breadcrumb-item bi active" aria-current="page">Documentos</li>
+        </ol>
+    </nav>
+</div>
+
+<div class="container mt-3" id="main-content">
+    @if (loadingData) {
+        <div class="alert alert-light border mb-3 d-flex align-items-center" role="status">
+            <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+            Cargando expediente documental...
+        </div>
+    }
+    @if (message) {
+        <div class="alert border mb-3" [class.alert-success]="messageKind === 'success'" [class.alert-danger]="messageKind === 'error'" role="alert">{{ message }}</div>
+    }
+
+    <div class="row gx-3 gx-lg-4 mb-3">
+        <div class="col-12 col-md-4">
+            <div class="card adminuiux-card h-100">
+                <div class="card-body">
+                    <p class="small text-secondary mb-1">Soportes registrados</p>
+                    <h4 class="mb-0">{{ documents.length }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div class="card adminuiux-card h-100">
+                <div class="card-body">
+                    <p class="small text-secondary mb-1">Expediente completo</p>
+                    <h4 class="mb-0">{{ completeFiles }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div class="card adminuiux-card h-100">
+                <div class="card-body">
+                    <p class="small text-secondary mb-1">Pendientes de carga</p>
+                    <h4 class="mb-0">{{ pendingDocuments.length }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card adminuiux-card mb-3 mb-lg-4">
+        <div class="card-header">
+            <h6 class="mb-0">Registro documental</h6>
+            <p class="text-secondary small mb-0">Carga real de soportes (maximo 8MB por archivo) con previsualizacion y descarga</p>
+        </div>
+        <div class="card-body">
+            <div class="row gx-3 gy-3 align-items-end mb-3">
+                <div class="col-12 col-md-3">
+                    <label class="form-label" for="draftEmployee">Empleado</label>
+                    <select class="form-select" id="draftEmployee" [(ngModel)]="draftEmployeeId">
+                        @for (employee of employees; track employee.id) {
+                            <option [value]="employee.id">{{ employee.name }}</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-12 col-md-2">
+                    <label class="form-label" for="draftCategory">Categoria</label>
+                    <select class="form-select" id="draftCategory" [(ngModel)]="draftCategory">
+                        @for (category of categoryOptions; track category) {
+                            <option [value]="category">{{ category }}</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label" for="draftFile">Archivo del soporte</label>
+                    <input class="form-control" id="draftFile" type="file" (change)="onDraftFileSelected($event)" [disabled]="uploading" />
+                    @if (draftFile) {
+                        <small class="text-secondary">{{ draftFile.name }} ({{ formatSize(draftFile.size) }})</small>
+                    }
+                </div>
+                <div class="col-12 col-md-3">
+                    <label class="form-label" for="draftNotes">Notas</label>
+                    <input class="form-control" id="draftNotes" type="text" [(ngModel)]="draftNotes" placeholder="Observaciones del soporte" />
+                </div>
+            </div>
+
+            <div class="row gx-3 gy-3 align-items-end mb-3">
+                <div class="col-12 col-md-2">
+                    <div class="form-check mt-4">
+                        <input class="form-check-input" type="checkbox" id="requiredDocument" [(ngModel)]="draftRequired" />
+                        <label class="form-check-label" for="requiredDocument">Obligatorio</label>
+                    </div>
+                </div>
+                <div class="col-12 col-md-3">
+                    <label class="form-label" for="filterEmployee">Filtro empleado</label>
+                    <select class="form-select" id="filterEmployee" [(ngModel)]="filterEmployeeId">
+                        <option value="all">Todos</option>
+                        @for (employee of employees; track employee.id) {
+                            <option [value]="employee.id">{{ employee.name }}</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-12 col-md-3">
+                    <label class="form-label" for="filterCategory">Filtro categoria</label>
+                    <select class="form-select" id="filterCategory" [(ngModel)]="filterCategory">
+                        <option value="all">Todas</option>
+                        @for (category of categoryOptions; track category) {
+                            <option [value]="category">{{ category }}</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-12 col-md-4 text-md-end">
+                    <button class="btn btn-outline-secondary me-2" type="button" (click)="resetFilters()">Limpiar filtros</button>
+                    <button class="btn btn-outline-theme" type="button" (click)="uploadDocument()" [disabled]="uploading || !draftFile">
+                        @if (uploading) {
+                            <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+                        }
+                        Cargar soporte
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Empleado</th>
+                            <th>Categoria</th>
+                            <th>Documento</th>
+                            <th>Fecha carga</th>
+                            <th>Tamano</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (document of filteredDocuments; track document.id) {
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold">{{ document.employeeName }}</div>
+                                </td>
+                                <td>{{ document.category || 'Sin categoria' }}</td>
+                                <td>
+                                    {{ document.fileName }}
+                                    @if (document.required) {
+                                        <span class="badge text-bg-secondary ms-1">Obligatorio</span>
+                                    }
+                                </td>
+                                <td>{{ document.uploadedAt.slice(0, 10) }}</td>
+                                <td>{{ formatSize(document.sizeBytes) }}</td>
+                                <td>
+                                    <span class="badge text-bg-success">Cargado</span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-link btn-sm" type="button" title="Previsualizar" (click)="previewDocument(document)"><i class="bi bi-eye"></i></button>
+                                    <button class="btn btn-link btn-sm" type="button" title="Descargar" (click)="downloadDocument(document)"><i class="bi bi-download"></i></button>
+                                    <a class="btn btn-link btn-sm" title="Ver ficha" routerLink="/app/profile-professional" [queryParams]="{ source: 'hr-employees', employeeId: document.employeeId }"><i class="bi bi-person-vcard"></i></a>
+                                    <button class="btn btn-link text-danger btn-sm" type="button" title="Eliminar" (click)="removeDocument(document)"><i class="bi bi-trash"></i></button>
+                                </td>
+                            </tr>
+                        } @empty {
+                            <tr>
+                                <td colspan="7" class="text-center text-secondary py-4">No hay soportes cargados con los filtros actuales.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card adminuiux-card mb-3 mb-lg-4">
+        <div class="card-header">
+            <h6 class="mb-0">Estado del expediente laboral</h6>
+            <p class="text-secondary small mb-0">Validacion por categoria documental de cada empleado</p>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Empleado</th>
+                            <th>Hoja vida</th>
+                            <th>Contrato</th>
+                            <th>Certificados</th>
+                            <th>Examenes</th>
+                            <th>Estado global</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (row of documentsMatrix; track row.employee) {
+                            <tr>
+                                <td>{{ row.employee }}</td>
+                                <td>{{ row.cv }}</td>
+                                <td>{{ row.contract }}</td>
+                                <td>{{ row.certificates }}</td>
+                                <td>{{ row.medical }}</td>
+                                <td>
+                                    <span class="badge" [class.text-bg-success]="row.status === 'Completo'" [class.text-bg-warning]="row.status === 'Pendiente'">
+                                        {{ row.status }}
+                                    </span>
+                                </td>
+                            </tr>
+                        } @empty {
+                            <tr>
+                                <td colspan="6" class="text-center text-secondary py-4">Sin empleados registrados en el directorio.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card adminuiux-card mb-3 mb-lg-4">
+        <div class="card-header">
+            <h6 class="mb-0">Pendientes de carga</h6>
+        </div>
+        <div class="card-body p-0">
+            <ul class="list-group list-group-flush">
+                @for (pending of pendingDocuments; track pending.employee + pending.document) {
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="mb-1 fw-semibold">{{ pending.employee }}</p>
+                            <p class="small text-secondary mb-0">Documento faltante: {{ pending.document }}</p>
+                        </div>
+                        <span class="badge text-bg-warning">{{ pending.status }}</span>
+                    </li>
+                } @empty {
+                    <li class="list-group-item text-secondary">Todos los expedientes estan completos.</li>
+                }
+            </ul>
+        </div>
+    </div>
+</div>

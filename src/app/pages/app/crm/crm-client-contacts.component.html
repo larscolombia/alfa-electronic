@@ -1,0 +1,149 @@
+<div class="card adminuiux-card mb-3">
+    <div class="card-header border-bottom d-flex justify-content-between align-items-center">
+        <div>
+            <h5 class="mb-1">Contactos</h5>
+            <p class="text-secondary small mb-0">Personas de contacto asociadas a este cliente y a sus prospectos.</p>
+        </div>
+        <span class="badge text-bg-theme">{{ rows.length }} contacto(s)</span>
+    </div>
+    <div class="card-body">
+        @if (successMessage) {
+            <div class="alert alert-success border py-2 px-3 mb-3">{{ successMessage }}</div>
+        }
+        @if (errorMessage) {
+            <div class="alert alert-danger border py-2 px-3 mb-3">{{ errorMessage }}</div>
+        }
+        @if (loading) {
+            <div class="text-secondary small">Cargando contactos...</div>
+        } @else if (rows.length === 0 && !showForm) {
+            <div class="border rounded p-4 text-center text-secondary mb-3">
+                No hay contactos asociados a este cliente. Usa "Agregar contacto" para crear el primero.
+            </div>
+        } @else if (rows.length > 0) {
+            <div class="table-responsive border rounded mb-3">
+                <table class="table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Cargo / Rol</th>
+                            <th>Correo</th>
+                            <th>Telefono</th>
+                            <th>Notas</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (row of rows; track row.source + ':' + row.id) {
+                            <tr>
+                                @if (editingId === row.source + ':' + row.id) {
+                                    <td colspan="5">
+                                        <div class="row gx-2 gy-2">
+                                            <div class="col-12 col-md-4">
+                                                <input class="form-control form-control-sm" type="text" [(ngModel)]="editForm.name" [disabled]="savingEdit" placeholder="Nombre *" aria-label="Nombre" />
+                                            </div>
+                                            <div class="col-12 col-md-4">
+                                                <input class="form-control form-control-sm" type="text" [(ngModel)]="editForm.role" [disabled]="savingEdit" placeholder="Cargo" aria-label="Cargo" />
+                                            </div>
+                                            <div class="col-12 col-md-4">
+                                                <input class="form-control form-control-sm" type="email" [(ngModel)]="editForm.email" [disabled]="savingEdit" placeholder="correo@empresa.com" aria-label="Correo" />
+                                            </div>
+                                            <div class="col-12 col-md-4">
+                                                <input class="form-control form-control-sm" type="tel" [(ngModel)]="editForm.phone" [disabled]="savingEdit" placeholder="Telefono" aria-label="Telefono" />
+                                            </div>
+                                            <div class="col-12 col-md-8">
+                                                <input class="form-control form-control-sm" type="text" [(ngModel)]="editForm.notes" [disabled]="savingEdit" placeholder="Notas" aria-label="Notas" />
+                                            </div>
+                                        </div>
+                                        @if (editError) {
+                                            <div class="text-danger small mt-2">{{ editError }}</div>
+                                        }
+                                    </td>
+                                    <td class="text-end text-nowrap">
+                                        <button class="btn btn-sm btn-theme me-1" type="button" [disabled]="savingEdit" (click)="saveEdit(row)">
+                                            @if (savingEdit) {
+                                                <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                                            } @else {
+                                                Guardar
+                                            }
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-secondary" type="button" [disabled]="savingEdit" (click)="cancelEdit()">Cancelar</button>
+                                    </td>
+                                } @else {
+                                    <td class="fw-semibold">
+                                        {{ row.name }}
+                                        <span class="badge ms-1" [class.text-bg-theme]="row.source === 'client'" [class.text-bg-info]="row.source === 'prospect'">
+                                            {{ row.source === 'client' ? 'Cliente' : 'Prospecto' }}
+                                        </span>
+                                    </td>
+                                    <td>{{ row.role || '--' }}</td>
+                                    <td>{{ row.email || '--' }}</td>
+                                    <td>{{ row.phone || '--' }}</td>
+                                    <td class="small text-secondary">{{ row.notes || '--' }}</td>
+                                    <td class="text-end text-nowrap">
+                                        <button class="btn btn-sm btn-outline-theme me-1" type="button"
+                                            [disabled]="deletingId !== '' || editingId !== ''"
+                                            [title]="'Editar ' + row.name"
+                                            (click)="startEdit(row)">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" type="button"
+                                            [disabled]="deletingId === row.source + ':' + row.id || editingId !== ''"
+                                            [title]="'Eliminar ' + row.name"
+                                            (click)="deleteContact(row)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+        @if (showForm) {
+            <div class="border rounded p-3 mb-3">
+                <h6 class="mb-3">Nuevo contacto</h6>
+                @if (formError) {
+                    <div class="alert alert-danger border py-2 px-3 mb-3">{{ formError }}</div>
+                }
+                <div class="row gx-3 gy-3">
+                    <div class="col-12 col-md-6">
+                        <label class="form-label" for="contact-name">Nombre <span class="text-danger">*</span></label>
+                        <input id="contact-name" class="form-control" type="text" [(ngModel)]="form.name" [disabled]="saving" placeholder="Ej: Maria Perez" />
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label" for="contact-role">Cargo</label>
+                        <input id="contact-role" class="form-control" type="text" [(ngModel)]="form.role" [disabled]="saving" placeholder="Ej: Gerente de compras" />
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label" for="contact-email">Correo</label>
+                        <input id="contact-email" class="form-control" type="email" [(ngModel)]="form.email" [disabled]="saving" placeholder="nombre@empresa.com" />
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label" for="contact-phone">Telefono</label>
+                        <input id="contact-phone" class="form-control" type="tel" [(ngModel)]="form.phone" [disabled]="saving" placeholder="+57 300 000 0000" />
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label" for="contact-notes">Notas</label>
+                        <textarea id="contact-notes" class="form-control" rows="2" [(ngModel)]="form.notes" [disabled]="saving" placeholder="Observaciones del contacto"></textarea>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-end gap-2 mt-3">
+                    <button class="btn btn-outline-secondary" type="button" [disabled]="saving" (click)="cancelForm()">Cancelar</button>
+                    <button class="btn btn-theme" type="button" [disabled]="saving" (click)="saveContact()">
+                        @if (saving) {
+                            <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span> Guardando...
+                        } @else {
+                            Guardar
+                        }
+                    </button>
+                </div>
+            </div>
+        } @else {
+            <button class="btn btn-theme btn-sm" type="button" (click)="openForm()">
+                <i class="bi bi-plus-lg me-1"></i> Agregar contacto
+            </button>
+        }
+    </div>
+</div>

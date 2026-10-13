@@ -1,0 +1,67 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Angular Build",
+			"type": "shell",
+			"command": "npm run build"
+		},
+		{
+			"label": "ngbuild",
+			"type": "shell",
+			"command": "npm run build"
+		},
+		{
+			"label": "check-kanban",
+			"type": "shell",
+			"command": "npx tsc --noEmit src/app/pages/app/projects/kanban-view.component.ts > error_output.txt 2>&1"
+		},
+		{
+			"label": "check work projects materiales",
+			"type": "shell",
+			"command": "node scripts/check-work-projects-materiales-playwright.mjs",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "check-lubot-ai-live",
+			"type": "shell",
+			"command": "xvfb-run -a env PW_BASE_URL=https://alfa.software.net.co node scripts/check-work-equipment-lubot-ai-playwright.mjs",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "restart-alfa-backend-service",
+			"type": "shell",
+			"command": "systemctl restart alfa-backend.service && systemctl is-active alfa-backend.service && ss -lptn 'sport = :8091'",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "force-reload-backend-8091",
+			"type": "shell",
+			"command": "bash scripts/force-reload-backend-8091.sh",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "LARS: ng serve",
+			"type": "shell",
+			"command": "npx ng serve",
+			"options": {
+				"cwd": "c:\\Users\\ludwi\\Desktop\\Proyectos\\LARS\\alfa-final\\themeforest-0dBIj6II-adminux-dashboard-responsive-html\\angular"
+			},
+			"isBackground": true,
+			"problemMatcher": [
+				{
+					"pattern": [{ "regexp": ".", "file": 1, "location": 2, "message": 3 }],
+					"background": {
+						"activeOnStart": true,
+						"beginsPattern": "Building",
+						"endsPattern": "compiled successfully"
+					}
+				}
+			]
+		}
+	]
+}
