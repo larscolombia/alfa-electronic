@@ -1,0 +1,65 @@
+# See http://help.github.com/ignore-files/ for more about ignoring files.
+
+# Compiled output
+/dist
+/tmp
+/out-tsc
+/bazel-out
+
+# Node
+/node_modules
+npm-debug.log
+yarn-error.log
+
+# IDEs and editors
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.history/*
+
+# Miscellaneous
+/.angular/cache
+.sass-cache/
+/connect.lock
+/coverage
+/libpeerconnection.log
+testem.log
+/typings
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Playwright local artifacts
+/playwright-artifacts
+
+# Go build artifacts
+/backend/tmp
+/backend/*.exe
+/backend/*.out
+/backend/vendor
+
+# --- Agregadas 2026-10-13: artefactos accidentales y build ---
+*.log
+error_output.txt
+backend/bin/
+backend/ema-backend
+# Artefactos shell accidentales (quarantine)
+"n := os.Getenv(\"DATABASE_URL\")"
+"pB_URL\" -Atc \"SELECT id, company_id, identifier FROM crm_equipment_records WHERE identifier IN ('CO260206', 'CO260245', 'CO260312');\" && "
+"ql.Open(\"pgx\", dbURL)"
+"ql.Open(\"pgx\", dsn)"
+"sed\" && "
+"tings\""
+"uccessful\" && "

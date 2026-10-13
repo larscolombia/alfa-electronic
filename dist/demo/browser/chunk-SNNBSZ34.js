@@ -1,1 +1,0 @@
-var e="adminux.finance.accounts";function n(){return typeof window<"u"&&typeof window.localStorage<"u"}var a=class{static getAccounts(){if(!n())return[];let t=window.localStorage.getItem(e);if(!t)return[];try{let r=JSON.parse(t);return Array.isArray(r)?r:[]}catch(r){return[]}}static saveAccounts(t){n()&&window.localStorage.setItem(e,JSON.stringify(t))}};export{a};

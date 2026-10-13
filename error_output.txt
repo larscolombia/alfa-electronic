@@ -1,5 +1,0 @@
-node_modules/@angular/core/types/_discovery-chunk.d.ts(12,86): error TS2307: Cannot find module '@angular/core/primitives/di' or its corresponding type declarations.
-  There are types at '/var/www/alfa.software.net.co/node_modules/@angular/core/types/primitives-di.d.ts', but this result could not be resolved under your current 'moduleResolution' setting. Consider updating to 'node16', 'nodenext', or 'bundler'.
-node_modules/@angular/platform-browser/types/platform-browser.d.ts(10,42): error TS2307: Cannot find module '@angular/common/http' or its corresponding type declarations.
-  There are types at '/var/www/alfa.software.net.co/node_modules/@angular/common/types/http.d.ts', but this result could not be resolved under your current 'moduleResolution' setting. Consider updating to 'node16', 'nodenext', or 'bundler'.
-src/app/pages/app/work/work-test-batch.service.ts(60,21): error TS2802: Type 'Set<string>' can only be iterated through when using the '--downlevelIteration' flag or with a '--target' of 'es2015' or higher.
