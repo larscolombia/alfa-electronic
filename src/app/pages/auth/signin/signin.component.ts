@@ -1,4 +1,4 @@
-﻿import { Component, OnDestroy, OnInit } from "@angular/core";
+import { Component, OnDestroy, OnInit } from "@angular/core";
 import { NgIf } from "@angular/common";
 import { RouterLink, Router, ActivatedRoute } from "@angular/router";
 import { FormsModule } from "@angular/forms";
@@ -101,7 +101,7 @@ const SIGNIN_DRAFT_KEY = "auth.signin";
                                                 <hr class="" />
                                             </div>
                                             <div class="col-auto">
-                                                <p class="text-secondary">OR Continue with</p>
+                                                <p class="text-secondary">O continuar con</p>
                                             </div>
                                             <div class="col">
                                                 <hr class="" />
