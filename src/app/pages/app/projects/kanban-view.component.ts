@@ -13,6 +13,7 @@ import { PurchaseLine, ReservationRecord, StockReference } from '../../../servic
 import { WorkEquipmentHistoryContextService } from '../../../services/work-equipment-history-context.service';
 import { CrmEquipmentApiService } from '../../../services/crm-equipment-api.service';
 import { ProjectsApiService } from '../../../services/projects-api.service';
+import { WorktimeApiService } from '../../../services/worktime-api.service';
 import { buildCommercialDocumentCode } from '../company/company-commercial-settings.store';
 import { buildEquipmentQrShortCode, generateEquipmentQrDataUrl } from '../crm/equipment-qr.util';
 import { ProspectEquipmentAttachment, ProspectEquipmentEvidencePhoto, ProspectEquipmentItem, ProspectEquipmentRepairStatus } from '../crm/crm-prospect-equipment.store';
@@ -3347,6 +3348,7 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
     private inventoryRbacService: InventoryRbacService,
     private inventoryApiService: InventoryApiService,
     private workTestBatchService: WorkTestBatchService,
+    private worktimeApi: WorktimeApiService,
     private equipmentHistoryContextService: WorkEquipmentHistoryContextService,
     private route: ActivatedRoute,
     private router: Router,
@@ -3879,7 +3881,8 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
 
     this.equipmentSessionProjectId = '';
 
-    const elapsedMinutes = (Date.now() - startedAt) / 60000;
+    const endedAt = Date.now();
+    const elapsedMinutes = (endedAt - startedAt) / 60000;
     const extraHours = accumulateQuarterHours(elapsedMinutes);
     if (extraHours <= 0) {
       return;
@@ -3906,6 +3909,27 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
         this.boardActionMessage = `El tiempo de sesion (+${extraHours} h) NO se guardo en el servidor: ${this.errorMessage(error)}`;
       },
     });
+
+    // Fase 4: el pointage tambien queda como entrada de horas en el servidor
+    // (work_time_entries) por tecnico/dia, no solo en actualHours del proyecto.
+    // El backend redondea a cuartos de hora y asigna el usuario desde el JWT.
+    this.worktimeApi
+      .createEntry({
+        projectId: project.id,
+        equipmentId: String(project.properties?.['equipmentIdentifier'] ?? '').trim(),
+        task: 'Sesion kanban',
+        entryType: 'normal',
+        employee: this.authService.getCurrentUserName(),
+        memo: `Pointage de sesion en tablero: +${extraHours} h (cuartos de hora).`,
+        startAt: new Date(startedAt).toISOString(),
+        endAt: new Date(endedAt).toISOString(),
+      })
+      .subscribe({
+        error: (error) => {
+          // Error visible: sin esta entrada el pointage no existe para RRHH.
+          this.boardActionMessage = `El pointage (+${extraHours} h) NO se guardo en el registro de horas: ${this.errorMessage(error)}`;
+        },
+      });
   }
 
   saveProjectDetail(): void {

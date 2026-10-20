@@ -1,4 +1,17 @@
+import { resolveApiBaseUrl } from "../../../../services/api-base-url.util";
+
 export type WorkDayLabel = "Lun" | "Mar" | "Mie" | "Jue" | "Vie" | "Sab" | "Dom";
+
+// Fase 4: los FESTIVOS vienen del servidor (GET /api/v1/worktime/holidays,
+// tabla `holidays` sembrada con la Ley 51 de Colombia). El mock que vivia en
+// localStorage['lars.hr.worktime.holidays'] ya no es la fuente de datos; la
+// clave solo se conserva exportada para que la UI de RRHH pueda migrar/borrar
+// lo que el usuario tuviera guardado.
+//
+// Los HORARIOS ('lars.hr.worktime.schedules') y los DIAS HABILES
+// ('lars.hr.worktime.business-days.v1') NO se migran en esta fase: siguen en
+// localStorage a proposito y quedan documentados para la FASE 6
+// (configuracion por empresa en el servidor).
 
 export interface WorkScheduleTemplate {
     id: string;
@@ -21,6 +34,7 @@ export interface BusinessCalendarConfig {
 }
 
 export const WORKTIME_SCHEDULES_STORAGE_KEY = "lars.hr.worktime.schedules";
+/** @deprecated Fase 4: los festivos viven en el servidor; clave solo para migracion. */
 export const WORKTIME_HOLIDAYS_STORAGE_KEY = "lars.hr.worktime.holidays";
 export const WORKTIME_BUSINESS_DAYS_STORAGE_KEY = "lars.hr.worktime.business-days.v1";
 
@@ -148,16 +162,117 @@ export function buildBusinessCalendar(labels: WorkDayLabel[], holidays: HolidayE
     };
 }
 
-export function loadBusinessCalendarFromStorage(): BusinessCalendarConfig {
+// ── Festivos desde el servidor (Fase 4) ──────────────────────────────────────
+//
+// Cache a nivel de modulo: los consumidores del calendario (semaforos SLA del
+// kanban via project-workflow.config, RRHH) son sincronos, asi que el util
+// expone la ultima carga del servidor y la refresca en segundo plano. Sin
+// sesion (login) la cache queda vacia: se cuentan todos los dias como habiles,
+// igual que antes cuando no habia festivos guardados.
+
+let cachedHolidays: HolidayEntry[] = [];
+let holidaysInFlight: Promise<HolidayEntry[]> | null = null;
+
+export function getHolidayCache(): HolidayEntry[] {
+    return cachedHolidays.map((holiday) => ({ ...holiday }));
+}
+
+/** La UI de RRHH usa esto tras editar festivos en el servidor. */
+export function setHolidayCache(holidays: HolidayEntry[]): void {
+    cachedHolidays = holidays.map((holiday) => ({ ...holiday }));
+}
+
+function readStoredAccessToken(): string | null {
     if (!canUseStorage()) {
-        return buildBusinessCalendar(getDefaultWorkDayLabels(), []);
+        return null;
+    }
+
+    try {
+        const raw = window.localStorage.getItem("pika.auth.session");
+        if (!raw) {
+            return null;
+        }
+        const parsed = JSON.parse(raw) as { accessToken?: string };
+        return typeof parsed.accessToken === "string" && parsed.accessToken ? parsed.accessToken : null;
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * Carga los festivos del servidor (anio anterior, actual y siguiente) con fetch
+ * plano: este util no es inyectable y puede llamarse desde codigo no-Angular.
+ * Devuelve la cache; nunca lanza (un fallo de red deja la cache anterior).
+ */
+export async function refreshHolidaysFromServer(): Promise<HolidayEntry[]> {
+    if (typeof window === "undefined") {
+        return cachedHolidays;
+    }
+
+    const token = readStoredAccessToken();
+    if (!token) {
+        return cachedHolidays;
+    }
+
+    const base = resolveApiBaseUrl();
+    const currentYear = new Date().getFullYear();
+    const years = [currentYear - 1, currentYear, currentYear + 1];
+
+    try {
+        const results = await Promise.all(
+            years.map(async (year) => {
+                const response = await fetch(`${base}/api/v1/worktime/holidays?year=${year}`, {
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+                if (!response.ok) {
+                    throw new Error(`GET holidays ${year}: status ${response.status}`);
+                }
+                const body = (await response.json()) as { items?: Array<{ id: string; country: string; date: string; name: string; paid: boolean }> };
+                return (body.items ?? []).map((item) => ({
+                    id: item.id,
+                    date: item.date,
+                    name: item.name,
+                    paid: Boolean(item.paid),
+                }));
+            })
+        );
+        cachedHolidays = results.flat();
+    } catch {
+        // Sin fallback silencioso de datos: se conserva la cache anterior (posible-
+        // mente vacia) y los calculos de dias habiles siguen funcionando.
+    }
+
+    return cachedHolidays;
+}
+
+/** Dispara la carga en segundo plano una sola vez por sesion de pagina. */
+export function ensureHolidaysLoaded(): void {
+    if (typeof window === "undefined" || holidaysInFlight || cachedHolidays.length > 0) {
+        return;
+    }
+
+    holidaysInFlight = refreshHolidaysFromServer().finally(() => {
+        holidaysInFlight = null;
+    });
+}
+
+export function loadBusinessCalendarFromStorage(): BusinessCalendarConfig {
+    // Los festivos vienen del servidor (cache en memoria, refresco en segundo
+    // plano). Los horarios y dias habiles siguen en localStorage: migracion
+    // pendiente para la Fase 6 (configuracion por empresa).
+    ensureHolidaysLoaded();
+
+    if (!canUseStorage()) {
+        return buildBusinessCalendar(getDefaultWorkDayLabels(), cachedHolidays);
     }
 
     const schedules = parseStoredArray(window.localStorage.getItem(WORKTIME_SCHEDULES_STORAGE_KEY)) as WorkScheduleTemplate[];
     const businessDayLabels = loadBusinessDayLabelsFromStorage(schedules);
-    const holidays = parseStoredArray(window.localStorage.getItem(WORKTIME_HOLIDAYS_STORAGE_KEY)) as HolidayEntry[];
 
-    return buildBusinessCalendar(businessDayLabels, holidays);
+    return buildBusinessCalendar(businessDayLabels, cachedHolidays);
 }
 
 export function computeBusinessDaysBetween(

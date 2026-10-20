@@ -25,6 +25,7 @@ import (
 	"pika.software.net.co/backend/internal/search"
 	"pika.software.net.co/backend/internal/security"
 	"pika.software.net.co/backend/internal/suppliers"
+	"pika.software.net.co/backend/internal/worktime"
 )
 
 func main() {
@@ -110,6 +111,10 @@ func main() {
 	documentationService := docs.NewService(db)
 	documentationHandler := docs.NewHandler(documentationService)
 
+	// Fase 4: horas de trabajo, telemetria de uso, pruebas funcionales y festivos.
+	worktimeService := worktime.NewService(db)
+	worktimeHandler := worktime.NewHandler(worktimeService)
+
 	// Fase 2b: identidad de usuario real. NewService falla si no hay JWT_SECRET
 	// (se elimino el secreto de desarrollo por defecto) y siembra la cuenta admin
 	// del entorno solo si ese email no existe todavia.
@@ -175,6 +180,7 @@ func main() {
 	securityHandler.RegisterRoutes(protectedAPI.Group("/security"))
 	remissionsHandler.RegisterRoutes(protectedAPI.Group("/remissions"))
 	documentationHandler.RegisterRoutes(protectedAPI.Group("/documentation"))
+	worktimeHandler.RegisterRoutes(protectedAPI.Group("/worktime", aclService.RequireModule("registro-horas")))
 
 	port := os.Getenv("PORT")
 	if port == "" {

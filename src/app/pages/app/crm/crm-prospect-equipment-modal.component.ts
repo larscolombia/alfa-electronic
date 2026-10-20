@@ -1994,6 +1994,16 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
             return;
         }
 
+        // La recepcion ya quedo guardada y el fallo de los proyectos ya se
+        // mostro en validationMessage: el boton solo cierra el modal de forma
+        // segura (emite saved y limpia el borrador) sin volver a guardar, para
+        // no duplicar la recepcion ni los proyectos que si se crearon.
+        if (this.receptionSavedWithProjectErrors) {
+            this.receptionSavedWithProjectErrors = false;
+            this.finalizeSave(this.pendingCreatedProjectIds, this.pendingRecordId, false);
+            return;
+        }
+
         void this.saveRecord(openPrintAfterSave);
     }
 
@@ -2334,6 +2344,11 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
         });
     }
 
+    /** Fase 4: recepcion guardada pero con proyectos de reparacion fallidos. */
+    private receptionSavedWithProjectErrors = false;
+    private pendingCreatedProjectIds: string[] = [];
+    private pendingRecordId = "";
+
     private finalizeAfterBackendSave(record: ProspectEquipmentRecord, openPrintAfterSave = false): void {
         if (!this.generateRepairProjectsOnSave) {
             this.finalizeSave([], record.id, openPrintAfterSave);
@@ -2348,6 +2363,7 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
 
         this.creatingRepairProjects = true;
 
+        const failedProjects: string[] = [];
         const createRequests = repairItems.map((item, index) =>
             this.projectService
                 .createProject(
@@ -2359,7 +2375,17 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
                         initialProperties: this.buildRepairProjectProperties(record, item),
                     },
                 )
-                .pipe(catchError(() => of(null))),
+                .pipe(
+                    catchError((error) => {
+                        // Sin tragar el fallo: antes catchError(() => of(null))
+                        // dejaba la recepcion "bien" aunque el proyecto nunca
+                        // llegara al tablero. Ahora se registra y se muestra.
+                        failedProjects.push(
+                            `${this.buildRepairProjectTitle(item, index)}: ${error?.message ?? error}`,
+                        );
+                        return of(null);
+                    }),
+                ),
         );
 
         forkJoin(createRequests).subscribe({
@@ -2368,6 +2394,17 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
                 const createdProjectIds = projects
                     .filter((project): project is Project => project !== null)
                     .map((project) => project.id);
+
+                if (failedProjects.length > 0) {
+                    this.receptionSavedWithProjectErrors = true;
+                    this.pendingCreatedProjectIds = createdProjectIds;
+                    this.pendingRecordId = record.id;
+                    this.validationMessage =
+                        `La recepción quedó guardada, pero ${failedProjects.length} proyecto(s) de reparación NO se pudieron crear y no llegarán al tablero: ${failedProjects.join(" | ")}. ` +
+                        `Pulsa "Guardar asociación" para cerrar de forma segura (no volverá a guardar).`;
+                    return;
+                }
+
                 this.finalizeSave(createdProjectIds, record.id, openPrintAfterSave);
             },
             error: () => {
