@@ -1,13 +1,47 @@
 package hr
 
 import (
+	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/labstack/echo/v4"
+	"pika.software.net.co/backend/internal/acl"
 	"pika.software.net.co/backend/internal/platform/company"
 )
+
+// employeePayload aplica el enmascarado por campo del ACL: los campos marcados
+// como "oculto" para el rol se eliminan de la respuesta. El slug del catalogo se
+// compara en minusculas contra las claves JSON (el slugify del seed normaliza a
+// minusculas: "documentNumber" -> "documentnumber"). Sin permisos en contexto
+// (p. ej. admin) no enmascara.
+func employeePayload(c echo.Context, employee Employee) (any, error) {
+	hidden := acl.HiddenFieldSlugs(acl.FieldPermissionsFromContext(c))
+	if len(hidden) == 0 {
+		return employee, nil
+	}
+
+	raw, err := json.Marshal(employee)
+	if err != nil {
+		return nil, err
+	}
+	var payload map[string]any
+	if err := json.Unmarshal(raw, &payload); err != nil {
+		return nil, err
+	}
+	hiddenSet := make(map[string]bool, len(hidden))
+	for _, slug := range hidden {
+		hiddenSet[strings.ToLower(slug)] = true
+	}
+	for key := range payload {
+		if hiddenSet[strings.ToLower(key)] {
+			delete(payload, key)
+		}
+	}
+	return payload, nil
+}
 
 func (h *Handler) listEmployees(c echo.Context) error {
 	companyID := company.IDFromRequest(c)
@@ -17,7 +51,17 @@ func (h *Handler) listEmployees(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to load employees"})
 	}
 
-	return c.JSON(http.StatusOK, map[string]any{"items": items})
+	payload := make([]any, 0, len(items))
+	for _, employee := range items {
+		item, err := employeePayload(c, employee)
+		if err != nil {
+			log.Printf("hr: mask employee %q failed for company %q: %v", employee.ID, companyID, err)
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to load employees"})
+		}
+		payload = append(payload, item)
+	}
+
+	return c.JSON(http.StatusOK, map[string]any{"items": payload})
 }
 
 func (h *Handler) getEmployee(c echo.Context) error {
@@ -33,7 +77,13 @@ func (h *Handler) getEmployee(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "no se pudo cargar el empleado"})
 	}
 
-	return c.JSON(http.StatusOK, employee)
+	payload, err := employeePayload(c, employee)
+	if err != nil {
+		log.Printf("hr: mask employee %q failed for company %q: %v", employeeID, companyID, err)
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "no se pudo cargar el empleado"})
+	}
+
+	return c.JSON(http.StatusOK, payload)
 }
 
 func (h *Handler) createEmployee(c echo.Context) error {

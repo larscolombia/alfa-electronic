@@ -13,7 +13,12 @@ interface InventoryRoutePermission {
     providedIn: "root",
 })
 export class InventoryRbacService {
-    private readonly storageKey = "lars.inventory.role.v1";
+    /**
+     * Clave legacy del rol elegido manualmente en un <select>. Ya no se usa:
+     * el rol operativo se deriva del perfil autenticado (Fase 2 ACL) y la clave
+     * vieja se elimina del navegador para que nadie conserve un rol auto-asignado.
+     */
+    private static readonly legacyStorageKey = "lars.inventory.role.v1";
 
     private readonly roleMatrix: Record<InventoryRole, InventoryPermission[]> = {
         tecnico: [
@@ -83,7 +88,8 @@ export class InventoryRbacService {
     readonly role$: import("rxjs").Observable<InventoryRole>;
 
     constructor(private readonly authService: AuthService) {
-        this.roleSubject = new BehaviorSubject<InventoryRole>(this.restoreRole());
+        this.removeLegacyStoredRole();
+        this.roleSubject = new BehaviorSubject<InventoryRole>(this.deriveRoleFromAuthProfile());
         this.role$ = this.roleSubject.asObservable();
     }
 
@@ -91,13 +97,19 @@ export class InventoryRbacService {
         return this.roleSubject.value;
     }
 
+    /**
+     * El rol ya no es elegible en la UI: proviene del perfil autenticado.
+     * Se mantiene la firma publica porque varios componentes la invocan desde
+     * selects legacy; cualquier cambio manual se ignora (aviso visible en
+     * consola) para que un <select> no escale permisos del lado del cliente.
+     * La autorizacion real la aplica el backend (middleware ACL, Fase 2).
+     */
     setRole(role: InventoryRole): void {
-        if (this.roleSubject.value === role) {
-            return;
+        if (role !== this.roleSubject.value) {
+            console.warn(
+                `[inventory-rbac] el rol operativo se deriva del perfil autenticado ('${this.roleSubject.value}'); se ignora el cambio manual a '${role}'.`
+            );
         }
-
-        this.roleSubject.next(role);
-        this.persistRole(role);
     }
 
     hasPermission(permission: InventoryPermission): boolean {
@@ -141,30 +153,19 @@ export class InventoryRbacService {
         return this.authService.getCurrentUser()?.role ?? "";
     }
 
-    private restoreRole(): InventoryRole {
-        if (typeof window === "undefined") {
-            return "tecnico";
-        }
-
-        const persisted = window.localStorage.getItem(this.storageKey);
-        if (persisted && this.isInventoryRole(persisted)) {
-            return persisted;
-        }
-
-        // Sin preferencia explicita: deriva el rol operativo del usuario autenticado
-        // (admin -> responsable) en lugar de asumir siempre "tecnico".
+    /**
+     * El rol operativo se deriva unicamente del perfil autenticado
+     * (admin -> responsable); ya no se lee ni se guarda en localStorage.
+     */
+    private deriveRoleFromAuthProfile(): InventoryRole {
         return defaultInventoryRoleForAuthRole(this.currentAuthRole()) ?? "tecnico";
     }
 
-    private persistRole(role: InventoryRole): void {
+    private removeLegacyStoredRole(): void {
         if (typeof window === "undefined") {
             return;
         }
 
-        window.localStorage.setItem(this.storageKey, role);
-    }
-
-    private isInventoryRole(value: string): value is InventoryRole {
-        return value === "tecnico" || value === "responsable" || value === "administrativo" || value === "compras" || value === "auditor";
+        window.localStorage.removeItem(InventoryRbacService.legacyStorageKey);
     }
 }

@@ -95,6 +95,23 @@ func (s *Service) UpdateEmployee(companyID, id string, req UpdateEmployeeRequest
 		employee.Manager = "Direccion General"
 	}
 
+	// El cliente ya no recibe email_password; si el request no trae valor nuevo,
+	// se preserva el guardado para no destruir el secreto al editar la ficha.
+	emailPassword := req.EmailPassword
+	if strings.TrimSpace(emailPassword) == "" {
+		var current string
+		if err := s.db.QueryRowContext(ctx, `
+SELECT COALESCE(email_password, '')
+FROM hr_employees
+WHERE company_id = $1
+  AND id = $2
+  AND soft_delete = false;
+`, companyID, targetID).Scan(&current); err != nil && !errors.Is(err, sql.ErrNoRows) {
+			return Employee{}, err
+		}
+		emailPassword = current
+	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return Employee{}, err
@@ -143,7 +160,7 @@ WHERE company_id = $1
 `, companyID, targetID, employee.Name, employee.Role, employee.Department, employee.Manager, employee.Status,
 		employee.DocumentNumber, employee.Email, employee.FileComplete,
 		employee.FirstName, employee.LastName, employee.AccessUser, employee.Treatment,
-		employee.Greeting, employee.UserName, employee.Initials, employee.EmailPassword,
+		employee.Greeting, employee.UserName, employee.Initials, emailPassword,
 		employee.RoleType, employee.AssignedScheduleID, employee.HourlyRate,
 		employee.EmergencyContact, employee.EmergencyRelationship, employee.Allergies,
 		employee.BloodType, employee.Eps, employee.CompensationFund,

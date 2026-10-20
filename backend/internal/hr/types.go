@@ -20,6 +20,8 @@ type CatalogsResponse struct {
 // EmployeeProfileFields agrupa los campos extendidos de la ficha del empleado.
 // Se embebe en Employee, CreateEmployeeRequest y UpdateEmployeeRequest; el JSON
 // queda plano (camelCase). Las fechas viajan como "YYYY-MM-DD" o "" (NULL en DB).
+// EmailPassword NO está aquí a propósito: es un secreto que solo entra (requests)
+// y nunca se serializa en respuestas (riesgo habeas data, Fase 2).
 type EmployeeProfileFields struct {
 	FirstName                   string  `json:"firstName"`
 	LastName                    string  `json:"lastName"`
@@ -28,7 +30,6 @@ type EmployeeProfileFields struct {
 	Greeting                    string  `json:"greeting"`
 	UserName                    string  `json:"userName"`
 	Initials                    string  `json:"initials"`
-	EmailPassword               string  `json:"emailPassword"`
 	RoleType                    string  `json:"roleType"`
 	AssignedScheduleID          string  `json:"assignedScheduleId"`
 	HourlyRate                  float64 `json:"hourlyRate"`
@@ -73,6 +74,8 @@ type CreateEmployeeRequest struct {
 	DocumentNumber string `json:"documentNumber"`
 	Email          string `json:"email"`
 	FileComplete   bool   `json:"fileComplete"`
+	// EmailPassword es solo entrada: se persiste pero nunca se devuelve.
+	EmailPassword string `json:"emailPassword"`
 	EmployeeProfileFields
 }
 
@@ -85,6 +88,8 @@ type UpdateEmployeeRequest struct {
 	DocumentNumber string `json:"documentNumber"`
 	Email          string `json:"email"`
 	FileComplete   bool   `json:"fileComplete"`
+	// EmailPassword vacío preserva el valor guardado (el cliente ya no lo recibe).
+	EmailPassword string `json:"emailPassword"`
 	EmployeeProfileFields
 }
 

@@ -14,7 +14,9 @@ type employeeScanner interface {
 }
 
 // scanEmployee lee una fila de hr_employees en el orden exacto de employeeColumns.
+// email_password se descarta a propósito: nunca sale del backend (Fase 2, habeas data).
 func scanEmployee(scanner employeeScanner, row *Employee) error {
+	var emailPasswordDiscard string
 	return scanner.Scan(
 		&row.ID,
 		&row.Name,
@@ -32,7 +34,7 @@ func scanEmployee(scanner employeeScanner, row *Employee) error {
 		&row.Greeting,
 		&row.UserName,
 		&row.Initials,
-		&row.EmailPassword,
+		&emailPasswordDiscard,
 		&row.RoleType,
 		&row.AssignedScheduleID,
 		&row.HourlyRate,

@@ -129,17 +129,25 @@ func main() {
 	protectedAPI.Use(authService.JWTMiddleware())
 	protectedAPI.Use(securityService.EnforcementMiddleware())
 
-	aclHandler.RegisterRoutes(protectedAPI.Group("/acl"))
-	aclHandler.RegisterUserRoutes(protectedAPI.Group("/users"))
-	hrHandler.RegisterRoutes(protectedAPI.Group("/hr"))
+	// Autorizacion ACL por modulo (Fase 2): tras JWT, cada grupo sensible exige
+	// el permiso de accion del rol (GET=ver, POST=agregar, PUT/PATCH/DELETE=actualizar)
+	// y expone permisos de campo para enmascarar respuestas. Admin/superadmin
+	// (rol del JWT) tienen acceso total: es la ruta de escape del propietario.
+	// /auth y las rutas publicas de /crm-quotes quedan fuera a proposito
+	// (login/onboarding no pueden requerir permisos).
+	requireAdminModule := aclService.RequireModule("administracion")
+
+	aclHandler.RegisterRoutes(protectedAPI.Group("/acl", requireAdminModule))
+	aclHandler.RegisterUserRoutes(protectedAPI.Group("/users", requireAdminModule))
+	hrHandler.RegisterRoutes(protectedAPI.Group("/hr", requireAdminModule))
 	calendarHandler.RegisterRoutes(protectedAPI.Group("/calendar"))
 	crmHandler.RegisterRoutes(protectedAPI.Group("/crm"))
 	crmEquipmentHandler.RegisterRoutes(protectedAPI.Group("/crm-equipment"))
 	crmQuotesHandler.RegisterRoutes(protectedAPI.Group("/crm-quotes"))
-	financeHandler.RegisterRoutes(protectedAPI.Group("/finance"))
+	financeHandler.RegisterRoutes(protectedAPI.Group("/finance", aclService.RequireModule("finanzas")))
 	projectsHandler.RegisterRoutes(protectedAPI.Group("/projects"))
-	inventoryHandler.RegisterRoutes(protectedAPI.Group("/inventory"))
-	suppliersHandler.RegisterRoutes(protectedAPI.Group("/suppliers"))
+	inventoryHandler.RegisterRoutes(protectedAPI.Group("/inventory", aclService.RequireModule("inventario")))
+	suppliersHandler.RegisterRoutes(protectedAPI.Group("/suppliers", aclService.RequireModule("proveedores")))
 	searchHandler.RegisterRoutes(protectedAPI)
 	securityHandler.RegisterRoutes(protectedAPI.Group("/security"))
 	remissionsHandler.RegisterRoutes(protectedAPI.Group("/remissions"))

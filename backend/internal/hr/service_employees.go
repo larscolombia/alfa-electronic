@@ -123,7 +123,7 @@ false, NOW(), NOW());
 `, companyID, employee.ID, employee.Name, employee.Role, employee.Department, employee.Manager, employee.Status,
 		employee.DocumentNumber, employee.Email, employee.FileComplete,
 		employee.FirstName, employee.LastName, employee.AccessUser, employee.Treatment,
-		employee.Greeting, employee.UserName, employee.Initials, employee.EmailPassword,
+		employee.Greeting, employee.UserName, employee.Initials, req.EmailPassword,
 		employee.RoleType, employee.AssignedScheduleID, employee.HourlyRate, employee.EmergencyContact,
 		employee.EmergencyRelationship, employee.Allergies, employee.BloodType, employee.Eps, employee.CompensationFund,
 		employee.HireDate, employee.TerminationDate, employee.Birthday,

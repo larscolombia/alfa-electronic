@@ -18,6 +18,7 @@ func fullEmployeeProfileRequest(suffix string) CreateEmployeeRequest {
 		DocumentNumber: fmt.Sprintf("DOC-%s", suffix[len(suffix)-8:]),
 		Email:          fmt.Sprintf("qa.perfil.%s@example.com", suffix),
 		FileComplete:   true,
+		EmailPassword:  "ClaveCorreo#123",
 
 		EmployeeProfileFields: EmployeeProfileFields{
 			FirstName:                   "QANombre",
@@ -27,7 +28,6 @@ func fullEmployeeProfileRequest(suffix string) CreateEmployeeRequest {
 			Greeting:                    "Estimada",
 			UserName:                    "qa.user",
 			Initials:                    "QQ",
-			EmailPassword:               "ClaveCorreo#123",
 			RoleType:                    "CS",
 			AssignedScheduleID:          "schedule-qa",
 			HourlyRate:                  75300.50,
@@ -60,7 +60,7 @@ func assertEmployeeMatchesProfile(t *testing.T, got Employee, want CreateEmploye
 	if got.FirstName != want.FirstName || got.LastName != want.LastName ||
 		got.AccessUser != want.AccessUser || got.Treatment != want.Treatment ||
 		got.Greeting != want.Greeting || got.UserName != want.UserName ||
-		got.Initials != want.Initials || got.EmailPassword != want.EmailPassword ||
+		got.Initials != want.Initials ||
 		got.RoleType != want.RoleType || got.AssignedScheduleID != want.AssignedScheduleID {
 		t.Fatalf("identity fields mismatch: %+v", got)
 	}
@@ -180,7 +180,7 @@ func TestEmployeeProfileOptionalFieldsEmpty(t *testing.T) {
 	if got.HourlyRate != 0 {
 		t.Fatalf("expected zero hourly rate, got %v", got.HourlyRate)
 	}
-	if got.FirstName != "" || got.EmailPassword != "" || got.Initials != "" || got.Gender != "" {
+	if got.FirstName != "" || got.Initials != "" || got.Gender != "" {
 		t.Fatalf("expected empty defaults for optional text fields, got %+v", got)
 	}
 	if got.RegistrationTermsAccepted || got.RegistrationPrivacyAccepted || got.FileComplete {
