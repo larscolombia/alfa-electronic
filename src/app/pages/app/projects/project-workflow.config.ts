@@ -177,10 +177,36 @@ export function buildTechnicalBoardColumns(): BoardColumn[] {
       trackAging: true,
     },
     {
+      id: 'pedir-repuestos',
+      name: 'Pedir componentes',
+      color: '#0891b2',
+      order: 4,
+      description: 'Position 0.5. Equipo aprobado para listar y solicitar componentes.',
+      equipmentStatusId: 'pedir-repuestos',
+      equipmentStatusLabel: 'Pedir componentes',
+      greenDays: 2,
+      yellowDays: 1,
+      includeInWorkload: true,
+      trackAging: true,
+    },
+    {
+      id: 'esperando-proveedor',
+      name: 'Esperando proveedor',
+      color: '#6366f1',
+      order: 5,
+      description: 'Position 11. Material solicitado y pendiente de arribo.',
+      equipmentStatusId: 'esperando-proveedor',
+      equipmentStatusLabel: 'Esperando proveedor',
+      greenDays: 3,
+      yellowDays: 2,
+      includeInWorkload: true,
+      trackAging: true,
+    },
+    {
       id: 'reparacion',
       name: 'Reparacion',
       color: '#7c3aed',
-      order: 4,
+      order: 6,
       description: 'Intervencion tecnica y consumo de componentes.',
       equipmentStatusId: 'reparacion',
       equipmentStatusLabel: 'En reparacion',
@@ -193,7 +219,7 @@ export function buildTechnicalBoardColumns(): BoardColumn[] {
       id: 'pruebas',
       name: 'Pruebas QA',
       color: '#0f766e',
-      order: 5,
+      order: 7,
       description: 'Pruebas finales en banco, laboratorio o QA.',
       equipmentStatusId: 'pruebas',
       equipmentStatusLabel: 'Pruebas QA',
@@ -206,7 +232,7 @@ export function buildTechnicalBoardColumns(): BoardColumn[] {
       id: 'listo-entrega',
       name: 'Listo para entrega',
       color: '#10b981',
-      order: 6,
+      order: 8,
       description: 'Equipo listo para despacho o cierre administrativo.',
       equipmentStatusId: 'listo-entrega',
       equipmentStatusLabel: 'Listo para entrega',
@@ -216,10 +242,36 @@ export function buildTechnicalBoardColumns(): BoardColumn[] {
       trackAging: true,
     },
     {
+      id: 'prestamo',
+      name: 'Material en prestamo',
+      color: '#0d9488',
+      order: 9,
+      description: 'Position 13. Materiales o equipos prestados al cliente.',
+      equipmentStatusId: 'prestamo',
+      equipmentStatusLabel: 'Material en prestamo',
+      greenDays: 0,
+      yellowDays: 0,
+      includeInWorkload: false,
+      trackAging: false,
+    },
+    {
+      id: 'garantia',
+      name: 'Garantia',
+      color: '#e11d48',
+      order: 10,
+      description: 'Position 16. Seguimiento de casos devueltos o en garantia.',
+      equipmentStatusId: 'garantia',
+      equipmentStatusLabel: 'Garantia',
+      greenDays: 3,
+      yellowDays: 2,
+      includeInWorkload: true,
+      trackAging: true,
+    },
+    {
       id: 'garantia-espera-repuestos',
       name: 'Garantia esp. repuestos',
       color: '#f97316',
-      order: 8,
+      order: 11,
       description: 'Equipos en garantia que esperan repuestos.',
       equipmentStatusId: 'garantia-espera-repuestos',
       equipmentStatusLabel: 'Garantia esp. repuestos',
@@ -232,7 +284,7 @@ export function buildTechnicalBoardColumns(): BoardColumn[] {
       id: 'entregado',
       name: 'Entregado',
       color: '#94a3b8',
-      order: 7,
+      order: 12,
       description: 'Caso cerrado y equipo entregado.',
       equipmentStatusId: 'entregado',
       equipmentStatusLabel: 'Entregado',
@@ -268,15 +320,17 @@ export function mapLegacyProjectStatus(status: string): ProjectWorkflowStatusId 
     case 'completed':
       return 'entregado';
     case 'pedir-repuestos':
-      return 'reparacion';
+      return 'pedir-repuestos';
     case 'por-cotizar':
       return 'por-cotizar';
     case 'esperando-proveedor':
-      return 'reparacion';
+      return 'esperando-proveedor';
     case 'garantia':
-      return 'reparacion';
+      return 'garantia';
+    case 'garantia-espera-repuestos':
+      return 'garantia-espera-repuestos';
     case 'prestamo':
-      return 'recibido';
+      return 'prestamo';
     case 'listo-entrega':
       return 'listo-entrega';
     case 'entregado':
@@ -299,9 +353,21 @@ export function computeBusinessDaysBetween(startDate: Date | null, endDate = new
 export function resolveProjectSlaSeverity(
   column: BoardColumn | null | undefined,
   stageEnteredAt: Date | null,
-  _priority: string,
+  priority: string,
 ): ProjectSlaSeverity {
-  if (!column || !stageEnteredAt) {
+  if (!column) {
+    return 'neutral';
+  }
+
+  // Rojo manual: la prioridad alta marcada a mano por administracion fuerza el
+  // semaforo a rojo (critical) en las etapas que envejecen, sin importar los
+  // dias transcurridos (requisito R1 @6:15 del modulo tecnico).
+  const normalizedPriority = String(priority ?? '').trim().toLowerCase();
+  if ((normalizedPriority === 'high' || normalizedPriority === 'urgente') && column.trackAging) {
+    return 'critical';
+  }
+
+  if (!stageEnteredAt) {
     return 'neutral';
   }
 

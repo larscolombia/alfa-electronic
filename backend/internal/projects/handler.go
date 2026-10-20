@@ -21,8 +21,11 @@ func NewHandler(service *Service) *Handler {
 func (h *Handler) RegisterRoutes(group *echo.Group) {
 	group.GET("", h.listProjects)
 	group.POST("", h.createProject)
+	group.GET("/board-config", h.getBoardConfig)
+	group.PUT("/board-config", h.updateBoardConfig)
 	group.GET("/:projectID", h.getProject)
 	group.PUT("/:projectID", h.updateProject)
+	group.DELETE("/:projectID", h.deleteProject)
 	group.POST("/:projectID/diagnosis/close", h.closeDiagnosis)
 	group.GET("/sla-config", h.getSLAConfig)
 	group.PUT("/sla-config", h.updateSLAConfig)
@@ -121,6 +124,54 @@ func (h *Handler) updateProject(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, item)
+}
+
+func (h *Handler) getBoardConfig(c echo.Context) error {
+	companyID := company.IDFromRequest(c)
+
+	config, err := h.service.GetBoardConfig(companyID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "no se pudo cargar la configuracion del tablero"})
+	}
+
+	return c.JSON(http.StatusOK, config)
+}
+
+func (h *Handler) updateBoardConfig(c echo.Context) error {
+	companyID := company.IDFromRequest(c)
+
+	var config map[string]any
+	if err := c.Bind(&config); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "cuerpo de solicitud invalido"})
+	}
+
+	saved, err := h.service.UpdateBoardConfig(companyID, config)
+	if err != nil {
+		if errors.Is(err, errProjectPropertiesInvalid) {
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+		}
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "no se pudo guardar la configuracion del tablero"})
+	}
+
+	return c.JSON(http.StatusOK, saved)
+}
+
+func (h *Handler) deleteProject(c echo.Context) error {
+	companyID := company.IDFromRequest(c)
+	projectID := strings.TrimSpace(c.Param("projectID"))
+
+	if err := h.service.DeleteProject(companyID, projectID); err != nil {
+		switch {
+		case errors.Is(err, errProjectIDRequired):
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+		case errors.Is(err, errProjectNotFound):
+			return c.JSON(http.StatusNotFound, map[string]string{"error": err.Error()})
+		default:
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "no se pudo eliminar el proyecto"})
+		}
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
 }
 
 func (h *Handler) closeDiagnosis(c echo.Context) error {

@@ -15,6 +15,11 @@ const (
 	maxProjectsListLimit     = 1000
 
 	projectSelectColumns = `id, status, properties_json, created_at, updated_at`
+
+	// reservedBoardConfigProjectID almacena la configuracion de columnas del
+	// tablero tecnico como una fila reservada de la tabla projects. Reemplaza
+	// la persistencia anterior en localStorage del navegador (Fase 3).
+	reservedBoardConfigProjectID = "board-config"
 )
 
 var (
@@ -67,9 +72,9 @@ func (s *Service) ListProjects(companyID string, query ListProjectsQuery) ([]Pro
 		return nil, err
 	}
 
-	sqlQuery := fmt.Sprintf(`SELECT %s FROM projects WHERE company_id = $1`, projectSelectColumns)
-	args := []any{strings.TrimSpace(companyID)}
-	argIndex := 2
+	sqlQuery := fmt.Sprintf(`SELECT %s FROM projects WHERE company_id = $1 AND id <> $2`, projectSelectColumns)
+	args := []any{strings.TrimSpace(companyID), reservedBoardConfigProjectID}
+	argIndex := 3
 
 	if statusFilter != "" {
 		sqlQuery += fmt.Sprintf(" AND status = $%d", argIndex)
@@ -176,6 +181,93 @@ func (s *Service) UpsertProject(companyID string, req UpsertProjectRequest) (Pro
 	}
 
 	return item, nil
+}
+
+func (s *Service) DeleteProject(companyID, projectID string) error {
+	normalizedProjectID := strings.TrimSpace(projectID)
+	if normalizedProjectID == "" {
+		return errProjectIDRequired
+	}
+
+	if normalizedProjectID == reservedBoardConfigProjectID {
+		return errProjectIDRequired
+	}
+
+	result, err := s.db.Exec(
+		`DELETE FROM projects WHERE company_id = $1 AND id = $2`,
+		strings.TrimSpace(companyID),
+		normalizedProjectID,
+	)
+	if err != nil {
+		return err
+	}
+
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return errProjectNotFound
+	}
+
+	return nil
+}
+
+// GetBoardConfig devuelve la configuracion de columnas del tablero tecnico
+// persistida para la empresa (mapa vacio cuando aun no existe).
+func (s *Service) GetBoardConfig(companyID string) (map[string]any, error) {
+	var rawProperties []byte
+	err := s.db.QueryRow(
+		`SELECT properties_json FROM projects WHERE company_id = $1 AND id = $2`,
+		strings.TrimSpace(companyID),
+		reservedBoardConfigProjectID,
+	).Scan(&rawProperties)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return map[string]any{}, nil
+		}
+		return nil, err
+	}
+
+	config := map[string]any{}
+	if len(rawProperties) > 0 {
+		if err := json.Unmarshal(rawProperties, &config); err != nil {
+			return nil, errProjectPropertiesInvalid
+		}
+	}
+	return config, nil
+}
+
+// UpdateBoardConfig persiste la configuracion de columnas del tablero tecnico
+// en la fila reservada de projects.
+func (s *Service) UpdateBoardConfig(companyID string, config map[string]any) (map[string]any, error) {
+	if config == nil {
+		config = map[string]any{}
+	}
+
+	configJSON, err := json.Marshal(config)
+	if err != nil {
+		return nil, errProjectPropertiesInvalid
+	}
+
+	now := time.Now().UTC()
+	_, err = s.db.Exec(
+		`INSERT INTO projects (company_id, id, status, properties_json, created_at, updated_at)
+		 VALUES ($1, $2, 'recibido', $3::jsonb, $4, $5)
+		 ON CONFLICT (company_id, id) DO UPDATE SET
+			properties_json = EXCLUDED.properties_json,
+			updated_at = EXCLUDED.updated_at`,
+		strings.TrimSpace(companyID),
+		reservedBoardConfigProjectID,
+		string(configJSON),
+		now,
+		now,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return config, nil
 }
 
 func (s *Service) CloseDiagnosis(companyID, projectID, requestedBy string) (Project, error) {

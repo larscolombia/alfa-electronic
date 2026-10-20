@@ -37,6 +37,20 @@ func (s *Service) ListRecords(companyID string, query ListRecordsQuery) ([]Recor
 		nextArg++
 	}
 
+	// Bandeja "mis equipos": registros con al menos un item asignado al tecnico
+	// (por id de asignacion o, como respaldo, por nombre asignado).
+	normalizedAssignedToID := strings.TrimSpace(query.AssignedToID)
+	if normalizedAssignedToID != "" {
+		filters = append(filters, fmt.Sprintf(`EXISTS (
+			SELECT 1
+			FROM jsonb_array_elements(items_json) AS item
+			WHERE lower(btrim(coalesce(item->>'assignedToId', ''))) = lower(btrim($%d::text))
+			   OR lower(btrim(coalesce(item->>'assignedTo', ''))) = lower(btrim($%d::text))
+		)`, nextArg, nextArg))
+		args = append(args, normalizedAssignedToID)
+		nextArg++
+	}
+
 	statement := buildListRecordsStatement(filters)
 
 	rows, err := s.db.QueryContext(ctx, statement, args...)
@@ -225,10 +239,44 @@ func (s *Service) ListItems(companyID string, query ListItemsQuery) ([]Summary, 
 		ClientName:      query.ClientName,
 		IncludeArchived: query.IncludeArchived,
 		Identifier:      query.Identifier,
+		AssignedToID:    query.AssignedToID,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	return flattenSummaries(records), nil
+	summaries := flattenSummaries(records)
+
+	// El filtro de tecnico es por item: un registro puede mezclar equipos de
+	// varios tecnicos, asi que la bandeja "mis equipos" solo devuelve los items
+	// asignados al tecnico consultado.
+	normalizedAssignedToID := strings.ToLower(strings.TrimSpace(query.AssignedToID))
+	if normalizedAssignedToID == "" {
+		return summaries, nil
+	}
+
+	filtered := make([]Summary, 0, len(summaries))
+	for _, record := range records {
+		assignedItemIDs := make(map[string]struct{})
+		for _, item := range record.Items {
+			if strings.EqualFold(strings.TrimSpace(item.AssignedToID), normalizedAssignedToID) ||
+				strings.EqualFold(strings.TrimSpace(item.AssignedTo), normalizedAssignedToID) {
+				assignedItemIDs[item.ID] = struct{}{}
+			}
+		}
+
+		if len(assignedItemIDs) == 0 {
+			continue
+		}
+
+		for _, summary := range summaries {
+			if summary.RecordID == record.ID {
+				if _, ok := assignedItemIDs[summary.ItemID]; ok {
+					filtered = append(filtered, summary)
+				}
+			}
+		}
+	}
+
+	return filtered, nil
 }

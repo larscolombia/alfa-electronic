@@ -11,6 +11,14 @@ import { KanbanViewComponent } from './kanban-view.component';
   imports: [CommonModule, FormsModule, KanbanViewComponent],
   template: `
     <div class="projects-board-container">
+      <div class="alert alert-danger border mb-3" *ngIf="serverError$ | async as serverError" data-testid="board-server-error">
+        <strong>El tablero no pudo sincronizarse con el servidor.</strong>
+        <div>{{ serverError }}</div>
+        <button type="button" class="btn btn-outline-danger btn-sm mt-2" (click)="retryServerSync()">
+          Reintentar
+        </button>
+      </div>
+
       <div class="board-header">
         <div class="board-header__content">
           <div class="board-header__identity">
@@ -181,12 +189,17 @@ import { KanbanViewComponent } from './kanban-view.component';
 export class ProjectsBoardComponent implements OnInit {
   board$ = this.projectService.board$;
   loading$ = this.projectService.loading$;
+  serverError$ = this.projectService.error$;
   projectCount$ = this.projectService.projects$.pipe(map((projects) => projects.length));
   compactMode = false;
 
   constructor(private projectService: ProjectService) {}
 
   ngOnInit() {
+    this.projectService.loadProjects('board-1').subscribe();
+  }
+
+  retryServerSync(): void {
     this.projectService.loadProjects('board-1').subscribe();
   }
 }

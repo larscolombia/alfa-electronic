@@ -10,6 +10,8 @@ export interface ListEquipmentRecordsQuery {
     clientName?: string;
     includeArchived?: boolean;
     identifier?: string;
+    /** Bandeja "mis equipos": filtra por tecnico asignado (id o nombre). */
+    assignedToId?: string;
 }
 
 export interface ListEquipmentItemsQuery {
@@ -18,6 +20,8 @@ export interface ListEquipmentItemsQuery {
     clientName?: string;
     includeArchived?: boolean;
     identifier?: string;
+    /** Bandeja "mis equipos": filtra por tecnico asignado (id o nombre). */
+    assignedToId?: string;
 }
 
 export interface EquipmentInsightQuery {
@@ -205,7 +209,7 @@ export class CrmEquipmentApiService {
         );
     }
 
-    private buildQueryString(query: { prospectId?: string | number; clientNit?: string; clientName?: string; includeArchived?: boolean; identifier?: string }): string {
+    private buildQueryString(query: { prospectId?: string | number; clientNit?: string; clientName?: string; includeArchived?: boolean; identifier?: string; assignedToId?: string }): string {
         const searchParams = new URLSearchParams();
 
         const prospectId = String(query.prospectId ?? "").trim();
@@ -230,6 +234,11 @@ export class CrmEquipmentApiService {
         const identifier = String(query.identifier ?? "").trim();
         if (identifier) {
             searchParams.set("identifier", identifier);
+        }
+
+        const assignedToId = String(query.assignedToId ?? "").trim();
+        if (assignedToId) {
+            searchParams.set("assignedToId", assignedToId);
         }
 
         return searchParams.toString();

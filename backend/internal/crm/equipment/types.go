@@ -145,6 +145,7 @@ type ListRecordsQuery struct {
 	ClientName      string
 	IncludeArchived bool
 	Identifier      string
+	AssignedToID    string
 }
 
 type ListItemsQuery struct {
@@ -153,6 +154,7 @@ type ListItemsQuery struct {
 	ClientName      string
 	IncludeArchived bool
 	Identifier      string
+	AssignedToID    string
 }
 
 type InsightQuery struct {

@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { BrowserMultiFormatReader } from '@zxing/browser';
 import { Subscription } from 'rxjs';
-import { filter, take } from 'rxjs/operators';
+import { filter, switchMap, take } from 'rxjs/operators';
 import { AuthService } from '../../../services/auth.service';
 import { InventoryRbacService } from '../../../services/inventory-rbac.service';
 import { InventoryWorkflowService } from '../../../services/inventory-workflow.service';
@@ -12,9 +12,10 @@ import { InventoryApiService } from '../../../services/inventory-api.service';
 import { PurchaseLine, ReservationRecord, StockReference } from '../../../services/inventory-domain.models';
 import { WorkEquipmentHistoryContextService } from '../../../services/work-equipment-history-context.service';
 import { CrmEquipmentApiService } from '../../../services/crm-equipment-api.service';
+import { ProjectsApiService } from '../../../services/projects-api.service';
 import { buildCommercialDocumentCode } from '../company/company-commercial-settings.store';
 import { buildEquipmentQrShortCode, generateEquipmentQrDataUrl } from '../crm/equipment-qr.util';
-import { ProspectEquipmentAttachment, ProspectEquipmentEvidencePhoto, ProspectEquipmentRepairStatus } from '../crm/crm-prospect-equipment.store';
+import { ProspectEquipmentAttachment, ProspectEquipmentEvidencePhoto, ProspectEquipmentItem, ProspectEquipmentRepairStatus } from '../crm/crm-prospect-equipment.store';
 import { Attachment, BoardColumn, Project, ProjectBoard } from './models';
 import { PROJECT_TEST_TYPE_OPTIONS, getProjectTechnicalTestTypeLabel, resolveProjectSlaSeverity } from './project-workflow.config';
 import { SlaSummaryChip, accumulateQuarterHours, buildSlaSummary, requiresAccessoriesConfirmation, resolveWarrantyBoardStatus } from './kanban-extras.logic';
@@ -148,6 +149,15 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
             [class.is-active]="boardAudience === option.value"
             (click)="setBoardAudience(option.value)">
             {{ option.label }}
+          </button>
+          <button
+            type="button"
+            class="board-audience-chip"
+            data-testid="only-my-projects-toggle"
+            [class.is-active]="onlyMyProjects"
+            [attr.title]="'Muestra solo los casos asignados a ' + (currentUserName() || 'ti')"
+            (click)="toggleOnlyMyProjects()">
+            Mis equipos
           </button>
         </div>
       </div>
@@ -3299,6 +3309,7 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
   boardActionMessage = '';
   receptionProjectsMessage = '';
   boardAudience: BoardAudience = 'todos';
+  onlyMyProjects = false;
   diagnosisCloseError = '';
   diagnosisCloseMessage = '';
   testsCloseError = '';
@@ -3330,6 +3341,7 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
     private projectService: ProjectService,
     private projectEquipmentService: ProjectEquipmentService,
     private crmEquipmentApi: CrmEquipmentApiService,
+    private projectsApi: ProjectsApiService,
     private authService: AuthService,
     private inventoryWorkflowService: InventoryWorkflowService,
     private inventoryRbacService: InventoryRbacService,
@@ -3518,6 +3530,14 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
 
   setBoardAudience(audience: BoardAudience): void {
     this.boardAudience = audience;
+  }
+
+  toggleOnlyMyProjects(): void {
+    this.onlyMyProjects = !this.onlyMyProjects;
+  }
+
+  currentUserName(): string {
+    return this.resolveCurrentUserName();
   }
 
   getColumnBadgeColor(color: string): string {
@@ -3722,9 +3742,14 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
 
     const description = this.draftDescription.trim();
 
-    this.projectService.createProject(columnId, title, description).subscribe((project) => {
-      this.cancelCreateProject();
-      this.openProjectDetail(project);
+    this.projectService.createProject(columnId, title, description).subscribe({
+      next: (project) => {
+        this.cancelCreateProject();
+        this.openProjectDetail(project);
+      },
+      error: (error) => {
+        this.boardActionMessage = `No se pudo crear el proyecto en el servidor: ${this.errorMessage(error)}`;
+      },
     });
   }
 
@@ -3875,8 +3900,10 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
       next: () => {
         this.boardActionMessage = `Tiempo de sesion registrado: +${extraHours} h.`;
       },
-      error: () => {
-        // Mantiene el valor acumulado local cuando la persistencia falla.
+      error: (error) => {
+        // Sin fallback silencioso: si el servidor no guardo las horas, el
+        // tecnico debe saberlo (el valor queda solo en esta vista hasta recargar).
+        this.boardActionMessage = `El tiempo de sesion (+${extraHours} h) NO se guardo en el servidor: ${this.errorMessage(error)}`;
       },
     });
   }
@@ -3947,25 +3974,39 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
       return;
     }
 
-    const now = new Date().toISOString();
+    this.saving = true;
+    const closedBy = this.resolveDiagnosisClosedBy(this.detailProject);
     const projectWithDiagnosisData: Project = {
       ...this.detailProject,
       properties: {
         ...(this.detailProject.properties ?? {}),
         diagnosisInspection,
-        diagnosisClosedAt: now,
-        diagnosisClosedBy: this.resolveDiagnosisClosedBy(this.detailProject),
       },
     };
 
-    const nextProject = this.applyProjectStatusChange(projectWithDiagnosisData, 'por-cotizar');
-    this.persistProjectDetail(nextProject, {
-      closeOnSuccess: false,
-      successMessage: 'Diagnostico cerrado y movido a Por cotizar.',
-      onSuccess: () => {
-        this.diagnosisCloseMessage = 'Diagnostico cerrado correctamente. El caso ya paso a Por cotizar.';
-      },
-    });
+    // 1) Persiste los datos del diagnostico en el servidor; 2) invoca el cierre
+    // transaccional POST /projects/:id/diagnosis/close, que valida en el
+    // backend (falla identificada, horas estimadas, presupuesto de repuestos)
+    // y mueve el caso a por-cotizar con diagnosisClosedAt/diagnosisClosedBy.
+    this.projectService
+      .updateProject(projectWithDiagnosisData.id, this.prepareProjectForSave(projectWithDiagnosisData))
+      .pipe(switchMap(() => this.projectService.closeDiagnosis(projectWithDiagnosisData.id, closedBy)))
+      .subscribe({
+        next: (savedProject) => {
+          this.saving = false;
+          if (this.detailProject?.id === savedProject.id) {
+            this.detailProject = this.normalizeProject(savedProject);
+            this.initializeDispatchContext();
+          }
+          this.boardActionMessage = 'Diagnostico cerrado y movido a Por cotizar.';
+          this.diagnosisCloseMessage = 'Diagnostico cerrado correctamente. El caso ya paso a Por cotizar.';
+          this.syncEquipmentMemos(savedProject);
+        },
+        error: (error) => {
+          this.saving = false;
+          this.diagnosisCloseError = `No se pudo cerrar el diagnostico en el servidor: ${this.errorMessage(error)}`;
+        },
+      });
   }
 
   finishTestsAndMarkReady(): void {
@@ -4319,6 +4360,12 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
       closeOnSuccess: true,
       successMessage: `Despacho ${dispatchRecord.code} registrado y caso cerrado en entregado.`,
       onSuccess: () => {
+        // El informe de intervencion y el aviso al cliente dejan de ser
+        // locales: se persisten en el servidor (technical-reports y
+        // notifications) como parte del cierre del despacho.
+        this.persistInterventionReport(dispatchRecord, nextProject);
+        this.notifyClientDispatch(dispatchRecord);
+
         if (equipmentReference && equipmentLocationId) {
           this.projectEquipmentService.updateEquipmentWorkflow(equipmentReference, 'entregado', equipmentLocationId, deliveredBy);
         }
@@ -5044,6 +5091,7 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
             ? selectedItem.attachments.map((attachment) => ({ ...attachment }))
             : [];
           this.linkedEquipmentEvidenceError = '';
+          this.preloadMemosFromEquipmentItem(selectedItem);
           this.cdr.detectChanges();
         },
         error: () => {
@@ -5458,6 +5506,7 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
           this.boardActionMessage = options.successMessage;
         }
 
+        this.syncEquipmentMemos(savedProject);
         options.onSuccess?.(savedProject);
 
         if (options.closeOnSuccess !== false) {
@@ -5470,8 +5519,11 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
         this.initializeDispatchContext();
         options.onFinally?.();
       },
-      error: () => {
+      error: (error) => {
         this.saving = false;
+        // Sin fallback silencioso: el fallo de persistencia en el servidor
+        // debe ser visible para el usuario.
+        this.boardActionMessage = `No se pudo guardar el caso en el servidor: ${this.errorMessage(error)}`;
         options.onFinally?.();
       },
     });
@@ -5495,15 +5547,25 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
   }
 
   private filterProjectsByAudience(projects: Project[]): Project[] {
-    if (this.boardAudience === 'todos' || !projects.length) {
-      return projects;
+    let filtered = projects;
+
+    // Bandeja "mis equipos": solo los casos asignados al usuario logueado.
+    if (this.onlyMyProjects) {
+      const currentUserName = this.resolveCurrentUserName().trim().toLowerCase();
+      filtered = currentUserName
+        ? filtered.filter((project) => String(project.properties?.['assignee'] ?? '').trim().toLowerCase() === currentUserName)
+        : [];
+    }
+
+    if (this.boardAudience === 'todos' || !filtered.length) {
+      return filtered;
     }
 
     if (this.boardAudience === 'tecnico') {
-      return projects.filter((project) => !this.isDiagnosisClosed(project));
+      return filtered.filter((project) => !this.isDiagnosisClosed(project));
     }
 
-    return projects.filter((project) => this.isDiagnosisClosed(project));
+    return filtered.filter((project) => this.isDiagnosisClosed(project));
   }
 
   private isDiagnosisClosed(project: Project): boolean {
@@ -5709,16 +5771,9 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
     attachments.push(orderAttachment);
     dispatchRecord.generatedAttachmentIds.push(orderAttachment.id);
 
-    if (dispatchRecord.includeInterventionReport) {
-      const reportAttachment = this.createGeneratedAttachment(
-        `reporte-intervencion-${dispatchRecord.code}.txt`,
-        this.buildDispatchInterventionReportContent(dispatchRecord, project),
-        dispatchRecord.id,
-        'reporte'
-      );
-      attachments.push(reportAttachment);
-      dispatchRecord.generatedAttachmentIds.push(reportAttachment.id);
-    }
+    // El informe de intervencion ya no se genera como .txt local: se persiste
+    // en el servidor vía POST /api/v1/projects/technical-reports
+    // (ver persistInterventionReport, invocado al confirmar el despacho).
 
     if (dispatchRecord.includePurchaseOrder && existingAttachments.length > 0) {
       const manifestAttachment = this.createGeneratedAttachment(
@@ -5786,6 +5841,168 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
       `Horas reales: ${this.normalizeNumber(project.properties['actualHours'])}`,
       `Observacion de despacho: ${dispatchRecord.notes || 'Sin observaciones'}`,
     ].join('\n');
+  }
+
+  /**
+   * Persiste el informe de intervencion en el servidor
+   * (POST /api/v1/projects/technical-reports). Reemplaza la generacion del
+   * .txt local de las versiones anteriores: el informe queda disponible para
+   * administracion y para el historial del equipo.
+   */
+  private persistInterventionReport(dispatchRecord: ProjectDispatchRecord, project: Project): void {
+    if (!dispatchRecord.includeInterventionReport) {
+      return;
+    }
+
+    const properties = project.properties ?? {};
+    const testType = String(properties['testType'] ?? 'sin-pruebas').trim() || 'sin-pruebas';
+
+    this.projectsApi
+      .createTechnicalReport({
+        projectId: project.id,
+        projectCode: String(properties['shortCode'] ?? '').trim() || project.id,
+        projectTitle: project.title,
+        clientName: dispatchRecord.clientName || this.getDispatchClientName(),
+        equipmentName: dispatchRecord.equipmentName || this.getDispatchEquipmentName(),
+        equipmentRecordId: String(properties['equipmentRecordId'] ?? '').trim(),
+        equipmentItemId: String(properties['equipmentItemId'] ?? '').trim(),
+        equipmentIdentifier: String(properties['equipmentIdentifier'] ?? '').trim(),
+        dispatchCode: dispatchRecord.code,
+        failureDescription: String(properties['equipmentFailureDescription'] ?? '').trim(),
+        diagnosticNotes: String(properties['diagnosticNotes'] ?? '').trim(),
+        repairNotes: String(properties['repairNotes'] ?? '').trim(),
+        testType,
+        testTypeLabel: getProjectTechnicalTestTypeLabel(testType),
+        repairabilityPercent: this.normalizeNumber(properties['repairabilityPercent']),
+        estimatedHours: this.normalizeNumber(properties['estimatedHours']),
+        actualHours: this.normalizeNumber(properties['actualHours']),
+        dispatchNotes: dispatchRecord.notes,
+        content: this.buildDispatchInterventionReportContent(dispatchRecord, project),
+        createdBy: dispatchRecord.deliveredBy || this.resolveCurrentUserName(),
+      })
+      .pipe(take(1))
+      .subscribe({
+        error: (error) => {
+          this.boardActionMessage = `El despacho quedo registrado, pero el informe de intervencion NO se guardo en el servidor: ${this.errorMessage(error)}`;
+        },
+      });
+  }
+
+  /**
+   * Convierte el flag notifyClient en una notificacion real persistida en el
+   * servidor (POST /api/v1/projects/notifications), que queda como pendiente
+   * de aviso/correo al cliente para administracion.
+   */
+  private notifyClientDispatch(dispatchRecord: ProjectDispatchRecord): void {
+    if (!dispatchRecord.notifyClient) {
+      return;
+    }
+
+    const deliveryDetail = dispatchRecord.deliveryMethod === 'transportadora'
+      ? `Transportadora ${dispatchRecord.carrier || 'sin nombre'} · guia ${dispatchRecord.guideNumber || 'sin guia'}`
+      : `Recogido por ${dispatchRecord.pickedUpBy || 'cliente'}`;
+
+    this.projectsApi
+      .createNotification({
+        type: 'despacho-cliente',
+        title: `Avisar al cliente: despacho ${dispatchRecord.code}`,
+        message: `${dispatchRecord.clientName || 'Cliente sin nombre'} · ${dispatchRecord.equipmentName || 'equipo sin nombre'} · ${deliveryDetail}. Pendiente notificar al cliente del envio/entrega de su equipo.`,
+        targetRole: 'administrativo',
+      })
+      .pipe(take(1))
+      .subscribe({
+        error: (error) => {
+          this.boardActionMessage = `El despacho quedo registrado, pero la notificacion al cliente NO se guardo en el servidor: ${this.errorMessage(error)}`;
+        },
+      });
+  }
+
+  /**
+   * Sincroniza los memos de diagnostico/reparacion del caso con el registro
+   * del equipo en recepcion (campos diagnosisMemo/repairMemo del item), para
+   * que el historial tecnico del equipo incluya la intervencion.
+   */
+  private syncEquipmentMemos(project: Project): void {
+    const properties = project.properties ?? {};
+    const recordId = String(properties['equipmentRecordId'] ?? '').trim();
+    const itemId = String(properties['equipmentItemId'] ?? '').trim();
+
+    if (!recordId || !itemId) {
+      return;
+    }
+
+    const diagnosisMemo = String(properties['diagnosticNotes'] ?? '').trim();
+    const repairMemo = String(properties['repairNotes'] ?? '').trim();
+
+    if (!diagnosisMemo && !repairMemo) {
+      return;
+    }
+
+    this.crmEquipmentApi
+      .getRecord(recordId, true)
+      .pipe(take(1))
+      .subscribe({
+        next: (record) => {
+          let changed = false;
+          const nextItems = (record.items ?? []).map((item) => {
+            if (String(item.id ?? '').trim() !== itemId) {
+              return item;
+            }
+
+            if (String(item.diagnosisMemo ?? '') === diagnosisMemo && String(item.repairMemo ?? '') === repairMemo) {
+              return item;
+            }
+
+            changed = true;
+            return { ...item, diagnosisMemo, repairMemo };
+          });
+
+          if (!changed) {
+            return;
+          }
+
+          this.crmEquipmentApi
+            .upsertRecord({ ...record, items: nextItems })
+            .pipe(take(1))
+            .subscribe({
+              error: (error) => {
+                this.equipmentWorkflowError = `El caso se guardo, pero los memos no se sincronizaron con el equipo: ${this.errorMessage(error)}`;
+              },
+            });
+        },
+        error: (error) => {
+          this.equipmentWorkflowError = `El caso se guardo, pero los memos no se sincronizaron con el equipo: ${this.errorMessage(error)}`;
+        },
+      });
+  }
+
+  /**
+   * Precarga los memos persistidos en el registro del equipo (diagnosisMemo/
+   * repairMemo) cuando el campo del caso esta vacio, segun lo conversado con
+   * el cliente (informe precargado del memo).
+   */
+  private preloadMemosFromEquipmentItem(item: ProspectEquipmentItem): void {
+    if (!this.detailProject) {
+      return;
+    }
+
+    const properties = this.detailProject.properties ?? {};
+    const diagnosisMemo = String(item.diagnosisMemo ?? '').trim();
+    const repairMemo = String(item.repairMemo ?? '').trim();
+
+    if (diagnosisMemo && !String(properties['diagnosticNotes'] ?? '').trim()) {
+      properties['diagnosticNotes'] = diagnosisMemo;
+    }
+
+    if (repairMemo && !String(properties['repairNotes'] ?? '').trim()) {
+      properties['repairNotes'] = repairMemo;
+    }
+  }
+
+  private errorMessage(error: unknown): string {
+    return error instanceof Error && error.message.trim()
+      ? error.message.trim()
+      : 'error de comunicacion con el servidor';
   }
 
   private buildDispatchAttachmentManifest(dispatchRecord: ProjectDispatchRecord, attachments: Attachment[]): string {

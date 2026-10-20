@@ -48,6 +48,7 @@ func (h *Handler) listRecords(c echo.Context) error {
 		ClientName:      strings.TrimSpace(c.QueryParam("clientName")),
 		IncludeArchived: parseBool(c.QueryParam("includeArchived")),
 		Identifier:      identifier,
+		AssignedToID:    strings.TrimSpace(c.QueryParam("assignedToId")),
 	})
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "no se pudieron cargar los registros de equipos"})
@@ -175,6 +176,7 @@ func (h *Handler) listItems(c echo.Context) error {
 		ClientName:      strings.TrimSpace(c.QueryParam("clientName")),
 		IncludeArchived: parseBool(c.QueryParam("includeArchived")),
 		Identifier:      identifier,
+		AssignedToID:    strings.TrimSpace(c.QueryParam("assignedToId")),
 	})
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "no se pudieron cargar los items de equipos"})
