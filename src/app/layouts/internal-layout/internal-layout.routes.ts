@@ -19,6 +19,10 @@ export const INTERNAL_ROUTES: Routes = [
                 loadComponent: () => import("../../pages/app/main-menu/main-menu.component").then((m) => m.MainMenuComponent),
             },
             {
+                path: "main-menu/:moduleId",
+                loadComponent: () => import("../../pages/app/main-menu/main-menu.component").then((m) => m.MainMenuComponent),
+            },
+            {
                 path: "grid-view",
                 loadComponent: () => import("../../pages/app/main-menu/main-menu.component").then((m) => m.MainMenuComponent),
             },

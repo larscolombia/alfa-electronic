@@ -1,4 +1,4 @@
-﻿import { Component, HostListener } from "@angular/core";
+import { Component, HostListener } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { RouterLink } from "@angular/router";
 
@@ -159,21 +159,18 @@ import { RouterLink } from "@angular/router";
         </div>
 
         <!-- standard footer -->
-        <footer class="adminuiux-footer has-adminuiux-sidebar mt-auto bg-theme-1">
-            <div class="container-fluid">
-                <div class="row gx-3 gx-lg-4">
-                    <div class="col-12 col-md col-lg py-2">
-                        <span class="small">Copyright 2026, Desarrollado por: <a href="https://lars.net.co" target="_blank" class="text-white">LARS Software Company</a></span>
-                    </div>
-                    <div class="col-12 col-md-auto col-lg-auto align-self-center">
-                        <ul class="nav small">
-                            <li class="nav-item"><a class="nav-link text-white" routerLink="company-help-center">Help</a></li>
-                            <li class="nav-item opacity-50">|</li>
-                            <li class="nav-item"><a class="nav-link text-white" routerLink="terms-of-use">Terms of Use</a></li>
-                            <li class="nav-item opacity-50">|</li>
-                            <li class="nav-item"><a class="nav-link text-white" routerLink="privacy-policy">Privacy Policy</a></li>
-                        </ul>
-                    </div>
+        <!-- sin has-adminuiux-sidebar: esa clase global anade margin-left de 280px (ancho del sidebar) y dejaba el hueco a la izquierda -->
+        <footer class="adminuiux-footer mt-auto mf">
+            <div class="container-fluid px-3 px-lg-4">
+                <div class="mf-shell">
+                    <p class="mf-copy">Copyright © 2026 · Desarrollado por: <a href="https://lars.net.co" target="_blank" rel="noopener noreferrer">LARS Software Company</a></p>
+                    <nav class="mf-links" aria-label="Enlaces de ayuda y legales">
+                        <a routerLink="company-help-center">Help</a>
+                        <span class="mf-sep" aria-hidden="true"></span>
+                        <a routerLink="terms-of-use">Terms of Use</a>
+                        <span class="mf-sep" aria-hidden="true"></span>
+                        <a routerLink="privacy-policy">Privacy Policy</a>
+                    </nav>
                 </div>
             </div>
         </footer>
@@ -225,6 +222,40 @@ import { RouterLink } from "@angular/router";
             </defs>
         </svg>
     `,
+    styles: [`
+        /* Footer estándar rediseñado: barra limpia, centrada y profesional */
+        .mf {
+            margin-left: 0 !important;
+            margin-right: 0;
+            padding-left: 0 !important; /* anula el padding global del sidebar (280px, position:fixed) para que la barra quede a ancho completo y centrada simetrica */
+            background: rgba(255, 255, 255, 0.88);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-top: 1px solid rgba(100, 130, 200, 0.16);
+            box-shadow: 0 -4px 24px rgba(30, 50, 100, 0.07);
+        }
+        .mf-shell {
+            display: flex; flex-wrap: wrap;
+            align-items: center; justify-content: center;
+            column-gap: 1.1rem; row-gap: 0.3rem;
+            text-align: center;
+        }
+        .mf-copy { margin: 0; font-size: 0.82rem; color: #64748b; letter-spacing: 0.01em; }
+        .mf-copy a { color: #2e6fd8; font-weight: 700; text-decoration: none; transition: opacity 0.15s ease; }
+        .mf-copy a:hover { text-decoration: underline; }
+        .mf-links {
+            display: flex; flex-wrap: wrap;
+            align-items: center; justify-content: center;
+            column-gap: 0.3rem; row-gap: 0.2rem;
+        }
+        .mf-links a {
+            font-size: 0.82rem; font-weight: 600; color: #4a5b78;
+            text-decoration: none; padding: 0.18rem 0.6rem; border-radius: 999px;
+            line-height: 1.3; transition: background-color 0.15s ease, color 0.15s ease;
+        }
+        .mf-links a:hover { background: rgba(80, 120, 220, 0.1); color: #2e6fd8; }
+        .mf-sep { width: 4px; height: 4px; border-radius: 50%; background: #c3cede; flex-shrink: 0; }
+    `],
 })
 export class MainFooterComponent {
     showScrollTop: boolean = false;

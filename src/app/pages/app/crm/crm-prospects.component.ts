@@ -1,7 +1,7 @@
 import { NgFor, NgIf } from "@angular/common";
 import { ChangeDetectorRef, Component, ElementRef, ViewChild } from "@angular/core";
 import { FormsModule } from "@angular/forms";
-import { RouterLink } from "@angular/router";
+import { Router, RouterLink } from "@angular/router";
 import { catchError, forkJoin, map, of } from "rxjs";
 
 import { CrmProspectEquipmentModalComponent } from "./crm-prospect-equipment-modal.component";
@@ -69,9 +69,14 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
     template: `
         <div class="container-fluid py-3">
             <div class="row gx-3 gx-lg-4 align-items-center page-title">
-                <div class="col mb-3 mb-sm-0">
-                    <h5 class="mb-0">Prospectos</h5>
-                    <p class="text-secondary small mb-0">Administra tus prospectos y su seguimiento comercial.</p>
+                <div class="col mb-3 mb-sm-0 d-flex align-items-start gap-2">
+                    <button class="btn btn-outline-secondary" type="button" (click)="goBack()" data-testid="back-btn">
+                        <i class="bi bi-arrow-left me-1"></i>Volver
+                    </button>
+                    <div>
+                        <h5 class="mb-0">Prospectos</h5>
+                        <p class="text-secondary small mb-0">Administra tus prospectos y su seguimiento comercial.</p>
+                    </div>
                 </div>
             </div>
 
@@ -138,9 +143,9 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
                                             {{ row.estado }}
                                         </span>
                                     </td>
-                                    <td class="position-relative">
+                                    <td>
                                         <div class="dropdown d-inline-block">
-                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-boundary="window">
+                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-popper-config='{"strategy":"fixed"}'>
                                                 Acciones
                                             </button>
                                             <ul class="dropdown-menu dropdown-menu-end" style="z-index: 1055;">
@@ -553,7 +558,17 @@ export class CrmProspectsComponent {
     private equipmentCountMap: Record<string, number> = {};
     private nextFollowupByProspectId: Record<number, ProspectFollowupBadge> = {};
 
+    goBack(): void {
+        if (typeof window !== "undefined" && window.history.length > 1) {
+            window.history.back();
+            return;
+        }
+
+        this.router.navigateByUrl("/index", { replaceUrl: true });
+    }
+
     constructor(
+        private readonly router: Router,
         private readonly crmProspectsApi: CrmProspectsApiService,
         private readonly crmClientsApi: CrmClientsApiService,
         private readonly crmEquipmentApi: CrmEquipmentApiService,

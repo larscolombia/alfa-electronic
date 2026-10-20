@@ -1,10 +1,9 @@
-import { Component, Inject, OnInit, OnDestroy, AfterViewInit, AfterViewChecked, ElementRef, Renderer2, HostListener } from "@angular/core";
+import { Component, Inject, OnInit, OnDestroy, AfterViewInit, ElementRef, Renderer2, HostListener } from "@angular/core";
 import { CommonModule, DOCUMENT } from "@angular/common";
 import { NavigationEnd, Router, RouterOutlet } from "@angular/router";
 import { FormsModule } from "@angular/forms";
 import { Subscription } from "rxjs";
 import { MainHeaderComponent } from "../../components/header-footer-sidebar/main-header/main-header.component";
-import { SidebarComponent } from "../../components/header-footer-sidebar/sidebar/sidebar.component";
 import { MainFooterComponent } from "../../components/header-footer-sidebar/main-footer/main-footer.component";
 import { ThemingComponent } from "../../components/offcanvas/theming.component";
 import { NotificationComponent } from "../../components/offcanvas/notification.component";
@@ -12,16 +11,14 @@ import { NotificationComponent } from "../../components/offcanvas/notification.c
 @Component({
     selector: "app-internal-layout",
     standalone: true,
-    imports: [RouterOutlet, CommonModule, FormsModule, MainHeaderComponent, SidebarComponent, MainFooterComponent, ThemingComponent, NotificationComponent],
+    imports: [RouterOutlet, CommonModule, FormsModule, MainHeaderComponent, MainFooterComponent, ThemingComponent, NotificationComponent],
     template: `
         <!-- header -->
         <app-main-header *ngIf="!hideHeader" class="adminuiux-header inner-page"></app-main-header>
 
         <div class="adminuiux-wrap">
-            <!-- sidebar -->
-            <app-sidebar *ngIf="!hideSidebar"></app-sidebar>
             <!-- page content -->
-            <main [class.has-sidebar]="!hideSidebar" class="adminuiux-content" (click)="contentClick()">
+            <main class="adminuiux-content">
                 <router-outlet></router-outlet>
             </main>
         </div>
@@ -36,13 +33,12 @@ import { NotificationComponent } from "../../components/offcanvas/notification.c
         <app-main-footer *ngIf="!hideMainFooter"></app-main-footer>
     `,
 })
-export class InternalLayoutComponent implements OnInit, AfterViewInit, AfterViewChecked, OnDestroy {
+export class InternalLayoutComponent implements OnInit, AfterViewInit, OnDestroy {
     private static readonly HEADER_CONTENT_GAP_PX = 12;
 
     showHeader = true;
     showBackHeader = false;
     hideMainFooter = false;
-    hideSidebar = false;
     hideHeader = false;
     private resizeObserver!: ResizeObserver;
     private routerSubscription?: Subscription;
@@ -84,8 +80,6 @@ export class InternalLayoutComponent implements OnInit, AfterViewInit, AfterView
         this.adjustPadding();
     }
 
-    ngAfterViewChecked() {}
-
     ngOnDestroy() {
         this.routerSubscription?.unsubscribe();
         this.resizeObserver?.disconnect();
@@ -93,16 +87,13 @@ export class InternalLayoutComponent implements OnInit, AfterViewInit, AfterView
         this.renderer.setStyle(this.document.body, "padding-bottom", "0");
     }
 
-    private readonly SIDEBAR_HIDDEN_ROUTES = ["/app/main-menu", "/app/grid-view"];
+    private readonly HEADER_HIDDEN_ROUTES = ["/app/main-menu", "/app/grid-view"];
 
     private updateRouteScopedLayoutState(url: string) {
         this.hideMainFooter = url.includes("/app/profile-professional");
-        const noSidebar = this.SIDEBAR_HIDDEN_ROUTES.some((r) => url.startsWith(r));
-        this.hideSidebar = noSidebar;
-        this.hideHeader = noSidebar;
-        if (noSidebar) {
-            this.renderer.removeClass(this.document.body, "sidebar-open");
-            this.renderer.removeClass(this.document.body, "sidebar-close");
+        const noHeader = this.HEADER_HIDDEN_ROUTES.some((r) => url.startsWith(r));
+        this.hideHeader = noHeader;
+        if (noHeader) {
             // The header is removed via *ngIf so its padding-top must be cleared immediately;
             // we use setTimeout(0) so Angular's CD has removed the element before we measure.
             setTimeout(() => {
@@ -112,7 +103,6 @@ export class InternalLayoutComponent implements OnInit, AfterViewInit, AfterView
                 }
             }, 0);
         } else {
-            this.openSidebarForCurrentBreakpoint();
             // Ensure spacing is refreshed when the header is mounted again.
             setTimeout(() => {
                 this.observeHeaderResize();
@@ -131,25 +121,13 @@ export class InternalLayoutComponent implements OnInit, AfterViewInit, AfterView
         }
     }
 
-    private openSidebarForCurrentBreakpoint() {
-        if (window.innerWidth >= 992) {
-            this.renderer.addClass(this.document.body, "sidebar-open");
-            this.renderer.removeClass(this.document.body, "sidebar-close");
-        } else {
-            this.renderer.addClass(this.document.body, "sidebar-close");
-            this.renderer.removeClass(this.document.body, "sidebar-open");
-        }
-    }
-
     adjustPadding() {
         const headerElement = this.el.nativeElement.querySelector(".adminuiux-header .navbar");
-        const sidebarPadding = this.el.nativeElement.querySelector(".adminuiux-sidebar");
         const contentPadding = this.el.nativeElement.querySelector(".adminuiux-content");
 
         if (headerElement) {
             const headerHeight = headerElement.offsetHeight + InternalLayoutComponent.HEADER_CONTENT_GAP_PX;
             this.renderer.setStyle(contentPadding, "padding-top", `${headerHeight}px`);
-            if (sidebarPadding) { this.renderer.setStyle(sidebarPadding, "padding-top", `${headerHeight}px`); }
         } else if (this.hideHeader && contentPadding) {
             this.renderer.setStyle(contentPadding, "padding-top", "0");
         }
@@ -161,13 +139,6 @@ export class InternalLayoutComponent implements OnInit, AfterViewInit, AfterView
             this.renderer.setStyle(this.document.body, "padding-bottom", `calc(${footerMobileHeight}px + 10px + env(safe-area-inset-bottom) )`);
         } else {
             this.renderer.setStyle(this.document.body, "padding-bottom", "0");
-        }
-    }
-    contentClick() {
-        const windowWidth = window.innerWidth;
-        if (windowWidth < 992) {
-            this.renderer.removeClass(this.document.body, "sidebar-open");
-            this.renderer.addClass(this.document.body, "sidebar-close");
         }
     }
 }

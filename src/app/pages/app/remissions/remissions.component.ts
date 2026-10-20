@@ -1,6 +1,7 @@
 import { CommonModule } from "@angular/common";
 import { ChangeDetectorRef, Component, OnInit } from "@angular/core";
 import { FormsModule } from "@angular/forms";
+import { Router } from "@angular/router";
 import { resolveApiBaseUrl } from "../../../services/api-base-url.util";
 import {
     buildAnchoredAlert,
@@ -61,7 +62,12 @@ interface DispatchReadyGroup {
 const REMISSIONS_TEMPLATE = `
 <div class="container-fluid p-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="mb-0"><i class="bi bi-truck me-2"></i>Remisiones</h4>
+        <div class="d-flex align-items-center gap-2">
+            <button class="btn btn-outline-secondary" type="button" (click)="goBack()" data-testid="back-btn">
+                <i class="bi bi-arrow-left me-1"></i>Volver
+            </button>
+            <h4 class="mb-0"><i class="bi bi-truck me-2"></i>Remisiones</h4>
+        </div>
         <button class="btn btn-theme" (click)="openCreate()" data-testid="create-remission-btn">
             <i class="bi bi-plus-lg me-1"></i>Nueva remision
         </button>
@@ -417,7 +423,15 @@ export class RemissionsComponent implements OnInit {
     readonly dispatchTypeLabel = dispatchTypeLabel;
     readonly anchoredAlert = buildAnchoredAlert;
 
-    constructor(private cdr: ChangeDetectorRef) {}
+    constructor(private cdr: ChangeDetectorRef, private router: Router) {}
+
+    goBack(): void {
+        if (typeof window !== "undefined" && window.history.length > 1) {
+            window.history.back();
+            return;
+        }
+        this.router.navigateByUrl("/");
+    }
 
     getCurrencySymbol() { return "$"; }
 

@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from "@angular/core";
 import { NgFor, NgIf } from "@angular/common";
-import { RouterLink } from "@angular/router";
+import { RouterLink, Router, ActivatedRoute } from "@angular/router";
 import { Subject, Subscription, of } from "rxjs";
 import { debounceTime, distinctUntilChanged, switchMap, catchError } from "rxjs/operators";
 import { GlobalSearchService, GlobalSearchResult } from "../../../services/global-search.service";
@@ -8,7 +8,7 @@ import { GlobalSearchService, GlobalSearchResult } from "../../../services/globa
 interface SubItem { label: string; icon: string; route: string; }
 interface AppModule {
     label: string; sublabel: string; icon: string; color: string;
-    route?: string; children?: SubItem[];
+    route?: string; routeKey?: string; children?: SubItem[];
 }
 
 @Component({
@@ -21,8 +21,9 @@ interface AppModule {
             <!-- NIVEL RAIZ -->
             <ng-container *ngIf="!selected">
                 <div class="mm-top mm-panel" [class.mm-panel--bck]="animDir === 'bck'">
-                    <img src="assets/img/logo-pika.png" alt="PIKA" class="mm-logo" />
-                    <span class="mm-os-badge">PIKA OS</span>
+                    <div class="mm-logo-frame">
+                        <img src="assets/img/logo-pika.png" alt="PIKA" class="mm-logo" />
+                    </div>
                     <h1 class="mm-title">Menu principal</h1>
                 </div>
 
@@ -133,14 +134,19 @@ interface AppModule {
     styles: [`
         :host { display: block; }
         .mm-root {
-            position: fixed; inset: 0; overflow: hidden;
+            position: fixed; inset: 0; overflow-y: auto; overflow-x: hidden;
             display: flex; flex-direction: column;
-            align-items: center; justify-content: center; padding: 2.5rem 1rem 2rem;
+            align-items: center; justify-content: safe center; padding: 2.5rem 1rem 2rem;
+            overscroll-behavior-y: none;
+            scrollbar-width: thin; scrollbar-color: rgba(100,130,200,0.28) transparent;
+        }
+        .mm-root::-webkit-scrollbar { width: 4px; }
+        .mm-root::-webkit-scrollbar-track { background: transparent; }
+        .mm-root::-webkit-scrollbar-thumb { background: rgba(100,130,200,0.28); border-radius: 2px; }
             background:
                 radial-gradient(ellipse 80% 55% at 50% -5%, rgba(90,130,255,0.12) 0%, transparent 65%),
                 linear-gradient(160deg,#eef2ff 0%,#fdf8f2 50%,#eff6f4 100%);
         }
-        /* When search results are visible, anchor the top section and let results fill/scroll */
         .mm-root--searching { justify-content: flex-start; }
         @keyframes slideInFwd { from{opacity:0;transform:translateX(36px)} to{opacity:1;transform:translateX(0)} }
         @keyframes slideInBck { from{opacity:0;transform:translateX(-36px)} to{opacity:1;transform:translateX(0)} }
@@ -148,13 +154,19 @@ interface AppModule {
         .mm-panel--bck { animation: slideInBck 0.22s ease both; }
 
         /* top */
-        .mm-top { display:flex; flex-direction:column; align-items:center; margin-bottom:1.6rem; }
-        .mm-logo { height:40px; width:auto; margin-bottom:1rem; object-fit:contain; }
-        .mm-os-badge {
-            display:inline-block; font-size:0.62rem; font-weight:800; letter-spacing:0.28em;
-            text-transform:uppercase; color:#7a8baa;
-            background:rgba(120,140,180,0.12); border:1px solid rgba(120,140,180,0.22);
-            padding:0.16rem 0.65rem; border-radius:999px; margin-bottom:0.6rem;
+        .mm-top { display:flex; flex-direction:column; align-items:center; margin-bottom:2rem; }
+        .mm-logo-frame {
+            padding:1rem 1.5rem; border-radius:20px; margin-bottom:1.1rem;
+            background:linear-gradient(160deg,#ffffff 0%,#f4f7fc 100%);
+            box-shadow:
+                0 8px 28px rgba(30,55,120,0.14),
+                0 2px 6px rgba(30,55,120,0.09),
+                inset 0 1px 0 rgba(255,255,255,0.95);
+            border:1px solid rgba(140,170,220,0.22);
+        }
+        .mm-logo {
+            height:88px; width:auto; object-fit:contain;
+            filter:drop-shadow(0 3px 6px rgba(25,45,95,0.22)) drop-shadow(0 1px 2px rgba(25,45,95,0.14));
         }
         .mm-title { font-size:1.85rem; font-weight:800; color:#1a2540; margin:0 0 0.2rem; line-height:1; letter-spacing:-0.03em; }
         .mm-subtitle { font-size:0.88rem; color:#6b7c9e; margin:0; }
@@ -194,7 +206,7 @@ interface AppModule {
         }
         .mm-loader-label { font-size:0.85rem; color:#8a9cbf; margin:0; }
 
-        /* results scrollable area */
+        /* results */
         .mm-results-area {
             flex: 1; min-height: 0;
             overflow-y: auto; overflow-x: hidden;
@@ -210,10 +222,7 @@ interface AppModule {
         .mm-results-num { font-weight:700; color:#4a6080; }
         .mm-result-list { display:flex; flex-direction:column; gap:0.55rem; }
 
-        @keyframes fadeUp {
-            from { opacity:0; transform:translateY(10px); }
-            to   { opacity:1; transform:translateY(0); }
-        }
+        @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
         .mm-result-card {
             display:flex; align-items:center; gap:0.85rem;
             padding:0.75rem 1rem;
@@ -328,149 +337,88 @@ export class MainMenuComponent implements OnInit, OnDestroy {
 
     private readonly searchSubject$ = new Subject<string>();
     private searchSub?: Subscription;
+    private routeSub?: Subscription;
 
-    constructor(private readonly searchService: GlobalSearchService, private readonly cdr: ChangeDetectorRef) {}
+    constructor(
+        private readonly searchService: GlobalSearchService,
+        private readonly cdr: ChangeDetectorRef,
+        private readonly router: Router,
+        private readonly route: ActivatedRoute,
+    ) {}
 
     ngOnInit(): void {
-        // Push browser-only datasets (suppliers + projects) to the backend search index.
         this.searchService.syncFrontendData();
+
+        // Si llegamos con un modulo en la URL (ej. /app/main-menu/crm), abrimos esa carpeta.
+        this.routeSub = this.route.paramMap.subscribe(params => {
+            const key = params.get("moduleId");
+            if (!key) return;
+            const mod = this.modules.find(m => m.routeKey === key && !!m.children?.length);
+            if (mod) {
+                this.animDir = "fwd";
+                this.selected = mod;
+            } else {
+                // Modulo desconocido o sin opciones: devolvemos al menu de carpetas.
+                void this.router.navigate(["/app", "main-menu"], { replaceUrl: true });
+            }
+        });
 
         this.searchSub = this.searchSubject$.pipe(
             debounceTime(350),
             distinctUntilChanged(),
             switchMap(q => {
-                if (!q.trim()) {
-                    return of([] as GlobalSearchResult[]);
-                }
-                return this.searchService.search(q).pipe(
-                    catchError(() => of([] as GlobalSearchResult[])),
-                );
+                if (!q.trim()) return of([] as GlobalSearchResult[]);
+                return this.searchService.search(q).pipe(catchError(() => of([])));
             }),
         ).subscribe(results => {
             this.isSearchLoading = false;
             this.globalResults = results;
-            // Native fetch resolves outside Angular's zone tick on this static page,
-            // so trigger change detection explicitly to render the results.
             this.cdr.detectChanges();
         });
     }
 
     ngOnDestroy(): void {
         this.searchSub?.unsubscribe();
+        this.routeSub?.unsubscribe();
     }
 
     readonly modules: AppModule[] = [
-        {
-            label: "CRM", sublabel: "Comercial", icon: "bi-person-lines-fill",
-            color: "linear-gradient(145deg,#2e86de,#54a0ff)",
-            children: [
-                { label: "Prospectos",     icon: "bi-funnel-fill",              route: "/app/crm-prospectos" },
-                { label: "Cotizaciones",   icon: "bi-receipt",                  route: "/app/crm-cotizaciones" },
-                { label: "Ordenes OC",     icon: "bi-file-earmark-check-fill",  route: "/app/crm-cotizaciones" },
-                { label: "Clientes",       icon: "bi-people-fill",              route: "/app/crm-clientes" },
-                { label: "Visitas",        icon: "bi-calendar-event-fill",      route: "/app/calendar" },
-                { label: "Carga de bases", icon: "bi-cloud-arrow-up-fill",      route: "/app/crm-carga-bases" },
-            ],
-        },
-        {
-            label: "Trabajo", sublabel: "Operaciones", icon: "bi-briefcase-fill",
-            color: "linear-gradient(145deg,#e07b39,#f9a825)",
-            children: [
-                { label: "Proyectos",      icon: "bi-kanban-fill",              route: "/app/work-projects" },
-                { label: "Tareas",         icon: "bi-check2-square",            route: "/app/work-tasks" },
-                { label: "Hoja de tiempo", icon: "bi-clock-history",            route: "/app/work-timesheet" },
-                { label: "Carga laboral",  icon: "bi-bar-chart-line-fill",      route: "/app/work-workload" },
-                { label: "Recep. equipos", icon: "bi-box-arrow-in-down",        route: "/app/work-equipment-reception" },
-                { label: "Garantias",      icon: "bi-shield-check",             route: "/app/work-garantias" },
-                { label: "Lote pruebas",   icon: "bi-ui-checks-grid",           route: "/app/work-test-batches" },
-            ],
-        },
-        {
-            label: "Inventario", sublabel: "Stock", icon: "bi-boxes",
-            color: "linear-gradient(145deg,#1b8a6b,#26de8e)",
-            children: [
-                { label: "Panel control",  icon: "bi-speedometer2",             route: "/app/inventory-dashboard" },
-                { label: "Stock y fichas", icon: "bi-box-seam-fill",            route: "/app/inventory-stock" },
-                { label: "Movimientos",    icon: "bi-arrow-left-right",         route: "/app/inventory-movements" },
-                { label: "Reposicion",     icon: "bi-exclamation-diamond-fill", route: "/app/inventory-orders" },
-                { label: "Conciliacion",   icon: "bi-clipboard-data-fill",      route: "/app/inventory-order-details" },
-            ],
-        },
-        {
-            label: "Financiero", sublabel: "Facturacion", icon: "bi-bank2",
-            color: "linear-gradient(145deg,#c0392b,#e84393)",
-            children: [
-                { label: "Dashboard",      icon: "bi-speedometer2",             route: "/app/finance-dashboard" },
-                { label: "Cuentas",        icon: "bi-building",                 route: "/app/finance-cuentas" },
-                { label: "Pagos",          icon: "bi-credit-card-2-front",      route: "/app/finance-pagos" },
-                { label: "Facturas",       icon: "bi-file-earmark-text-fill",   route: "/app/finance-facturacion" },
-                { label: "Crear factura",  icon: "bi-plus-square-fill",         route: "/app/finance-facturacion-crear" },
-                { label: "Recurrentes",    icon: "bi-arrow-repeat",             route: "/app/finance-facturacion-recurrentes" },
-                { label: "Fact. tiempo",   icon: "bi-clock-history",            route: "/app/finance-facturacion-tiempo" },
-                { label: "Cred. clientes", icon: "bi-cash-coin",                route: "/app/finance-clientes-credito" },
-                { label: "Garantias",      icon: "bi-shield-check",             route: "/app/finance-garantias" },
-            ],
-        },
-        {
-            label: "RRHH", sublabel: "Empleados", icon: "bi-people-fill",
-            color: "linear-gradient(145deg,#6c3fcc,#a55eea)",
-            children: [
-                { label: "Dashboard",      icon: "bi-speedometer2",             route: "/app/company-hr-dashboard" },
-                { label: "Empleados",      icon: "bi-person-vcard-fill",        route: "/app/company-hr-employees" },
-                { label: "Carga laboral",  icon: "bi-bar-chart-line-fill",      route: "/app/work-workload" },
-                { label: "Nomina",         icon: "bi-cash-stack",               route: "/app/company-hr-compensation" },
-                { label: "Horarios",       icon: "bi-calendar3",                route: "/app/company-hr-worktime" },
-                { label: "Salud",          icon: "bi-heart-pulse-fill",         route: "/app/company-hr-health" },
-                { label: "Vacaciones",     icon: "bi-calendar2-week-fill",      route: "/app/company-hr-leaves" },
-                { label: "Documentos",     icon: "bi-folder-check",             route: "/app/company-hr-documents" },
-                { label: "Auditoria",      icon: "bi-clipboard-data-fill",      route: "/app/company-hr-audit" },
-            ],
-        },
-        {
-            label: "Proveedores", sublabel: "Red de compra", icon: "bi-truck-front-fill",
-            color: "linear-gradient(145deg,#b5860d,#f0d060)",
-            children: [
-                { label: "Dashboard",   icon: "bi-speedometer2",  route: "/app/suppliers-dashboard" },
-                { label: "CRUD",        icon: "bi-table",         route: "/app/suppliers-crud" },
-                { label: "Historial",   icon: "bi-clock-history", route: "/app/suppliers-orders-history" },
-            ],
-        },
-        {
-            label: "Calendario", sublabel: "Agenda", icon: "bi-calendar-week-fill",
-            color: "linear-gradient(145deg,#0984b7,#56cce6)",
-            route: "/app/calendar",
-        },
-        {
-            label: "Seguridad", sublabel: "Accesos", icon: "bi-shield-lock-fill",
-            color: "linear-gradient(145deg,#3d5a80,#6290c8)",
-            children: [
-                { label: "IP Restrictions",   icon: "bi-shield-lock-fill", route: "/app/advanced-security-ip-restrictions" },
-                { label: "Roles",             icon: "bi-people",           route: "/app/company-user-roles" },
-                { label: "Perfil empresa",    icon: "bi-building",         route: "/app/company-profile" },
-                { label: "Config. comercial", icon: "bi-sliders",          route: "/app/company-commercial-config" },
-                { label: "ACL Playground",    icon: "bi-ui-checks",        route: "/app/company-acl-hr-playground" },
-            ],
-        },
+        { label: "CRM", sublabel: "Comercial", routeKey: "crm", icon: "bi-person-lines-fill", color: "linear-gradient(145deg,#2e86de,#54a0ff)", children: [{ label: "Prospectos", icon: "bi-funnel-fill", route: "/app/crm-prospectos" }, { label: "Cotizaciones", icon: "bi-receipt", route: "/app/crm-cotizaciones" }, { label: "Clientes", icon: "bi-people-fill", route: "/app/crm-clientes" }, { label: "Carga de bases", icon: "bi-cloud-arrow-up-fill", route: "/app/crm-carga-bases" }] },
+        { label: "Trabajo", sublabel: "Operaciones", routeKey: "trabajo", icon: "bi-briefcase-fill", color: "linear-gradient(145deg,#e07b39,#f9a825)", children: [{ label: "Proyectos", icon: "bi-kanban-fill", route: "/app/work-projects" }, { label: "Tareas", icon: "bi-check2-square", route: "/app/work-tasks" }, { label: "Hoja de tiempo", icon: "bi-clock-history", route: "/app/work-timesheet" }, { label: "Carga laboral", icon: "bi-bar-chart-line-fill", route: "/app/work-workload" }, { label: "Recep. equipos", icon: "bi-box-arrow-in-down", route: "/app/work-equipment-reception" }, { label: "Garantias", icon: "bi-shield-check", route: "/app/work-garantias" }, { label: "Lote pruebas", icon: "bi-ui-checks-grid", route: "/app/work-test-batches" }, { label: "Remisiones", icon: "bi-truck", route: "/app/remissions" }] },
+        { label: "Inventario", sublabel: "Stock", routeKey: "inventario", icon: "bi-boxes", color: "linear-gradient(145deg,#1b8a6b,#26de8e)", children: [{ label: "Panel control", icon: "bi-speedometer2", route: "/app/inventory-dashboard" }, { label: "Stock y fichas", icon: "bi-box-seam-fill", route: "/app/inventory-stock" }, { label: "Movimientos", icon: "bi-arrow-left-right", route: "/app/inventory-movements" }, { label: "Reposicion", icon: "bi-exclamation-diamond-fill", route: "/app/inventory-orders" }, { label: "Conciliacion", icon: "bi-clipboard-data-fill", route: "/app/inventory-order-details" }, { label: "Reservas", icon: "bi-hourglass-split", route: "/app/inventory-reservations" }] },
+        { label: "Financiero", sublabel: "Facturacion", routeKey: "financiero", icon: "bi-bank2", color: "linear-gradient(145deg,#c0392b,#e84393)", children: [{ label: "Dashboard", icon: "bi-speedometer2", route: "/app/finance-dashboard" }, { label: "Cuentas", icon: "bi-building", route: "/app/finance-cuentas" }, { label: "Pagos", icon: "bi-credit-card-2-front", route: "/app/finance-pagos" }, { label: "Facturas", icon: "bi-file-earmark-text-fill", route: "/app/finance-facturacion" }, { label: "Recurrentes", icon: "bi-arrow-repeat", route: "/app/finance-facturacion-recurrentes" }, { label: "Cred. clientes", icon: "bi-cash-coin", route: "/app/finance-clientes-credito" }, { label: "Garantias", icon: "bi-shield-check", route: "/app/finance-garantias" }] },
+        { label: "RRHH", sublabel: "Empleados", routeKey: "rrhh", icon: "bi-people-fill", color: "linear-gradient(145deg,#6c3fcc,#a55eea)", children: [{ label: "Dashboard", icon: "bi-speedometer2", route: "/app/company-hr-dashboard" }, { label: "Empleados", icon: "bi-person-vcard-fill", route: "/app/company-hr-employees" }, { label: "Carga laboral", icon: "bi-bar-chart-line-fill", route: "/app/work-workload" }, { label: "Nomina", icon: "bi-cash-stack", route: "/app/company-hr-compensation" }, { label: "Horarios", icon: "bi-calendar3", route: "/app/company-hr-worktime" }, { label: "Salud", icon: "bi-heart-pulse-fill", route: "/app/company-hr-health" }, { label: "Vacaciones", icon: "bi-calendar2-week-fill", route: "/app/company-hr-leaves" }, { label: "Documentos", icon: "bi-folder-check", route: "/app/company-hr-documents" }, { label: "Auditoria", icon: "bi-clipboard-data-fill", route: "/app/company-hr-audit" }] },
+        { label: "Proveedores", sublabel: "Red de compra", routeKey: "proveedores", icon: "bi-truck-front-fill", color: "linear-gradient(145deg,#b5860d,#f0d060)", children: [{ label: "Dashboard", icon: "bi-speedometer2", route: "/app/suppliers-dashboard" }, { label: "CRUD", icon: "bi-table", route: "/app/suppliers-crud" }, { label: "Historial", icon: "bi-clock-history", route: "/app/suppliers-orders-history" }] },
+        { label: "Compania", sublabel: "Configuracion interna", routeKey: "compania", icon: "bi-buildings", color: "linear-gradient(145deg,#4a5568,#9aa5b5)", children: [{ label: "Company Profile", icon: "bi-building", route: "/app/company-profile" }, { label: "User Roles", icon: "bi-people", route: "/app/company-user-roles" }, { label: "Config. Comercial", icon: "bi-sliders", route: "/app/company-commercial-config" }, { label: "Config. Seguimientos", icon: "bi-arrow-repeat", route: "/app/company-followups-config" }, { label: "Config. Proyectos", icon: "bi-kanban", route: "/app/company-projects-config" }] },
+        { label: "Seguridad avanzada", sublabel: "Proteccion", icon: "bi-shield-exclamation", color: "linear-gradient(145deg,#b7791f,#ecc94b)", route: "/app/advanced-security-ip-restrictions" },
+        { label: "Paginas de soporte", sublabel: "Paginas utilitarias", routeKey: "supportive-pages", icon: "bi-life-preserver", color: "linear-gradient(145deg,#b83280,#f687b3)", children: [{ label: "Sign up", icon: "bi-person-plus-fill", route: "/auth/signup" }, { label: "Forgot Password", icon: "bi-key-fill", route: "/auth/forgot-password" }, { label: "Change Password", icon: "bi-shield-lock", route: "/auth/change-password" }, { label: "Maintenance", icon: "bi-tools", route: "/under-construction" }, { label: "Coming soon", icon: "bi-alarm", route: "/coming-soon" }, { label: "Error", icon: "bi-exclamation-octagon-fill", route: "/coming-soon" }, { label: "Onboarding", icon: "bi-person-check", route: "/auth/onboarding" }, { label: "Contact", icon: "bi-chat-dots-fill", route: "/app/contact-us" }, { label: "Timeline", icon: "bi-diagram-3", route: "/app/timeline" }] },
+        { label: "Aplicaciones", sublabel: "Sistema", routeKey: "aplicaciones", icon: "bi-grid-fill", color: "linear-gradient(145deg,#3730a3,#818cf8)", children: [{ label: "Email", icon: "bi-envelope-fill", route: "/app/inbox" }, { label: "Explorer", icon: "bi-folder2-open", route: "/app/explorer" }, { label: "Calendar", icon: "bi-calendar3", route: "/app/calendar" }] },
+        { label: "Perfil profesional", sublabel: "Tu perfil", icon: "bi-person-workspace", color: "linear-gradient(145deg,#0f766e,#2dd4bf)", route: "/app/profile-professional" },
     ];
 
-    open(m: AppModule): void { this.animDir = "fwd"; this.selected = m; }
-    back(): void { this.animDir = "bck"; this.selected = null; }
+    open(m: AppModule): void {
+        // Cada carpeta vive en su propia URL (ej. /app/main-menu/crm) para que el
+        // historial del navegador y el boton atras funcionen de forma nativa.
+        if (m.routeKey) { void this.router.navigate(["/app", "main-menu", m.routeKey]); return; }
+        this.animDir = "fwd"; this.selected = m;
+    }
+    back(): void {
+        if (this.selected?.routeKey || typeof window !== "undefined" && window.history.length > 1) {
+            this.router.navigate(["/app", "main-menu"]);
+            return;
+        }
+        this.animDir = "bck"; this.selected = null;
+    }
 
     onSearch(event: Event): void {
         this.query = (event.target as HTMLInputElement).value;
-        if (!this.query.trim()) {
-            this.globalResults = [];
-            this.isSearchLoading = false;
-        } else {
-            this.isSearchLoading = true;
-        }
+        if (!this.query.trim()) { this.globalResults = []; this.isSearchLoading = false; }
+        else { this.isSearchLoading = true; }
         this.searchSubject$.next(this.query);
     }
 
     clearSearch(): void {
-        this.query = "";
-        this.globalResults = [];
-        this.isSearchLoading = false;
+        this.query = ""; this.globalResults = []; this.isSearchLoading = false;
         this.searchSubject$.next("");
     }
 }

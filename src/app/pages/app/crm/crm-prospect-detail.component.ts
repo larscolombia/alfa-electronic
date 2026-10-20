@@ -105,9 +105,14 @@ type EditableProfileFieldConfig = {
     template: `
         <div class="container-fluid py-3">
             <div class="row gx-3 gx-lg-4 align-items-center page-title">
-                <div class="col mb-3 mb-sm-0">
-                    <h5 class="mb-0">{{ prospect?.nombre || "Prospecto" }}</h5>
-                    <p class="text-secondary small mb-0">Ficha comercial del prospecto.</p>
+                <div class="col mb-3 mb-sm-0 d-flex align-items-start gap-2">
+                    <button class="btn btn-outline-secondary" type="button" (click)="goBack()" data-testid="back-btn">
+                        <i class="bi bi-arrow-left me-1"></i>Volver
+                    </button>
+                    <div>
+                        <h5 class="mb-0">{{ prospect?.nombre || "Prospecto" }}</h5>
+                        <p class="text-secondary small mb-0">Ficha comercial del prospecto.</p>
+                    </div>
                 </div>
             </div>
 
@@ -1030,6 +1035,15 @@ export class CrmProspectDetailComponent {
     timelineItems: TraceabilityItem[] = [];
 
     private readonly cdr = inject(ChangeDetectorRef);
+
+    goBack(): void {
+        if (typeof window !== "undefined" && window.history.length > 1) {
+            window.history.back();
+            return;
+        }
+
+        this.router.navigateByUrl("/app/crm-prospectos");
+    }
 
     constructor(
         private readonly route: ActivatedRoute,

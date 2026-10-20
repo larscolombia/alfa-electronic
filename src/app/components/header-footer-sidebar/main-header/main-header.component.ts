@@ -11,11 +11,6 @@ import { AuthService } from "../../../services/auth.service";
         <!-- Fixed navbar -->
         <nav class="navbar navbar-expand-lg fixed-top">
             <div class="container-fluid">
-                <!-- main sidebar toggle -->
-                <button class="btn btn-link btn-square sidebar-toggler" type="button" (click)="toggleSidebar()">
-                    <i class="sidebar-svg bi bi-list"></i>
-                </button>
-
                 <a class="btn btn-link btn-square btn-icon btn-link-header" routerLink="/app/main-menu" title="Menu principal" aria-label="Menu principal">
                     <i class="bi bi-grid-3x3-gap-fill"></i>
                 </a>
@@ -626,8 +621,6 @@ export class MainHeaderComponent {
     ) { }
 
     ngOnInit() {
-        this.openSidebar();
-
         // dark light mode initial
         this.htmlElement = this.document.querySelector("html");
         this.buttonElement = document.querySelector("#btn-layout-modes-dark-page");
@@ -644,46 +637,6 @@ export class MainHeaderComponent {
             this.renderer.setAttribute(this.htmlElement, "data-bs-theme", "light");
         }
     }
-    @HostListener("window:resize", ["$event"])
-    onResize(event: any) {
-        this.openSidebar();
-    }
-
-    toggleSidebar() {
-        const windowWidth = window.innerWidth;
-        const body = document.body; // or use this.renderer.selectRootElement(document.body)
-
-        if (windowWidth >= 992) {
-            if (body.classList.contains("sidebar-close")) {
-                this.renderer.removeClass(body, "sidebar-close");
-                this.renderer.addClass(body, "sidebar-open");
-            } else {
-                this.renderer.removeClass(body, "sidebar-open");
-                this.renderer.addClass(body, "sidebar-close");
-            }
-        } else {
-            if (body.classList.contains("sidebar-close")) {
-                this.renderer.removeClass(body, "sidebar-close");
-                this.renderer.addClass(body, "sidebar-open");
-            } else {
-                this.renderer.removeClass(body, "sidebar-open");
-                this.renderer.addClass(body, "sidebar-close");
-            }
-        }
-    }
-
-    openSidebar() {
-        const windowWidth = window.innerWidth;
-        const body = document.body;
-        if (windowWidth >= 992) {
-            this.renderer.addClass(body, "sidebar-open");
-            this.renderer.removeClass(body, "sidebar-close");
-        } else {
-            this.renderer.addClass(body, "sidebar-close");
-            this.renderer.removeClass(body, "sidebar-open");
-        }
-    }
-
     toggleDarkMode() {
         if (this.htmlElement && this.buttonElement) {
             if (this.buttonElement.classList.contains("active")) {
