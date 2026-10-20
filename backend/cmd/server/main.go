@@ -1,11 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
@@ -88,15 +86,14 @@ func main() {
 
 	inventoryService := inventory.NewService(db)
 	inventoryService.SetPurchaseLineEditNotifier(func(companyID string, n inventory.PurchaseLineEditNotification) {
-		projectsService.CreateNotification(companyID, projects.Notification{
-			ID:         fmt.Sprintf("notif-%d", time.Now().UnixNano()),
+		if _, err := projectsService.CreateNotification(companyID, projects.Notification{
 			Type:       n.Type,
 			Title:      n.Title,
 			Message:    n.Message,
-			Read:       false,
-			CreatedAt:  time.Now().UTC().Format(time.RFC3339),
 			TargetRole: n.TargetRole,
-		})
+		}); err != nil {
+			log.Printf("notificar edicion de linea de compra: %v", err)
+		}
 	})
 	inventoryHandler := inventory.NewHandler(inventoryService)
 
@@ -109,7 +106,7 @@ func main() {
 	remissionsService := remissions.NewService(db)
 	remissionsHandler := remissions.NewHandler(remissionsService)
 
-	documentationService := docs.NewService()
+	documentationService := docs.NewService(db)
 	documentationHandler := docs.NewHandler(documentationService)
 
 	authService := auth.NewService(auth.Config{

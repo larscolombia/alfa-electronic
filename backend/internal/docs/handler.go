@@ -25,7 +25,10 @@ func (h *Handler) RegisterRoutes(group *echo.Group) {
 
 func (h *Handler) listDocuments(c echo.Context) error {
 	companyID := company.IDFromRequest(c)
-	docs := h.service.ListDocuments(companyID)
+	docs, err := h.service.ListDocuments(companyID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
 	return c.JSON(http.StatusOK, map[string]any{"items": docs})
 }
 
@@ -35,13 +38,19 @@ func (h *Handler) createDocument(c echo.Context) error {
 	if err := c.Bind(&doc); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "cuerpo invalido"})
 	}
-	result := h.service.CreateDocument(companyID, doc)
+	result, err := h.service.CreateDocument(companyID, doc)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
 	return c.JSON(http.StatusCreated, result)
 }
 
 func (h *Handler) listBackups(c echo.Context) error {
 	companyID := company.IDFromRequest(c)
-	backups := h.service.ListBackups(companyID)
+	backups, err := h.service.ListBackups(companyID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
 	return c.JSON(http.StatusOK, map[string]any{"items": backups})
 }
 
@@ -51,14 +60,20 @@ func (h *Handler) createBackup(c echo.Context) error {
 	if err := c.Bind(&backup); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "cuerpo invalido"})
 	}
-	result := h.service.CreateBackup(companyID, backup)
+	result, err := h.service.CreateBackup(companyID, backup)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
 	return c.JSON(http.StatusCreated, result)
 }
 
 func (h *Handler) getBackupForModel(c echo.Context) error {
 	companyID := company.IDFromRequest(c)
 	model := c.Param("model")
-	backup := h.service.GetBackupForModel(companyID, model)
+	backup, err := h.service.GetBackupForModel(companyID, model)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
 	if backup == nil {
 		return c.JSON(http.StatusNotFound, map[string]string{"error": "backup no encontrado"})
 	}

@@ -365,15 +365,33 @@ var defaultSLAConfig = []SLAConfig{
 	{Stage: "listo-entrega", GreenDays: 1, YellowDays: 1},
 }
 
-var slaConfigStore = map[string][]SLAConfig{}
-var notificationStore = map[string][]Notification{}
-var technicalReportStore = map[string][]map[string]any{}
-
-func (s *Service) GetSLAConfig(companyID string) []SLAConfig {
-	if config, ok := slaConfigStore[companyID]; ok {
-		return config
+func (s *Service) GetSLAConfig(companyID string) ([]SLAConfig, error) {
+	rows, err := s.db.Query(
+		`SELECT stage, green_days, yellow_days FROM project_sla_configs
+		 WHERE company_id = $1 ORDER BY position`,
+		strings.TrimSpace(companyID),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("leer configuracion SLA: %w", err)
 	}
-	return defaultSLAConfig
+	defer rows.Close()
+
+	configs := make([]SLAConfig, 0, len(defaultSLAConfig))
+	for rows.Next() {
+		var config SLAConfig
+		if err := rows.Scan(&config.Stage, &config.GreenDays, &config.YellowDays); err != nil {
+			return nil, fmt.Errorf("leer etapa SLA: %w", err)
+		}
+		configs = append(configs, config)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("recorrer configuracion SLA: %w", err)
+	}
+
+	if len(configs) == 0 {
+		return defaultSLAConfig, nil
+	}
+	return configs, nil
 }
 
 func (s *Service) UpdateSLAConfig(companyID string, configs []SLAConfig) error {
@@ -386,39 +404,148 @@ func (s *Service) UpdateSLAConfig(companyID string, configs []SLAConfig) error {
 		normalized = append(normalized, SLAConfig{Stage: stage, GreenDays: config.GreenDays, YellowDays: config.YellowDays})
 	}
 
-	slaConfigStore[companyID] = normalized
+	company := strings.TrimSpace(companyID)
+	tx, err := s.db.Begin()
+	if err != nil {
+		return fmt.Errorf("iniciar transaccion SLA: %w", err)
+	}
+	defer tx.Rollback()
+
+	if _, err := tx.Exec(`DELETE FROM project_sla_configs WHERE company_id = $1`, company); err != nil {
+		return fmt.Errorf("limpiar configuracion SLA: %w", err)
+	}
+
+	for position, config := range normalized {
+		_, err := tx.Exec(
+			`INSERT INTO project_sla_configs (company_id, stage, green_days, yellow_days, position)
+			 VALUES ($1, $2, $3, $4, $5)`,
+			company, config.Stage, config.GreenDays, config.YellowDays, position,
+		)
+		if err != nil {
+			return fmt.Errorf("guardar etapa SLA %q: %w", config.Stage, err)
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("confirmar configuracion SLA: %w", err)
+	}
 	return nil
 }
 
-func (s *Service) ListNotifications(companyID string) []Notification {
-	if notifications, ok := notificationStore[companyID]; ok {
-		return notifications
+func (s *Service) ListNotifications(companyID string) ([]Notification, error) {
+	rows, err := s.db.Query(
+		`SELECT id, type, title, message, read, target_role, created_at
+		 FROM project_notifications WHERE company_id = $1 ORDER BY created_at DESC`,
+		strings.TrimSpace(companyID),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("listar notificaciones: %w", err)
 	}
-	return []Notification{}
-}
+	defer rows.Close()
 
-func (s *Service) CreateNotification(companyID string, n Notification) {
-	notificationStore[companyID] = append([]Notification{n}, notificationStore[companyID]...)
-}
-
-func (s *Service) MarkNotificationRead(companyID string, notificationID string) {
-	notifications := notificationStore[companyID]
-	for i := range notifications {
-		if notifications[i].ID == notificationID {
-			notifications[i].Read = true
-			break
+	notifications := []Notification{}
+	for rows.Next() {
+		var n Notification
+		var createdAt time.Time
+		if err := rows.Scan(&n.ID, &n.Type, &n.Title, &n.Message, &n.Read, &n.TargetRole, &createdAt); err != nil {
+			return nil, fmt.Errorf("leer notificacion: %w", err)
 		}
+		n.CreatedAt = createdAt.UTC().Format(time.RFC3339)
+		notifications = append(notifications, n)
 	}
-	notificationStore[companyID] = notifications
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("recorrer notificaciones: %w", err)
+	}
+
+	return notifications, nil
 }
 
-func (s *Service) ListTechnicalReports(companyID string) []map[string]any {
-	return technicalReportStore[companyID]
+func (s *Service) CreateNotification(companyID string, n Notification) (Notification, error) {
+	if strings.TrimSpace(n.ID) == "" {
+		n.ID = fmt.Sprintf("notif-%d", time.Now().UnixNano())
+	}
+	n.Read = false
+
+	var createdAt time.Time
+	err := s.db.QueryRow(
+		`INSERT INTO project_notifications (company_id, id, type, title, message, read, target_role)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7)
+		 RETURNING created_at`,
+		strings.TrimSpace(companyID), n.ID, n.Type, n.Title, n.Message, n.Read, n.TargetRole,
+	).Scan(&createdAt)
+	if err != nil {
+		return Notification{}, fmt.Errorf("crear notificacion: %w", err)
+	}
+	n.CreatedAt = createdAt.UTC().Format(time.RFC3339)
+
+	return n, nil
 }
 
-func (s *Service) CreateTechnicalReport(companyID string, data map[string]any) map[string]any {
+func (s *Service) MarkNotificationRead(companyID string, notificationID string) error {
+	_, err := s.db.Exec(
+		`UPDATE project_notifications SET read = TRUE WHERE company_id = $1 AND id = $2`,
+		strings.TrimSpace(companyID), strings.TrimSpace(notificationID),
+	)
+	if err != nil {
+		return fmt.Errorf("marcar notificacion como leida: %w", err)
+	}
+	return nil
+}
+
+func (s *Service) ListTechnicalReports(companyID string) ([]map[string]any, error) {
+	rows, err := s.db.Query(
+		`SELECT payload_json FROM project_technical_reports
+		 WHERE company_id = $1 ORDER BY created_at DESC`,
+		strings.TrimSpace(companyID),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("listar informes tecnicos: %w", err)
+	}
+	defer rows.Close()
+
+	reports := []map[string]any{}
+	for rows.Next() {
+		var payload []byte
+		if err := rows.Scan(&payload); err != nil {
+			return nil, fmt.Errorf("leer informe tecnico: %w", err)
+		}
+		var report map[string]any
+		if err := json.Unmarshal(payload, &report); err != nil {
+			return nil, fmt.Errorf("decodificar informe tecnico: %w", err)
+		}
+		reports = append(reports, report)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("recorrer informes tecnicos: %w", err)
+	}
+
+	return reports, nil
+}
+
+func (s *Service) CreateTechnicalReport(companyID string, data map[string]any) (map[string]any, error) {
+	if data == nil {
+		data = map[string]any{}
+	}
 	data["id"] = fmt.Sprintf("report-%d", time.Now().UnixNano())
 	data["createdAt"] = time.Now().UTC().Format(time.RFC3339)
-	technicalReportStore[companyID] = append([]map[string]any{data}, technicalReportStore[companyID]...)
-	return data
+
+	payload, err := json.Marshal(data)
+	if err != nil {
+		return nil, fmt.Errorf("serializar informe tecnico: %w", err)
+	}
+
+	projectID, _ := data["projectId"].(string)
+	createdBy, _ := data["createdBy"].(string)
+
+	_, err = s.db.Exec(
+		`INSERT INTO project_technical_reports (company_id, id, project_id, payload_json, created_by)
+		 VALUES ($1, $2, $3, $4, $5)`,
+		strings.TrimSpace(companyID), data["id"], strings.TrimSpace(projectID), payload, strings.TrimSpace(createdBy),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("crear informe tecnico: %w", err)
+	}
+
+	return data, nil
 }
+

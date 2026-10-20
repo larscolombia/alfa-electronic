@@ -2,11 +2,9 @@ package projects
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/labstack/echo/v4"
 	"pika.software.net.co/backend/internal/platform/company"
@@ -161,7 +159,10 @@ func (h *Handler) closeDiagnosis(c echo.Context) error {
 
 func (h *Handler) getSLAConfig(c echo.Context) error {
 	companyID := company.IDFromRequest(c)
-	config := h.service.GetSLAConfig(companyID)
+	config, err := h.service.GetSLAConfig(companyID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
 	return c.JSON(http.StatusOK, config)
 }
 
@@ -172,14 +173,20 @@ func (h *Handler) updateSLAConfig(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "cuerpo invalido"})
 	}
 	if err := h.service.UpdateSLAConfig(companyID, configs); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+		if errors.Is(err, errSLAConfigInvalid) {
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+		}
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 	return c.JSON(http.StatusOK, configs)
 }
 
 func (h *Handler) listNotifications(c echo.Context) error {
 	companyID := company.IDFromRequest(c)
-	notifications := h.service.ListNotifications(companyID)
+	notifications, err := h.service.ListNotifications(companyID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
 	return c.JSON(http.StatusOK, map[string]any{"items": notifications})
 }
 
@@ -189,23 +196,28 @@ func (h *Handler) createNotification(c echo.Context) error {
 	if err := c.Bind(&n); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "cuerpo invalido"})
 	}
-	n.ID = fmt.Sprintf("notif-%d", time.Now().UnixNano())
-	n.CreatedAt = time.Now().UTC().Format(time.RFC3339)
-	n.Read = false
-	h.service.CreateNotification(companyID, n)
-	return c.JSON(http.StatusCreated, n)
+	created, err := h.service.CreateNotification(companyID, n)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+	return c.JSON(http.StatusCreated, created)
 }
 
 func (h *Handler) markNotificationRead(c echo.Context) error {
 	companyID := company.IDFromRequest(c)
 	notificationID := c.Param("notificationID")
-	h.service.MarkNotificationRead(companyID, notificationID)
+	if err := h.service.MarkNotificationRead(companyID, notificationID); err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
 	return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
 }
 
 func (h *Handler) listTechnicalReports(c echo.Context) error {
 	companyID := company.IDFromRequest(c)
-	reports := h.service.ListTechnicalReports(companyID)
+	reports, err := h.service.ListTechnicalReports(companyID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
 	return c.JSON(http.StatusOK, map[string]any{"items": reports})
 }
 
@@ -215,7 +227,10 @@ func (h *Handler) createTechnicalReport(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "cuerpo invalido"})
 	}
-	report := h.service.CreateTechnicalReport(companyID, req)
+	report, err := h.service.CreateTechnicalReport(companyID, req)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
 	return c.JSON(http.StatusCreated, report)
 }
 
