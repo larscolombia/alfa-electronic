@@ -2,6 +2,7 @@ package database
 
 func migrationStatements() []string {
 	statements := make([]string, 0, 64)
+	statements = append(statements, migrationStatementsUsers()...)
 	statements = append(statements, migrationStatementsACLAndSecurity()...)
 	statements = append(statements, migrationStatementsHR()...)
 	statements = append(statements, migrationStatementsCRMCatalogsAndProspects()...)

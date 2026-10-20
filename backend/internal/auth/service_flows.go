@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"strings"
 
@@ -64,20 +65,81 @@ func (s *Service) Signup(ctx context.Context, companyID string, req SignupReques
 		Phone:       normalized.Phone,
 	}
 
-	err = s.db.QueryRowContext(ctx, `
+	// Signup y alta de usuario en la misma transaccion: un registro sin cuenta en
+	// users no podria iniciar sesion (el login solo consulta users).
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return SignupRecord{}, err
+	}
+
+	err = tx.QueryRowContext(ctx, `
 INSERT INTO auth_signup_submissions (
 	company_id, id, first_name, last_name, email, country_code, phone, password_hash, signup_type, created_at, updated_at
 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, '', NOW(), NOW())
 RETURNING created_at, updated_at;
 `, normalizedCompanyID, record.ID, record.FirstName, record.LastName, record.Email, record.CountryCode, record.Phone, string(hashedPassword)).Scan(&record.CreatedAt, &record.UpdatedAt)
 	if err != nil {
+		tx.Rollback()
 		if isDuplicateSignupEmailError(err) {
 			return SignupRecord{}, errSignupEmailExists
 		}
 		return SignupRecord{}, err
 	}
 
+	if err := s.createUserFromSignupTx(ctx, tx, normalizedCompanyID, record, string(hashedPassword)); err != nil {
+		tx.Rollback()
+		if errors.Is(err, errUserEmailExists) {
+			return SignupRecord{}, errSignupEmailExists
+		}
+		return SignupRecord{}, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return SignupRecord{}, err
+	}
+
 	return record, nil
+}
+
+// createUserFromSignupTx crea la cuenta de login del registro.
+//
+// El cliente NUNCA elige el rol: aceptarlo aqui reabriria la escalada de
+// privilegios que se acabo de cerrar (cualquier navegador podria registrarse como
+// admin). Las dos unicas posibilidades son del servidor:
+//
+//   - Bootstrap: si la tabla users esta completamente vacia, el primer registro
+//     nace con el rol admin configurado (AUTH_ADMIN_ROLE). Es la red de seguridad
+//     contra el lockout del dueño en una instalacion nueva donde la cuenta admin
+//     del entorno no llego a sembrarse; sin ella nadie podria entrar a crear
+//     usuarios.
+//   - Normal: en cuanto existe al menos un usuario (en la practica siempre, porque
+//     NewService siembra el admin del entorno al arrancar), el registro recibe el
+//     rol NO privilegiado de AUTH_SIGNUP_ROLE. Si ese rol no existe en acl_roles,
+//     el middleware ACL no le dara permisos: falla cerrado, nunca hacia arriba.
+func (s *Service) createUserFromSignupTx(ctx context.Context, tx *sql.Tx, companyID string, record SignupRecord, passwordHash string) error {
+	var hasUsers bool
+	if err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM users);`).Scan(&hasUsers); err != nil {
+		return err
+	}
+
+	role := s.signupRole
+	if !hasUsers {
+		role = s.adminRole
+	}
+
+	name := strings.TrimSpace(record.FirstName + " " + record.LastName)
+
+	if _, err := tx.ExecContext(ctx, `
+INSERT INTO users (id, company_id, email, password_hash, name, role, is_active, created_at, updated_at)
+VALUES ($1, $2, $3, $4, $5, $6, true, NOW(), NOW());
+`, uuid.NewString(), companyID, record.Email, passwordHash, name, role); err != nil {
+		if isDuplicateUserEmailError(err) {
+			return errUserEmailExists
+		}
+		return err
+	}
+
+	return nil
 }
 
 func (s *Service) UpdateSignupSuccess(ctx context.Context, companyID, signupID string, req SignupSuccessRequest) (SignupRecord, error) {

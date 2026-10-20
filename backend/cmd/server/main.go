@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
@@ -109,14 +110,30 @@ func main() {
 	documentationService := docs.NewService(db)
 	documentationHandler := docs.NewHandler(documentationService)
 
-	authService := auth.NewService(auth.Config{
-		DB:            db,
-		JWTSecret:     os.Getenv("JWT_SECRET"),
-		AdminEmail:    os.Getenv("AUTH_ADMIN_EMAIL"),
-		AdminPassword: os.Getenv("AUTH_ADMIN_PASSWORD"),
-		AdminName:     os.Getenv("AUTH_ADMIN_NAME"),
-		AdminRole:     os.Getenv("AUTH_ADMIN_ROLE"),
+	// Fase 2b: identidad de usuario real. NewService falla si no hay JWT_SECRET
+	// (se elimino el secreto de desarrollo por defecto) y siembra la cuenta admin
+	// del entorno solo si ese email no existe todavia.
+	authService, err := auth.NewService(auth.Config{
+		DB:             db,
+		JWTSecret:      os.Getenv("JWT_SECRET"),
+		AdminEmail:     os.Getenv("AUTH_ADMIN_EMAIL"),
+		AdminPassword:  os.Getenv("AUTH_ADMIN_PASSWORD"),
+		AdminName:      os.Getenv("AUTH_ADMIN_NAME"),
+		AdminRole:      os.Getenv("AUTH_ADMIN_ROLE"),
+		AdminCompanyID: os.Getenv("AUTH_ADMIN_COMPANY_ID"),
+		SignupRole:     os.Getenv("AUTH_SIGNUP_ROLE"),
 	})
+	if err != nil {
+		log.Fatalf("auth service error: %v", err)
+	}
+	// El ACL siembra sus roles por defecto de forma perezosa; auth los necesita
+	// asegurados antes de validar el rol de un usuario nuevo. Se inyecta aqui para
+	// que auth no importe el paquete acl.
+	authService.SetRoleReadiness(func(ctx context.Context, companyID string) error {
+		_, err := aclService.ListRoles(companyID)
+		return err
+	})
+
 	securityService := security.NewService(db)
 	securityHandler := security.NewHandler(securityService)
 	authHandler := auth.NewHandler(authService, securityService)
@@ -137,8 +154,14 @@ func main() {
 	// (login/onboarding no pueden requerir permisos).
 	requireAdminModule := aclService.RequireModule("administracion")
 
+	// /users lleva dos handlers sobre el mismo prefijo y el mismo guard admin-only:
+	// el de acl (PATCH /soft-delete, eventos) y el de auth (GET/POST de usuarios
+	// reales con rol elegido por el admin, Fase 2b). Sin rutas en conflicto.
+	userRoutes := protectedAPI.Group("/users", requireAdminModule)
+	aclHandler.RegisterUserRoutes(userRoutes)
+	authHandler.RegisterUserRoutes(userRoutes)
+
 	aclHandler.RegisterRoutes(protectedAPI.Group("/acl", requireAdminModule))
-	aclHandler.RegisterUserRoutes(protectedAPI.Group("/users", requireAdminModule))
 	hrHandler.RegisterRoutes(protectedAPI.Group("/hr", requireAdminModule))
 	calendarHandler.RegisterRoutes(protectedAPI.Group("/calendar"))
 	crmHandler.RegisterRoutes(protectedAPI.Group("/crm"))

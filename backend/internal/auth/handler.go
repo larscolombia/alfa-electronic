@@ -36,7 +36,7 @@ func (h *Handler) login(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request body"})
 	}
 
-	response, err := h.service.Authenticate(req)
+	response, err := h.service.Authenticate(c.Request().Context(), req)
 	if err != nil {
 		switch {
 		case errors.Is(err, errInvalidPayload):
