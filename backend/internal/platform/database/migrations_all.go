@@ -4,6 +4,7 @@ func migrationStatements() []string {
 	statements := make([]string, 0, 64)
 	statements = append(statements, migrationStatementsUsers()...)
 	statements = append(statements, migrationStatementsACLAndSecurity()...)
+	statements = append(statements, migrationStatementsACLHardening()...)
 	statements = append(statements, migrationStatementsHR()...)
 	statements = append(statements, migrationStatementsCRMCatalogsAndProspects()...)
 	statements = append(statements, migrationStatementsCRMEquipmentAndQuotes()...)
