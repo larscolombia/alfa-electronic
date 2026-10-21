@@ -10,10 +10,12 @@ import {
     EquipmentLocationRecord,
     EquipmentServiceTypeRecord,
     IndustrialEquipmentModelRecord,
+    ensureEquipmentCatalogLoaded,
     getEquipmentFamilyName,
     getEquipmentLocations,
     getEquipmentServiceTypes,
     getIndustrialEquipmentModels,
+    subscribeEquipmentCatalog,
 } from "../company/company-equipment-config.store";
 import { buildEvidencePhotosFromFiles } from "./crm-prospect-equipment-evidence.util";
 import {
@@ -1541,9 +1543,22 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
     readonly industrialCostQuestionKey = "costAboveTwoMillion";
     readonly maxVisibleItemWarnings = 4;
     readonly requiredFaceEvidenceTypes = REQUIRED_FACE_EVIDENCE_TYPES;
-    readonly equipmentModels: IndustrialEquipmentModelRecord[] = getIndustrialEquipmentModels();
-    readonly equipmentServiceTypes: EquipmentServiceTypeRecord[] = getEquipmentServiceTypes();
-    readonly equipmentLocations: EquipmentLocationRecord[] = getEquipmentLocations();
+    /**
+     * Fase 6: el catálogo viene del servidor, así que ya no puede resolverse una
+     * sola vez en la inicialización de campos (quedaría vacío hasta que llegue la
+     * respuesta). Son getters sobre la caché del store; la suscripción del
+     * constructor repinta cuando el catálogo aterriza.
+     */
+    get equipmentModels(): IndustrialEquipmentModelRecord[] {
+        return getIndustrialEquipmentModels();
+    }
+    get equipmentServiceTypes(): EquipmentServiceTypeRecord[] {
+        return getEquipmentServiceTypes();
+    }
+    get equipmentLocations(): EquipmentLocationRecord[] {
+        return getEquipmentLocations();
+    }
+    private readonly catalogUnsubscribe: () => void;
     technicianCatalogLoading = false;
     techniciansAll: EquipmentTechnicianOption[] = [];
     techniciansBySpeciality = new Map<string, EquipmentTechnicianOption[]>();
@@ -1569,7 +1584,13 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
         private readonly changeDetectorRef: ChangeDetectorRef,
         // Fase 5c: acuse de recepción por correo.
         private readonly emailsApi: EmailsApiService,
-    ) { }
+    ) {
+        // Fase 6: el catálogo de equipos (familias, modelos industriales, tipos de
+        // servicio y ubicaciones) viene del servidor. Sin esto los selectores del
+        // modal quedarían vacíos hasta una recarga.
+        void ensureEquipmentCatalogLoaded();
+        this.catalogUnsubscribe = subscribeEquipmentCatalog(() => this.changeDetectorRef.detectChanges());
+    }
 
     get currentWizardStep(): WizardStepDefinition {
         return this.wizardSteps[this.currentStepIndex];
@@ -1651,6 +1672,7 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
     }
 
     ngOnDestroy(): void {
+        this.catalogUnsubscribe();
         this.stopDraftWatch();
         this.stopScannerSession();
     }

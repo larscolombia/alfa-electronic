@@ -30,5 +30,6 @@ func migrationStatements() []string {
 	statements = append(statements, migrationStatementsFinance5b()...)
 	statements = append(statements, migrationStatementsEmails5c()...)
 	statements = append(statements, migrationStatementsConsecutives()...)
+	statements = append(statements, migrationStatementsEquipmentCatalog()...)
 	return statements
 }

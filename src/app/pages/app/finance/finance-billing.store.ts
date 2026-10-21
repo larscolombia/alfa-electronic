@@ -1,4 +1,4 @@
-import { getEquipmentFamilyName, getEquipmentServiceTypes, getIndustrialEquipmentModels } from "../company/company-equipment-config.store";
+import { ensureEquipmentCatalogLoaded, getEquipmentFamilyName, getEquipmentServiceTypes, getIndustrialEquipmentModels } from "../company/company-equipment-config.store";
 import { buildCommercialSeriesPrefix } from "../company/company-commercial-settings.store";
 import { CrmClientRecord, getCrmClients } from "../crm/crm-clients.store";
 import { CRM_PROSPECTS_MOCK, ProspectRecord } from "../crm/crm-prospects.store";
@@ -658,9 +658,14 @@ export class FinanceBillingStore {
 
     static async reload(): Promise<void> {
         try {
+            // Fase 6: el catálogo de facturación se construye a partir de los
+            // maestros de equipos (tipos de servicio y modelos industriales), que
+            // ahora vienen del servidor. Hay que esperarlo acá, o getCatalog()
+            // devolvería una lista vacía en el primer render.
             const [invoicesResponse, recurringResponse] = await Promise.all([
                 financeStoreFetch<{ items: BillingInvoice[] }>("/api/v1/finance/invoices"),
                 financeStoreFetch<{ items: BillingRecurringInvoice[] }>("/api/v1/finance/recurring-invoices"),
+                ensureEquipmentCatalogLoaded(),
             ]);
             invoicesCache = sortByCreatedAtDesc(invoicesResponse.items ?? []);
             recurringCache = sortByCreatedAtDesc(recurringResponse.items ?? []);

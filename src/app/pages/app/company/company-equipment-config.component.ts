@@ -1,5 +1,5 @@
 import { CommonModule } from "@angular/common";
-import { Component } from "@angular/core";
+import { Component, OnDestroy } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { RouterLink } from "@angular/router";
 
@@ -8,15 +8,22 @@ import {
     EquipmentLocationRecord,
     EquipmentServiceTypeRecord,
     IndustrialEquipmentModelRecord,
+    deleteEquipmentFamily,
+    deleteEquipmentLocation,
+    deleteEquipmentServiceType,
+    deleteIndustrialEquipmentModel,
+    ensureEquipmentCatalogLoaded,
+    getEquipmentCatalogError,
     getEquipmentLocations,
     getEquipmentFamilies,
     getEquipmentFamilyName,
     getIndustrialEquipmentModels,
     getEquipmentServiceTypes,
-    saveEquipmentLocations,
-    saveEquipmentFamilies,
-    saveEquipmentServiceTypes,
-    saveIndustrialEquipmentModels,
+    subscribeEquipmentCatalog,
+    upsertEquipmentFamily,
+    upsertEquipmentLocation,
+    upsertEquipmentServiceType,
+    upsertIndustrialEquipmentModel,
 } from "./company-equipment-config.store";
 import { countEquipmentItemsByLocation, reassignProspectEquipmentLocation } from "../crm/crm-prospect-equipment.store";
 
@@ -485,11 +492,67 @@ interface LocationDraft {
         }
     `,
 })
-export class CompanyEquipmentConfigComponent {
+export class CompanyEquipmentConfigComponent implements OnDestroy {
     families: EquipmentFamilyRecord[] = getEquipmentFamilies();
     models: IndustrialEquipmentModelRecord[] = getIndustrialEquipmentModels();
     serviceTypes: EquipmentServiceTypeRecord[] = getEquipmentServiceTypes();
     locations: EquipmentLocationRecord[] = getEquipmentLocations();
+
+    /** True mientras hay una escritura en vuelo contra el servidor. */
+    isSaving = false;
+
+    private readonly catalogUnsubscribe: () => void;
+
+    constructor() {
+        // Fase 6: el catálogo viene del servidor. La primera lectura dispara la
+        // carga y esta suscripción repinta cuando llega (o cuando otra pestaña
+        // lo modifica).
+        void ensureEquipmentCatalogLoaded();
+        this.catalogUnsubscribe = subscribeEquipmentCatalog(() => this.syncFromStore());
+        this.syncFromStore();
+    }
+
+    ngOnDestroy(): void {
+        this.catalogUnsubscribe();
+    }
+
+    /** Vuelca la caché del store a las listas locales que pinta la plantilla. */
+    private syncFromStore(): void {
+        this.families = getEquipmentFamilies();
+        this.models = getIndustrialEquipmentModels();
+        this.serviceTypes = getEquipmentServiceTypes();
+        this.locations = getEquipmentLocations();
+
+        const catalogError = getEquipmentCatalogError();
+        if (catalogError) {
+            // Sin catálogo no se puede editar nada: se dice en vez de mostrar
+            // listas vacías como si la empresa simplemente no tuviera modelos.
+            this.formError = `No se pudo cargar el catalogo de equipos del servidor: ${catalogError}`;
+        }
+    }
+
+    /**
+     * Envuelve una escritura en el servidor: marca isSaving, y si falla muestra
+     * el motivo real y devuelve false para que el llamador no cierre el
+     * formulario ni anuncie un éxito que no ocurrió.
+     */
+    private async persist(action: () => Promise<unknown>, successMessage: string): Promise<boolean> {
+        this.formError = "";
+        this.successMessage = "";
+        this.isSaving = true;
+        try {
+            await action();
+            this.successMessage = successMessage;
+            return true;
+        } catch (error) {
+            this.formError = error instanceof Error && error.message.trim()
+                ? error.message
+                : "No se pudo guardar en el servidor.";
+            return false;
+        } finally {
+            this.isSaving = false;
+        }
+    }
 
     searchTerm = "";
     selectedFamilyId = "";
@@ -582,7 +645,7 @@ export class CompanyEquipmentConfigComponent {
         this.clearMessages();
     }
 
-    saveFamily(): void {
+    async saveFamily(): Promise<void> {
         const name = this.familyDraft.name.trim();
         const description = this.familyDraft.description.trim();
 
@@ -599,31 +662,34 @@ export class CompanyEquipmentConfigComponent {
             return;
         }
 
+        const isEditing = Boolean(this.editingFamilyId);
         const nextFamily: EquipmentFamilyRecord = {
             id: this.editingFamilyId ?? this.buildId("family"),
             name,
             description,
             active: this.familyDraft.active,
-            updatedAt: this.buildTimestamp(),
+            // La marca la fija el servidor (updated_at = NOW()); lo que se envíe
+            // acá se ignora y syncFromStore() repinta con el valor real.
+            updatedAt: "",
         };
 
-        this.families = [nextFamily, ...this.families.filter((family) => family.id !== nextFamily.id)];
-        saveEquipmentFamilies(this.families);
-        this.successMessage = this.editingFamilyId ? "Familia actualizada." : "Familia creada.";
-        this.cancelFamilyForm();
+        const saved = await this.persist(
+            () => upsertEquipmentFamily(nextFamily),
+            isEditing ? "Familia actualizada." : "Familia creada.",
+        );
+        if (saved) {
+            this.cancelFamilyForm();
+        }
     }
 
-    removeFamily(familyId: string): void {
+    async removeFamily(familyId: string): Promise<void> {
         if (this.models.some((model) => model.familyId === familyId)) {
             this.formError = "No puedes eliminar una familia que aún tiene modelos asociados.";
             this.successMessage = "";
             return;
         }
 
-        this.families = this.families.filter((family) => family.id !== familyId);
-        saveEquipmentFamilies(this.families);
-        this.successMessage = "Familia eliminada.";
-        this.formError = "";
+        await this.persist(() => deleteEquipmentFamily(familyId), "Familia eliminada.");
     }
 
     cancelFamilyForm(): void {
@@ -655,7 +721,7 @@ export class CompanyEquipmentConfigComponent {
         this.clearMessages();
     }
 
-    saveServiceType(): void {
+    async saveServiceType(): Promise<void> {
         const name = this.serviceTypeDraft.name.trim();
         const description = this.serviceTypeDraft.description.trim();
 
@@ -672,25 +738,26 @@ export class CompanyEquipmentConfigComponent {
             return;
         }
 
+        const isEditing = Boolean(this.editingServiceTypeId);
         const nextServiceType: EquipmentServiceTypeRecord = {
             id: this.editingServiceTypeId ?? this.buildId("service-type"),
             name,
             description,
             active: this.serviceTypeDraft.active,
-            updatedAt: this.buildTimestamp(),
+            updatedAt: "",
         };
 
-        this.serviceTypes = [nextServiceType, ...this.serviceTypes.filter((serviceType) => serviceType.id !== nextServiceType.id)];
-        saveEquipmentServiceTypes(this.serviceTypes);
-        this.successMessage = this.editingServiceTypeId ? "Tipo de servicio actualizado." : "Tipo de servicio creado.";
-        this.cancelServiceTypeForm();
+        const saved = await this.persist(
+            () => upsertEquipmentServiceType(nextServiceType),
+            isEditing ? "Tipo de servicio actualizado." : "Tipo de servicio creado.",
+        );
+        if (saved) {
+            this.cancelServiceTypeForm();
+        }
     }
 
-    removeServiceType(serviceTypeId: string): void {
-        this.serviceTypes = this.serviceTypes.filter((serviceType) => serviceType.id !== serviceTypeId);
-        saveEquipmentServiceTypes(this.serviceTypes);
-        this.successMessage = "Tipo de servicio eliminado.";
-        this.formError = "";
+    async removeServiceType(serviceTypeId: string): Promise<void> {
+        await this.persist(() => deleteEquipmentServiceType(serviceTypeId), "Tipo de servicio eliminado.");
     }
 
     cancelServiceTypeForm(): void {
@@ -722,7 +789,7 @@ export class CompanyEquipmentConfigComponent {
         this.clearMessages();
     }
 
-    saveLocation(): void {
+    async saveLocation(): Promise<void> {
         const name = this.locationDraft.name.trim();
         const description = this.locationDraft.description.trim();
 
@@ -739,21 +806,26 @@ export class CompanyEquipmentConfigComponent {
             return;
         }
 
+        const isEditing = Boolean(this.editingLocationId);
         const nextLocation: EquipmentLocationRecord = {
             id: this.editingLocationId ?? this.buildId("location"),
             name,
             description,
             active: this.locationDraft.active,
-            updatedAt: this.buildTimestamp(),
+            updatedAt: "",
         };
 
-        if (this.editingLocationId) {
-            reassignProspectEquipmentLocation(nextLocation.id, { id: nextLocation.id, name: nextLocation.name });
+        const saved = await this.persist(
+            () => upsertEquipmentLocation(nextLocation),
+            isEditing ? "Ubicación actualizada." : "Ubicación creada.",
+        );
+        if (!saved) {
+            return;
         }
 
-        this.locations = [nextLocation, ...this.locations.filter((location) => location.id !== nextLocation.id)];
-        saveEquipmentLocations(this.locations);
-        this.successMessage = this.editingLocationId ? "Ubicación actualizada." : "Ubicación creada.";
+        if (isEditing) {
+            reassignProspectEquipmentLocation(nextLocation.id, { id: nextLocation.id, name: nextLocation.name });
+        }
         this.cancelLocationForm();
     }
 
@@ -785,7 +857,7 @@ export class CompanyEquipmentConfigComponent {
         this.locationDeleteError = "";
     }
 
-    confirmDeleteLocation(): void {
+    async confirmDeleteLocation(): Promise<void> {
         this.locationDeleteError = "";
 
         const locationToDelete = this.locationToDelete;
@@ -799,12 +871,18 @@ export class CompanyEquipmentConfigComponent {
             return;
         }
 
+        // Primero se reasignan los equipos y después se borra la ubicación: si el
+        // borrado falla, los equipos ya apuntan a una ubicación válida en vez de
+        // quedar colgando de un id inexistente.
         reassignProspectEquipmentLocation(locationToDelete.id, { id: targetLocation.id, name: targetLocation.name });
-        this.locations = this.locations.filter((location) => location.id !== locationToDelete.id);
-        saveEquipmentLocations(this.locations);
 
-        this.successMessage = `Ubicación ${locationToDelete.name} eliminada y equipos reasignados a ${targetLocation.name}.`;
-        this.closeDeleteLocationModal();
+        const deleted = await this.persist(
+            () => deleteEquipmentLocation(locationToDelete.id),
+            `Ubicación ${locationToDelete.name} eliminada y equipos reasignados a ${targetLocation.name}.`,
+        );
+        if (deleted) {
+            this.closeDeleteLocationModal();
+        }
     }
 
     openCreateModelForm(): void {
@@ -834,7 +912,7 @@ export class CompanyEquipmentConfigComponent {
         this.clearMessages();
     }
 
-    saveModel(): void {
+    async saveModel(): Promise<void> {
         const familyId = this.modelDraft.familyId.trim();
         const brand = this.modelDraft.brand.trim();
         const type = this.modelDraft.type.trim();
@@ -859,6 +937,7 @@ export class CompanyEquipmentConfigComponent {
             return;
         }
 
+        const isEditing = Boolean(this.editingModelId);
         const nextModel: IndustrialEquipmentModelRecord = {
             id: this.editingModelId ?? this.buildId("model"),
             familyId,
@@ -868,20 +947,20 @@ export class CompanyEquipmentConfigComponent {
             notes,
             isIndustrial: this.modelDraft.isIndustrial,
             active: this.modelDraft.active,
-            updatedAt: this.buildTimestamp(),
+            updatedAt: "",
         };
 
-        this.models = [nextModel, ...this.models.filter((model) => model.id !== nextModel.id)];
-        saveIndustrialEquipmentModels(this.models);
-        this.successMessage = this.editingModelId ? "Modelo actualizado." : "Modelo creado.";
-        this.cancelModelForm();
+        const saved = await this.persist(
+            () => upsertIndustrialEquipmentModel(nextModel),
+            isEditing ? "Modelo actualizado." : "Modelo creado.",
+        );
+        if (saved) {
+            this.cancelModelForm();
+        }
     }
 
-    removeModel(modelId: string): void {
-        this.models = this.models.filter((model) => model.id !== modelId);
-        saveIndustrialEquipmentModels(this.models);
-        this.successMessage = "Modelo eliminado.";
-        this.formError = "";
+    async removeModel(modelId: string): Promise<void> {
+        await this.persist(() => deleteIndustrialEquipmentModel(modelId), "Modelo eliminado.");
     }
 
     cancelModelForm(): void {
@@ -951,15 +1030,5 @@ export class CompanyEquipmentConfigComponent {
 
     private buildId(prefix: string): string {
         return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    }
-
-    private buildTimestamp(): string {
-        const now = new Date();
-        const day = String(now.getDate()).padStart(2, "0");
-        const month = String(now.getMonth() + 1).padStart(2, "0");
-        const year = now.getFullYear();
-        const hours = String(now.getHours()).padStart(2, "0");
-        const minutes = String(now.getMinutes()).padStart(2, "0");
-        return `${day}/${month}/${year} ${hours}:${minutes}`;
     }
 }

@@ -168,6 +168,14 @@ export const INTERNAL_ROUTES: Routes = [
                 loadComponent: () => import("../../pages/app/company/company-projects-config.component").then((m) => m.CompanyProjectsConfigComponent),
             },
             {
+                // Fase 6 (ítems 1-2): el maestro de familias/modelos/tipos de
+                // servicio/ubicaciones existía pero NO tenía ruta registrada, así
+                // que el selector "Modelo industrial" de recepción sólo podía
+                // mostrar los 3 modelos demo hardcodeados.
+                path: "company-equipment-config",
+                loadComponent: () => import("../../pages/app/company/company-equipment-config.component").then((m) => m.CompanyEquipmentConfigComponent),
+            },
+            {
                 path: "advanced-security-ip-restrictions",
                 loadComponent: () => import("../../pages/app/security/advanced-security-ip-restrictions.component").then((m) => m.AdvancedSecurityIpRestrictionsComponent),
             },

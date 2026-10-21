@@ -335,7 +335,12 @@ const MAX_GENERATED_BY_LENGTH = 140;
 })
 export class FinanceRecurringInvoiceCreateComponent implements OnDestroy {
     readonly clients = FinanceBillingStore.getClients();
-    readonly catalog = FinanceBillingStore.getCatalog();
+    // Fase 6: el catálogo se construye desde los maestros de equipos, que ahora
+    // vienen del servidor. Como getter (no como campo) se re-lee cuando la carga
+    // termina; capturado una sola vez quedaría vacío.
+    get catalog() {
+        return FinanceBillingStore.getCatalog();
+    }
     readonly taxOptions = FinanceBillingStore.getTaxOptions();
     readonly currencyOptions = FinanceBillingStore.getCurrencyOptions();
     readonly taxCalculationOptions = FinanceBillingStore.getTaxCalculationOptions();

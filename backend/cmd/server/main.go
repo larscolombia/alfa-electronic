@@ -16,6 +16,7 @@ import (
 	crmequipment "pika.software.net.co/backend/internal/crm/equipment"
 	crmquotes "pika.software.net.co/backend/internal/crm/quotes"
 	"pika.software.net.co/backend/internal/docs"
+	equipmentcatalog "pika.software.net.co/backend/internal/equipmentcatalog"
 	"pika.software.net.co/backend/internal/finance"
 	"pika.software.net.co/backend/internal/hr"
 	"pika.software.net.co/backend/internal/inventory"
@@ -137,6 +138,12 @@ func main() {
 	worktimeService := worktime.NewService(db)
 	worktimeHandler := worktime.NewHandler(worktimeService)
 
+	// Fase 6 (items 1-2): maestros de equipos por empresa (familias, modelos
+	// industriales, tipos de servicio y ubicaciones). Antes vivian en localStorage
+	// con valores hardcodeados y el CRUD que los edita no tenia ruta registrada.
+	equipmentCatalogService := equipmentcatalog.NewService(db)
+	equipmentCatalogHandler := equipmentcatalog.NewHandler(equipmentCatalogService)
+
 	// Fase 2b: identidad de usuario real. NewService falla si no hay JWT_SECRET
 	// (se elimino el secreto de desarrollo por defecto) y siembra la cuenta admin
 	// del entorno solo si ese email no existe todavia.
@@ -193,6 +200,7 @@ func main() {
 	calendarHandler.RegisterRoutes(protectedAPI.Group("/calendar"))
 	crmHandler.RegisterRoutes(protectedAPI.Group("/crm"))
 	crmEquipmentHandler.RegisterRoutes(protectedAPI.Group("/crm-equipment"))
+	equipmentCatalogHandler.RegisterRoutes(protectedAPI.Group("/equipment-catalog"))
 	crmQuotesHandler.RegisterRoutes(protectedAPI.Group("/crm-quotes"))
 	financeHandler.RegisterRoutes(protectedAPI.Group("/finance", aclService.RequireModule("finanzas")))
 	projectsHandler.RegisterRoutes(protectedAPI.Group("/projects"))
