@@ -12,6 +12,7 @@ import { InventoryApiService } from '../../../services/inventory-api.service';
 import { PurchaseLine, ReservationRecord, StockReference } from '../../../services/inventory-domain.models';
 import { WorkEquipmentHistoryContextService } from '../../../services/work-equipment-history-context.service';
 import { CrmEquipmentApiService } from '../../../services/crm-equipment-api.service';
+import { HrPeoplePickerService } from '../../../services/hr-people-picker.service';
 import { ProjectsApiService } from '../../../services/projects-api.service';
 import { EmailsApiService } from '../../../services/emails-api.service';
 import { WorktimeApiService } from '../../../services/worktime-api.service';
@@ -3199,14 +3200,20 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
   readonly repairStatusOptions = this.projectEquipmentService.repairStatusOptions;
   readonly technicalTestTypeOptions = PROJECT_TEST_TYPE_OPTIONS;
 
-  readonly assigneeOptions = [
-    'Juan Pérez',
-    'Ana Martínez',
-    'María García',
-    'Luis Rodríguez',
-    'Carlos López',
-    'Valentina Ruiz',
-  ];
+  /**
+   * Fase 6: los responsables salen de RRHH (hr_employees activos), no de una
+   * lista quemada. Antes acá había 6 nombres inventados ("Juan Pérez"…) que no
+   * existían como empleados: se podía asignar un proyecto a gente inexistente y
+   * el select nunca reflejaba la plantilla real.
+   */
+  peopleNames: string[] = [];
+
+  get assigneeOptions(): string[] {
+    return this.hrPeople.merge(
+      this.peopleNames,
+      String(this.detailProject?.properties?.['assignee'] ?? ''),
+    );
+  }
 
   readonly clientOptions = [
     'Cliente interno',
@@ -3343,6 +3350,7 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
     private projectService: ProjectService,
     private projectEquipmentService: ProjectEquipmentService,
     private crmEquipmentApi: CrmEquipmentApiService,
+    private hrPeople: HrPeoplePickerService,
     private projectsApi: ProjectsApiService,
     private emailsApi: EmailsApiService,
     private authService: AuthService,
@@ -3384,6 +3392,12 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
     });
 
     this.loadMaterialTechnicianOptions();
+    // Fase 6: responsables y técnicos salen de RRHH. Si no hay empleados activos
+    // el picker queda vacío a propósito, nunca con nombres inventados.
+    void this.hrPeople.refresh().then((names) => {
+      this.peopleNames = names;
+      this.cdr.detectChanges();
+    });
   }
 
   ngAfterViewInit(): void {
@@ -6188,7 +6202,7 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
 
     const technicianOptions = this.materialTechnicianOptions.length > 0
       ? this.materialTechnicianOptions
-      : this.assigneeOptions;
+      : this.peopleNames;
 
     return this.normalizeAssigneeOptions([
       ...technicianOptions,

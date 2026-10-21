@@ -1,7 +1,8 @@
-import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Task, TaskPriority } from '../../models';
+import { HrPeoplePickerService } from '../../../../../services/hr-people-picker.service';
 
 @Component({
   selector: 'app-task-form',
@@ -80,14 +81,18 @@ import { Task, TaskPriority } from '../../models';
                   <label for="taskAssignee" class="form-label">
                     Asignado a
                   </label>
-                  <input 
-                    type="text" 
-                    class="form-control" 
+                  <!-- Fase 6: el responsable sale de RRHH (hr_employees activos).
+                       El valor ya guardado se incluye aunque ese empleado hoy esté
+                       inactivo, para no dejar la tarea sin responsable visible. -->
+                  <select
+                    class="form-select"
                     id="taskAssignee"
                     [(ngModel)]="formData.assignee"
                     name="assignee"
-                    placeholder="Nombre del responsable"
                   >
+                    <option value="">Selecciona un responsable</option>
+                    <option *ngFor="let person of assigneeOptions" [value]="person">{{ person }}</option>
+                  </select>
                 </div>
               </div>
 
@@ -241,11 +246,23 @@ export class TaskFormComponent implements OnInit {
   dueDateString = '';
   tagsString = '';
 
+  private readonly hrPeople = inject(HrPeoplePickerService);
+  /** Fase 6: empleados activos de RRHH para el select de responsable. */
+  peopleNames: string[] = [];
+
+  get assigneeOptions(): string[] {
+    return this.hrPeople.merge(this.peopleNames, this.formData.assignee);
+  }
+
   get isEditMode(): boolean {
     return !!this.task;
   }
 
   ngOnInit() {
+    // Fase 6: el responsable se elige entre empleados reales de RRHH.
+    void this.hrPeople.refresh().then((names) => {
+      this.peopleNames = names;
+    });
     if (this.task) {
       // Edit mode - populate form with task data
       this.formData = {

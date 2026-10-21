@@ -7,6 +7,7 @@ import type { ECharts, EChartsOption } from 'echarts';
 import { Subscription, combineLatest } from 'rxjs';
 import { BoardColumn, Project } from '../projects/models';
 import { ProjectService } from '../projects/services';
+import { HrPeoplePickerService } from '../../../services/hr-people-picker.service';
 
 interface TechnicianWorkload {
   technician: string;
@@ -396,6 +397,8 @@ export class WorkWorkloadComponent implements OnInit, AfterViewInit, OnDestroy {
   /** Modal state */
   modalProject: Project | null = null;
   modalTechnician = '';
+  /** Fase 6: empleados activos de RRHH que alimentan el select de técnico. */
+  peopleNames: string[] = [];
   isAssigning = false;
 
   private chart?: ECharts;
@@ -406,6 +409,7 @@ export class WorkWorkloadComponent implements OnInit, AfterViewInit, OnDestroy {
   constructor(
     private readonly ngZone: NgZone,
     private readonly projectService: ProjectService,
+    private readonly hrPeople: HrPeoplePickerService,
   ) {}
 
   get totalProjects(): number {
@@ -436,13 +440,19 @@ export class WorkWorkloadComponent implements OnInit, AfterViewInit, OnDestroy {
 
   get technicianOptions(): string[] {
     const fromWorkload = this.workloadItems.map((item) => item.technician).filter((t) => t !== 'Sin asignar');
-    const fallback = ['Juan Pérez', 'Ana Martínez', 'María García', 'Luis Rodríguez', 'Carlos López', 'Valentina Ruiz'];
-    const merged = Array.from(new Set([...fromWorkload, ...fallback]));
-    return merged;
+    // Fase 6: los técnicos salen de RRHH (hr_employees activos). Los nombres que
+    // ya aparecen en cargas se conservan para no dejar en blanco lo histórico.
+    // Antes había un fallback de 6 nombres inventados que ocultaba que RRHH
+    // estaba vacío.
+    return this.hrPeople.merge(this.peopleNames, this.modalTechnician, fromWorkload);
   }
 
   ngOnInit(): void {
     this.projectService.loadProjects('board-1').subscribe();
+    // Fase 6: el select de técnico se alimenta de RRHH, no de nombres quemados.
+    void this.hrPeople.refresh().then((names) => {
+      this.peopleNames = names;
+    });
     this.dataSubscription = combineLatest([this.projectService.projectsWithTasks$, this.projectService.board$]).subscribe({
       next: ([projects, board]) => {
         this.allProjects = [...projects].sort((a, b) => this.getProjectCode(a).localeCompare(this.getProjectCode(b)));

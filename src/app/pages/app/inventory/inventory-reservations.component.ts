@@ -5,6 +5,7 @@ import { RouterLink } from "@angular/router";
 import { InventoryRole, ReservationRecord } from "../../../services/inventory-domain.models";
 import { InventoryRbacService } from "../../../services/inventory-rbac.service";
 import { InventoryWorkflowService } from "../../../services/inventory-workflow.service";
+import { HrPeoplePickerService } from "../../../services/hr-people-picker.service";
 
 @Component({
     selector: "app-inventory-reservations",
@@ -125,7 +126,12 @@ import { InventoryWorkflowService } from "../../../services/inventory-workflow.s
                         </div>
                         <div class="col-12 col-md-3">
                             <label class="form-label">Asignado a</label>
-                            <input class="form-control" [(ngModel)]="draft.assignedTo" placeholder="Tecnico responsable" />
+                            <!-- Fase 6: el técnico de la reserva sale de RRHH. El
+                                 valor guardado se conserva aunque ya no esté activo. -->
+                            <select class="form-select" [(ngModel)]="draft.assignedTo" name="reservationAssignedTo">
+                                <option value="">Selecciona un tecnico</option>
+                                <option *ngFor="let person of assignedToOptions" [value]="person">{{ person }}</option>
+                            </select>
                         </div>
                         <div class="col-12 col-md-4">
                             <label class="form-label">Motivo</label>
@@ -238,10 +244,22 @@ export class InventoryReservationsComponent implements OnInit {
 
     constructor(
         private readonly inventoryRbac: InventoryRbacService,
-        private readonly inventoryWorkflow: InventoryWorkflowService
+        private readonly inventoryWorkflow: InventoryWorkflowService,
+        private readonly hrPeople: HrPeoplePickerService
     ) { }
 
+    /** Fase 6: empleados activos de RRHH para el select de asignado a. */
+    peopleNames: string[] = [];
+
+    get assignedToOptions(): string[] {
+        return this.hrPeople.merge(this.peopleNames, this.draft.assignedTo);
+    }
+
     ngOnInit(): void {
+        // Fase 6: el técnico de la reserva sale de RRHH.
+        void this.hrPeople.refresh().then((names) => {
+            this.peopleNames = names;
+        });
         this.refreshState();
     }
 

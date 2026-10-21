@@ -13,6 +13,7 @@ import {
 import { InventoryApiService } from "../../../services/inventory-api.service";
 import { InventoryRbacService } from "../../../services/inventory-rbac.service";
 import { InventoryWorkflowService } from "../../../services/inventory-workflow.service";
+import { HrPeoplePickerService } from "../../../services/hr-people-picker.service";
 import { SupplierRecord, SuppliersCatalogService } from "../../../services/suppliers-catalog.service";
 import { Project } from "../projects/models";
 import { ProjectService } from "../projects/services";
@@ -164,7 +165,12 @@ import { projectOriginLabel } from "./project-origin-label.util";
                         </div>
                         <div class="col-12 col-md-3">
                             <label class="form-label">Comprador responsable</label>
-                            <input class="form-control" [(ngModel)]="attemptDraft.procurementOwner" placeholder="Analista de compras" />
+                            <!-- Fase 6: el comprador sale de RRHH. El valor guardado
+                                 se conserva aunque ese empleado ya no esté activo. -->
+                            <select class="form-select" [(ngModel)]="attemptDraft.procurementOwner" name="procurementOwner">
+                                <option value="">Selecciona un comprador</option>
+                                <option *ngFor="let person of procurementOwnerOptions" [value]="person">{{ person }}</option>
+                            </select>
                         </div>
                         <div class="col-12 col-md-3">
                             <label class="form-label">Lead time estimado (dias)</label>
@@ -369,10 +375,22 @@ export class InventoryReplenishmentComponent implements OnInit, OnDestroy {
         private readonly inventoryApi: InventoryApiService,
         private readonly suppliersCatalog: SuppliersCatalogService,
         private readonly projectService: ProjectService,
-        private readonly cdr: ChangeDetectorRef
+        private readonly cdr: ChangeDetectorRef,
+        private readonly hrPeople: HrPeoplePickerService
     ) { }
 
+    /** Fase 6: empleados activos de RRHH para el select de comprador responsable. */
+    peopleNames: string[] = [];
+
+    get procurementOwnerOptions(): string[] {
+        return this.hrPeople.merge(this.peopleNames, this.attemptDraft.procurementOwner);
+    }
+
     ngOnInit(): void {
+        // Fase 6: el comprador responsable sale de RRHH.
+        void this.hrPeople.refresh().then((names) => {
+            this.peopleNames = names;
+        });
         this.refreshSuppliers();
         this.refreshState();
         // El estado del workflow se carga asincrono (fetch fuera de la zona de Angular):

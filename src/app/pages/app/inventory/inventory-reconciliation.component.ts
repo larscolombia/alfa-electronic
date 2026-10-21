@@ -5,6 +5,7 @@ import { RouterLink } from "@angular/router";
 import { AuditEvent, CountSession, DiscrepancyRecord, InventoryRole, SessionStatus } from "../../../services/inventory-domain.models";
 import { InventoryRbacService } from "../../../services/inventory-rbac.service";
 import { InventoryWorkflowService } from "../../../services/inventory-workflow.service";
+import { HrPeoplePickerService } from "../../../services/hr-people-picker.service";
 
 @Component({
     selector: "app-inventory-reconciliation",
@@ -103,7 +104,13 @@ import { InventoryWorkflowService } from "../../../services/inventory-workflow.s
                         </div>
                         <div class="col-12 col-md-3">
                             <label class="form-label">Responsable</label>
-                            <input class="form-control" [(ngModel)]="sessionDraft.owner" placeholder="Coord. inventario" />
+                            <!-- Fase 6: el responsable de la sesión sale de RRHH.
+                                 El valor guardado se conserva aunque ese empleado
+                                 ya no esté activo. -->
+                            <select class="form-select" [(ngModel)]="sessionDraft.owner" name="sessionOwner">
+                                <option value="">Selecciona un responsable</option>
+                                <option *ngFor="let person of ownerOptions" [value]="person">{{ person }}</option>
+                            </select>
                         </div>
                         <div class="col-12 col-md-3">
                             <label class="form-label">Fecha inicio</label>
@@ -276,10 +283,22 @@ export class InventoryReconciliationComponent implements OnInit {
 
     constructor(
         private readonly inventoryRbac: InventoryRbacService,
-        private readonly inventoryWorkflow: InventoryWorkflowService
+        private readonly inventoryWorkflow: InventoryWorkflowService,
+        private readonly hrPeople: HrPeoplePickerService
     ) { }
 
+    /** Fase 6: empleados activos de RRHH para el select de responsable. */
+    peopleNames: string[] = [];
+
+    get ownerOptions(): string[] {
+        return this.hrPeople.merge(this.peopleNames, this.sessionDraft.owner);
+    }
+
     ngOnInit(): void {
+        // Fase 6: el responsable de la sesión de conteo sale de RRHH.
+        void this.hrPeople.refresh().then((names) => {
+            this.peopleNames = names;
+        });
         this.refreshState();
     }
 

@@ -2,6 +2,7 @@ import { ChangeDetectorRef, Component, OnInit, inject } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { ActivatedRoute, Router, RouterLink } from "@angular/router";
 import { HrApiService } from "../../../services/hr-api.service";
+import { HrPeoplePickerService } from "../../../services/hr-people-picker.service";
 import { HrDocumentsApiService } from "../../../services/hr-documents-api.service";
 import { buildCreateEmployeeRequest } from "./profile-professional-hr-create.util";
 import { mapEmployeeToFormValues } from "./profile-professional-hr-load.util";
@@ -778,6 +779,7 @@ export class ProfileProfessionalComponent implements OnInit {
     private readonly route = inject(ActivatedRoute);
     private readonly router = inject(Router);
     private readonly hrApi = inject(HrApiService);
+    private readonly hrPeople = inject(HrPeoplePickerService);
     private readonly hrDocumentsApi = inject(HrDocumentsApiService);
     private readonly cdr = inject(ChangeDetectorRef);
 
@@ -929,7 +931,7 @@ export class ProfileProfessionalComponent implements OnInit {
 
         this.restoreHrCatalogs();
         this.restoreScheduleTemplates();
-        this.initializeManagers();
+        this.loadHrManagers();
         this.refreshHrAssociations();
 
         if (fromHrDirectory && !this.isNewEmployeeFromHr && employeeId) {
@@ -1322,6 +1324,19 @@ export class ProfileProfessionalComponent implements OnInit {
         });
     }
 
+    /**
+     * Fase 6: el catálogo de jefes parte de "Direccion General" (unidad
+     * organizacional legítima) y se completa con los empleados ACTIVOS de RRHH.
+     * initializeManagers() corre después para conservar su mezcla de actores del
+     * activity log y los jefes ya guardados en la ficha.
+     */
+    private loadHrManagers(): void {
+        void this.hrPeople.refresh().then((names) => {
+            this.managerCatalog = Array.from(new Set([...this.managerCatalog, ...names]));
+            this.initializeManagers();
+        });
+    }
+
     private initializeManagers(): void {
         this.managerCatalog = Array.from(new Set([...this.managerCatalog, ...this.activityLog.map((entry) => entry.actor).filter((actor) => !!actor.trim())]));
 
@@ -1568,6 +1583,10 @@ export class ProfileProfessionalComponent implements OnInit {
     }
 
     private defaultManagerCatalog(): string[] {
-        return ["Direccion General", "Kartikaa Joshi", "Steven Jobs", "Ludwig Angarita", "Danny Ramirez", "Elkin Ramirez", "Maria Londono"];
+        // Fase 6: "Direccion General" es una unidad organizacional legitima como
+        // jefe; las PERSONAS salen de RRHH (hr_employees activos) y se agregan en
+        // loadHrManagers(). Antes esta lista quemaba nombres ("Kartikaa Joshi",
+        // "Steven Jobs"…) que no eran empleados de nadie.
+        return ["Direccion General"];
     }
 }
