@@ -2,10 +2,19 @@ import { CommonModule } from "@angular/common";
 import { Component } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { RouterLink } from "@angular/router";
+import { firstValueFrom } from "rxjs";
 
-type WarrantyStatus = "Vigente" | "Por vencer" | "Vencida" | "Cerrada";
+import {
+    FinanceWarrantiesApiService,
+    FinanceWarrantyPhase,
+    FinanceWarrantyRecord,
+    FinanceWarrantyStatus,
+} from "../../../services/finance-warranties-api.service";
+import { isBrowserEnv } from "../../../services/finance-store-fetch.util";
+
+type WarrantyStatus = FinanceWarrantyStatus;
+type WarrantyPhase = FinanceWarrantyPhase;
 type ExpirationWindow = "all" | "next7" | "next30" | "expired";
-type WarrantyPhase = "en-revision" | "esperando-componentes" | "en-reparacion" | "lista";
 
 interface WarrantyRecord {
     id: number;
@@ -33,7 +42,14 @@ interface WarrantyDraft {
     phase: WarrantyPhase;
 }
 
-const WARRANTIES_STORAGE_KEY = "adminux.finance.warranties.v2";
+// Clave legacy: SOLO se lee una vez para migrar al servidor y se borra cuando
+// la migración termina sin errores.
+const LEGACY_WARRANTIES_STORAGE_KEY = "adminux.finance.warranties.v2";
+
+interface LegacyWarrantyRecord extends WarrantyRecord {
+    months?: number;
+    equipmentId?: string;
+}
 
 @Component({
     selector: "app-finance-garantias",
@@ -71,8 +87,30 @@ const WARRANTIES_STORAGE_KEY = "adminux.finance.warranties.v2";
             @if (formError) {
                 <div class="alert alert-danger border mb-3">{{ formError }}</div>
             }
+            @if (migrationError) {
+                <div class="alert alert-warning border mb-3" data-testid="warranties-migration-error">{{ migrationError }}</div>
+            }
 
             @if (viewMode === "list") {
+                <div class="card adminuiux-card mb-3 mb-lg-4 border-start border-4 border-start-warning" data-testid="expiring-report-card">
+                    <div class="card-body">
+                        <h6 class="mb-1"><i class="bi bi-exclamation-triangle me-2"></i>Garantias por vencer (proximos 30 dias)</h6>
+                        @if (expiringWarranties.length > 0) {
+                            <p class="small text-secondary mb-2">{{ expiringWarranties.length }} garantia(s) vencen entre hoy y los proximos 30 dias.</p>
+                            <ul class="mb-0 small">
+                                @for (record of expiringWarranties; track record.id) {
+                                    <li>
+                                        <strong>{{ record.code }}</strong> - {{ record.clientName }} / {{ record.equipmentIdentifier }}
+                                        (vence {{ record.endAt | date: "dd/MM/yyyy" }})
+                                    </li>
+                                }
+                            </ul>
+                        } @else {
+                            <p class="small text-secondary mb-0">Ninguna garantia vence en los proximos 30 dias.</p>
+                        }
+                    </div>
+                </div>
+
                 <div class="card adminuiux-card mb-3 mb-lg-4">
                     <div class="card-body">
                         <div class="row gx-3 gy-3 align-items-end">
@@ -250,7 +288,7 @@ const WARRANTIES_STORAGE_KEY = "adminux.finance.warranties.v2";
                             </div>
 
                             <div class="mt-3 d-flex gap-2">
-                                <button class="btn btn-theme" type="submit">Guardar</button>
+                                <button class="btn btn-theme" type="submit" [disabled]="isSaving">{{ isSaving ? "Guardando..." : "Guardar" }}</button>
                                 <button class="btn btn-outline-secondary" type="button" (click)="goToList()">Cancelar</button>
                             </div>
                         </form>
@@ -271,7 +309,9 @@ export class FinanceGarantiasComponent {
 
     viewMode: "list" | "form" = "list";
     warranties: WarrantyRecord[] = [];
+    expiringWarranties: FinanceWarrantyRecord[] = [];
     editingId: number | null = null;
+    isSaving = false;
 
     searchTerm = "";
     selectedStatus: WarrantyStatus | "" = "";
@@ -280,11 +320,14 @@ export class FinanceGarantiasComponent {
 
     successMessage = "";
     formError = "";
+    migrationError = "";
 
     draft: WarrantyDraft = this.createDefaultDraft();
 
-    constructor() {
-        this.warranties = this.normalizeStatuses(this.loadWarranties());
+    private legacyMigrationStarted = false;
+
+    constructor(private readonly financeWarrantiesApi: FinanceWarrantiesApiService) {
+        void this.loadWarranties();
     }
 
     get filteredRecords(): WarrantyRecord[] {
@@ -344,14 +387,16 @@ export class FinanceGarantiasComponent {
         };
     }
 
-    saveWarranty(): void {
+    async saveWarranty(): Promise<void> {
         this.formError = "";
         this.successMessage = "";
 
+        if (this.isSaving) {
+            return;
+        }
+
         const client = this.draft.client.trim();
         const equipment = this.draft.equipment.trim();
-        const owner = this.draft.owner.trim();
-        const notes = this.draft.notes.trim();
 
         if (!client || !equipment) {
             this.formError = "Cliente y equipo/servicio son obligatorios.";
@@ -370,76 +415,74 @@ export class FinanceGarantiasComponent {
 
         const nextStatus = this.draft.status === "Cerrada" ? "Cerrada" : this.statusFromDates(this.draft.expiresAt);
 
-        if (this.editingId === null) {
-            const nextRecord: WarrantyRecord = {
-                id: Date.now(),
-                code: this.buildWarrantyCode(),
-                client,
-                equipment,
-                startedAt: this.draft.startedAt,
-                expiresAt: this.draft.expiresAt,
-                followUpAt: this.draft.followUpAt,
-                owner,
-                notes,
-                status: nextStatus,
-                phase: this.draft.phase,
-            };
+        const payload = {
+            equipmentIdentifier: equipment,
+            clientName: client,
+            startAt: this.draft.startedAt,
+            endAt: this.draft.expiresAt,
+            followUpAt: this.draft.followUpAt,
+            owner: this.draft.owner.trim(),
+            notes: this.draft.notes.trim(),
+            status: nextStatus,
+            phase: this.draft.phase,
+        };
 
-            this.warranties = [nextRecord, ...this.warranties];
-            this.successMessage = `Garantia ${nextRecord.code} creada correctamente.`;
-        } else {
-            this.warranties = this.warranties.map((record) => {
-                if (record.id !== this.editingId) {
-                    return record;
-                }
+        try {
+            this.isSaving = true;
+            if (this.editingId === null) {
+                const created = await firstValueFrom(this.financeWarrantiesApi.createWarranty(payload));
+                this.successMessage = `Garantia ${created.code} creada correctamente.`;
+            } else {
+                await firstValueFrom(this.financeWarrantiesApi.updateWarranty(this.editingId, payload));
+                this.successMessage = "Garantia actualizada correctamente.";
+            }
+            await this.loadWarranties();
+            this.goToList();
+        } catch (error) {
+            this.formError = this.resolveErrorMessage(error, "No se pudo guardar la garantia en el servidor.");
+        } finally {
+            this.isSaving = false;
+        }
+    }
 
-                return {
-                    ...record,
-                    client,
-                    equipment,
-                    startedAt: this.draft.startedAt,
-                    expiresAt: this.draft.expiresAt,
-                    followUpAt: this.draft.followUpAt,
-                    owner,
-                    notes,
-                    status: nextStatus,
-                    phase: this.draft.phase,
-                };
-            });
-            this.successMessage = "Garantia actualizada correctamente.";
+    async removeWarranty(id: number): Promise<void> {
+        this.formError = "";
+        try {
+            await firstValueFrom(this.financeWarrantiesApi.deleteWarranty(id));
+            await this.loadWarranties();
+            this.successMessage = "Garantia eliminada.";
+        } catch (error) {
+            this.formError = this.resolveErrorMessage(error, "No se pudo eliminar la garantia en el servidor.");
+        }
+    }
+
+    async toggleClosed(id: number): Promise<void> {
+        this.formError = "";
+        const record = this.warranties.find((item) => item.id === id);
+        if (!record) {
+            return;
         }
 
-        this.persistWarranties();
-        this.goToList();
-    }
-
-    removeWarranty(id: number): void {
-        this.warranties = this.warranties.filter((record) => record.id !== id);
-        this.persistWarranties();
-        this.successMessage = "Garantia eliminada.";
-    }
-
-    toggleClosed(id: number): void {
-        this.warranties = this.warranties.map((record) => {
-            if (record.id !== id) {
-                return record;
-            }
-
-            if (record.status === "Cerrada") {
-                return {
-                    ...record,
-                    status: this.statusFromDates(record.expiresAt),
-                };
-            }
-
-            return {
-                ...record,
-                status: "Cerrada",
-            };
-        });
-
-        this.persistWarranties();
-        this.successMessage = "Estado de garantia actualizado.";
+        const nextStatus: WarrantyStatus = record.status === "Cerrada" ? this.statusFromDates(record.expiresAt) : "Cerrada";
+        try {
+            await firstValueFrom(
+                this.financeWarrantiesApi.updateWarranty(id, {
+                    equipmentIdentifier: record.equipment,
+                    clientName: record.client,
+                    startAt: record.startedAt,
+                    endAt: record.expiresAt,
+                    followUpAt: record.followUpAt,
+                    owner: record.owner,
+                    notes: record.notes,
+                    status: nextStatus,
+                    phase: record.phase,
+                }),
+            );
+            await this.loadWarranties();
+            this.successMessage = "Estado de garantia actualizado.";
+        } catch (error) {
+            this.formError = this.resolveErrorMessage(error, "No se pudo actualizar la garantia en el servidor.");
+        }
     }
 
     clearFilters(): void {
@@ -479,6 +522,120 @@ export class FinanceGarantiasComponent {
         return `${days} dia(s)`;
     }
 
+    private async loadWarranties(): Promise<void> {
+        try {
+            const [records, expiring] = await Promise.all([
+                firstValueFrom(this.financeWarrantiesApi.listWarranties()),
+                firstValueFrom(this.financeWarrantiesApi.listExpiring(30)),
+            ]);
+            this.warranties = records.map((record) => this.toView(record));
+            this.expiringWarranties = expiring;
+            this.formError = "";
+            await this.migrateLegacyWarranties(records);
+        } catch (error) {
+            this.formError = this.resolveErrorMessage(error, "No se pudieron cargar las garantias desde el servidor.");
+        }
+    }
+
+    /**
+     * Migración única de 'adminux.finance.warranties.v2': sube solo lo que no
+     * exista en el servidor (dedupe por codigo) y omite las tres filas mock que
+     * el componente sembraba antes (ids pequenos generados a mano; las reales
+     * usaban Date.now()). Borra la clave SOLO si migró sin errores.
+     */
+    private async migrateLegacyWarranties(serverRecords: FinanceWarrantyRecord[]): Promise<void> {
+        if (this.legacyMigrationStarted || !isBrowserEnv()) {
+            return;
+        }
+
+        const raw = window.localStorage.getItem(LEGACY_WARRANTIES_STORAGE_KEY);
+        if (!raw) {
+            return;
+        }
+
+        this.legacyMigrationStarted = true;
+
+        let legacy: LegacyWarrantyRecord[];
+        try {
+            const parsed = JSON.parse(raw) as LegacyWarrantyRecord[];
+            legacy = Array.isArray(parsed) ? parsed : [];
+        } catch {
+            // Clave corrupta: nada rescatable; se elimina para no reintentar.
+            window.localStorage.removeItem(LEGACY_WARRANTIES_STORAGE_KEY);
+            this.legacyMigrationStarted = false;
+            return;
+        }
+
+        const failures: string[] = [];
+        const existingCodes = new Set(serverRecords.map((record) => record.code));
+
+        for (const record of legacy) {
+            // Las semillas mock usaban ids 1..3; los registros reales de la UI
+            // antigua usaban Date.now() (~1.7e12).
+            if (!record || Number(record.id) <= 1000) {
+                continue;
+            }
+            if (record.code && existingCodes.has(record.code)) {
+                continue;
+            }
+
+            try {
+                const created = await firstValueFrom(
+                    this.financeWarrantiesApi.createWarranty({
+                        code: record.code || undefined,
+                        equipmentId: record.equipmentId || "",
+                        equipmentIdentifier: record.equipment || "",
+                        clientName: record.client || "",
+                        months: Number(record.months) || 0,
+                        startAt: record.startedAt || "",
+                        endAt: record.expiresAt || "",
+                        followUpAt: record.followUpAt || "",
+                        owner: record.owner || "",
+                        phase: record.phase || "en-revision",
+                        status: record.status || "Vigente",
+                        notes: record.notes || "",
+                    }),
+                );
+                existingCodes.add(created.code);
+            } catch (error) {
+                failures.push(this.resolveErrorMessage(error, `garantia ${record.code || record.id}`));
+            }
+        }
+
+        if (failures.length > 0) {
+            // La clave SE CONSERVA y se reintenta en el próximo arranque.
+            this.legacyMigrationStarted = false;
+            this.migrationError = `La migracion de tus garantias locales fallo y se reintentara mas tarde. Detalles: ${failures.join(" | ")}`;
+            return;
+        }
+
+        window.localStorage.removeItem(LEGACY_WARRANTIES_STORAGE_KEY);
+        this.migrationError = "";
+        // Recarga para mostrar lo migrado.
+        const records = await firstValueFrom(this.financeWarrantiesApi.listWarranties());
+        this.warranties = records.map((record) => this.toView(record));
+    }
+
+    private toView(record: FinanceWarrantyRecord): WarrantyRecord {
+        return {
+            id: record.id,
+            code: record.code,
+            client: record.clientName,
+            equipment: record.equipmentIdentifier,
+            startedAt: record.startAt,
+            expiresAt: record.endAt,
+            followUpAt: record.followUpAt,
+            owner: record.owner,
+            notes: record.notes,
+            status: record.status,
+            phase: record.phase,
+        };
+    }
+
+    private resolveErrorMessage(error: unknown, fallback: string): string {
+        return error instanceof Error && error.message.trim() ? error.message : fallback;
+    }
+
     private createDefaultDraft(): WarrantyDraft {
         const today = this.todayIso();
         return {
@@ -492,32 +649,6 @@ export class FinanceGarantiasComponent {
             status: "Vigente",
             phase: "en-revision",
         };
-    }
-
-    private loadWarranties(): WarrantyRecord[] {
-        if (typeof window === "undefined" || typeof window.localStorage === "undefined") {
-            return this.defaultWarranties();
-        }
-
-        const rawValue = window.localStorage.getItem(WARRANTIES_STORAGE_KEY);
-        if (!rawValue) {
-            return this.defaultWarranties();
-        }
-
-        try {
-            const parsed = JSON.parse(rawValue) as WarrantyRecord[];
-            return Array.isArray(parsed) ? parsed : this.defaultWarranties();
-        } catch {
-            return this.defaultWarranties();
-        }
-    }
-
-    private persistWarranties(): void {
-        if (typeof window === "undefined" || typeof window.localStorage === "undefined") {
-            return;
-        }
-
-        window.localStorage.setItem(WARRANTIES_STORAGE_KEY, JSON.stringify(this.warranties));
     }
 
     private normalizeStatuses(records: WarrantyRecord[]): WarrantyRecord[] {
@@ -583,11 +714,6 @@ export class FinanceGarantiasComponent {
         return true;
     }
 
-    private buildWarrantyCode(): string {
-        const nextNumber = this.warranties.length + 1;
-        return `GAR-${new Date().getFullYear()}-${nextNumber.toString().padStart(4, "0")}`;
-    }
-
     private todayIso(): string {
         return new Date().toISOString().slice(0, 10);
     }
@@ -596,49 +722,5 @@ export class FinanceGarantiasComponent {
         const date = new Date();
         date.setDate(date.getDate() + days);
         return date.toISOString().slice(0, 10);
-    }
-
-    private defaultWarranties(): WarrantyRecord[] {
-        return [
-            {
-                id: 1,
-                code: "GAR-2026-0001",
-                client: "Impresos Norte SAS",
-                equipment: "Fuente industrial 24V",
-                startedAt: "2026-01-20",
-                expiresAt: "2026-05-20",
-                followUpAt: "2026-04-25",
-                owner: "Equipo Comercial",
-                notes: "Cobertura por cambio de componente.",
-                status: "Por vencer",
-                phase: "en-reparacion",
-            },
-            {
-                id: 2,
-                code: "GAR-2026-0002",
-                client: "Grupo Restrepo",
-                equipment: "Main Board Rev C",
-                startedAt: "2026-02-10",
-                expiresAt: "2026-06-30",
-                followUpAt: "2026-05-30",
-                owner: "Soporte Tecnico",
-                notes: "Aplican revisiones preventivas.",
-                status: "Vigente",
-                phase: "esperando-componentes",
-            },
-            {
-                id: 3,
-                code: "GAR-2026-0003",
-                client: "Cardenas Digital",
-                equipment: "Kit IGBT FGA25N120",
-                startedAt: "2025-12-15",
-                expiresAt: "2026-03-15",
-                followUpAt: "2026-03-10",
-                owner: "Postventa",
-                notes: "Pendiente cierre documental.",
-                status: "Vencida",
-                phase: "lista",
-            },
-        ];
     }
 }

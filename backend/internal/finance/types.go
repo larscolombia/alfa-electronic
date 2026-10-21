@@ -1,5 +1,7 @@
 package finance
 
+import "encoding/json"
+
 type AccountType string
 
 type AccountProductType string
@@ -236,13 +238,166 @@ type ListRecurringInvoicesQuery struct {
 	Limit  int
 }
 
+// OasisExportRecord modela una línea del archivo plano 961 (interfaz de
+// facturación electrónica de Oasis): una fila por ítem de factura, con el NIT
+// del comprador y su dígito de verificación en columnas propias (antes el NIT
+// salía de `note` y el código postal de `billing_address`, ambos erróneos).
+// Los datos del vendedor y el código postal quedan vacíos hasta exista la
+// ficha fiscal de la empresa (Fase 5b).
 type OasisExportRecord struct {
-	NIT           string  `json:"nit"`
-	InvoiceNumber string  `json:"invoiceNumber"`
-	Date          string  `json:"date"`
-	Subtotal      float64 `json:"subtotal"`
-	IVA           float64 `json:"iva"`
-	Total         float64 `json:"total"`
-	PostalCode    string  `json:"postalCode"`
-	Concept       string  `json:"concept"`
+	BuyerIDType       string  `json:"buyerIdType"`
+	BuyerNIT          string  `json:"buyerNit"`
+	BuyerDV           string  `json:"buyerDv"`
+	BuyerName         string  `json:"buyerName"`
+	BuyerPostalCode   string  `json:"buyerPostalCode"`
+	BuyerPhone        string  `json:"buyerPhone"`
+	BuyerAddress      string  `json:"buyerAddress"`
+	BuyerBillingEmail string  `json:"buyerBillingEmail"`
+	SellerIDType      string  `json:"sellerIdType"`
+	SellerNIT         string  `json:"sellerNit"`
+	SellerDV          string  `json:"sellerDv"`
+	SellerName        string  `json:"sellerName"`
+	SellerPostalCode  string  `json:"sellerPostalCode"`
+	SellerAddress     string  `json:"sellerAddress"`
+	InvoiceNumber     string  `json:"invoiceNumber"`
+	Constant          string  `json:"constant"`
+	IssueDate         string  `json:"issueDate"`
+	IssueTime         string  `json:"issueTime"`
+	DueDate           string  `json:"dueDate"`
+	CreditFlag        string  `json:"creditFlag"`
+	PurchaseOrder     string  `json:"purchaseOrder"`
+	GenerationDate    string  `json:"generationDate"`
+	LineValue         float64 `json:"lineValue"`
+	ItemNumber        int     `json:"itemNumber"`
+	EquipmentCode     string  `json:"equipmentCode"`
+	Description       string  `json:"description"`
+	IVAPercent        float64 `json:"ivaPercent"`
+	IVAValue          float64 `json:"ivaValue"`
+	LineTotal         float64 `json:"lineTotal"`
+	CreditMarker      string  `json:"creditMarker"`
+	InvoiceTotal      float64 `json:"invoiceTotal"`
+}
+
+// OasisExportQuery filtra el export por rango de fechas de emisión (ambas
+// opcionales, formato YYYY-MM-DD, inclusivo).
+type OasisExportQuery struct {
+	From string
+	To   string
+}
+
+// Expense es un gasto de caja menor.
+type Expense struct {
+	ID              int64   `json:"id"`
+	AccountID       *int64  `json:"accountId"`
+	AccountName     string  `json:"accountName"`
+	ItemName        string  `json:"itemName"`
+	Concept         string  `json:"concept"`
+	Category        string  `json:"category"`
+	Description     string  `json:"description"`
+	Employee        string  `json:"employee"`
+	Project         string  `json:"project"`
+	Vendor          string  `json:"vendor"`
+	Amount          float64 `json:"amount"`
+	CurrencyCode    string  `json:"currencyCode"`
+	ExchangeRate    float64 `json:"exchangeRate"`
+	ValueInCop      float64 `json:"valueInCop"`
+	PaidAt          string  `json:"paidAt"`
+	ReceiptFileName string  `json:"receiptFileName"`
+	CreatedBy       string  `json:"createdBy"`
+	CreatedAt       string  `json:"createdAt"`
+}
+
+type UpsertExpenseRequest struct {
+	AccountID       *int64  `json:"accountId"`
+	ItemName        string  `json:"itemName"`
+	Concept         string  `json:"concept"`
+	Category        string  `json:"category"`
+	Description     string  `json:"description"`
+	Employee        string  `json:"employee"`
+	Project         string  `json:"project"`
+	Vendor          string  `json:"vendor"`
+	Amount          float64 `json:"amount"`
+	CurrencyCode    string  `json:"currencyCode"`
+	ExchangeRate    float64 `json:"exchangeRate"`
+	PaidAt          string  `json:"paidAt"`
+	ReceiptFileName string  `json:"receiptFileName"`
+}
+
+type ListExpensesQuery struct {
+	Limit int
+}
+
+// CashCountEntry es una denominación del arqueo de billetes/monedas.
+type CashCountEntry struct {
+	Kind         string  `json:"kind"`
+	Denomination float64 `json:"denomination"`
+	Quantity     int     `json:"quantity"`
+	Total        float64 `json:"total"`
+}
+
+type CashCount struct {
+	ID           int64   `json:"id"`
+	AccountID    *int64  `json:"accountId"`
+	Kind         string  `json:"kind"`
+	Denomination float64 `json:"denomination"`
+	Quantity     int     `json:"quantity"`
+	Total        float64 `json:"total"`
+	CountedAt    string  `json:"countedAt"`
+	CountedBy    string  `json:"countedBy"`
+}
+
+type SaveCashCountsRequest struct {
+	AccountID *int64           `json:"accountId"`
+	Entries   []CashCountEntry `json:"entries"`
+}
+
+// Warranty es un registro de garantía.
+type Warranty struct {
+	ID                  int64  `json:"id"`
+	Code                string `json:"code"`
+	EquipmentID         string `json:"equipmentId"`
+	EquipmentIdentifier string `json:"equipmentIdentifier"`
+	ClientName          string `json:"clientName"`
+	Months              int    `json:"months"`
+	StartAt             string `json:"startAt"`
+	EndAt               string `json:"endAt"`
+	FollowUpAt          string `json:"followUpAt"`
+	Owner               string `json:"owner"`
+	Phase               string `json:"phase"`
+	Status              string `json:"status"`
+	Notes               string `json:"notes"`
+	CreatedBy           string `json:"createdBy"`
+	CreatedAt           string `json:"createdAt"`
+	UpdatedAt           string `json:"updatedAt"`
+}
+
+type UpsertWarrantyRequest struct {
+	Code                string `json:"code"`
+	EquipmentID         string `json:"equipmentId"`
+	EquipmentIdentifier string `json:"equipmentIdentifier"`
+	ClientName          string `json:"clientName"`
+	Months              int    `json:"months"`
+	StartAt             string `json:"startAt"`
+	EndAt               string `json:"endAt"`
+	FollowUpAt          string `json:"followUpAt"`
+	Owner               string `json:"owner"`
+	Phase               string `json:"phase"`
+	Status              string `json:"status"`
+	Notes               string `json:"notes"`
+}
+
+type ListWarrantiesQuery struct {
+	Status string
+	Limit  int
+}
+
+// CompanySetting es una configuración genérica por empresa.
+type CompanySetting struct {
+	Key       string          `json:"key"`
+	Value     json.RawMessage `json:"value"`
+	UpdatedAt string          `json:"updatedAt"`
+}
+
+type UpsertSettingRequest struct {
+	Value json.RawMessage `json:"value"`
 }

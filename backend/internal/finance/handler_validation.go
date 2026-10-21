@@ -8,7 +8,8 @@ func isPaymentValidationError(err error) bool {
 		errors.Is(err, errPaymentAmountInvalid) ||
 		errors.Is(err, errPaymentStatusInvalid) ||
 		errors.Is(err, errPaymentCurrencyInvalid) ||
-		errors.Is(err, errPaymentExchangeInvalid)
+		errors.Is(err, errPaymentExchangeInvalid) ||
+		errors.Is(err, errPaymentRetentionInvalid)
 }
 
 func isInvoiceValidationError(err error) bool {

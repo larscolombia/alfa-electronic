@@ -1,5 +1,5 @@
 import { CommonModule } from "@angular/common";
-import { Component } from "@angular/core";
+import { Component, OnDestroy } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { Router, RouterLink } from "@angular/router";
 import { firstValueFrom } from "rxjs";
@@ -356,7 +356,7 @@ interface InvoiceDraft {
         </div>
     `,
 })
-export class FinanceInvoiceCreateComponent {
+export class FinanceInvoiceCreateComponent implements OnDestroy {
     readonly clients = FinanceBillingStore.getClients();
     readonly catalog = FinanceBillingStore.getCatalog();
     readonly taxOptions = FinanceBillingStore.getTaxOptions();
@@ -364,7 +364,7 @@ export class FinanceInvoiceCreateComponent {
     readonly taxCalculationOptions = FinanceBillingStore.getTaxCalculationOptions();
     readonly generatedByOptions = FinanceBillingStore.getGeneratedByOptions();
     readonly unitOptions = FinanceBillingStore.getUnitOptions();
-    readonly bankAccounts = FinanceAccountsStore.getAccounts();
+    bankAccounts: FinanceAccount[] = FinanceAccountsStore.getAccounts();
 
     draft = this.createDraft();
     items: BillingInvoiceItem[] = [this.createEmptyItem()];
@@ -374,10 +374,24 @@ export class FinanceInvoiceCreateComponent {
 
     isSaving = false;
 
+    private readonly accountsUnsubscribe: () => void;
+
     constructor(
         private readonly router: Router,
         private readonly financeBillingApi: FinanceBillingApiService,
-    ) {}
+    ) {
+        this.accountsUnsubscribe = FinanceAccountsStore.subscribe(() => {
+            this.bankAccounts = FinanceAccountsStore.getAccounts();
+        });
+        void FinanceAccountsStore.ensureLoaded();
+        // Recalcula prefijo/consecutivo cuando la caché de facturas del
+        // servidor esté disponible (el consecutivo en servidor es Fase 6).
+        void FinanceBillingStore.ensureLoaded().then(() => this.onIssueDateChange());
+    }
+
+    ngOnDestroy(): void {
+        this.accountsUnsubscribe();
+    }
 
     get availableProjects() {
         return FinanceBillingStore.getProjects(this.draft.clientId || undefined);

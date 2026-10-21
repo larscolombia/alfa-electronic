@@ -1,5 +1,5 @@
 import { CommonModule } from "@angular/common";
-import { Component } from "@angular/core";
+import { Component, OnDestroy } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { Router, RouterLink } from "@angular/router";
 import { firstValueFrom } from "rxjs";
@@ -333,7 +333,7 @@ const MAX_GENERATED_BY_LENGTH = 140;
         </div>
     `,
 })
-export class FinanceRecurringInvoiceCreateComponent {
+export class FinanceRecurringInvoiceCreateComponent implements OnDestroy {
     readonly clients = FinanceBillingStore.getClients();
     readonly catalog = FinanceBillingStore.getCatalog();
     readonly taxOptions = FinanceBillingStore.getTaxOptions();
@@ -342,7 +342,7 @@ export class FinanceRecurringInvoiceCreateComponent {
     readonly frequencyOptions = FinanceBillingStore.getFrequencyOptions();
     readonly unitOptions = FinanceBillingStore.getUnitOptions();
     readonly generatedByOptions = FinanceBillingStore.getGeneratedByOptions();
-    readonly bankAccounts = FinanceAccountsStore.getAccounts();
+    bankAccounts: FinanceAccount[] = FinanceAccountsStore.getAccounts();
 
     draft = this.createDraft();
     items: BillingInvoiceItem[] = [this.createEmptyItem()];
@@ -351,10 +351,21 @@ export class FinanceRecurringInvoiceCreateComponent {
     isSaving = false;
     private itemSequence = 0;
 
+    private readonly accountsUnsubscribe: () => void;
+
     constructor(
         private readonly router: Router,
         private readonly financeBillingApi: FinanceBillingApiService,
-    ) {}
+    ) {
+        this.accountsUnsubscribe = FinanceAccountsStore.subscribe(() => {
+            this.bankAccounts = FinanceAccountsStore.getAccounts();
+        });
+        void FinanceAccountsStore.ensureLoaded();
+    }
+
+    ngOnDestroy(): void {
+        this.accountsUnsubscribe();
+    }
 
     get availableProjects() {
         return FinanceBillingStore.getProjects(this.draft.clientId || undefined);

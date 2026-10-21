@@ -115,6 +115,9 @@ import { resolveApiBaseUrl } from "../../../services/api-base-url.util";
             @if (message) {
                 <div class="alert alert-success border mb-3">{{ message }}</div>
             }
+            @if (errorMessage) {
+                <div class="alert alert-danger border mb-3" data-testid="billing-error">{{ errorMessage }}</div>
+            }
 
             <div class="card adminuiux-card mb-3">
                 <div class="card-body">
@@ -143,6 +146,19 @@ import { resolveApiBaseUrl } from "../../../services/api-base-url.util";
                         </div>
                         <div class="col-12 col-lg-2 text-lg-end">
                             <button class="btn btn-outline-secondary w-100" type="button" (click)="clearFilters()">Limpiar filtros</button>
+                        </div>
+                    </div>
+                    <div class="row gx-3 gy-3 align-items-end mt-1">
+                        <div class="col-12 col-lg-3">
+                            <label class="form-label" for="exportFrom">Export Oasis desde</label>
+                            <input id="exportFrom" class="form-control" type="date" [(ngModel)]="exportFrom" data-testid="export-from-input" />
+                        </div>
+                        <div class="col-12 col-lg-3">
+                            <label class="form-label" for="exportTo">Export Oasis hasta</label>
+                            <input id="exportTo" class="form-control" type="date" [(ngModel)]="exportTo" data-testid="export-to-input" />
+                        </div>
+                        <div class="col-12 col-lg-6">
+                            <p class="small text-secondary mb-0">Los botones CSV y TXT descargan el archivo plano 961 filtrado por el rango de fechas de emision.</p>
                         </div>
                     </div>
                 </div>
@@ -228,6 +244,9 @@ export class FinanceBillingComponent implements OnInit {
     statusFilter = "";
     searchTerm = "";
     message = "";
+    errorMessage = "";
+    exportFrom = "";
+    exportTo = "";
     private apiBaseUrl = resolveApiBaseUrl();
 
     constructor(
@@ -310,16 +329,14 @@ export class FinanceBillingComponent implements OnInit {
         };
 
         try {
+            this.errorMessage = "";
             await firstValueFrom(this.financeBillingApi.createInvoice(duplicatedInvoice));
             this.message = `Se duplicó ${this.invoiceCode(duplicatedInvoice)}.`;
             await this.loadInvoices();
-        } catch {
-            const fallbackInvoice = FinanceBillingStore.duplicateInvoice(invoiceId);
-            if (!fallbackInvoice) {
-                return;
-            }
-            this.message = `Se duplicó ${this.invoiceCode(fallbackInvoice)}.`;
-            await this.loadInvoices();
+        } catch (error) {
+            // Sin fallback local: la copia solo existe si quedó en el servidor.
+            this.message = "";
+            this.errorMessage = error instanceof Error ? error.message : "No se pudo duplicar la factura en el servidor.";
         }
     }
 
@@ -330,13 +347,13 @@ export class FinanceBillingComponent implements OnInit {
         }
 
         try {
+            this.errorMessage = "";
             await firstValueFrom(this.financeBillingApi.updateInvoice(invoiceId, { ...sourceInvoice, status }));
             this.message = `Factura actualizada a estado ${status}.`;
             await this.loadInvoices();
-        } catch {
-            FinanceBillingStore.updateInvoiceStatus(invoiceId, status);
-            this.message = `Factura actualizada a estado ${status}.`;
-            await this.loadInvoices();
+        } catch (error) {
+            this.message = "";
+            this.errorMessage = error instanceof Error ? error.message : "No se pudo actualizar la factura en el servidor.";
         }
     }
 
@@ -356,20 +373,37 @@ export class FinanceBillingComponent implements OnInit {
         window.URL.revokeObjectURL(exportUrl);
     }
 
-    exportCSV(): void {
-        window.open(this.apiBaseUrl + "/api/v1/finance/export-oasis/csv", "_blank");
+    async exportCSV(): Promise<void> {
+        this.errorMessage = "";
+        try {
+            // Endpoint CSV (con cabecera) y descarga autenticada: window.open
+            // no puede enviar el token y el archivo quedaba en 401.
+            await this.financeBillingApi.downloadOasisExport("csv", this.exportFrom, this.exportTo);
+        } catch (error) {
+            this.errorMessage = error instanceof Error ? error.message : "No se pudo exportar el CSV Oasis.";
+        }
     }
 
-    exportTXT(): void {
-        window.open(this.apiBaseUrl + "/api/v1/finance/export-oasis/csv", "_blank");
+    async exportTXT(): Promise<void> {
+        this.errorMessage = "";
+        try {
+            // El TXT es el archivo plano 961 (sin cabecera), endpoint propio.
+            await this.financeBillingApi.downloadOasisExport("txt", this.exportFrom, this.exportTo);
+        } catch (error) {
+            this.errorMessage = error instanceof Error ? error.message : "No se pudo exportar el TXT Oasis.";
+        }
     }
 
     private async loadInvoices(): Promise<void> {
         try {
             this.invoices = await firstValueFrom(this.financeBillingApi.listInvoices()) as BillingInvoice[];
             FinanceBillingStore.saveInvoices(this.invoices);
-        } catch {
+            this.errorMessage = "";
+        } catch (error) {
+            // La caché del store (datos del servidor de cargas anteriores) se
+            // mantiene; ya no hay semilla mock ni localStorage.
             this.invoices = FinanceBillingStore.getInvoices();
+            this.errorMessage = error instanceof Error ? error.message : "No se pudieron cargar las facturas del servidor.";
         }
         this.refreshFilteredInvoices();
         this.changeDetector.detectChanges();

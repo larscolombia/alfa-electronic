@@ -1,27 +1,19 @@
 import { CommonModule } from "@angular/common";
-import { Component } from "@angular/core";
+import { Component, OnDestroy } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { RouterLink } from "@angular/router";
+import { firstValueFrom } from "rxjs";
 
 import { FinanceAccount, FinanceAccountsStore } from "./finance-accounts.store";
+import {
+    FinanceCashCountEntry,
+    FinanceExpensesApiService,
+    FinanceExpenseRecord,
+    UpsertFinanceExpenseRequest,
+} from "../../../services/finance-expenses-api.service";
+import { FINANCE_PETTY_CASH_BUDGET_KEY, FinanceSettingsApiService } from "../../../services/finance-settings-api.service";
 
-interface PettyCashExpense {
-    id: number;
-    itemName: string;
-    concept: string;
-    purchaseDate: string;
-    employee: string;
-    project: string;
-    category: string;
-    vendor: string;
-    accountId: number;
-    accountName: string;
-    currencyCode: "COP" | "USD" | "EUR";
-    exchangeRate: number;
-    price: number;
-    valueInCop: number;
-    description: string;
-    invoiceFileName: string;
+interface PettyCashExpenseView extends FinanceExpenseRecord {
     balance: number;
 }
 
@@ -52,7 +44,10 @@ interface PettyCashExpenseDraft {
                     <h5 class="mb-0">Caja menor</h5>
                     <p class="text-secondary small mb-0">Registro de gastos detallados, saldo y control de billetes y monedas por denominacion.</p>
                 </div>
-                <div class="col-12 col-sm-auto text-sm-end">
+                <div class="col-12 col-sm-auto text-sm-end d-flex gap-2 justify-content-sm-end">
+                    <button class="btn btn-outline-secondary" type="button" (click)="exportCsv()" data-testid="export-expenses-csv-btn">
+                        <i class="bi bi-download me-2"></i>Exportar CSV (contadora)
+                    </button>
                     <a class="btn btn-outline-secondary" routerLink="/app/finance-cuentas">Gestionar cuentas</a>
                 </div>
             </div>
@@ -66,13 +61,20 @@ interface PettyCashExpenseDraft {
         </div>
 
         <div class="container mt-3" id="main-content">
+            @if (loadError) {
+                <div class="alert alert-danger border mb-3">{{ loadError }}</div>
+            }
+
             <div class="row gx-3 gx-lg-4 mb-3">
                 <div class="col-12 col-lg-4">
                     <div class="card adminuiux-card h-100">
                         <div class="card-body">
                             <label class="form-label mb-1" for="monthlyBudget">Presupuesto mensual</label>
-                            <input id="monthlyBudget" class="form-control mb-3" type="number" min="0" step="1000" [(ngModel)]="monthlyBudget" (ngModelChange)="onBudgetChange()" />
-                            <p class="small text-secondary mb-0">Define el presupuesto base para calcular el saldo de caja menor.</p>
+                            <div class="input-group mb-3">
+                                <input id="monthlyBudget" class="form-control" type="number" min="0" step="1000" [(ngModel)]="monthlyBudget" (ngModelChange)="onBudgetChange()" />
+                                <button class="btn btn-outline-theme" type="button" (click)="saveBudget()" data-testid="save-budget-btn">Guardar</button>
+                            </div>
+                            <p class="small text-secondary mb-0">Define el presupuesto base para calcular el saldo de caja menor. Se guarda por empresa en el servidor.</p>
                         </div>
                     </div>
                 </div>
@@ -205,7 +207,7 @@ interface PettyCashExpenseDraft {
                             </div>
 
                             <div class="col-12 col-lg-6 d-flex align-items-end justify-content-start justify-content-lg-end gap-2">
-                                <button class="btn btn-theme" type="submit">Guardar</button>
+                                <button class="btn btn-theme" type="submit" [disabled]="isSaving">{{ isSaving ? "Guardando..." : "Guardar" }}</button>
                                 <button class="btn btn-outline-secondary" type="button" (click)="resetDraft()">Cancelar</button>
                             </div>
                         </div>
@@ -300,13 +302,19 @@ interface PettyCashExpenseDraft {
             <div class="row gx-3 gx-lg-4">
                 <div class="col-12">
                     <div class="card adminuiux-card mb-3 mb-lg-4">
-                        <div class="card-body">
-                            <p class="small text-secondary mb-1">Efectivo contado (billetes + monedas)</p>
-                            <h6 class="mb-3">{{ totalCashCounted | currency: "COP" : "symbol" : "1.0-0" }}</h6>
-                            <p class="small text-secondary mb-1">Diferencia (saldo - efectivo contado)</p>
-                            <h5 class="mb-0" [class.text-danger]="reconciliationDifference < 0" [class.text-success]="reconciliationDifference >= 0">
-                                {{ reconciliationDifference | currency: "COP" : "symbol" : "1.0-0" }}
-                            </h5>
+                        <div class="card-body d-flex flex-wrap align-items-center justify-content-between gap-2">
+                            <div>
+                                <p class="small text-secondary mb-1">Efectivo contado (billetes + monedas)</p>
+                                <h6 class="mb-3">{{ totalCashCounted | currency: "COP" : "symbol" : "1.0-0" }}</h6>
+                                <p class="small text-secondary mb-1">Diferencia (saldo - efectivo contado)</p>
+                                <h5 class="mb-0" [class.text-danger]="reconciliationDifference < 0" [class.text-success]="reconciliationDifference >= 0">
+                                    {{ reconciliationDifference | currency: "COP" : "symbol" : "1.0-0" }}
+                                </h5>
+                                @if (lastCashCountAt) {
+                                    <p class="small text-secondary mt-2 mb-0">Ultimo arqueo guardado: {{ lastCashCountAt | date: "dd/MM/yyyy HH:mm" }}</p>
+                                }
+                            </div>
+                            <button class="btn btn-theme" type="button" (click)="saveCashCount()" data-testid="save-cash-count-btn">Guardar arqueo</button>
                         </div>
                     </div>
                 </div>
@@ -333,10 +341,10 @@ interface PettyCashExpenseDraft {
                                     <tbody>
                                         @for (expense of expenses; track expense.id) {
                                             <tr>
-                                                <td>{{ expense.purchaseDate | date: "yyyy-MM-dd" }}</td>
+                                                <td>{{ expense.paidAt | date: "yyyy-MM-dd" }}</td>
                                                 <td>{{ expense.itemName }}</td>
                                                 <td>{{ expense.concept }}</td>
-                                                <td>{{ expense.accountName }}</td>
+                                                <td>{{ expense.accountName || "--" }}</td>
                                                 <td class="text-end">{{ expense.valueInCop | currency: "COP" : "symbol" : "1.0-0" }}</td>
                                                 <td class="text-end">{{ expense.balance | currency: "COP" : "symbol" : "1.0-0" }}</td>
                                                 <td class="text-end">
@@ -358,12 +366,15 @@ interface PettyCashExpenseDraft {
         </div>
     `,
 })
-export class FinanceCajaMenorComponent {
+export class FinanceCajaMenorComponent implements OnDestroy {
     monthlyBudget = 0;
     financeAccounts: FinanceAccount[] = [];
-    expenses: PettyCashExpense[] = [];
+    expenses: PettyCashExpenseView[] = [];
     formError = "";
     successMessage = "";
+    loadError = "";
+    isSaving = false;
+    lastCashCountAt = "";
 
     readonly currencyOptions = [
         { value: "COP", label: "Colombia peso - ($)" },
@@ -381,15 +392,33 @@ export class FinanceCajaMenorComponent {
     readonly coinDenominations = [1000, 500, 200, 100, 50];
     coinCounter: Record<number, number> = {};
 
-    constructor() {
-        this.loadFinanceAccounts();
+    private readonly accountsUnsubscribe: () => void;
+
+    constructor(
+        private readonly financeExpensesApi: FinanceExpensesApiService,
+        private readonly financeSettingsApi: FinanceSettingsApiService,
+    ) {
         this.billDenominations.forEach((denomination) => {
             this.billCounter[denomination] = 0;
         });
         this.coinDenominations.forEach((denomination) => {
             this.coinCounter[denomination] = 0;
         });
-        this.draft = this.getDefaultDraft();
+
+        this.financeAccounts = FinanceAccountsStore.getAccounts();
+        this.accountsUnsubscribe = FinanceAccountsStore.subscribe(() => {
+            this.financeAccounts = FinanceAccountsStore.getAccounts();
+            this.draft = this.getDefaultDraft();
+        });
+        void FinanceAccountsStore.ensureLoaded();
+
+        void this.loadBudget();
+        void this.loadExpenses();
+        void this.loadCashCounts();
+    }
+
+    ngOnDestroy(): void {
+        this.accountsUnsubscribe();
     }
 
     get totalExpenses(): number {
@@ -425,6 +454,16 @@ export class FinanceCajaMenorComponent {
         this.recalculateBalances();
     }
 
+    async saveBudget(): Promise<void> {
+        this.formError = "";
+        try {
+            await firstValueFrom(this.financeSettingsApi.putSetting(FINANCE_PETTY_CASH_BUDGET_KEY, this.toPositiveNumber(this.monthlyBudget)));
+            this.successMessage = "Presupuesto mensual guardado en el servidor.";
+        } catch (error) {
+            this.formError = this.resolveErrorMessage(error, "No se pudo guardar el presupuesto en el servidor.");
+        }
+    }
+
     onBillCounterChange(denomination: number): void {
         this.billCounter[denomination] = Math.floor(this.toPositiveNumber(this.billCounter[denomination]));
     }
@@ -450,9 +489,13 @@ export class FinanceCajaMenorComponent {
         this.draft.invoiceFileName = file ? file.name : "";
     }
 
-    registerExpense(): void {
+    async registerExpense(): Promise<void> {
         this.formError = "";
         this.successMessage = "";
+
+        if (this.isSaving) {
+            return;
+        }
 
         const itemName = this.draft.itemName.trim();
         const concept = this.draft.concept.trim();
@@ -467,7 +510,7 @@ export class FinanceCajaMenorComponent {
         }
 
         if (this.monthlyBudget <= 0) {
-            this.formError = "Define primero un presupuesto mensual mayor a cero.";
+            this.formError = "Define primero un presupuesto mensual mayor a cero y guardalo.";
             return;
         }
 
@@ -476,8 +519,7 @@ export class FinanceCajaMenorComponent {
             return;
         }
 
-        const selectedAccount = this.financeAccounts.find((account) => account.id === selectedAccountId);
-        if (!selectedAccount) {
+        if (!this.financeAccounts.some((account) => account.id === selectedAccountId)) {
             this.formError = "La cuenta seleccionada no esta disponible.";
             return;
         }
@@ -487,48 +529,80 @@ export class FinanceCajaMenorComponent {
             return;
         }
 
-        this.expenses = [
-            ...this.expenses,
-            {
-                id: Date.now() + this.expenses.length,
-                itemName,
-                concept,
-                purchaseDate: this.draft.purchaseDate,
-                employee: this.draft.employee,
-                project: this.draft.project,
-                category,
-                vendor: this.draft.vendor.trim(),
-                accountId: selectedAccountId,
-                accountName: `${selectedAccount.bankName} - ${selectedAccount.accountNumber}`,
-                currencyCode: this.draft.currencyCode,
-                exchangeRate: this.getExchangeRate(),
-                price: value,
-                valueInCop,
-                description: this.draft.description.trim(),
-                invoiceFileName: this.draft.invoiceFileName,
-                balance: 0,
-            },
+        const payload: UpsertFinanceExpenseRequest = {
+            accountId: selectedAccountId,
+            itemName,
+            concept,
+            category,
+            description: this.draft.description.trim(),
+            employee: this.draft.employee,
+            project: this.draft.project,
+            vendor: this.draft.vendor.trim(),
+            amount: value,
+            currencyCode: this.draft.currencyCode,
+            exchangeRate: this.getExchangeRate(),
+            paidAt: this.draft.purchaseDate,
+            receiptFileName: this.draft.invoiceFileName,
+        };
+
+        try {
+            this.isSaving = true;
+            await firstValueFrom(this.financeExpensesApi.createExpense(payload));
+            await this.loadExpenses();
+            this.successMessage = "Gasto guardado correctamente.";
+            this.resetDraft();
+        } catch (error) {
+            this.formError = this.resolveErrorMessage(error, "No se pudo guardar el gasto en el servidor.");
+        } finally {
+            this.isSaving = false;
+        }
+    }
+
+    async removeExpense(expenseId: number): Promise<void> {
+        this.formError = "";
+        this.successMessage = "";
+        try {
+            await firstValueFrom(this.financeExpensesApi.deleteExpense(expenseId));
+            await this.loadExpenses();
+            this.successMessage = "Gasto eliminado.";
+        } catch (error) {
+            this.formError = this.resolveErrorMessage(error, "No se pudo eliminar el gasto en el servidor.");
+        }
+    }
+
+    async saveCashCount(): Promise<void> {
+        this.formError = "";
+        this.successMessage = "";
+
+        const entries: FinanceCashCountEntry[] = [
+            ...this.billDenominations.map((denomination) => ({
+                kind: "billete" as const,
+                denomination,
+                quantity: Math.floor(this.toPositiveNumber(this.billCounter[denomination])),
+            })),
+            ...this.coinDenominations.map((denomination) => ({
+                kind: "moneda" as const,
+                denomination,
+                quantity: Math.floor(this.toPositiveNumber(this.coinCounter[denomination])),
+            })),
         ];
 
-        this.recalculateBalances();
-        this.successMessage = "Gasto guardado correctamente.";
-        this.resetDraft();
+        try {
+            const result = await firstValueFrom(this.financeExpensesApi.saveCashCounts(this.draft.accountId, entries));
+            this.lastCashCountAt = result.countedAt;
+            this.successMessage = "Arqueo guardado correctamente.";
+        } catch (error) {
+            this.formError = this.resolveErrorMessage(error, "No se pudo guardar el arqueo en el servidor.");
+        }
     }
 
-    removeExpense(expenseId: number): void {
-        this.expenses = this.expenses.filter((expense) => expense.id !== expenseId);
-        this.recalculateBalances();
-    }
-
-    private recalculateBalances(): void {
-        let runningBalance = this.monthlyBudget;
-        this.expenses = this.expenses.map((expense) => {
-            runningBalance -= expense.valueInCop;
-            return {
-                ...expense,
-                balance: runningBalance,
-            };
-        });
+    async exportCsv(): Promise<void> {
+        this.formError = "";
+        try {
+            await this.financeExpensesApi.downloadExpensesCsv();
+        } catch (error) {
+            this.formError = this.resolveErrorMessage(error, "No se pudo exportar el CSV de gastos.");
+        }
     }
 
     resetDraft(): void {
@@ -539,8 +613,65 @@ export class FinanceCajaMenorComponent {
         }
     }
 
-    private loadFinanceAccounts(): void {
-        this.financeAccounts = FinanceAccountsStore.getAccounts();
+    private async loadBudget(): Promise<void> {
+        try {
+            const stored = await firstValueFrom(this.financeSettingsApi.getSetting<number>(FINANCE_PETTY_CASH_BUDGET_KEY));
+            if (typeof stored === "number" && Number.isFinite(stored) && stored >= 0) {
+                this.monthlyBudget = stored;
+                this.recalculateBalances();
+            }
+        } catch (error) {
+            this.loadError = this.resolveErrorMessage(error, "No se pudo cargar el presupuesto desde el servidor.");
+        }
+    }
+
+    private async loadExpenses(): Promise<void> {
+        try {
+            const items = await firstValueFrom(this.financeExpensesApi.listExpenses());
+            this.expenses = items.map((item) => ({ ...item, balance: 0 }));
+            this.recalculateBalances();
+            this.loadError = "";
+        } catch (error) {
+            this.expenses = [];
+            this.loadError = this.resolveErrorMessage(error, "No se pudieron cargar los gastos desde el servidor.");
+        }
+    }
+
+    private async loadCashCounts(): Promise<void> {
+        try {
+            const result = await firstValueFrom(this.financeExpensesApi.getCashCounts());
+            this.lastCashCountAt = result.countedAt;
+            for (const row of result.items ?? []) {
+                if (row.kind === "billete" && this.billDenominations.includes(row.denomination)) {
+                    this.billCounter[row.denomination] = row.quantity;
+                }
+                if (row.kind === "moneda" && this.coinDenominations.includes(row.denomination)) {
+                    this.coinCounter[row.denomination] = row.quantity;
+                }
+            }
+        } catch {
+            // Sin arqueo guardado todavía: los contadores siguen en cero.
+        }
+    }
+
+    private recalculateBalances(): void {
+        // Saldo corrido del más antiguo al más reciente; la tabla muestra el
+        // orden del servidor (más reciente primero).
+        const chronological = this.expenses
+            .slice()
+            .sort((left, right) => `${left.paidAt}|${left.createdAt ?? ""}`.localeCompare(`${right.paidAt}|${right.createdAt ?? ""}`));
+
+        let runningBalance = this.monthlyBudget;
+        const balanceById = new Map<number, number>();
+        for (const expense of chronological) {
+            runningBalance -= expense.valueInCop;
+            balanceById.set(expense.id, runningBalance);
+        }
+
+        this.expenses = this.expenses.map((expense) => ({
+            ...expense,
+            balance: balanceById.get(expense.id) ?? runningBalance,
+        }));
     }
 
     private getExchangeRate(): number {
@@ -566,6 +697,10 @@ export class FinanceCajaMenorComponent {
             description: "",
             invoiceFileName: "",
         };
+    }
+
+    private resolveErrorMessage(error: unknown, fallback: string): string {
+        return error instanceof Error && error.message.trim() ? error.message : fallback;
     }
 
     private toPositiveNumber(value: number | string | null | undefined): number {

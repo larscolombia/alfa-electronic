@@ -2,7 +2,10 @@ package finance
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"strings"
 	"time"
 )
 
@@ -62,6 +65,29 @@ var (
 	errRecurringCyclesInvalid     = errors.New("los ciclos deben ser -1 o un numero entero positivo")
 	errRecurringItemsRequired     = errors.New("la factura recurrente debe tener al menos un item")
 	errRecurringItemAmountInvalid = errors.New("los items de la factura recurrente deben tener cantidad y precio mayores que cero")
+	errPaymentRetentionInvalid   = errors.New("las retenciones del pago son invalidas")
+	errOasisDateInvalid          = errors.New("el rango de fechas del export es invalido (use YYYY-MM-DD)")
+	errExpenseIDRequired         = errors.New("el id del gasto es obligatorio")
+	errExpenseNotFound           = errors.New("gasto no encontrado")
+	errExpenseItemRequired       = errors.New("el nombre del item del gasto es obligatorio")
+	errExpenseCategoryRequired   = errors.New("la categoria del gasto es obligatoria")
+	errExpenseConceptRequired    = errors.New("el concepto del gasto es obligatorio")
+	errExpenseDateInvalid        = errors.New("la fecha del gasto es invalida")
+	errExpenseAmountInvalid      = errors.New("el valor del gasto debe ser mayor que cero")
+	errExpenseCurrencyInvalid    = errors.New("moneda del gasto invalida")
+	errExpenseExchangeInvalid    = errors.New("la tasa de cambio del gasto debe ser mayor que cero")
+	errCashCountEntryInvalid     = errors.New("las denominaciones del arqueo son invalidas")
+	errWarrantyIDRequired        = errors.New("el id de la garantia es obligatorio")
+	errWarrantyNotFound          = errors.New("garantia no encontrada")
+	errWarrantyClientRequired    = errors.New("el cliente de la garantia es obligatorio")
+	errWarrantyEquipmentRequired = errors.New("el equipo o servicio de la garantia es obligatorio")
+	errWarrantyDateInvalid       = errors.New("las fechas de la garantia son invalidas")
+	errWarrantyStatusInvalid     = errors.New("estado de garantia invalido")
+	errWarrantyPhaseInvalid      = errors.New("fase de garantia invalida")
+	errWarrantyDaysInvalid       = errors.New("la ventana de dias debe estar entre 1 y 365")
+	errSettingKeyRequired        = errors.New("la clave de configuracion es obligatoria")
+	errSettingNotFound           = errors.New("configuracion no encontrada")
+	errSettingValueRequired      = errors.New("el valor de la configuracion es obligatorio")
 )
 
 type Service struct {
@@ -72,20 +98,149 @@ func NewService(db *sql.DB) *Service {
 	return &Service{db: db}
 }
 
-func (s *Service) GetOasisExport(companyID string) []OasisExportRecord {
-	rows, err := s.db.Query(`SELECT reference_code, project_name, issue_date, subtotal, tax_total, total, billing_address, note FROM invoices WHERE company_id = $1 AND status != 'Cancelado' ORDER BY issue_date DESC`, companyID)
+// GetOasisExport construye las líneas del archivo plano 961 (una por ítem de
+// factura) a partir de finance_invoices, con el NIT del comprador tomado de
+// crm_clients (antes se leía de `note`, que nunca fue un NIT) y filtro opcional
+// por rango de fechas de emisión.
+func (s *Service) GetOasisExport(companyID string, query OasisExportQuery) ([]OasisExportRecord, error) {
+	from := strings.TrimSpace(query.From)
+	to := strings.TrimSpace(query.To)
+	for _, value := range []string{from, to} {
+		if value == "" {
+			continue
+		}
+		if _, err := time.Parse("2006-01-02", value); err != nil {
+			return nil, errOasisDateInvalid
+		}
+	}
+	if from != "" && to != "" && from > to {
+		return nil, errOasisDateInvalid
+	}
+
+	statement := `
+SELECT ci.series_prefix, ci.sequence_number, ci.issue_date, ci.due_date,
+	ci.client_name, ci.billing_address, ci.total, ci.items_json,
+	COALESCE(cc.nit, ''), COALESCE(cc.correo, ''), COALESCE(cc.office_phone, ''),
+	COALESCE(cc.address, ''), COALESCE(cc.credit_enabled, false)
+FROM finance_invoices ci
+LEFT JOIN crm_clients cc
+	ON cc.company_id = ci.company_id
+	AND ci.client_id = 'crm-client-' || cc.id
+WHERE ci.company_id = $1
+	AND ci.soft_delete = false
+	AND ci.status != 'Cancelado'`
+	args := []any{companyID}
+	nextArg := 2
+	if from != "" {
+		statement += fmt.Sprintf(" AND ci.issue_date >= $%d::date", nextArg)
+		args = append(args, from)
+		nextArg++
+	}
+	if to != "" {
+		statement += fmt.Sprintf(" AND ci.issue_date <= $%d::date", nextArg)
+		args = append(args, to)
+		nextArg++
+	}
+	statement += " ORDER BY ci.issue_date DESC, ci.id DESC"
+
+	rows, err := s.db.Query(statement, args...)
 	if err != nil {
-		return []OasisExportRecord{}
+		return nil, err
 	}
 	defer rows.Close()
 
-	var records []OasisExportRecord
+	generationDate := time.Now().UTC().Format("2006-01-02")
+	records := make([]OasisExportRecord, 0)
 	for rows.Next() {
-		var r OasisExportRecord
-		rows.Scan(&r.InvoiceNumber, &r.Concept, &r.Date, &r.Subtotal, &r.IVA, &r.Total, &r.PostalCode, &r.NIT)
-		records = append(records, r)
+		var seriesPrefix, clientName, billingAddress, buyerNIT, buyerEmail, buyerPhone, buyerAddress string
+		var sequenceNumber int
+		var issueDate, dueDate sql.NullTime
+		var invoiceTotal float64
+		var itemsJSON []byte
+		var creditEnabled bool
+		if err := rows.Scan(&seriesPrefix, &sequenceNumber, &issueDate, &dueDate,
+			&clientName, &billingAddress, &invoiceTotal, &itemsJSON,
+			&buyerNIT, &buyerEmail, &buyerPhone, &buyerAddress, &creditEnabled); err != nil {
+			return nil, err
+		}
+
+		var items []InvoiceItem
+		if len(itemsJSON) > 0 {
+			_ = json.Unmarshal(itemsJSON, &items)
+		}
+
+		nit, dv := splitNIT(buyerNIT)
+		issueDateText := ""
+		if issueDate.Valid {
+			issueDateText = issueDate.Time.Format("2006-01-02")
+		}
+		dueDateText := ""
+		if dueDate.Valid {
+			dueDateText = dueDate.Time.Format("2006-01-02")
+		}
+		creditFlag := "1"
+		creditMarker := "0"
+		if creditEnabled {
+			creditFlag = "0"
+			creditMarker = "99"
+		}
+		address := strings.TrimSpace(billingAddress)
+		if address == "" {
+			address = buyerAddress
+		}
+
+		if len(items) == 0 {
+			records = append(records, OasisExportRecord{
+				BuyerIDType: "NIT", BuyerNIT: nit, BuyerDV: dv, BuyerName: clientName,
+				BuyerPhone: buyerPhone, BuyerAddress: address, BuyerBillingEmail: buyerEmail,
+				SellerIDType: "NIT",
+				InvoiceNumber: fmt.Sprintf("%s%03d", seriesPrefix, sequenceNumber),
+				Constant: "2", IssueDate: issueDateText, IssueTime: "00", DueDate: dueDateText,
+				CreditFlag: creditFlag, GenerationDate: generationDate,
+				LineValue: invoiceTotal, ItemNumber: 1,
+				CreditMarker: creditMarker, InvoiceTotal: invoiceTotal,
+			})
+			continue
+		}
+
+		for index, item := range items {
+			lineValue := item.Quantity * item.UnitPrice
+			ivaValue := lineValue * (item.TaxRate / 100)
+			description := strings.TrimSpace(item.Description)
+			if description == "" {
+				description = item.Name
+			}
+			records = append(records, OasisExportRecord{
+				BuyerIDType: "NIT", BuyerNIT: nit, BuyerDV: dv, BuyerName: clientName,
+				BuyerPhone: buyerPhone, BuyerAddress: address, BuyerBillingEmail: buyerEmail,
+				SellerIDType: "NIT",
+				InvoiceNumber: fmt.Sprintf("%s%03d", seriesPrefix, sequenceNumber),
+				Constant: "2", IssueDate: issueDateText, IssueTime: "00", DueDate: dueDateText,
+				CreditFlag: creditFlag, GenerationDate: generationDate,
+				LineValue: lineValue, ItemNumber: index + 1, EquipmentCode: "",
+				Description: description, IVAPercent: item.TaxRate, IVAValue: ivaValue,
+				LineTotal: lineValue + ivaValue,
+				CreditMarker: creditMarker, InvoiceTotal: invoiceTotal,
+			})
+		}
 	}
-	return records
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return records, nil
+}
+
+// splitNIT separa el NIT del dígito de verificación ("86511911-8" → NIT y DV
+// en columnas distintas, como exige el formato 961).
+func splitNIT(raw string) (string, string) {
+	value := strings.TrimSpace(raw)
+	if value == "" {
+		return "", ""
+	}
+	if index := strings.LastIndex(value, "-"); index >= 0 {
+		return strings.TrimSpace(value[:index]), strings.TrimSpace(value[index+1:])
+	}
+	return value, ""
 }
 
 type PortfolioItem struct {
@@ -99,8 +254,8 @@ type PortfolioItem struct {
 	Overdue    bool    `json:"overdue"`
 }
 
-func (s *Service) GetPortfolio(companyID string, status string) []PortfolioItem {
-	query := `SELECT id, reference_code, client_name, total, balance_amount, due_date, status FROM invoices WHERE company_id = $1 AND status IN ('Pendiente', 'Pago parcial')`
+func (s *Service) GetPortfolio(companyID string, status string) ([]PortfolioItem, error) {
+	query := `SELECT id, reference_code, client_name, total, balance_amount, due_date, status FROM finance_invoices WHERE company_id = $1 AND soft_delete = false AND status IN ('Pendiente', 'Pago parcial')`
 	args := []any{companyID}
 
 	if status != "" {
@@ -111,18 +266,25 @@ func (s *Service) GetPortfolio(companyID string, status string) []PortfolioItem 
 
 	rows, err := s.db.Query(query, args...)
 	if err != nil {
-		return []PortfolioItem{}
+		return nil, err
 	}
 	defer rows.Close()
 
-	var items []PortfolioItem
+	items := make([]PortfolioItem, 0)
 	for rows.Next() {
 		var item PortfolioItem
-		rows.Scan(&item.InvoiceID, &item.Reference, &item.ClientName, &item.Total, &item.Balance, &item.DueDate, &item.Status)
-		if item.DueDate != "" {
+		var dueDate sql.NullTime
+		if err := rows.Scan(&item.InvoiceID, &item.Reference, &item.ClientName, &item.Total, &item.Balance, &dueDate, &item.Status); err != nil {
+			return nil, err
+		}
+		if dueDate.Valid {
+			item.DueDate = dueDate.Time.Format("2006-01-02")
 			item.Overdue = item.DueDate < time.Now().UTC().Format("2006-01-02")
 		}
 		items = append(items, item)
 	}
-	return items
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

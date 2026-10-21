@@ -11,7 +11,8 @@ import (
 
 const paymentSelectColumns = `id, order_number, code, project_name, invoice_number, client_name, purchase_order, amount,
 	paid_at, payment_gateway, status, currency_code, exchange_rate, transaction_id,
-	bank_account_id, bank_account_name, receipt_file_name, notes, created_at, updated_at`
+	bank_account_id, bank_account_name, receipt_file_name, notes,
+	rete_fuente, rete_iva, rete_ica, retention_comments, payment_date, created_at, updated_at`
 
 func (s *Service) ListPayments(companyID string, query ListPaymentsQuery) ([]Payment, error) {
 	ctx := context.Background()
@@ -123,12 +124,14 @@ INSERT INTO finance_payments (
 	company_id, order_number, code, project_name, invoice_number, client_name, purchase_order, amount,
 	paid_at, payment_gateway, status, currency_code, exchange_rate, transaction_id,
 	bank_account_id, bank_account_name, receipt_file_name, notes,
+	rete_fuente, rete_iva, rete_ica, retention_comments, payment_date,
 	soft_delete, created_at, updated_at
 )
 VALUES (
 	$1, $2, $3, $4, $5, $6, $7, $8,
 	NULLIF($9, '')::date, $10, $11, $12, $13, $14,
 	$15, $16, $17, $18,
+	$19, $20, $21, $22, NULLIF($23, '')::date,
 	false, NOW(), NOW()
 )
 RETURNING id;
@@ -151,6 +154,11 @@ RETURNING id;
 		payload.BankAccount,
 		payload.ReceiptFile,
 		payload.Notes,
+		payload.ReteFuente,
+		payload.ReteIVA,
+		payload.ReteICA,
+		payload.RetentionComments,
+		payload.PaymentDate,
 	).Scan(&paymentID)
 	if err != nil {
 		return Payment{}, err
@@ -207,9 +215,14 @@ SET order_number = $1,
 	bank_account_name = $15,
 	receipt_file_name = $16,
 	notes = $17,
+	rete_fuente = $18,
+	rete_iva = $19,
+	rete_ica = $20,
+	retention_comments = $21,
+	payment_date = NULLIF($22, '')::date,
 	updated_at = NOW()
-WHERE company_id = $18
-  AND id = $19
+WHERE company_id = $23
+  AND id = $24
   AND soft_delete = false;
 `,
 		orderNumber,
@@ -229,6 +242,11 @@ WHERE company_id = $18
 		payload.BankAccount,
 		payload.ReceiptFile,
 		payload.Notes,
+		payload.ReteFuente,
+		payload.ReteIVA,
+		payload.ReteICA,
+		payload.RetentionComments,
+		payload.PaymentDate,
 		companyID,
 		paymentID,
 	)
@@ -323,6 +341,8 @@ func normalizePayment(input UpsertPaymentRequest) (UpsertPaymentRequest, error) 
 	normalized.BankAccount = strings.TrimSpace(normalized.BankAccount)
 	normalized.ReceiptFile = strings.TrimSpace(normalized.ReceiptFile)
 	normalized.Notes = strings.TrimSpace(normalized.Notes)
+	normalized.RetentionComments = strings.TrimSpace(normalized.RetentionComments)
+	normalized.PaymentDate = strings.TrimSpace(normalized.PaymentDate)
 
 	if normalized.InvoiceNumber == "" {
 		return UpsertPaymentRequest{}, errPaymentInvoiceRequired
@@ -346,6 +366,21 @@ func normalizePayment(input UpsertPaymentRequest) (UpsertPaymentRequest, error) 
 		return UpsertPaymentRequest{}, errPaymentExchangeInvalid
 	}
 
+	// Retenciones: nunca negativas y su suma no puede superar el monto del pago
+	// (amount - retenciones = neto debe tener sentido). Un pago antiguo sin
+	// retenciones llega con ceros y pasa igual.
+	if normalized.ReteFuente < 0 || normalized.ReteIVA < 0 || normalized.ReteICA < 0 {
+		return UpsertPaymentRequest{}, errPaymentRetentionInvalid
+	}
+	if normalized.ReteFuente+normalized.ReteIVA+normalized.ReteICA > normalized.Amount {
+		return UpsertPaymentRequest{}, errPaymentRetentionInvalid
+	}
+	if normalized.PaymentDate != "" {
+		if _, err := time.Parse("2006-01-02", normalized.PaymentDate); err != nil {
+			return UpsertPaymentRequest{}, errPaymentDateInvalid
+		}
+	}
+
 	if normalized.Client == "" {
 		normalized.Client = "Cliente sin definir"
 	}
@@ -356,6 +391,7 @@ func normalizePayment(input UpsertPaymentRequest) (UpsertPaymentRequest, error) 
 func scanPayment(scanner interface{ Scan(dest ...any) error }) (Payment, error) {
 	var item Payment
 	var paidAt sql.NullTime
+	var paymentDate sql.NullTime
 	var status string
 	var createdAt time.Time
 	var updatedAt time.Time
@@ -379,6 +415,11 @@ func scanPayment(scanner interface{ Scan(dest ...any) error }) (Payment, error) 
 		&item.BankAccount,
 		&item.ReceiptFile,
 		&item.Notes,
+		&item.ReteFuente,
+		&item.ReteIVA,
+		&item.ReteICA,
+		&item.RetentionComments,
+		&paymentDate,
 		&createdAt,
 		&updatedAt,
 	); err != nil {
@@ -387,6 +428,9 @@ func scanPayment(scanner interface{ Scan(dest ...any) error }) (Payment, error) 
 
 	if paidAt.Valid {
 		item.PaidAt = paidAt.Time.Format("2006-01-02")
+	}
+	if paymentDate.Valid {
+		item.PaymentDate = paymentDate.Time.Format("2006-01-02")
 	}
 	item.Status = PaymentStatus(status)
 	item.Code = strings.TrimSpace(item.Code)

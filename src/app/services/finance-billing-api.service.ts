@@ -82,6 +82,17 @@ export interface FinanceRecurringInvoiceRecord {
     updatedAt?: string;
 }
 
+export interface FinancePortfolioItem {
+    invoiceId: number;
+    referenceCode: string;
+    clientName: string;
+    total: number;
+    balanceAmount: number;
+    dueDate: string;
+    status: string;
+    overdue: boolean;
+}
+
 @Injectable({ providedIn: "root" })
 export class FinanceBillingApiService {
     private readonly apiBaseUrl = resolveApiBaseUrl();
@@ -142,6 +153,53 @@ export class FinanceBillingApiService {
                 method: "DELETE",
             }),
         ).pipe(map(() => void 0));
+    }
+
+    getPortfolio(status = ""): Observable<FinancePortfolioItem[]> {
+        const query = status ? `?status=${encodeURIComponent(status)}` : "";
+        return from(this.request<{ items: FinancePortfolioItem[] }>(`/api/v1/finance/portfolio${query}`, { method: "GET" })).pipe(
+            map((response) => response.items ?? []),
+        );
+    }
+
+    /**
+     * Descarga el export Oasis 961 en el formato pedido ("csv" con cabecera o
+     * "txt" archivo plano), filtrando por rango de fechas de emisión. Usa fetch
+     * con el token de sesión: window.open no puede enviar Authorization.
+     */
+    async downloadOasisExport(format: "csv" | "txt", from = "", to = ""): Promise<void> {
+        const params = new URLSearchParams();
+        if (from) {
+            params.set("from", from);
+        }
+        if (to) {
+            params.set("to", to);
+        }
+        const query = params.toString() ? `?${params.toString()}` : "";
+        const path = format === "csv" ? `/api/v1/finance/export-oasis/csv${query}` : `/api/v1/finance/export-oasis/txt${query}`;
+
+        const headers = new Headers();
+        headers.set("X-Company-Id", this.companyID);
+        const accessToken = this.authService.getAccessToken();
+        if (accessToken) {
+            headers.set("Authorization", `Bearer ${accessToken}`);
+        }
+
+        const response = await fetch(this.apiURL(path), { method: "GET", headers });
+        if (response.status === 401) {
+            this.authService.markUnauthorized();
+        }
+        if (!response.ok) {
+            throw new Error(`Request failed with status ${response.status}`);
+        }
+
+        const blob = await response.blob();
+        const fileUrl = window.URL.createObjectURL(blob);
+        const anchor = window.document.createElement("a");
+        anchor.href = fileUrl;
+        anchor.download = `oasis-961.${format}`;
+        anchor.click();
+        window.URL.revokeObjectURL(fileUrl);
     }
 
     private apiURL(path: string): string {
