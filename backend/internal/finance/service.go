@@ -38,7 +38,7 @@ var (
 	errInvoiceIDRequired          = errors.New("el id de la factura es obligatorio")
 	errInvoiceNotFound            = errors.New("factura no encontrada")
 	errInvoiceClientRequired      = errors.New("el cliente de la factura es obligatorio")
-	errInvoiceSequenceInvalid     = errors.New("el numero de la factura debe ser mayor que cero")
+	errInvoiceSequenceInvalid     = errors.New("el numero de la factura no puede ser negativo (0 = asignacion automatica)")
 	errInvoiceDateInvalid         = errors.New("las fechas de la factura son invalidas")
 	errInvoiceDueDateInvalid      = errors.New("la fecha de vencimiento no puede ser anterior a la fecha de la factura")
 	errInvoiceCurrencyInvalid     = errors.New("moneda de factura invalida")

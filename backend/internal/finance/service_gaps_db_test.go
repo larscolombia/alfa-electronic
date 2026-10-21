@@ -49,6 +49,7 @@ func testCompany(t *testing.T, db *sql.DB, name string) string {
 		db.Exec(`DELETE FROM company_settings WHERE company_id = $1`, companyID)
 		db.Exec(`DELETE FROM finance_payments WHERE company_id = $1`, companyID)
 		db.Exec(`DELETE FROM finance_invoices WHERE company_id = $1`, companyID)
+		db.Exec(`DELETE FROM document_sequences WHERE company_id = $1`, companyID)
 		db.Exec(`DELETE FROM crm_clients WHERE company_id = $1`, companyID)
 	})
 	return companyID

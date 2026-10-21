@@ -42,6 +42,9 @@ func (h *Handler) RegisterRoutes(group *echo.Group) {
 
 	group.GET("/invoices", h.listInvoices)
 	group.POST("/invoices", h.createInvoice)
+	// Fase 6: previsualización del consecutivo sin consumirlo (estático, no
+	// colisiona con /invoices/:invoiceID).
+	group.POST("/invoices/allocate-sequence", h.peekInvoiceSequence)
 	// Fase 5b: conversión cotización→factura (idempotente) y nota crédito
 	// (única reversa de una factura emitida/bloqueada).
 	group.POST("/invoices/from-quote/:quoteID", h.createInvoiceFromQuote)

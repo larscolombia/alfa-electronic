@@ -2,7 +2,7 @@ import { CommonModule } from "@angular/common";
 import { Component, OnDestroy } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { Router, RouterLink } from "@angular/router";
-import { firstValueFrom } from "rxjs";
+import { firstValueFrom, take } from "rxjs";
 
 import { FinanceAccount, FinanceAccountsStore } from "./finance-accounts.store";
 import {
@@ -16,7 +16,7 @@ import {
     computeInvoiceSummary,
     deriveInvoiceStatus,
 } from "./finance-billing.store";
-import { FinanceBillingApiService } from "../../../services/finance-billing-api.service";
+import { FinanceBillingApiService, FinanceInvoiceSequencePreview } from "../../../services/finance-billing-api.service";
 
 interface InvoiceDraft {
     seriesPrefix: string;
@@ -129,8 +129,13 @@ interface InvoiceDraft {
                             <label class="form-label">Número de factura</label>
                             <div class="input-group">
                                 <span class="input-group-text">{{ draft.seriesPrefix }}</span>
-                                <input class="form-control" type="number" min="1" [(ngModel)]="draft.sequenceNumber" name="sequenceNumber" />
+                                <input class="form-control" type="number" min="0" [(ngModel)]="draft.sequenceNumber" name="sequenceNumber" (ngModelChange)="onSequenceNumberChange()" data-testid="invoice-sequence-input" />
                             </div>
+                            <!-- Fase 6: 0 no es un número inválido, es "lo asigna el
+                                 servidor al guardar". Se dice en vez de inventar uno. -->
+                            @if (!draft.sequenceNumber) {
+                                <div class="form-text">El numero definitivo lo asigna el servidor al guardar.</div>
+                            }
                         </div>
                         <div class="col-12 col-lg-3">
                             <label class="form-label">Número externo (Oasis)</label>
@@ -380,6 +385,13 @@ export class FinanceInvoiceCreateComponent implements OnDestroy {
 
     isSaving = false;
 
+    /**
+     * Fase 6: true sólo si el usuario editó a mano el número de factura. Mientras
+     * sea false se envía sequenceNumber 0 y el servidor asigna el consecutivo de
+     * forma atómica, que es lo que evita que dos usuarios reciban el mismo.
+     */
+    private sequenceOverriddenByUser = false;
+
     private readonly accountsUnsubscribe: () => void;
 
     constructor(
@@ -428,7 +440,41 @@ export class FinanceInvoiceCreateComponent implements OnDestroy {
     onIssueDateChange(): void {
         const issueDate = this.draft.issueDate || new Date().toISOString().slice(0, 10);
         this.draft.seriesPrefix = FinanceBillingStore.getInvoiceSeriesPrefix(issueDate);
-        this.draft.sequenceNumber = FinanceBillingStore.getNextSequenceNumber(issueDate);
+        // Fase 6: el consecutivo lo previsualiza el servidor. Antes salía de
+        // MAX()+1 sobre la caché local, o sea el mismo número para dos usuarios.
+        this.sequenceOverriddenByUser = false;
+        this.draft.sequenceNumber = 0;
+        this.loadSequencePreview(issueDate);
+    }
+
+    /**
+     * Rellena el campo con lo que el servidor asignaría, SIN reservarlo. Si la
+     * llamada falla el campo queda en 0 (= "lo asigna el servidor al guardar"),
+     * que es honesto; mostrar un número calculado en el navegador no lo es.
+     */
+    private loadSequencePreview(issueDate: string): void {
+        this.financeBillingApi
+            .peekInvoiceSequence(issueDate)
+            .pipe(take(1))
+            .subscribe({
+                next: (preview: FinanceInvoiceSequencePreview) => {
+                    // Si el usuario ya cambió la fecha o editó el número, no lo
+                    // pisamos con una respuesta que llegó tarde.
+                    if (this.sequenceOverriddenByUser || (this.draft.issueDate || "") !== issueDate) {
+                        return;
+                    }
+                    this.draft.seriesPrefix = preview.seriesPrefix || this.draft.seriesPrefix;
+                    this.draft.sequenceNumber = preview.sequenceNumber;
+                },
+                error: () => {
+                    this.draft.sequenceNumber = 0;
+                },
+            });
+    }
+
+    /** El usuario editó el número a mano: se respeta como override explícito. */
+    onSequenceNumberChange(): void {
+        this.sequenceOverriddenByUser = true;
     }
 
     addCatalogItem(): void {
@@ -512,7 +558,10 @@ export class FinanceInvoiceCreateComponent implements OnDestroy {
             id: FinanceBillingStore.getNextInvoiceId(),
             referenceCode: "--",
             seriesPrefix: this.draft.seriesPrefix,
-            sequenceNumber: this.draft.sequenceNumber,
+            // Fase 6: 0 = "asignalo vos, servidor". Sólo se manda un número
+            // explícito si el usuario lo editó a mano (override estilo Oasis);
+            // mandar el preview sería reintroducir la colisión entre usuarios.
+            sequenceNumber: this.sequenceOverriddenByUser ? this.draft.sequenceNumber : 0,
             projectId: selectedProject?.id || "",
             projectName: selectedProject?.name || "--",
             clientId: selectedClient.id,
@@ -547,8 +596,11 @@ export class FinanceInvoiceCreateComponent implements OnDestroy {
 
         try {
             this.isSaving = true;
-            await firstValueFrom(this.financeBillingApi.createInvoice(invoice));
-            FinanceBillingStore.addInvoice(invoice);
+            // Fase 6: se cachea la factura QUE DEVOLVIO EL SERVIDOR, no el objeto
+            // local. El local viaja con sequenceNumber 0 (asignación automática),
+            // así que cachearlo pintaría "FAC-2026-000" en el listado.
+            const created = await firstValueFrom(this.financeBillingApi.createInvoice(invoice));
+            FinanceBillingStore.addInvoice({ ...invoice, ...created } as BillingInvoice);
             void this.router.navigateByUrl("/app/finance-facturacion");
         } catch (error) {
             this.formError = error instanceof Error ? error.message : "No se pudo guardar la factura.";
@@ -564,7 +616,9 @@ export class FinanceInvoiceCreateComponent implements OnDestroy {
 
         return {
             seriesPrefix: FinanceBillingStore.getInvoiceSeriesPrefix(today),
-            sequenceNumber: FinanceBillingStore.getNextSequenceNumber(today),
+            // Fase 6: arranca en 0 (= "lo asigna el servidor"). onIssueDateChange
+            // lo rellena con la previsualización del servidor al iniciar.
+            sequenceNumber: 0,
             externalNumber: "",
             issueDate: today,
             dueDate: dueDate.toISOString().slice(0, 10),

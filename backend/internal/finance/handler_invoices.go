@@ -73,6 +73,31 @@ func (h *Handler) createInvoice(c echo.Context) error {
 	return c.JSON(http.StatusCreated, item)
 }
 
+// peekInvoiceSequence previsualiza el consecutivo que se asignaría para la
+// fecha indicada SIN consumirlo (FASE 6): el frontend lo usa para mostrar el
+// número en borrador; la asignación real ocurre atómica al guardar.
+func (h *Handler) peekInvoiceSequence(c echo.Context) error {
+	companyID := company.IDFromRequest(c)
+	var req struct {
+		Date string `json:"date"`
+	}
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "cuerpo de solicitud invalido"})
+	}
+
+	preview, err := h.service.PeekInvoiceSequence(companyID, req.Date)
+	if err != nil {
+		switch {
+		case errors.Is(err, errInvoiceDateInvalid):
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+		default:
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "no se pudo calcular el consecutivo de factura"})
+		}
+	}
+
+	return c.JSON(http.StatusOK, preview)
+}
+
 func (h *Handler) updateInvoice(c echo.Context) error {
 	companyID := company.IDFromRequest(c)
 	invoiceID, err := parseNumericID(c.Param("invoiceID"), errInvoiceIDRequired)

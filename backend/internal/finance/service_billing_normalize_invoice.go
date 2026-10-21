@@ -53,7 +53,8 @@ func normalizeInvoice(input Invoice) (Invoice, error) {
 	if n.ClientID == "" || n.ClientName == "" {
 		return Invoice{}, errInvoiceClientRequired
 	}
-	if n.SequenceNumber <= 0 {
+	// FASE 6: 0 es valido = asignacion automatica en el servidor.
+	if n.SequenceNumber < 0 {
 		return Invoice{}, errInvoiceSequenceInvalid
 	}
 	issueDate, hasIssueDate, err := parseInvoiceDate(n.IssueDate)

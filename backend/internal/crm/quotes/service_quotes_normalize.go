@@ -21,10 +21,9 @@ func normalizeQuote(input Quote) (Quote, error) {
 		normalized.Token = randomHex(32)
 	}
 
+	// FASE 6: codigo vacio es valido; UpsertQuote asigna COT-<año>-NNN en el
+	// servidor dentro de la misma transacción del INSERT.
 	normalized.Codigo = strings.TrimSpace(normalized.Codigo)
-	if normalized.Codigo == "" {
-		return Quote{}, errQuoteCodeRequired
-	}
 
 	normalized.Prospecto = strings.TrimSpace(normalized.Prospecto)
 	if normalized.Prospecto == "" {

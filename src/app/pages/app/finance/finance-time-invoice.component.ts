@@ -2,10 +2,10 @@ import { CommonModule } from "@angular/common";
 import { Component, OnDestroy } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { Router, RouterLink } from "@angular/router";
-import { firstValueFrom } from "rxjs";
+import { firstValueFrom, take } from "rxjs";
 
 import { WorkTimesheetEntry, WorkTimeTrackerService } from "../../../services/work-time-tracker.service";
-import { FinanceBillingApiService } from "../../../services/finance-billing-api.service";
+import { FinanceBillingApiService, FinanceInvoiceSequencePreview } from "../../../services/finance-billing-api.service";
 import { FINANCE_HOURLY_RATE_KEY, FinanceSettingsApiService } from "../../../services/finance-settings-api.service";
 import { FinanceAccount, FinanceAccountsStore } from "./finance-accounts.store";
 import {
@@ -85,8 +85,13 @@ interface TimeInvoiceDraft {
                                 <label class="form-label">Número de factura</label>
                                 <div class="input-group">
                                     <span class="input-group-text">{{ draft.seriesPrefix }}</span>
-                                    <input class="form-control" type="number" min="1" [(ngModel)]="draft.sequenceNumber" name="sequenceNumber" />
+                                    <input class="form-control" type="number" min="0" [(ngModel)]="draft.sequenceNumber" name="sequenceNumber" (ngModelChange)="onSequenceNumberChange()" data-testid="time-invoice-sequence-input" />
                                 </div>
+                                <!-- Fase 6: 0 no es un número inválido, es "lo asigna
+                                     el servidor al guardar". Se dice en vez de inventar uno. -->
+                                @if (!draft.sequenceNumber) {
+                                    <div class="form-text">El numero definitivo lo asigna el servidor al guardar.</div>
+                                }
                             </div>
                             <div class="col-12 col-lg-2">
                                 <label class="form-label">Fecha de la factura</label>
@@ -274,6 +279,12 @@ export class FinanceTimeInvoiceComponent implements OnDestroy {
     isSaving = false;
     /** True cuando la tarifa ya vino del servidor o el usuario la tocó. */
     private hourlyRateResolved = false;
+    /**
+     * Fase 6: true sólo si el usuario editó a mano el número de factura. Mientras
+     * sea false se envía sequenceNumber 0 y el servidor asigna el consecutivo de
+     * forma atómica, que es lo que evita que dos usuarios reciban el mismo.
+     */
+    private sequenceOverriddenByUser = false;
 
     private readonly accountsUnsubscribe: () => void;
 
@@ -364,7 +375,41 @@ export class FinanceTimeInvoiceComponent implements OnDestroy {
     onIssueDateChange(): void {
         const issueDate = this.isValidDate(this.draft.issueDate) ? this.draft.issueDate : new Date().toISOString().slice(0, 10);
         this.draft.seriesPrefix = FinanceBillingStore.getInvoiceSeriesPrefix(issueDate);
-        this.draft.sequenceNumber = FinanceBillingStore.getNextSequenceNumber(issueDate);
+        // Fase 6: el consecutivo lo previsualiza el servidor. Antes salía de
+        // MAX()+1 sobre la caché local, o sea el mismo número para dos usuarios.
+        this.sequenceOverriddenByUser = false;
+        this.draft.sequenceNumber = 0;
+        this.loadSequencePreview(issueDate);
+    }
+
+    /**
+     * Rellena el campo con lo que el servidor asignaría, SIN reservarlo. Si la
+     * llamada falla el campo queda en 0 (= "lo asigna el servidor al guardar"),
+     * que es honesto; mostrar un número calculado en el navegador no lo es.
+     */
+    private loadSequencePreview(issueDate: string): void {
+        this.financeBillingApi
+            .peekInvoiceSequence(issueDate)
+            .pipe(take(1))
+            .subscribe({
+                next: (preview: FinanceInvoiceSequencePreview) => {
+                    // Si el usuario ya cambió la fecha o editó el número, no lo
+                    // pisamos con una respuesta que llegó tarde.
+                    if (this.sequenceOverriddenByUser || (this.draft.issueDate || "") !== issueDate) {
+                        return;
+                    }
+                    this.draft.seriesPrefix = preview.seriesPrefix || this.draft.seriesPrefix;
+                    this.draft.sequenceNumber = preview.sequenceNumber;
+                },
+                error: () => {
+                    this.draft.sequenceNumber = 0;
+                },
+            });
+    }
+
+    /** El usuario editó el número a mano: se respeta como override explícito. */
+    onSequenceNumberChange(): void {
+        this.sequenceOverriddenByUser = true;
     }
 
     onProjectChange(): void {
@@ -426,7 +471,10 @@ export class FinanceTimeInvoiceComponent implements OnDestroy {
             id: FinanceBillingStore.getNextInvoiceId(),
             referenceCode: "TS",
             seriesPrefix: this.draft.seriesPrefix,
-            sequenceNumber: this.draft.sequenceNumber,
+            // Fase 6: 0 = "asignalo vos, servidor". Sólo se manda un número
+            // explícito si el usuario lo editó a mano (override estilo Oasis);
+            // mandar el preview sería reintroducir la colisión entre usuarios.
+            sequenceNumber: this.sequenceOverriddenByUser ? this.draft.sequenceNumber : 0,
             projectId: selectedProject?.id || "",
             projectName: selectedProject?.name || items[0]?.description.split("|")[0]?.trim() || "Horas facturables",
             clientId: selectedClient.id,
@@ -471,8 +519,10 @@ export class FinanceTimeInvoiceComponent implements OnDestroy {
     }
 
     private validateDraft(): string {
-        if (!Number.isFinite(Number(this.draft.sequenceNumber)) || Number(this.draft.sequenceNumber) < 1) {
-            return "El número de factura debe ser mayor que cero.";
+        // Fase 6: 0 es válido y significa "el servidor asigna el consecutivo".
+        // Sólo se rechazan los negativos.
+        if (!Number.isFinite(Number(this.draft.sequenceNumber)) || Number(this.draft.sequenceNumber) < 0) {
+            return "El número de factura no puede ser negativo (0 = asignación automática).";
         }
 
         if (!this.isValidDate(this.draft.issueDate)) {
@@ -555,7 +605,9 @@ export class FinanceTimeInvoiceComponent implements OnDestroy {
 
         return {
             seriesPrefix: FinanceBillingStore.getInvoiceSeriesPrefix(todayValue),
-            sequenceNumber: FinanceBillingStore.getNextSequenceNumber(todayValue),
+            // Fase 6: arranca en 0 (= "lo asigna el servidor"). onIssueDateChange
+            // lo rellena con la previsualización del servidor al iniciar.
+            sequenceNumber: 0,
             issueDate: todayValue,
             dueDate: dueDate.toISOString().slice(0, 10),
             clientId: "",

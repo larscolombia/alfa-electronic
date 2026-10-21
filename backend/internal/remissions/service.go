@@ -148,18 +148,20 @@ func (s *Service) Create(companyID string, req UpsertRemissionRequest, createdBy
 	}
 	defer tx.Rollback()
 
+	now := time.Now().UTC()
+	// FASE 6: el consecutivo se reinicia cada mes (E-CO-YYMM-NNNN); el
+	// contador queda claveado por (company_id, periodo YYMM).
+	period := fmt.Sprintf("%02d%02d", now.Year()%100, int(now.Month()))
 	var seq int
 	err = tx.QueryRow(`
-		INSERT INTO remission_sequences (company_id, next_value)
-		VALUES ($1, 2)
-		ON CONFLICT (company_id)
+		INSERT INTO remission_sequences (company_id, period, next_value)
+		VALUES ($1, $2, 2)
+		ON CONFLICT (company_id, period)
 		DO UPDATE SET next_value = remission_sequences.next_value + 1
-		RETURNING next_value - 1`, companyID).Scan(&seq)
+		RETURNING next_value - 1`, companyID, period).Scan(&seq)
 	if err != nil {
 		return Remission{}, fmt.Errorf("generar consecutivo: %w", err)
 	}
-
-	now := time.Now().UTC()
 	r := Remission{
 		ID:             fmt.Sprintf("rem-%d", now.UnixNano()),
 		Consecutive:    formatConsecutive(seq, now),

@@ -114,7 +114,62 @@ func (s *Service) CreateInvoice(companyID string, req UpsertInvoiceRequest) (Inv
 	}
 
 	var invoiceID int64
-	err = s.db.QueryRowContext(ctx, `
+	if payload.SequenceNumber == 0 {
+		// FASE 6: secuencia 0 = asignación en el servidor. La asignación y el
+		// INSERT comparten transacción para que creaciones concurrentes nunca
+		// colisionen (el helper antiguo hacía MAX()+1 en dos pasos).
+		tx, beginErr := s.db.BeginTx(ctx, nil)
+		if beginErr != nil {
+			return Invoice{}, beginErr
+		}
+		defer func() { _ = tx.Rollback() }()
+
+		sequence, allocErr := allocateInvoiceSequence(ctx, tx, companyID, invoiceSequencePeriod(payload.IssueDate))
+		if allocErr != nil {
+			return Invoice{}, allocErr
+		}
+		payload.SequenceNumber = sequence
+		if payload.SeriesPrefix == "" {
+			prefix, prefixErr := resolveInvoiceSeriesPrefix(ctx, tx, companyID, parseInvoiceIssueTime(payload.IssueDate))
+			if prefixErr != nil {
+				return Invoice{}, prefixErr
+			}
+			payload.SeriesPrefix = prefix
+		}
+
+		invoiceID, err = insertInvoice(ctx, tx, companyID, payload, itemsRaw)
+		if err != nil {
+			return Invoice{}, err
+		}
+		if err := tx.Commit(); err != nil {
+			return Invoice{}, err
+		}
+	} else {
+		// Secuencia explícita (override manual, p. ej. Oasis): se usa tal cual,
+		// sin consumir el contador.
+		if payload.SeriesPrefix == "" {
+			prefix, prefixErr := resolveInvoiceSeriesPrefix(ctx, s.db, companyID, parseInvoiceIssueTime(payload.IssueDate))
+			if prefixErr != nil {
+				return Invoice{}, prefixErr
+			}
+			payload.SeriesPrefix = prefix
+		}
+		invoiceID, err = insertInvoice(ctx, s.db, companyID, payload, itemsRaw)
+		if err != nil {
+			return Invoice{}, err
+		}
+	}
+
+	return s.GetInvoice(companyID, invoiceID)
+}
+
+// insertInvoice comparte el INSERT entre creación manual, conversión desde
+// cotización y nota crédito. q puede ser *sql.DB o *sql.Tx: quien llama
+// controla el límite transaccional (la asignación del consecutivo debe
+// comprometerse junto con la fila).
+func insertInvoice(ctx context.Context, q sequenceQuerier, companyID string, payload Invoice, itemsRaw []byte) (int64, error) {
+	var invoiceID int64
+	err := q.QueryRowContext(ctx, `
 INSERT INTO finance_invoices (
 	company_id, reference_code, series_prefix, sequence_number, project_id, project_name, client_id, client_name,
 	billing_address, shipping_address, issue_date, due_date, currency_code, exchange_rate, bank_account_id, bank_account_name,
@@ -140,10 +195,9 @@ RETURNING id;
 		payload.ExternalNumber, payload.DocumentType, payload.CreditNoteRef, payload.Locked, payload.SourceQuoteID,
 	).Scan(&invoiceID)
 	if err != nil {
-		return Invoice{}, err
+		return 0, err
 	}
-
-	return s.GetInvoice(companyID, invoiceID)
+	return invoiceID, nil
 }
 
 func (s *Service) UpdateInvoice(companyID string, invoiceID int64, req UpsertInvoiceRequest) (Invoice, error) {

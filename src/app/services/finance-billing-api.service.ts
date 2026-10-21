@@ -70,6 +70,15 @@ export interface FinanceCreditNoteRequest {
     issueDate?: string;
 }
 
+/**
+ * Fase 6: respuesta de POST /finance/invoices/allocate-sequence. Es una
+ * previsualización, no una reserva: el consecutivo real se asigna al guardar.
+ */
+export interface FinanceInvoiceSequencePreview {
+    seriesPrefix: string;
+    sequenceNumber: number;
+}
+
 export interface FinanceRecurringInvoiceRecord {
     id: number;
     clientId: string;
@@ -130,6 +139,21 @@ export class FinanceBillingApiService {
 
     createInvoice(payload: FinanceInvoiceRecord): Observable<FinanceInvoiceRecord> {
         return from(this.request<FinanceInvoiceRecord>("/api/v1/finance/invoices", { method: "POST", body: JSON.stringify(payload) }));
+    }
+
+    /**
+     * Fase 6: previsualiza el consecutivo que recibiría la próxima factura SIN
+     * consumirlo. Es solo una ayuda visual para el formulario: el número
+     * definitivo lo asigna el servidor al guardar (sequenceNumber 0), así dos
+     * usuarios concurrentes nunca reciben el mismo consecutivo.
+     */
+    peekInvoiceSequence(date = ""): Observable<FinanceInvoiceSequencePreview> {
+        return from(
+            this.request<FinanceInvoiceSequencePreview>("/api/v1/finance/invoices/allocate-sequence", {
+                method: "POST",
+                body: JSON.stringify({ date }),
+            }),
+        );
     }
 
     updateInvoice(id: number, payload: FinanceInvoiceRecord): Observable<FinanceInvoiceRecord> {

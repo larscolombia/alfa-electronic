@@ -39,7 +39,24 @@ func (s *Service) UpsertQuote(companyID string, quote Quote) (Quote, error) {
 		purchaseOrderUploadedAt = parsedUploadedAt.UTC()
 	}
 
-	if _, err := s.db.ExecContext(ctx, `
+	tx, beginErr := s.db.BeginTx(ctx, nil)
+	if beginErr != nil {
+		return Quote{}, beginErr
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	// FASE 6: codigo vacio = el servidor asigna COT-<año>-NNN atómicamente en
+	// la misma transacción (los updates envían el código existente, así que
+	// aquí solo se asigna en creaciones).
+	if normalized.Codigo == "" {
+		code, allocErr := allocateQuoteCode(ctx, tx, companyID, quoteCodePeriod(normalized.Fecha))
+		if allocErr != nil {
+			return Quote{}, allocErr
+		}
+		normalized.Codigo = code
+	}
+
+	if _, err := tx.ExecContext(ctx, `
 INSERT INTO crm_quotes (
 	company_id, id, token, codigo, prospecto, prospect_id, empresa, correo, movil,
 	fecha, valido_hasta, estado, moneda, descuento_tipo, descuento_valor,
@@ -138,6 +155,9 @@ DO UPDATE SET
 		normalized.PurchaseOrderDate,
 		purchaseOrderUploadedAt,
 	); err != nil {
+		return Quote{}, err
+	}
+	if err := tx.Commit(); err != nil {
 		return Quote{}, err
 	}
 

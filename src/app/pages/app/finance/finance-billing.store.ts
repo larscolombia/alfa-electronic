@@ -744,15 +744,6 @@ export class FinanceBillingStore {
         return currentIds.length ? Math.max(...currentIds) + 1 : 1;
     }
 
-    static getNextSequenceNumber(dateValue?: string): number {
-        const targetPrefix = buildInvoiceSeriesPrefix(dateValue);
-        const matchingSequences = invoicesCache
-            .filter((invoice) => invoice.seriesPrefix === targetPrefix)
-            .map((invoice) => Number(invoice.sequenceNumber) || 0);
-
-        return matchingSequences.length ? Math.max(...matchingSequences) + 1 : 1;
-    }
-
     static findClient(clientId: string): BillingClient | undefined {
         return this.getClients().find((client) => client.id === clientId);
     }

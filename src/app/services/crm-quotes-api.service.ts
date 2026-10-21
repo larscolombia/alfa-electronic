@@ -100,6 +100,19 @@ export class CrmQuotesApiService {
         return from(this.request<CrmQuoteRecord>(`/api/v1/crm-quotes/quotes/${encodeURIComponent(quoteId)}`, { method: "GET" }));
     }
 
+    /**
+     * Fase 6: previsualiza el código COT-<año>-NNN que recibiría la próxima
+     * cotización SIN consumirlo. Es solo una ayuda visual: el código definitivo
+     * lo asigna el servidor al guardar, así dos usuarios concurrentes nunca
+     * reciben el mismo número.
+     */
+    peekNextQuoteCode(date = ""): Observable<string> {
+        const query = date ? `?date=${encodeURIComponent(date)}` : "";
+        return from(this.request<{ code?: string }>(`/api/v1/crm-quotes/quotes/next-code${query}`, { method: "GET" })).pipe(
+            map((response) => response.code ?? "")
+        );
+    }
+
     createQuote(payload: CrmQuoteRecord): Observable<CrmQuoteRecord> {
         return from(
             this.request<CrmQuoteRecord>("/api/v1/crm-quotes/quotes", {

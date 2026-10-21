@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -263,35 +264,18 @@ WHERE company_id = $2
 	return created, nil
 }
 
-// nextInvoiceSequence genera el consecutivo server-side: MAX(sequence_number)+1
-// por empresa, reutilizando el prefijo de serie de la factura más reciente para
-// mantener coherencia con las facturas existentes (por defecto "FAC-<año>-",
-// el mismo prefijo base que usa el frontend).
+// nextInvoiceSequence genera el consecutivo server-side (FASE 6): asignación
+// atómica por empresa y año en document_sequences con auto-sanación contra el
+// MAX(sequence_number) real; el prefijo de serie se resuelve desde la
+// configuración o la factura más reciente (por defecto "FAC-<año>-").
 func (s *Service) nextInvoiceSequence(ctx context.Context, companyID string, issueDate time.Time) (string, int, error) {
-	var maxSequence sql.NullInt64
-	var lastPrefix sql.NullString
-	if err := s.db.QueryRowContext(ctx, `
-SELECT COALESCE(MAX(sequence_number), 0), MAX(series_prefix) FILTER (WHERE created_at = max_created)
-FROM (
-	SELECT sequence_number, series_prefix, MAX(created_at) OVER () AS max_created, created_at
-	FROM finance_invoices
-	WHERE company_id = $1 AND soft_delete = false
-) recent;
-`, companyID).Scan(&maxSequence, &lastPrefix); err != nil && !errors.Is(err, sql.ErrNoRows) {
+	sequence, err := allocateInvoiceSequence(ctx, s.db, companyID, strconv.Itoa(issueDate.Year()))
+	if err != nil {
 		return "", 0, err
 	}
-
-	prefix := ""
-	if lastPrefix.Valid {
-		prefix = strings.TrimSpace(lastPrefix.String)
-	}
-	if prefix == "" {
-		prefix = fmt.Sprintf("FAC-%d-", issueDate.Year())
-	}
-
-	sequence := 1
-	if maxSequence.Valid && maxSequence.Int64 >= 1 {
-		sequence = int(maxSequence.Int64) + 1
+	prefix, err := resolveInvoiceSeriesPrefix(ctx, s.db, companyID, issueDate)
+	if err != nil {
+		return "", 0, err
 	}
 	return prefix, sequence, nil
 }
@@ -395,7 +379,10 @@ FOR UPDATE;
 		CreditNoteRef: &origin.ID,
 	}
 
-	nextSequence, err := s.nextInvoiceSequenceTx(ctx, tx, companyID)
+	// FASE 6: asignación atómica dentro de la transacción (mismo helper que
+	// CreateInvoice); issueDate ya fue validado como YYYY-MM-DD arriba.
+	issueTime, _ := time.Parse("2006-01-02", issueDate)
+	nextSequence, err := allocateInvoiceSequence(ctx, tx, companyID, strconv.Itoa(issueTime.Year()))
 	if err != nil {
 		return Invoice{}, err
 	}
@@ -410,32 +397,7 @@ FOR UPDATE;
 		return Invoice{}, err
 	}
 
-	var creditNoteID int64
-	err = tx.QueryRowContext(ctx, `
-INSERT INTO finance_invoices (
-	company_id, reference_code, series_prefix, sequence_number, project_id, project_name, client_id, client_name,
-	billing_address, shipping_address, issue_date, due_date, currency_code, exchange_rate, bank_account_id, bank_account_name,
-	tax_calculation, generated_by, items_json, discount_value, discount_mode, subtotal, tax_total, total,
-	paid_amount, balance_amount, status, note, terms, attachment_name, received_payment, source,
-	external_number, document_type, credit_note_ref, locked, source_quote_id,
-	soft_delete, created_at, updated_at
-)
-VALUES (
-	$1, $2, $3, $4, $5, $6, $7, $8,
-	$9, $10, NULLIF($11, '')::date, NULLIF($12, '')::date, $13, $14, $15, $16,
-	$17, $18, $19::jsonb, $20, $21, $22, $23, $24,
-	$25, $26, $27, $28, $29, $30, $31, $32,
-	$33, $34, $35, $36, $37,
-	false, NOW(), NOW()
-)
-RETURNING id;
-`,
-		companyID, normalized.ReferenceCode, normalized.SeriesPrefix, normalized.SequenceNumber, normalized.ProjectID, normalized.ProjectName, normalized.ClientID, normalized.ClientName,
-		normalized.BillingAddress, normalized.ShippingAddr, normalized.IssueDate, normalized.DueDate, normalized.CurrencyCode, normalized.ExchangeRate, normalized.BankAccountID, normalized.BankAccount,
-		normalized.TaxCalc, normalized.GeneratedBy, string(itemsRaw), normalized.DiscountValue, normalized.DiscountMode, normalized.Subtotal, normalized.TaxTotal, normalized.Total,
-		normalized.PaidAmount, normalized.BalanceAmount, normalized.Status, normalized.Note, normalized.Terms, normalized.AttachmentName, normalized.ReceivedPay, normalized.Source,
-		normalized.ExternalNumber, normalized.DocumentType, normalized.CreditNoteRef, normalized.Locked, normalized.SourceQuoteID,
-	).Scan(&creditNoteID)
+	creditNoteID, err := insertInvoice(ctx, tx, companyID, normalized, itemsRaw)
 	if err != nil {
 		return Invoice{}, err
 	}
@@ -472,21 +434,6 @@ WHERE company_id = $4
 	}
 
 	return s.GetInvoice(companyID, creditNoteID)
-}
-
-func (s *Service) nextInvoiceSequenceTx(ctx context.Context, tx *sql.Tx, companyID string) (int, error) {
-	var maxSequence sql.NullInt64
-	if err := tx.QueryRowContext(ctx, `
-SELECT COALESCE(MAX(sequence_number), 0)
-FROM finance_invoices
-WHERE company_id = $1 AND soft_delete = false;
-`, companyID).Scan(&maxSequence); err != nil {
-		return 0, err
-	}
-	if maxSequence.Valid && maxSequence.Int64 >= 1 {
-		return int(maxSequence.Int64) + 1, nil
-	}
-	return 1, nil
 }
 
 // creditNoteSeriesPrefix deriva la serie de la nota crédito: "NC-" delante de

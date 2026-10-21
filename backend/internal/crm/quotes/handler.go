@@ -22,6 +22,9 @@ func NewHandler(service *Service) *Handler {
 func (h *Handler) RegisterRoutes(group *echo.Group) {
 	group.GET("/quotes", h.listQuotes)
 	group.POST("/quotes", h.createQuote)
+	// Fase 6: previsualización del código sin consumirlo (estático, no
+	// colisiona con /quotes/:quoteID).
+	group.GET("/quotes/next-code", h.peekQuoteCode)
 	group.GET("/quotes/:quoteID", h.getQuote)
 	group.PUT("/quotes/:quoteID", h.updateQuote)
 	group.DELETE("/quotes/:quoteID", h.deleteQuote)
@@ -34,6 +37,20 @@ func (h *Handler) RegisterRoutes(group *echo.Group) {
 func (h *Handler) RegisterPublicRoutes(group *echo.Group) {
 	group.GET("/quotes/public/:token", h.getQuoteByToken)
 	group.PATCH("/quotes/public/:token/decision", h.updateDecisionByToken)
+}
+
+// peekQuoteCode previsualiza el código que recibiría la próxima cotización
+// SIN consumirlo (FASE 6): el frontend lo usa para mostrar el código en el
+// formulario; la asignación real ocurre atómica al guardar.
+func (h *Handler) peekQuoteCode(c echo.Context) error {
+	companyID := company.IDFromRequest(c)
+
+	code, err := h.service.PeekQuoteCode(companyID, c.QueryParam("date"))
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "no se pudo calcular el codigo de cotizacion"})
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{"code": code})
 }
 
 func (h *Handler) listQuotes(c echo.Context) error {

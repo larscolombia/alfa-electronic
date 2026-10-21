@@ -8,7 +8,6 @@ import { ProspectEquipmentSummary } from "./crm-prospect-equipment.store";
 import { buildEquipmentMatchCriteria } from "./crm-prospect-equipment-match.logic";
 import { PublicQuotePreview, PublicQuotePreviewLine, upsertPublicQuotePreview } from "./crm-quote-preview.store";
 import { CrmZoneRecord } from "./crm-zones.store";
-import { buildCommercialDocumentCode, buildCommercialSeriesPrefix } from "../company/company-commercial-settings.store";
 import { getProjectWorkflowStatusLabel } from "../projects/project-workflow.config";
 import { ProjectService } from "../projects/services/project.service";
 import { CrmEquipmentApiService } from "../../../services/crm-equipment-api.service";
@@ -161,6 +160,14 @@ type QuoteLine = {
                         </button>
                         {{ editingQuoteId ? 'Editar Cotizacion' : 'Nueva Cotizacion' }}
                     </h5>
+                    <!-- Fase 6: el código lo asigna el servidor al guardar; esto es
+                         sólo una previsualización y puede cambiar si otro usuario
+                         guarda antes. -->
+                    @if (!editingQuoteId && nextQuoteCodePreview) {
+                        <span class="badge bg-light text-dark border" data-testid="quote-next-code-preview">
+                            Codigo: {{ nextQuoteCodePreview }}
+                        </span>
+                    }
                 </div>
                 <div class="card-body">
                     <div class="alert alert-danger border mb-3" *ngIf="prospectsLoadErrorMessage || catalogsLoadErrorMessage || quoteSaveErrorMessage">
@@ -510,6 +517,12 @@ export class CrmQuotesComponent implements OnInit {
     catalogsLoadErrorMessage = "";
     quoteSaveErrorMessage = "";
     /**
+     * Fase 6: código que el servidor asignaría a la próxima cotización. Es sólo
+     * una ayuda visual (GET /quotes/next-code no consume el contador); el código
+     * definitivo llega en la respuesta del guardado.
+     */
+    nextQuoteCodePreview = "";
+    /**
      * Fase 5c: estado real del correo de la cotización. Se llena sólo cuando el
      * envío sí va a salir; cuando no sale el mensaje va a
      * `quoteSaveErrorMessage`, que es el que se muestra en rojo.
@@ -636,6 +649,33 @@ export class CrmQuotesComponent implements OnInit {
 
         this.showQuoteForm = true;
         this.handleProspectChange(this.selectedProspecto);
+        this.loadNextQuoteCodePreview();
+    }
+
+    /**
+     * Fase 6: el código ya NO se calcula en el navegador (era MAX()+1 sobre las
+     * filas cargadas acá, así que dos usuarios concurrentes recibían el mismo).
+     * Esto sólo previsualiza lo que asignará el servidor; el código real llega
+     * en la respuesta del guardado.
+     */
+    private loadNextQuoteCodePreview(): void {
+        if (this.editingQuoteId) {
+            this.nextQuoteCodePreview = "";
+            return;
+        }
+
+        this.crmQuotesApi.peekNextQuoteCode().pipe(take(1)).subscribe({
+            next: (code) => {
+                this.nextQuoteCodePreview = code;
+                this.cdr.detectChanges();
+            },
+            // Un fallo del preview no bloquea guardar: el servidor asigna el
+            // código igual. Se deja vacío en vez de mostrar un número inventado.
+            error: () => {
+                this.nextQuoteCodePreview = "";
+                this.cdr.detectChanges();
+            },
+        });
     }
 
     openEditQuoteForm(row: QuoteRow): void {
@@ -1092,17 +1132,18 @@ export class CrmQuotesComponent implements OnInit {
         // ────────────────────────────────────────────────────────────────────
 
         const now = new Date();
-        const dateValue = `${now.getFullYear()}-${this.pad(now.getMonth() + 1)}-${this.pad(now.getDate())}`;
         const dateLabel = `${this.pad(now.getDate())}/${this.pad(now.getMonth() + 1)}/${now.getFullYear()}`;
-        const nextCode = this.getNextQuoteCode(dateValue);
         const token = this.generateProposalToken();
 
-        // When editing, keep the existing code and token; only generate new ones for creates
+        // When editing, keep the existing code and token. FASE 6: en creaciones el
+        // código viaja vacío y lo asigna el servidor (COT-<año>-NNN) dentro de la
+        // misma transacción del INSERT. Calcularlo acá era MAX()+1 sobre las filas
+        // cargadas en este navegador: dos usuarios concurrentes recibían el mismo.
         const isEditing = Boolean(this.editingQuoteId && this.editingQuoteToken);
         const existingRow = isEditing
             ? this.quotesRows.find((r) => r.token === this.editingQuoteToken)
             : undefined;
-        const finalCode = isEditing && existingRow ? existingRow.codigo : nextCode;
+        const finalCode = isEditing && existingRow ? existingRow.codigo : "";
         const finalToken = isEditing && this.editingQuoteToken ? this.editingQuoteToken : token;
 
         const newRow: QuoteRow = {
@@ -1449,17 +1490,6 @@ export class CrmQuotesComponent implements OnInit {
             return error.message;
         }
         return fallback;
-    }
-
-    private getNextQuoteCode(dateValue: string): string {
-        const targetSeriesPrefix = buildCommercialSeriesPrefix("quote", dateValue);
-        const matchingSequences = this.quotesRows
-            .filter((row) => row.codigo.startsWith(targetSeriesPrefix))
-            .map((row) => Number(row.codigo.slice(targetSeriesPrefix.length)))
-            .filter((sequence) => Number.isFinite(sequence) && sequence > 0);
-
-        const nextSequence = matchingSequences.length ? Math.max(...matchingSequences) + 1 : 1;
-        return buildCommercialDocumentCode("quote", nextSequence, dateValue);
     }
 
     private defaultValidUntil(): string {
