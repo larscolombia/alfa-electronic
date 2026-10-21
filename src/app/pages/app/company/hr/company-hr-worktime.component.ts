@@ -1,3 +1,4 @@
+import { CommonModule } from "@angular/common";
 import { Component, OnInit } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { RouterLink } from "@angular/router";
@@ -21,7 +22,7 @@ import {
 @Component({
     selector: "app-company-hr-worktime",
     standalone: true,
-    imports: [RouterLink, FormsModule],
+    imports: [CommonModule, RouterLink, FormsModule],
     template: `
         <div class="container-fluid py-3">
             <div class="row gx-3 gx-lg-4 align-items-center page-title">
