@@ -204,6 +204,16 @@ interface ChartThemeTokens {
     </div>
 
     <div class="container mt-3" id="main-content">
+      @if (serverError$ | async; as serverError) {
+        <div class="alert alert-danger border mb-3" role="alert" data-testid="workload-server-error">
+          <strong>Los datos del tablero no pudieron sincronizarse con el servidor.</strong>
+          <div>{{ serverError }}</div>
+          <button type="button" class="btn btn-outline-danger btn-sm mt-2" (click)="retryServerSync()">
+            Reintentar
+          </button>
+        </div>
+      }
+
       <div class="row gx-3 gx-lg-4 mb-3 mb-lg-4">
         <div class="col-12 col-md-6 col-xl-3 mb-3 mb-xl-0">
           <div class="card adminuiux-card h-100">
@@ -394,6 +404,9 @@ export class WorkWorkloadComponent implements OnInit, AfterViewInit, OnDestroy {
   allProjects: Project[] = [];
   chartInitError = false;
 
+  /** Ultimo error de sincronizacion del tablero (mismo subject que la vista de proyectos). */
+  serverError$ = this.projectService.error$;
+
   /** Modal state */
   modalProject: Project | null = null;
   modalTechnician = '';
@@ -445,6 +458,11 @@ export class WorkWorkloadComponent implements OnInit, AfterViewInit, OnDestroy {
     // Antes había un fallback de 6 nombres inventados que ocultaba que RRHH
     // estaba vacío.
     return this.hrPeople.merge(this.peopleNames, this.modalTechnician, fromWorkload);
+  }
+
+  retryServerSync(): void {
+    // Mismo patron que la vista de proyectos: recarga y el banner desaparece si vuelve a funcionar.
+    this.projectService.loadProjects('board-1').subscribe();
   }
 
   ngOnInit(): void {
