@@ -23,9 +23,24 @@ Versión: v2 — incorpora Recepción (Fase 8B) y Despacho/Facturación (Fase 5,
 | fix(hr) — `CommonModule` faltante rompía `ng build` en HEAD | `a0440452` | `ng build` pasa de NG8002 a 0 errores | ✅ |
 | 6 (parcial) — consecutivos generados en el servidor | `2458ccc7` | build/vet 0, `go test ./...` con `RUN_DB_TESTS=1` (13 paquetes ok, concurrencia 8 goroutines), `ng build` 0, fire test HTTP real: 8 POST concurrentes → `[2..9]` sin duplicados, cotización con código vacío → `COT-2026-001` | ✅ |
 | 6 (parcial) — maestros de equipos al servidor + ruta del CRUD | `77ab7b35` | build/vet 0, `go test ./...` con `RUN_DB_TESTS=1` `-count=1` (14 paquetes ok, +8 tests de catálogo), `tsc --noEmit` 0, `ng build` 0 | ✅ |
+| 6 (parcial) — selects de responsable/técnico/jefe cableados a RRHH | `5c8f0664` | `tsc --noEmit` 0, `ng build` 0, build/vet 0 y `go test ./...` `-count=1` (14 paquetes ok) como sanity; sin cambios de backend ni esquema | ✅ |
 | 6 (resto) - 9 | pendientes | — | — |
 
-Todo lo commiteado está subido a `origin/cambios-Anderson` (último push de código `77ab7b35`).
+Todo lo commiteado está subido a `origin/cambios-Anderson` (último push de código `5c8f0664`).
+
+**Hecho en `5c8f0664` — responsables cableados a RRHH:** de 15 lugares que piden un
+"responsable", sólo 2 llamaban a RRHH y aún así se veían vacíos (no había ni un empleado activo);
+el RESPONSABLE de la ficha de proyecto y el catálogo de jefes del perfil eran arrays quemados
+("Juan Pérez", "Steven Jobs"…) sin correspondencia con ningún empleado, y 6 campos eran texto libre.
+Ahora `HrPeoplePickerService` es la fuente única: lee empleados ACTIVOS de `hr_employees` vía
+`GET /crm-equipment/technicians` (endpoint ya abierto a todo rol autenticado, sin superficie de ACL
+nueva), cachea, y si RRHH no tiene activos devuelve **vacío** en vez de nombres inventados.
+Cableados: Planeación de proyecto, solicitud de material, carga laboral, tareas ("Asignado a"),
+conciliación/reservas/reposición de inventario y "Jefe directo" del perfil. El valor ya guardado se
+agrega siempre a las opciones para no dejar en blanco lo asignado a empleados hoy inactivos.
+Quedan a propósito como texto libre: Responsable de proveedores (persona del proveedor) y
+Responsable de garantías (puede ser un área o un externo). **Deuda de nombre:** cuando exista
+`GET /hr/people` con esta proyección, el servicio debe apuntar ahí.
 
 **Abierto de la Fase 6:** hechos el ítem 3 (consecutivos) y el ámbito *equipment* del ítem 1-2
 (maestros de equipos). Los prefijos comerciales siguen en localStorage
