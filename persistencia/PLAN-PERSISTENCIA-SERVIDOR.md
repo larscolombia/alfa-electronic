@@ -24,9 +24,10 @@ Versión: v2 — incorpora Recepción (Fase 8B) y Despacho/Facturación (Fase 5,
 | 6 (parcial) — consecutivos generados en el servidor | `2458ccc7` | build/vet 0, `go test ./...` con `RUN_DB_TESTS=1` (13 paquetes ok, concurrencia 8 goroutines), `ng build` 0, fire test HTTP real: 8 POST concurrentes → `[2..9]` sin duplicados, cotización con código vacío → `COT-2026-001` | ✅ |
 | 6 (parcial) — maestros de equipos al servidor + ruta del CRUD | `77ab7b35` | build/vet 0, `go test ./...` con `RUN_DB_TESTS=1` `-count=1` (14 paquetes ok, +8 tests de catálogo), `tsc --noEmit` 0, `ng build` 0 | ✅ |
 | 6 (parcial) — selects de responsable/técnico/jefe cableados a RRHH | `5c8f0664` | `tsc --noEmit` 0, `ng build` 0, build/vet 0 y `go test ./...` `-count=1` (14 paquetes ok) como sanity; sin cambios de backend ni esquema | ✅ |
+| 6 (parcial) — dos fuentes quemadas que el mapeo inicial omitió | `72de0292` | la verificación post-deploy grepeó el bundle servido y halló "Steven Jobs"; `tsc` 0 y `ng build` 0 tras corregir | ✅ |
 | 6 (resto) - 9 | pendientes | — | — |
 
-Todo lo commiteado está subido a `origin/cambios-Anderson` (último push de código `5c8f0664`).
+Todo lo commiteado está subido a `origin/cambios-Anderson` (último push de código `72de0292`).
 
 **Hecho en `5c8f0664` — responsables cableados a RRHH:** de 15 lugares que piden un
 "responsable", sólo 2 llamaban a RRHH y aún así se veían vacíos (no había ni un empleado activo);
