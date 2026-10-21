@@ -22,16 +22,32 @@ Versión: v2 — incorpora Recepción (Fase 8B) y Despacho/Facturación (Fase 5,
 | extra — autor de la acción comercial desde la sesión | `e7f17e91` | — | ✅ |
 | fix(hr) — `CommonModule` faltante rompía `ng build` en HEAD | `a0440452` | `ng build` pasa de NG8002 a 0 errores | ✅ |
 | 6 (parcial) — consecutivos generados en el servidor | `2458ccc7` | build/vet 0, `go test ./...` con `RUN_DB_TESTS=1` (13 paquetes ok, concurrencia 8 goroutines), `ng build` 0, fire test HTTP real: 8 POST concurrentes → `[2..9]` sin duplicados, cotización con código vacío → `COT-2026-001` | ✅ |
+| 6 (parcial) — maestros de equipos al servidor + ruta del CRUD | `77ab7b35` | build/vet 0, `go test ./...` con `RUN_DB_TESTS=1` `-count=1` (14 paquetes ok, +8 tests de catálogo), `tsc --noEmit` 0, `ng build` 0 | ✅ |
 | 6 (resto) - 9 | pendientes | — | — |
 
-Todo lo commiteado está subido a `origin/cambios-Anderson` (último push de código `2458ccc7`).
+Todo lo commiteado está subido a `origin/cambios-Anderson` (último push de código `77ab7b35`).
 
-**Abierto de la Fase 6:** sólo se hizo el ítem 3 (consecutivos). Los prefijos comerciales siguen en
-localStorage (`company-commercial-settings.store.ts`) y **nada escribe `company_settings`**, así que
-el servidor cae al fallback `COT` / `FAC-<año>-` y un prefijo personalizado en la UI no se aplica.
-Ese puente es el ítem 2 de la Fase 6 y conviene hacerlo antes de demostrar cotizaciones. Pendientes
-también: ítem 1 (migración de `company_settings` por ámbito), ítem 2 (los 6 stores a la API) e
-ítem 4 (`personalization.component.ts`).
+**Abierto de la Fase 6:** hechos el ítem 3 (consecutivos) y el ámbito *equipment* del ítem 1-2
+(maestros de equipos). Los prefijos comerciales siguen en localStorage
+(`company-commercial-settings.store.ts`) y **nada escribe `company_settings`**, así que el servidor
+cae al fallback `COT` / `FAC-<año>-` y un prefijo personalizado en la UI no se aplica. Ese puente es
+el ítem 2 de la Fase 6 y conviene hacerlo antes de demostrar cotizaciones. Pendientes también:
+`company-followups-config.component.ts`, `crm-zones.store.ts`, `crm-quote-preview.store.ts`,
+comisiones, y el ítem 4 (`personalization.component.ts`).
+
+**Hecho en `77ab7b35` — maestros de equipos (cierra el "Ojo" de la Fase 8B):** el selector "Modelo
+industrial" del modal de recepción sólo podía mostrar 3 modelos demo, porque el catálogo vivía en
+localStorage con `DEFAULT_*` hardcodeados y `CompanyEquipmentConfigComponent` **no tenía ruta
+registrada**. Evidencia del impacto real: de 46 recepciones en la BD, el 100% de los
+`equipmentModelId` no vacíos eran uno de esos 3 demo (9 Yaskawa, 5 Siemens, 4 Allen-Bradley; 28
+vacíos). Ahora hay 4 tablas por empresa (`company_equipment_families/_models/_service_types/
+_locations`, PK `(company_id, id)`), el paquete `internal/equipmentcatalog` con
+`GET /equipment-catalog` + `PUT`/`DELETE` por entidad, el store reescrito como caché respaldada por
+la API (getters síncronos conservados: los consumen 5 módulos), y la ruta
+`/app/company-equipment-config` con entrada "Config. Equipos" en el menú Compañía. La siembra es
+**condicionada**: los `DEFAULT_*` sólo se replican en empresas que ya tienen recepciones
+referenciándolos; una empresa nueva arranca con el catálogo vacío, sin datos inventados. De paso le
+dio sentido al `ALTER TABLE` huérfano de `migrations_crm_equipment_quotes.go:251`.
 
 **Ojo con los cambios de contrato para quien trabaje sobre esta rama:** `normalizeInvoice` ahora
 acepta `sequenceNumber == 0` (= asignación automática), `POST /finance/invoices` ya no exige un
@@ -375,12 +391,15 @@ no conectados y 12 inexistentes.
    las únicas rutas públicas son `/crm-quotes/quotes/public/:token`.
 9. Mapeo campo-por-campo del escaneo: el texto crudo va entero a `receivedIdentifier` (`modal:3654`).
 
-**Maestros en localStorage → Fase 6:** tipos de servicio (`company-equipment-config.store.ts:44,106-135`,
-faltan intercambio y venta nueva/usada), autorrelleno desde `DEFAULT_MODELS` hardcodeado (`store.ts:70`)
-en vez del histórico real, clasificación por familias sin tabla en BD, ubicaciones/estanterías
-(`DEFAULT_LOCATIONS`, `store.ts:137-166`, faltan Interior 4, 5 y garaje).
-**Ojo:** `company-equipment-config.component.ts` (964 líneas, maestro de familias)
-**no tiene ruta registrada** en ningún `*.routes.ts` → código inaccesible.
+**Maestros en localStorage → RESUELTO en `77ab7b35` (Fase 6):** tipos de servicio, modelos
+industriales, familias y ubicaciones/estanterías salieron de `company-equipment-config.store.ts`
+(`DEFAULT_*` hardcodeados bajo la clave `adminux.company.equipment.catalog.v1`) y ahora viven en 4
+tablas por empresa con CRUD en `internal/equipmentcatalog`. El componente
+`company-equipment-config.component.ts`, que **no tenía ruta registrada** en ningún `*.routes.ts` y
+por tanto era código inaccesible, ya está en `/app/company-equipment-config` con entrada de menú.
+Sigue pendiente de negocio (no de persistencia): faltan los tipos de servicio *intercambio* y
+*venta nueva/usada*, las ubicaciones *Interior 4, 5 y garaje*, y el autorrelleno desde el histórico
+real en vez de un catálogo fijo — eso se carga ahora desde la UI, ya no se hardcodea.
 
 **Inexistente:** auto-asignar al técnico anterior en garantía (`findPreviousReception` no devuelve
 el técnico, `warranty.logic.ts:117-127`), cotización automática para ventas, remisión interna de ALFA,
