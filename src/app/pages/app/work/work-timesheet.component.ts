@@ -4,7 +4,7 @@ import { FormsModule } from "@angular/forms";
 import { RouterLink } from "@angular/router";
 import { Subscription } from "rxjs";
 import { CrmEquipmentApiService } from "../../../services/crm-equipment-api.service";
-import { HrApiService } from "../../../services/hr-api.service";
+import { HrPeoplePickerService } from "../../../services/hr-people-picker.service";
 import { WeeklyEmployeeTotal, WorktimeApiService } from "../../../services/worktime-api.service";
 import { CreateWorkTimesheetEntry, DailyUsage, WorkTimesheetEntry, WorkTimeTrackerService } from "../../../services/work-time-tracker.service";
 import { accumulateQuarterHours, calculateDailyBalance, calculateTimeKpi, summarizeByEntryType, TimeKpiResult, WorkEntryType } from "./work-time.logic";
@@ -364,10 +364,12 @@ export class WorkTimesheetComponent implements OnInit, OnDestroy {
         "Soporte interno": ["Soporte usuarios", "Mantenimiento", "Monitoreo", "Capacitacion"],
     };
 
-    private readonly fallbackEmployees = ["Juan Perez", "Maria Gomez", "Carlos Ruiz", "Ana Lopez"];
-
-    /** Empleados reales de HR API; si el API falla se conserva la lista local. */
-    employees: string[] = [...this.fallbackEmployees];
+    /**
+     * Fase 6: empleados ACTIVOS de RRHH. Antes había un fallback de 4 nombres
+     * inventados ("Juan Perez", "Maria Gomez"…) que se mostraba cuando RRHH
+     * venía vacío o fallaba, o sea el timesheet ofrecía gente que no existe.
+     */
+    employees: string[] = [];
 
     readonly entryTypeOptions: Array<{ value: WorkEntryType; label: string }> = [
         { value: "normal", label: "Normal" },
@@ -395,7 +397,7 @@ export class WorkTimesheetComponent implements OnInit, OnDestroy {
 
     project = this.projects[0];
     task = this.tasksByProject[this.projects[0]][0];
-    employee = this.employees[0];
+    employee = "";
     equipmentId = "";
     startDate = this.todayKey();
     startTime = "08:00";
@@ -426,7 +428,7 @@ export class WorkTimesheetComponent implements OnInit, OnDestroy {
 
     constructor(
         private readonly tracker: WorkTimeTrackerService,
-        private readonly hrApi: HrApiService,
+        private readonly hrPeople: HrPeoplePickerService,
         private readonly crmEquipmentApi: CrmEquipmentApiService,
         private readonly worktimeApi: WorktimeApiService,
     ) { }
@@ -444,19 +446,14 @@ export class WorkTimesheetComponent implements OnInit, OnDestroy {
     }
 
     private loadEmployees(): void {
-        this.hrApi.listEmployees().subscribe({
-            next: (rows) => {
-                const names = rows.map((row) => row.name).filter((name) => !!name);
-                if (names.length) {
-                    this.employees = names;
-                    if (!this.employees.includes(this.employee)) {
-                        this.employee = this.employees[0];
-                    }
-                }
-            },
-            error: () => {
-                // Fallback silencioso: se conserva la lista local de empleados.
-            },
+        // Fase 6: una sola fuente de personas (RRHH activo). Sin fallback
+        // inventado: si no hay empleados activos la lista queda vacía y el
+        // select se ve vacío, que es la verdad.
+        void this.hrPeople.refresh().then((names) => {
+            this.employees = names;
+            if (!this.employees.includes(this.employee)) {
+                this.employee = this.employees[0] ?? "";
+            }
         });
     }
 
@@ -644,7 +641,7 @@ export class WorkTimesheetComponent implements OnInit, OnDestroy {
     resetDraft(): void {
         this.project = this.projects[0];
         this.task = this.tasksByProject[this.projects[0]][0];
-        this.employee = this.employees[0];
+        this.employee = this.employees[0] ?? "";
         this.equipmentId = "";
         this.startDate = this.todayKey();
         this.startTime = "08:00";

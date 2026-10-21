@@ -1,6 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit, Inject, ViewChild, Renderer2, ElementRef, CUSTOM_ELEMENTS_SCHEMA } from "@angular/core";
 import { RouterLink } from "@angular/router";
 import Choices, { ClassNames } from "choices.js";
+import { HrPeoplePickerService } from "../../../services/hr-people-picker.service";
 import { DOCUMENT, NgClass, NgFor, NgIf, NgTemplateOutlet } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import Swiper from "swiper";
@@ -622,14 +623,11 @@ interface RoleModuleView {
                             <h6 class="mb-3 mb-lg-4">Usuarios bajo este rol</h6>
                             <div class="input-group input-group-md rounded mb-2 mb-lg-3" style="--mw-dynamic: calc(100% - 42px)">
                                 <span class="input-group-text text-theme-1"><i class="bi bi-people"></i></span>
-                                <select class="choices" #choices3 multiple="">
-                                    <option value="user1" selected>Kartikaa Joshi</option>
-                                    <option value="user2" selected>Steven Jobs</option>
-                                    <option value="user3">Martian Apprila</option>
-                                    <option value="user4">Ken Williamson</option>
-                                    <option value="user5">Jack Manas</option>
-                                    <option value="user6">Corolla Protect</option>
-                                </select>
+                                <!-- Fase 6: las opciones las inyecta setChoices() con
+                                     empleados activos de RRHH. Antes eran 6 personas
+                                     quemadas ("Kartikaa Joshi", "Steven Jobs"…) que no
+                                     existían como usuarios ni empleados. -->
+                                <select class="choices" #choices3 multiple=""></select>
                             </div>
 
                             <div class="d-block mb-2">
@@ -711,10 +709,23 @@ export class CompanyUserRolesComponent {
         @Inject(DOCUMENT) private document: Document,
         private readonly aclApi: AclApiService,
         private readonly cdr: ChangeDetectorRef,
+        private readonly hrPeople: HrPeoplePickerService,
     ) { }
+
+    /**
+     * Fase 6: el multi-select "Usuarios bajo este rol" tenía 6 personas quemadas
+     * en el template ("Kartikaa Joshi", "Steven Jobs"…) que no eran usuarios ni
+     * empleados de nadie. Ahora se pobla con empleados activos de RRHH.
+     */
+    peopleNames: string[] = [];
+    private roleUsersWidget: Choices | null = null;
 
     ngOnInit(): void {
         this.loadAclData();
+        void this.hrPeople.refresh().then((names) => {
+            this.peopleNames = names;
+            this.syncRoleUsersWidget();
+        });
     }
 
     ngAfterViewInit() {
@@ -735,8 +746,25 @@ export class CompanyUserRolesComponent {
             } as ClassNames,
             placeholderValue: "Type...",
         });
+        this.roleUsersWidget = choices3;
+        // Si los empleados de RRHH llegaron antes que el widget (carga rápida),
+        // se pintan ahora; si llegan después, los pinta el then() del ngOnInit.
+        this.syncRoleUsersWidget();
 
         this.initAccessTooltips();
+    }
+
+    /** Vuelca los empleados activos de RRHH al multi-select de Choices.js. */
+    private syncRoleUsersWidget(): void {
+        if (!this.roleUsersWidget) {
+            return;
+        }
+        this.roleUsersWidget.setChoices(
+            this.peopleNames.map((name) => ({ value: name, label: name, selected: false })),
+            "value",
+            "label",
+            true,
+        );
     }
 
     toggleModuleVisibility(moduleKey: string, event: Event): void {
