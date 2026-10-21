@@ -190,8 +190,28 @@ type Invoice struct {
 	AttachmentName string        `json:"attachmentName"`
 	ReceivedPay    bool          `json:"receivedPayment"`
 	Source         string        `json:"source"`
-	CreatedAt      string        `json:"createdAt"`
-	UpdatedAt      string        `json:"updatedAt"`
+	// Fase 5b: número de factura externa Oasis (editable mientras la factura
+	// no esté bloqueada), tipo de documento ('factura' | 'nota_credito'),
+	// referencia a la factura origen cuando es nota crédito, bloqueo de
+	// factura emitida ("no hay reversa": solo nota crédito) y cotización
+	// de origen cuando se generó por conversión.
+	ExternalNumber string `json:"externalNumber"`
+	DocumentType   string `json:"documentType"`
+	CreditNoteRef  *int64 `json:"creditNoteRef"`
+	Locked         bool   `json:"locked"`
+	SourceQuoteID  string `json:"sourceQuoteId"`
+	CreatedAt      string `json:"createdAt"`
+	UpdatedAt      string `json:"updatedAt"`
+}
+
+// CreditNoteRequest es el cuerpo de POST /finance/invoices/credit-note:
+// nota crédito que referencia una factura existente y descuenta su saldo
+// pendiente al quedar aplicada.
+type CreditNoteRequest struct {
+	InvoiceID int64   `json:"invoiceId"`
+	Amount    float64 `json:"amount"`
+	Note      string  `json:"note"`
+	IssueDate string  `json:"issueDate"`
 }
 
 type RecurringInvoice struct {

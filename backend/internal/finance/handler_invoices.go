@@ -3,9 +3,10 @@ package finance
 import (
 	"errors"
 	"net/http"
+	"strings"
 
-	"pika.software.net.co/backend/internal/platform/company"
 	"github.com/labstack/echo/v4"
+	"pika.software.net.co/backend/internal/platform/company"
 )
 
 func (h *Handler) listInvoices(c echo.Context) error {
@@ -56,6 +57,8 @@ func (h *Handler) createInvoice(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "cuerpo de solicitud invalido"})
 	}
+	// Identidad real (Fase 2b): generated_by sale del JWT, nunca del cliente.
+	req.GeneratedBy = h.currentUserID(c)
 
 	item, err := h.service.CreateInvoice(companyID, req)
 	if err != nil {
@@ -89,12 +92,71 @@ func (h *Handler) updateInvoice(c echo.Context) error {
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 		case errors.Is(err, errInvoiceNotFound):
 			return c.JSON(http.StatusNotFound, map[string]string{"error": err.Error()})
+		case errors.Is(err, errInvoiceLocked):
+			// Factura emitida: "no hay reversa"; la única vía es nota crédito.
+			return c.JSON(http.StatusConflict, map[string]string{"error": err.Error()})
 		default:
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "no se pudo actualizar la factura"})
 		}
 	}
 
 	return c.JSON(http.StatusOK, item)
+}
+
+// createInvoiceFromQuote convierte una cotización aprobada/aceptada en
+// factura (POST /finance/invoices/from-quote/:quoteID). Idempotente: si la
+// cotización ya fue convertida responde 409 con la factura existente en el
+// cuerpo, sin duplicarla.
+func (h *Handler) createInvoiceFromQuote(c echo.Context) error {
+	companyID := company.IDFromRequest(c)
+	quoteID := strings.TrimSpace(c.Param("quoteID"))
+
+	item, err := h.service.ConvertQuoteToInvoice(companyID, quoteID, h.currentUserID(c))
+	if err != nil {
+		switch {
+		case errors.Is(err, errQuoteIDRequired):
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+		case errors.Is(err, errQuoteNotFound):
+			return c.JSON(http.StatusNotFound, map[string]string{"error": err.Error()})
+		case errors.Is(err, errQuoteAlreadyInvoiced):
+			return c.JSON(http.StatusConflict, map[string]any{"error": err.Error(), "invoice": item})
+		case errors.Is(err, errQuoteNotApprovable), errors.Is(err, errQuoteLinesRequired), isInvoiceValidationError(err):
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+		default:
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "no se pudo convertir la cotizacion en factura"})
+		}
+	}
+
+	return c.JSON(http.StatusCreated, item)
+}
+
+// createCreditNote emite una nota crédito contra una factura existente
+// (POST /finance/invoices/credit-note) y ajusta su saldo pendiente.
+func (h *Handler) createCreditNote(c echo.Context) error {
+	companyID := company.IDFromRequest(c)
+	var req CreditNoteRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "cuerpo de solicitud invalido"})
+	}
+
+	item, err := h.service.CreateCreditNote(companyID, h.currentUserID(c), req)
+	if err != nil {
+		switch {
+		case errors.Is(err, errInvoiceNotFound):
+			return c.JSON(http.StatusNotFound, map[string]string{"error": err.Error()})
+		case errors.Is(err, errCreditNoteInvoiceRequired),
+			errors.Is(err, errCreditNoteAmountInvalid),
+			errors.Is(err, errCreditNoteExceedsBalance),
+			errors.Is(err, errCreditNoteDocumentInvalid),
+			errors.Is(err, errCreditNoteDateInvalid),
+			isInvoiceValidationError(err):
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+		default:
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "no se pudo crear la nota credito"})
+		}
+	}
+
+	return c.JSON(http.StatusCreated, item)
 }
 
 func (h *Handler) deleteInvoice(c echo.Context) error {
@@ -106,10 +168,15 @@ func (h *Handler) deleteInvoice(c echo.Context) error {
 
 	deleted, err := h.service.DeleteInvoice(companyID, invoiceID)
 	if err != nil {
-		if errors.Is(err, errInvoiceIDRequired) {
+		switch {
+		case errors.Is(err, errInvoiceIDRequired):
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+		case errors.Is(err, errInvoiceLocked):
+			// Factura emitida: no se borra ("no hay reversa"); solo nota crédito.
+			return c.JSON(http.StatusConflict, map[string]string{"error": err.Error()})
+		default:
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "no se pudo eliminar la factura"})
 		}
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "no se pudo eliminar la factura"})
 	}
 	if !deleted {
 		return c.JSON(http.StatusNotFound, map[string]string{"error": "factura no encontrada"})

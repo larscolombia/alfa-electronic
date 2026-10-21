@@ -42,6 +42,10 @@ func (h *Handler) RegisterRoutes(group *echo.Group) {
 
 	group.GET("/invoices", h.listInvoices)
 	group.POST("/invoices", h.createInvoice)
+	// Fase 5b: conversión cotización→factura (idempotente) y nota crédito
+	// (única reversa de una factura emitida/bloqueada).
+	group.POST("/invoices/from-quote/:quoteID", h.createInvoiceFromQuote)
+	group.POST("/invoices/credit-note", h.createCreditNote)
 	group.GET("/invoices/:invoiceID", h.getInvoice)
 	group.PUT("/invoices/:invoiceID", h.updateInvoice)
 	group.DELETE("/invoices/:invoiceID", h.deleteInvoice)

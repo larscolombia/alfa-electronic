@@ -14,6 +14,7 @@ import { ProjectService } from "../projects/services/project.service";
 import { CrmEquipmentApiService } from "../../../services/crm-equipment-api.service";
 import { CrmProspectRecord, CrmProspectsApiService } from "../../../services/crm-prospects-api.service";
 import { CrmQuoteRecord, CrmQuotesApiService } from "../../../services/crm-quotes-api.service";
+import { FinanceBillingApiService } from "../../../services/finance-billing-api.service";
 import { FormDraftService } from "../../../services/form-draft.service";
 
 const CRM_QUOTES_FORM_DRAFT_KEY = "app.crm.quotes.form";
@@ -85,6 +86,8 @@ type QuoteLine = {
                     <div class="alert alert-danger border mb-3" *ngIf="quoteDeleteErrorMessage">{{ quoteDeleteErrorMessage }}</div>
                     <div class="alert alert-success border mb-3" *ngIf="quotePurchaseOrderSuccessMessage">{{ quotePurchaseOrderSuccessMessage }}</div>
                     <div class="alert alert-danger border mb-3" *ngIf="quotePurchaseOrderErrorMessage">{{ quotePurchaseOrderErrorMessage }}</div>
+                    <div class="alert alert-success border mb-3" *ngIf="quoteConversionMessage" data-testid="quote-conversion-success">{{ quoteConversionMessage }}</div>
+                    <div class="alert alert-danger border mb-3" *ngIf="quoteConversionError" data-testid="quote-conversion-error">{{ quoteConversionError }}</div>
 
                     <div class="table-responsive border rounded">
                         <table class="table align-middle mb-0">
@@ -119,6 +122,15 @@ type QuoteLine = {
                                     <td class="text-end">
                                         <button class="btn btn-sm btn-outline-primary me-2" type="button" (click)="openPurchaseOrderModal(row)">
                                             <i class="bi bi-file-earmark-arrow-up me-1"></i>{{ row.purchaseOrderNumber ? 'Actualizar OC' : 'Cargar OC' }}
+                                        </button>
+                                        <button
+                                            class="btn btn-sm btn-outline-success me-2"
+                                            type="button"
+                                            *ngIf="row.estado === 'Aprobado'"
+                                            [disabled]="convertingQuoteToken === row.token"
+                                            (click)="convertQuoteToInvoice(row)"
+                                            data-testid="convert-to-invoice-btn">
+                                            <i class="bi bi-receipt me-1"></i>{{ convertingQuoteToken === row.token ? 'Convirtiendo…' : 'Convertir en factura' }}
                                         </button>
                                         <a
                                             class="btn btn-sm btn-outline-secondary me-2"
@@ -489,6 +501,10 @@ export class CrmQuotesComponent implements OnInit {
     prospectsLoadErrorMessage = "";
     catalogsLoadErrorMessage = "";
     quoteSaveErrorMessage = "";
+    // Fase 5b: conversión cotización→factura.
+    convertingQuoteToken: string | null = null;
+    quoteConversionMessage = "";
+    quoteConversionError = "";
 
     quoteLines: QuoteLine[] = [
         {
@@ -517,6 +533,7 @@ export class CrmQuotesComponent implements OnInit {
         private readonly crmProspectsApi: CrmProspectsApiService,
         private readonly crmQuotesApi: CrmQuotesApiService,
         private readonly crmEquipmentApi: CrmEquipmentApiService,
+        private readonly financeBillingApi: FinanceBillingApiService,
         private readonly projectService: ProjectService,
         private readonly cdr: ChangeDetectorRef,
         private readonly formDraftService: FormDraftService,
@@ -660,6 +677,38 @@ export class CrmQuotesComponent implements OnInit {
         this.quoteDeleteErrorMessage = "";
         this.pendingDeleteRow = row;
         this.showDeleteModal = true;
+    }
+
+    /**
+     * Fase 5b: convierte la cotización aprobada en factura del módulo de
+     * facturación (POST /finance/invoices/from-quote/:id). El servidor es
+     * idempotente: si la cotización ya tiene factura responde 409 y aquí se
+     * muestra el mensaje sin duplicar nada.
+     */
+    convertQuoteToInvoice(row: QuoteRow): void {
+        const quoteId = this.quoteIdByToken[row.token];
+        if (!quoteId) {
+            this.quoteConversionMessage = "";
+            this.quoteConversionError = "No se puede convertir: ID de cotizacion no encontrado.";
+            return;
+        }
+
+        this.convertingQuoteToken = row.token;
+        this.quoteConversionMessage = "";
+        this.quoteConversionError = "";
+        this.financeBillingApi.createInvoiceFromQuote(quoteId).subscribe({
+            next: (invoice) => {
+                this.convertingQuoteToken = null;
+                const code = `${invoice.seriesPrefix || ""}${String(invoice.sequenceNumber).padStart(3, "0")}`;
+                this.quoteConversionMessage = `Cotizacion ${row.codigo} convertida en la factura ${code} (borrador) en Facturacion.`;
+                this.cdr.detectChanges();
+            },
+            error: (error) => {
+                this.convertingQuoteToken = null;
+                this.quoteConversionError = this.resolveErrorMessage(error, "No se pudo convertir la cotizacion en factura.");
+                this.cdr.detectChanges();
+            },
+        });
     }
 
     closeDeleteModal(): void {

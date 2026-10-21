@@ -27,5 +27,6 @@ func migrationStatements() []string {
 	statements = append(statements, migrationStatementsServerPersistence()...)
 	statements = append(statements, migrationStatementsWorktime()...)
 	statements = append(statements, migrationStatementsFinanceGaps()...)
+	statements = append(statements, migrationStatementsFinance5b()...)
 	return statements
 }

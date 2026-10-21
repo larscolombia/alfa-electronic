@@ -42,6 +42,16 @@ export interface CrmClientRecord {
     country: string;
     city: string;
     address: string;
+    /**
+     * Fase 5b: datos fiscales para facturación electrónica. Opcionales en el
+     * payload: el backend aplica defaults (idType vacío → 'NIT', resto vacío)
+     * y así los consumidores que no gestionan la ficha fiscal siguen compilando.
+     */
+    dv?: string;
+    postalCode?: string;
+    billingEmail?: string;
+    grandContributor?: boolean;
+    idType?: string;
     creado: string;
     credito: ClientCreditProfile;
     branches?: CrmBranchRecord[];

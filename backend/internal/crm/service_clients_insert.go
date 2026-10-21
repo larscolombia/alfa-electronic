@@ -24,6 +24,7 @@ func insertClient(ctx context.Context, ex clientExecutor, companyID string, payl
 INSERT INTO crm_clients (
 	company_id, id, nombre, correo, empresa, nit, zona, estado,
 	website, office_phone, country, city, address,
+	dv, postal_code, billing_email, grand_contributor, id_type,
 	credit_enabled, credit_limit, credit_consumed, last_payment_date, payment_term_days,
 	soft_delete, created_at, updated_at
 )
@@ -31,6 +32,7 @@ VALUES (
 	$1, $2, $3, $4, $5, $6, $7, $8,
 	$9, $10, $11, $12, $13,
 	$14, $15, $16, $17, $18,
+	$19, $20, $21, $22, $23,
 	false, NOW(), NOW()
 );
 `,
@@ -47,6 +49,11 @@ VALUES (
 		payload.Country,
 		payload.City,
 		payload.Address,
+		payload.DV,
+		payload.PostalCode,
+		payload.BillingEmail,
+		payload.GrandContributor,
+		payload.IDType,
 		payload.CreditEnabled,
 		payload.CreditLimit,
 		payload.CreditConsumed,

@@ -26,7 +26,9 @@ func isInvoiceValidationError(err error) bool {
 		errors.Is(err, errInvoiceSourceInvalid) ||
 		errors.Is(err, errInvoiceStatusInvalid) ||
 		errors.Is(err, errInvoiceItemsRequired) ||
-		errors.Is(err, errInvoiceItemAmountInvalid)
+		errors.Is(err, errInvoiceItemAmountInvalid) ||
+		errors.Is(err, errInvoiceDocumentTypeInvalid) ||
+		errors.Is(err, errInvoiceExternalNumberInvalid)
 }
 
 func isRecurringValidationError(err error) bool {

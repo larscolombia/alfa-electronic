@@ -50,6 +50,12 @@ interface ClientDraft {
     country: string;
     city: string;
     address: string;
+    // Fase 5b: datos fiscales para facturación electrónica.
+    dv: string;
+    postalCode: string;
+    billingEmail: string;
+    grandContributor: boolean;
+    idType: string;
     creditEnabled: boolean;
     creditLimit: number | null;
     creditConsumed: number | null;
@@ -204,6 +210,34 @@ interface ClientDraft {
                         <div class="col-12 col-lg-4 mb-3">
                             <label class="form-label">NIT</label>
                             <input class="form-control" placeholder="por ejemplo, 900123456-7" [(ngModel)]="draft.nit" name="nit" maxlength="80" />
+                        </div>
+
+                        <div class="col-12 col-lg-4 mb-3">
+                            <label class="form-label">Tipo de identificación</label>
+                            <select class="form-select" [(ngModel)]="draft.idType" name="idType" data-testid="client-id-type">
+                                <option value="NIT">NIT</option>
+                                <option value="CC">CC</option>
+                                <option value="CE">CE</option>
+                                <option value="PASAPORTE">Pasaporte</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-lg-4 mb-3">
+                            <label class="form-label">DV</label>
+                            <input class="form-control" placeholder="Dígito de verificación" [(ngModel)]="draft.dv" name="dv" maxlength="4" data-testid="client-dv" />
+                        </div>
+                        <div class="col-12 col-lg-4 mb-3">
+                            <label class="form-label">Código postal</label>
+                            <input class="form-control" placeholder="por ejemplo, 110111" [(ngModel)]="draft.postalCode" name="postalCode" maxlength="20" data-testid="client-postal-code" />
+                        </div>
+                        <div class="col-12 col-lg-8 mb-3">
+                            <label class="form-label">Correo de facturación electrónica</label>
+                            <input class="form-control" type="email" placeholder="facturacion@empresa.com (distinto del correo general)" [(ngModel)]="draft.billingEmail" name="billingEmail" maxlength="180" data-testid="client-billing-email" />
+                        </div>
+                        <div class="col-12 col-lg-4 mb-3 d-flex align-items-end">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="grandContributor" [(ngModel)]="draft.grandContributor" name="grandContributor" data-testid="client-grand-contributor" />
+                                <label class="form-check-label" for="grandContributor">Gran contribuyente</label>
+                            </div>
                         </div>
 
                         <div class="col-12 col-lg-4 mb-3">
@@ -440,6 +474,11 @@ export class CrmClientsComponent {
             country: client.country ?? "",
             city: client.city ?? "",
             address: client.address ?? "",
+            dv: client.dv ?? "",
+            postalCode: client.postalCode ?? "",
+            billingEmail: client.billingEmail ?? "",
+            grandContributor: Boolean(client.grandContributor),
+            idType: client.idType || "NIT",
             creditEnabled: client.credito.enabled,
             creditLimit: client.credito.creditLimit,
             creditConsumed: client.credito.consumed,
@@ -512,6 +551,11 @@ export class CrmClientsComponent {
             country: this.draft.country.trim(),
             city: this.draft.city.trim(),
             address: this.draft.address.trim(),
+            dv: this.draft.dv.trim(),
+            postalCode: this.draft.postalCode.trim(),
+            billingEmail: this.draft.billingEmail.trim(),
+            grandContributor: this.draft.grandContributor,
+            idType: this.draft.idType || "NIT",
             credito: {
                 enabled: this.draft.creditEnabled,
                 creditLimit,
@@ -897,6 +941,11 @@ export class CrmClientsComponent {
             country: "",
             city: "",
             address: "",
+            dv: "",
+            postalCode: "",
+            billingEmail: "",
+            grandContributor: false,
+            idType: "NIT",
             creditEnabled: false,
             creditLimit: 0,
             creditConsumed: 0,

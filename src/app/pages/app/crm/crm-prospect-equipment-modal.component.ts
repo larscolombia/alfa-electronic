@@ -399,6 +399,11 @@ type SoftwareBackupInfo = {
                                                         data-testid="software-backup-icon"
                                                         [ngClass]="softwareBackupFor(item) ? 'bi-cloud-check-fill text-success' : 'bi-cloud text-secondary'"
                                                         [title]="softwareBackupFor(item) ? 'Hay backup de software para este modelo' : 'Sin backup de software para este modelo'"></i>
+                                                    <i
+                                                        *ngIf="item.priorityBilling"
+                                                        class="bi bi-bell-fill text-warning ms-1"
+                                                        data-testid="priority-billing-badge"
+                                                        title="Marcado para facturación urgente"></i>
                                                 </h6>
                                                 <p class="text-secondary small mb-0">Servicio {{ item.serviceTypeName || "pendiente" }} · Ubicación {{ item.storageLocationName || "pendiente" }}</p>
                                                 <a
@@ -519,6 +524,14 @@ type SoftwareBackupInfo = {
                                                             <div class="form-check mb-0">
                                                                 <input class="form-check-input" type="checkbox" [id]="'label-issue-' + item.id" [(ngModel)]="item.identifierLabelIssue" [ngModelOptions]="{ standalone: true }" />
                                                                 <label class="form-check-label" [for]="'label-issue-' + item.id">Etiqueta rota o ilegible</label>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-12 col-lg-4">
+                                                            <div class="form-check mb-0">
+                                                                <input class="form-check-input" type="checkbox" [id]="'priority-billing-' + item.id" [(ngModel)]="item.priorityBilling" [ngModelOptions]="{ standalone: true }" data-testid="priority-billing-toggle" />
+                                                                <label class="form-check-label" [for]="'priority-billing-' + item.id">
+                                                                    <i class="bi bi-bell text-warning me-1"></i>Facturación urgente (priority billing)
+                                                                </label>
                                                             </div>
                                                         </div>
                                                     </div>

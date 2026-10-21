@@ -14,7 +14,7 @@ const (
 	descripcion, tax_mode, zone, signature_required, selected_equipment_ids_json,
 	subtotal, tax_total, total,
 	purchase_order_number, purchase_order_file_name, purchase_order_file_data_url, purchase_order_date, purchase_order_uploaded_at,
-	created_at, updated_at`
+	created_at, updated_at, invoice_id, invoiced_at`
 )
 
 var (

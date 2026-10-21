@@ -80,7 +80,17 @@ export interface BillingInvoice {
     terms: string;
     attachmentName: string;
     receivedPayment: boolean;
-    source: "manual" | "timesheet";
+    source: "manual" | "timesheet" | "quote";
+    /** Fase 5b: número de factura externa Oasis. */
+    externalNumber?: string;
+    /** Fase 5b: 'factura' | 'nota_credito'. */
+    documentType?: string;
+    /** Fase 5b: factura origen cuando es nota crédito. */
+    creditNoteRef?: number | null;
+    /** Fase 5b: emitida ⇒ sin edición ni eliminación (409 en el servidor). */
+    locked?: boolean;
+    /** Fase 5b: cotización de origen cuando se generó por conversión. */
+    sourceQuoteId?: string;
     createdAt: string;
 }
 

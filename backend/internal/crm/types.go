@@ -175,21 +175,29 @@ type ClientCreditProfile struct {
 }
 
 type Client struct {
-	ID          string              `json:"id"`
-	Nombre      string              `json:"nombre"`
-	Correo      string              `json:"correo"`
-	Empresa     string              `json:"empresa"`
-	Nit         string              `json:"nit"`
-	Zona        string              `json:"zona"`
-	Estado      string              `json:"estado"`
-	Website     string              `json:"website"`
-	OfficePhone string              `json:"officePhone"`
-	Country     string              `json:"country"`
-	City        string              `json:"city"`
-	Address     string              `json:"address"`
-	Creado      string              `json:"creado"`
-	Credito     ClientCreditProfile `json:"credito"`
-	Branches    []Branch            `json:"branches"`
+	ID          string `json:"id"`
+	Nombre      string `json:"nombre"`
+	Correo      string `json:"correo"`
+	Empresa     string `json:"empresa"`
+	Nit         string `json:"nit"`
+	Zona        string `json:"zona"`
+	Estado      string `json:"estado"`
+	Website     string `json:"website"`
+	OfficePhone string `json:"officePhone"`
+	Country     string `json:"country"`
+	City        string `json:"city"`
+	Address     string `json:"address"`
+	// Fase 5b: datos fiscales para facturación electrónica (DV separado del
+	// NIT, código postal, correo de facturación electrónica distinto del
+	// correo general, gran contribuyente y tipo de identificación).
+	DV               string              `json:"dv"`
+	PostalCode       string              `json:"postalCode"`
+	BillingEmail     string              `json:"billingEmail"`
+	GrandContributor bool                `json:"grandContributor"`
+	IDType           string              `json:"idType"`
+	Creado           string              `json:"creado"`
+	Credito          ClientCreditProfile `json:"credito"`
+	Branches         []Branch            `json:"branches"`
 }
 
 type ClientListQuery struct {
@@ -199,17 +207,22 @@ type ClientListQuery struct {
 }
 
 type UpsertClientRequest struct {
-	Nombre      string                `json:"nombre"`
-	Correo      string                `json:"correo"`
-	Empresa     string                `json:"empresa"`
-	Nit         string                `json:"nit"`
-	Zona        string                `json:"zona"`
-	Estado      string                `json:"estado"`
-	Website     string                `json:"website"`
-	OfficePhone string                `json:"officePhone"`
-	Country     string                `json:"country"`
-	City        string                `json:"city"`
-	Address     string                `json:"address"`
-	Credito     ClientCreditProfile   `json:"credito"`
-	Branches    []UpsertBranchRequest `json:"branches"`
+	Nombre           string                `json:"nombre"`
+	Correo           string                `json:"correo"`
+	Empresa          string                `json:"empresa"`
+	Nit              string                `json:"nit"`
+	Zona             string                `json:"zona"`
+	Estado           string                `json:"estado"`
+	Website          string                `json:"website"`
+	OfficePhone      string                `json:"officePhone"`
+	Country          string                `json:"country"`
+	City             string                `json:"city"`
+	Address          string                `json:"address"`
+	DV               string                `json:"dv"`
+	PostalCode       string                `json:"postalCode"`
+	BillingEmail     string                `json:"billingEmail"`
+	GrandContributor bool                  `json:"grandContributor"`
+	IDType           string                `json:"idType"`
+	Credito          ClientCreditProfile   `json:"credito"`
+	Branches         []UpsertBranchRequest `json:"branches"`
 }

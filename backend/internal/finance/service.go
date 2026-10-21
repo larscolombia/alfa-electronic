@@ -51,43 +51,58 @@ var (
 	errInvoiceStatusInvalid       = errors.New("estado de la factura invalido")
 	errInvoiceItemsRequired       = errors.New("la factura debe tener al menos un item")
 	errInvoiceItemAmountInvalid   = errors.New("los items de la factura deben tener cantidad y precio mayores que cero")
-	errRecurringIDRequired        = errors.New("el id de la factura recurrente es obligatorio")
-	errRecurringNotFound          = errors.New("factura recurrente no encontrada")
-	errRecurringClientRequired    = errors.New("el cliente de la factura recurrente es obligatorio")
-	errRecurringStatusInvalid     = errors.New("estado de la factura recurrente invalido")
-	errRecurringCurrencyInvalid   = errors.New("moneda de factura recurrente invalida")
-	errRecurringTaxCalcInvalid    = errors.New("calculo de impuesto de factura recurrente invalido")
-	errRecurringDiscountInvalid   = errors.New("el descuento de la factura recurrente es invalido")
-	errRecurringDiscountMode      = errors.New("modo de descuento de factura recurrente invalido")
-	errRecurringFrequencyInvalid  = errors.New("frecuencia de la factura recurrente invalida")
-	errRecurringDateInvalid       = errors.New("las fechas de la factura recurrente son invalidas")
-	errRecurringNextDateInvalid   = errors.New("la proxima fecha de factura no puede ser anterior al inicio")
-	errRecurringCyclesInvalid     = errors.New("los ciclos deben ser -1 o un numero entero positivo")
-	errRecurringItemsRequired     = errors.New("la factura recurrente debe tener al menos un item")
-	errRecurringItemAmountInvalid = errors.New("los items de la factura recurrente deben tener cantidad y precio mayores que cero")
-	errPaymentRetentionInvalid   = errors.New("las retenciones del pago son invalidas")
-	errOasisDateInvalid          = errors.New("el rango de fechas del export es invalido (use YYYY-MM-DD)")
-	errExpenseIDRequired         = errors.New("el id del gasto es obligatorio")
-	errExpenseNotFound           = errors.New("gasto no encontrado")
-	errExpenseItemRequired       = errors.New("el nombre del item del gasto es obligatorio")
-	errExpenseCategoryRequired   = errors.New("la categoria del gasto es obligatoria")
-	errExpenseConceptRequired    = errors.New("el concepto del gasto es obligatorio")
-	errExpenseDateInvalid        = errors.New("la fecha del gasto es invalida")
-	errExpenseAmountInvalid      = errors.New("el valor del gasto debe ser mayor que cero")
-	errExpenseCurrencyInvalid    = errors.New("moneda del gasto invalida")
-	errExpenseExchangeInvalid    = errors.New("la tasa de cambio del gasto debe ser mayor que cero")
-	errCashCountEntryInvalid     = errors.New("las denominaciones del arqueo son invalidas")
-	errWarrantyIDRequired        = errors.New("el id de la garantia es obligatorio")
-	errWarrantyNotFound          = errors.New("garantia no encontrada")
-	errWarrantyClientRequired    = errors.New("el cliente de la garantia es obligatorio")
-	errWarrantyEquipmentRequired = errors.New("el equipo o servicio de la garantia es obligatorio")
-	errWarrantyDateInvalid       = errors.New("las fechas de la garantia son invalidas")
-	errWarrantyStatusInvalid     = errors.New("estado de garantia invalido")
-	errWarrantyPhaseInvalid      = errors.New("fase de garantia invalida")
-	errWarrantyDaysInvalid       = errors.New("la ventana de dias debe estar entre 1 y 365")
-	errSettingKeyRequired        = errors.New("la clave de configuracion es obligatoria")
-	errSettingNotFound           = errors.New("configuracion no encontrada")
-	errSettingValueRequired      = errors.New("el valor de la configuracion es obligatorio")
+	// Fase 5b: bloqueo de factura emitida, nota crédito y conversión desde
+	// cotización.
+	errInvoiceLocked                = errors.New("la factura esta bloqueada por estar emitida: no se puede editar ni eliminar; la unica reversa es una nota credito")
+	errInvoiceDocumentTypeInvalid   = errors.New("tipo de documento de factura invalido")
+	errInvoiceExternalNumberInvalid = errors.New("el numero externo de la factura no puede superar 80 caracteres")
+	errCreditNoteInvoiceRequired    = errors.New("la factura origen de la nota credito es obligatoria")
+	errCreditNoteAmountInvalid      = errors.New("el valor de la nota credito debe ser mayor que cero")
+	errCreditNoteExceedsBalance     = errors.New("la nota credito no puede exceder el saldo pendiente de la factura")
+	errCreditNoteDocumentInvalid    = errors.New("solo se pueden emitir notas credito contra facturas que no sean notas credito ni esten canceladas")
+	errCreditNoteDateInvalid        = errors.New("la fecha de la nota credito es invalida")
+	errQuoteIDRequired              = errors.New("el id de la cotizacion es obligatorio")
+	errQuoteNotFound                = errors.New("cotizacion no encontrada")
+	errQuoteNotApprovable           = errors.New("solo se pueden facturar cotizaciones aprobadas o aceptadas por el cliente")
+	errQuoteAlreadyInvoiced         = errors.New("la cotizacion ya fue convertida en factura")
+	errQuoteLinesRequired           = errors.New("la cotizacion no tiene lineas validas para facturar")
+	errRecurringIDRequired          = errors.New("el id de la factura recurrente es obligatorio")
+	errRecurringNotFound            = errors.New("factura recurrente no encontrada")
+	errRecurringClientRequired      = errors.New("el cliente de la factura recurrente es obligatorio")
+	errRecurringStatusInvalid       = errors.New("estado de la factura recurrente invalido")
+	errRecurringCurrencyInvalid     = errors.New("moneda de factura recurrente invalida")
+	errRecurringTaxCalcInvalid      = errors.New("calculo de impuesto de factura recurrente invalido")
+	errRecurringDiscountInvalid     = errors.New("el descuento de la factura recurrente es invalido")
+	errRecurringDiscountMode        = errors.New("modo de descuento de factura recurrente invalido")
+	errRecurringFrequencyInvalid    = errors.New("frecuencia de la factura recurrente invalida")
+	errRecurringDateInvalid         = errors.New("las fechas de la factura recurrente son invalidas")
+	errRecurringNextDateInvalid     = errors.New("la proxima fecha de factura no puede ser anterior al inicio")
+	errRecurringCyclesInvalid       = errors.New("los ciclos deben ser -1 o un numero entero positivo")
+	errRecurringItemsRequired       = errors.New("la factura recurrente debe tener al menos un item")
+	errRecurringItemAmountInvalid   = errors.New("los items de la factura recurrente deben tener cantidad y precio mayores que cero")
+	errPaymentRetentionInvalid      = errors.New("las retenciones del pago son invalidas")
+	errOasisDateInvalid             = errors.New("el rango de fechas del export es invalido (use YYYY-MM-DD)")
+	errExpenseIDRequired            = errors.New("el id del gasto es obligatorio")
+	errExpenseNotFound              = errors.New("gasto no encontrado")
+	errExpenseItemRequired          = errors.New("el nombre del item del gasto es obligatorio")
+	errExpenseCategoryRequired      = errors.New("la categoria del gasto es obligatoria")
+	errExpenseConceptRequired       = errors.New("el concepto del gasto es obligatorio")
+	errExpenseDateInvalid           = errors.New("la fecha del gasto es invalida")
+	errExpenseAmountInvalid         = errors.New("el valor del gasto debe ser mayor que cero")
+	errExpenseCurrencyInvalid       = errors.New("moneda del gasto invalida")
+	errExpenseExchangeInvalid       = errors.New("la tasa de cambio del gasto debe ser mayor que cero")
+	errCashCountEntryInvalid        = errors.New("las denominaciones del arqueo son invalidas")
+	errWarrantyIDRequired           = errors.New("el id de la garantia es obligatorio")
+	errWarrantyNotFound             = errors.New("garantia no encontrada")
+	errWarrantyClientRequired       = errors.New("el cliente de la garantia es obligatorio")
+	errWarrantyEquipmentRequired    = errors.New("el equipo o servicio de la garantia es obligatorio")
+	errWarrantyDateInvalid          = errors.New("las fechas de la garantia son invalidas")
+	errWarrantyStatusInvalid        = errors.New("estado de garantia invalido")
+	errWarrantyPhaseInvalid         = errors.New("fase de garantia invalida")
+	errWarrantyDaysInvalid          = errors.New("la ventana de dias debe estar entre 1 y 365")
+	errSettingKeyRequired           = errors.New("la clave de configuracion es obligatoria")
+	errSettingNotFound              = errors.New("configuracion no encontrada")
+	errSettingValueRequired         = errors.New("el valor de la configuracion es obligatorio")
 )
 
 type Service struct {
@@ -121,14 +136,18 @@ func (s *Service) GetOasisExport(companyID string, query OasisExportQuery) ([]Oa
 SELECT ci.series_prefix, ci.sequence_number, ci.issue_date, ci.due_date,
 	ci.client_name, ci.billing_address, ci.total, ci.items_json,
 	COALESCE(cc.nit, ''), COALESCE(cc.correo, ''), COALESCE(cc.office_phone, ''),
-	COALESCE(cc.address, ''), COALESCE(cc.credit_enabled, false)
+	COALESCE(cc.address, ''), COALESCE(cc.credit_enabled, false),
+	COALESCE(ci.external_number, ''),
+	COALESCE(cc.id_type, 'NIT'), COALESCE(cc.dv, ''), COALESCE(cc.postal_code, ''),
+	COALESCE(cc.billing_email, '')
 FROM finance_invoices ci
 LEFT JOIN crm_clients cc
 	ON cc.company_id = ci.company_id
 	AND ci.client_id = 'crm-client-' || cc.id
 WHERE ci.company_id = $1
 	AND ci.soft_delete = false
-	AND ci.status != 'Cancelado'`
+	AND ci.status != 'Cancelado'
+	AND ci.document_type = 'factura'`
 	args := []any{companyID}
 	nextArg := 2
 	if from != "" {
@@ -158,9 +177,13 @@ WHERE ci.company_id = $1
 		var invoiceTotal float64
 		var itemsJSON []byte
 		var creditEnabled bool
+		// Fase 5b: número externo Oasis y datos fiscales del cliente (tipo de
+		// ID, DV propio, código postal y correo de facturación electrónica).
+		var externalNumber, buyerIDType, buyerDVColumn, buyerPostalCode, buyerBillingEmail string
 		if err := rows.Scan(&seriesPrefix, &sequenceNumber, &issueDate, &dueDate,
 			&clientName, &billingAddress, &invoiceTotal, &itemsJSON,
-			&buyerNIT, &buyerEmail, &buyerPhone, &buyerAddress, &creditEnabled); err != nil {
+			&buyerNIT, &buyerEmail, &buyerPhone, &buyerAddress, &creditEnabled,
+			&externalNumber, &buyerIDType, &buyerDVColumn, &buyerPostalCode, &buyerBillingEmail); err != nil {
 			return nil, err
 		}
 
@@ -170,6 +193,20 @@ WHERE ci.company_id = $1
 		}
 
 		nit, dv := splitNIT(buyerNIT)
+		// El DV explícito de la ficha fiscal manda sobre el que venga pegado
+		// al NIT.
+		if strings.TrimSpace(buyerDVColumn) != "" {
+			dv = strings.TrimSpace(buyerDVColumn)
+		}
+		idType := strings.TrimSpace(buyerIDType)
+		if idType == "" {
+			idType = "NIT"
+		}
+		// Correo de facturación electrónica separado del correo general.
+		eInvoiceEmail := strings.TrimSpace(buyerBillingEmail)
+		if eInvoiceEmail == "" {
+			eInvoiceEmail = buyerEmail
+		}
 		issueDateText := ""
 		if issueDate.Valid {
 			issueDateText = issueDate.Time.Format("2006-01-02")
@@ -188,14 +225,21 @@ WHERE ci.company_id = $1
 		if address == "" {
 			address = buyerAddress
 		}
+		// Número de factura: el número externo Oasis si ya se asignó; si no,
+		// el consecutivo interno serie+secuencia.
+		invoiceNumber := strings.TrimSpace(externalNumber)
+		if invoiceNumber == "" {
+			invoiceNumber = fmt.Sprintf("%s%03d", seriesPrefix, sequenceNumber)
+		}
 
 		if len(items) == 0 {
 			records = append(records, OasisExportRecord{
-				BuyerIDType: "NIT", BuyerNIT: nit, BuyerDV: dv, BuyerName: clientName,
-				BuyerPhone: buyerPhone, BuyerAddress: address, BuyerBillingEmail: buyerEmail,
-				SellerIDType: "NIT",
-				InvoiceNumber: fmt.Sprintf("%s%03d", seriesPrefix, sequenceNumber),
-				Constant: "2", IssueDate: issueDateText, IssueTime: "00", DueDate: dueDateText,
+				BuyerIDType: idType, BuyerNIT: nit, BuyerDV: dv, BuyerName: clientName,
+				BuyerPostalCode: buyerPostalCode,
+				BuyerPhone:      buyerPhone, BuyerAddress: address, BuyerBillingEmail: eInvoiceEmail,
+				SellerIDType:  "NIT",
+				InvoiceNumber: invoiceNumber,
+				Constant:      "2", IssueDate: issueDateText, IssueTime: "00", DueDate: dueDateText,
 				CreditFlag: creditFlag, GenerationDate: generationDate,
 				LineValue: invoiceTotal, ItemNumber: 1,
 				CreditMarker: creditMarker, InvoiceTotal: invoiceTotal,
@@ -211,15 +255,16 @@ WHERE ci.company_id = $1
 				description = item.Name
 			}
 			records = append(records, OasisExportRecord{
-				BuyerIDType: "NIT", BuyerNIT: nit, BuyerDV: dv, BuyerName: clientName,
-				BuyerPhone: buyerPhone, BuyerAddress: address, BuyerBillingEmail: buyerEmail,
-				SellerIDType: "NIT",
-				InvoiceNumber: fmt.Sprintf("%s%03d", seriesPrefix, sequenceNumber),
-				Constant: "2", IssueDate: issueDateText, IssueTime: "00", DueDate: dueDateText,
+				BuyerIDType: idType, BuyerNIT: nit, BuyerDV: dv, BuyerName: clientName,
+				BuyerPostalCode: buyerPostalCode,
+				BuyerPhone:      buyerPhone, BuyerAddress: address, BuyerBillingEmail: eInvoiceEmail,
+				SellerIDType:  "NIT",
+				InvoiceNumber: invoiceNumber,
+				Constant:      "2", IssueDate: issueDateText, IssueTime: "00", DueDate: dueDateText,
 				CreditFlag: creditFlag, GenerationDate: generationDate,
 				LineValue: lineValue, ItemNumber: index + 1, EquipmentCode: "",
 				Description: description, IVAPercent: item.TaxRate, IVAValue: ivaValue,
-				LineTotal: lineValue + ivaValue,
+				LineTotal:    lineValue + ivaValue,
 				CreditMarker: creditMarker, InvoiceTotal: invoiceTotal,
 			})
 		}

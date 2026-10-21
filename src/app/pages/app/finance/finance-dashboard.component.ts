@@ -7,6 +7,9 @@ register();
 import DataTable from "datatables.net-dt";
 import "datatables.net-responsive-dt";
 
+import { CrmEquipmentApiService } from "../../../services/crm-equipment-api.service";
+import type { ProspectEquipmentSummary } from "../crm/crm-prospect-equipment.store";
+
 import { DaterangePickerRangesComponent } from "../../../components/input-fields/daterange-picker/daterange-picker-ranges.component";
 import { CircleProgressBlueBlankComponent } from "../../../components/charts/circle-progress-blue-blank.component";
 import { CircleProgressYellowBlankComponent } from "../../../components/charts/circle-progress-yellow-blank.component";
@@ -126,6 +129,20 @@ import { DoughnutChartjs180Component } from "../../../components/charts/doughnut
 
         <!-- content -->
         <div class="container mt-3" id="main-content">
+            <!-- Fase 5b: campanita de facturación urgente (priority billing). -->
+            @if (priorityBillingItems.length > 0) {
+                <div class="alert alert-warning border d-flex align-items-start gap-2 mb-3" data-testid="priority-billing-alert">
+                    <i class="bi bi-bell-fill text-warning fs-5"></i>
+                    <div>
+                        <strong>Facturación urgente:</strong> {{ priorityBillingItems.length }} equipo(s) marcados para facturar con prioridad.
+                        <ul class="mb-0 small mt-1">
+                            @for (item of priorityBillingItems; track item.itemId) {
+                                <li>{{ item.displayName || item.receivedIdentifier || item.itemId }} — {{ item.prospectName }} ({{ item.repairStatusLabel }})</li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            }
             <div class="row gx-3 gx-lg-4">
                 <!-- summary blocks -->
                 <div class="col-12 col-md-6 col-lg-6 col-xxl-3">
@@ -1574,8 +1591,26 @@ import { DoughnutChartjs180Component } from "../../../components/charts/doughnut
     `,
     schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
-export class FinanceDashboardComponent {
+export class FinanceDashboardComponent implements OnInit {
     @ViewChild("choices") mySelect!: ElementRef;
+
+    /** Fase 5b: equipos marcados para facturación urgente (campanita). */
+    priorityBillingItems: ProspectEquipmentSummary[] = [];
+
+    constructor(private readonly crmEquipmentApi: CrmEquipmentApiService) {}
+
+    ngOnInit(): void {
+        // Carga única al entrar al dashboard; el polling periódico de la
+        // campanita (cada 10 minutos) es Fase 5c y no se implementa aquí.
+        this.crmEquipmentApi.listItems({ includeArchived: false }).subscribe({
+            next: (items) => {
+                this.priorityBillingItems = items.filter((item) => item.priorityBilling);
+            },
+            error: () => {
+                this.priorityBillingItems = [];
+            },
+        });
+    }
 
     ngAfterViewInit() {
         const choices = new Choices(this.mySelect.nativeElement, {

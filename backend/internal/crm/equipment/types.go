@@ -137,6 +137,9 @@ type Summary struct {
 	RepairStatus              string   `json:"repairStatus"`
 	RepairStatusLabel         string   `json:"repairStatusLabel"`
 	RepairStatusUpdatedAt     string   `json:"repairStatusUpdatedAt"`
+	// Fase 5b: facturación urgente — el listado de equipos y el dashboard de
+	// facturación marcan los ítems con priorityBilling.
+	PriorityBilling bool `json:"priorityBilling"`
 }
 
 type ListRecordsQuery struct {

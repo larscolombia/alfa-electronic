@@ -43,6 +43,7 @@ func flattenSummaries(records []Record) []Summary {
 				RepairStatus:              repairStatus,
 				RepairStatusLabel:         repairStatusLabel,
 				RepairStatusUpdatedAt:     strings.TrimSpace(item.RepairStatusUpdatedAt),
+				PriorityBilling:           item.PriorityBilling,
 			})
 		}
 	}

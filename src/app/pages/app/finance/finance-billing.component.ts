@@ -186,6 +186,12 @@ import { resolveApiBaseUrl } from "../../../services/api-base-url.util";
                                         <td>{{ invoice.referenceCode || "--" }}</td>
                                         <td>
                                             <strong>{{ invoiceCode(invoice) }}</strong>
+                                            @if ((invoice.documentType || "factura") === "nota_credito") {
+                                                <span class="badge text-bg-warning ms-1">NC</span>
+                                            }
+                                            @if (invoice.externalNumber) {
+                                                <small class="text-secondary d-block">Ext: {{ invoice.externalNumber }}</small>
+                                            }
                                         </td>
                                         <td>{{ invoice.projectName || "--" }}</td>
                                         <td>
@@ -207,6 +213,9 @@ import { resolveApiBaseUrl } from "../../../services/api-base-url.util";
                                         <td>{{ invoice.issueDate | date: "dd/MM/yyyy" }}</td>
                                         <td>
                                             <span [class]="statusClass(invoice.status)"></span>{{ invoice.status }}
+                                            @if (invoice.locked) {
+                                                <i class="bi bi-lock-fill ms-1 text-secondary" title="Factura emitida: no hay reversa; la única vía es una nota crédito" data-testid="invoice-locked-icon"></i>
+                                            }
                                         </td>
                                         <td class="text-end invoice-actions">
                                             <div class="dropdown d-inline-block">
@@ -215,8 +224,17 @@ import { resolveApiBaseUrl } from "../../../services/api-base-url.util";
                                                 </button>
                                                 <ul class="dropdown-menu dropdown-menu-end" [attr.aria-labelledby]="'invoice-actions-' + invoice.id">
                                                     <li><button class="dropdown-item" type="button" (click)="duplicateInvoice(invoice.id)">Duplicar factura</button></li>
-                                                    <li><button class="dropdown-item" type="button" (click)="markStatus(invoice.id, 'Pagado')">Marcar como pagada</button></li>
-                                                    <li><button class="dropdown-item" type="button" (click)="markStatus(invoice.id, 'Cancelado')">Marcar como cancelada</button></li>
+                                                    <li>
+                                                        <button class="dropdown-item" type="button" [disabled]="invoice.locked" (click)="markStatus(invoice.id, 'Pagado')"
+                                                            [title]="invoice.locked ? 'Factura emitida: no hay reversa; use nota crédito' : ''">Marcar como pagada</button>
+                                                    </li>
+                                                    <li>
+                                                        <button class="dropdown-item" type="button" [disabled]="invoice.locked" (click)="markStatus(invoice.id, 'Cancelado')"
+                                                            [title]="invoice.locked ? 'Factura emitida: no hay reversa; use nota crédito' : ''">Marcar como cancelada</button>
+                                                    </li>
+                                                    <li>
+                                                        <button class="dropdown-item" type="button" [disabled]="!canCreateCreditNote(invoice)" (click)="openCreditNoteModal(invoice)" data-testid="credit-note-action">Nota crédito</button>
+                                                    </li>
                                                 </ul>
                                             </div>
                                         </td>
@@ -231,6 +249,41 @@ import { resolveApiBaseUrl } from "../../../services/api-base-url.util";
                     </div>
                 </div>
             </div>
+
+            @if (creditNoteTarget) {
+                <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Nota crédito contra {{ invoiceCode(creditNoteTarget) }}</h5>
+                                <button type="button" class="btn-close" aria-label="Cerrar" (click)="closeCreditNoteModal()"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p class="text-secondary small mb-3">
+                                    Saldo pendiente: {{ creditNoteTarget.balanceAmount | currency: creditNoteTarget.currencyCode : "symbol" : "1.0-0" }}.
+                                    La nota crédito descuenta el saldo de la factura y no puede excederlo. Una factura emitida no se edita ni se borra: esta es la única reversa.
+                                </p>
+                                @if (creditNoteError) {
+                                    <div class="alert alert-danger border mb-3" data-testid="credit-note-error">{{ creditNoteError }}</div>
+                                }
+                                <div class="mb-3">
+                                    <label class="form-label" for="creditNoteAmount">Valor de la nota crédito</label>
+                                    <input id="creditNoteAmount" class="form-control" type="number" min="0.01" step="0.01" [(ngModel)]="creditNoteAmount" name="creditNoteAmount" data-testid="credit-note-amount" />
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label" for="creditNoteNote">Motivo (opcional)</label>
+                                    <textarea id="creditNoteNote" class="form-control" rows="3" [(ngModel)]="creditNoteNote" name="creditNoteNote" data-testid="credit-note-note"></textarea>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-outline-secondary" (click)="closeCreditNoteModal()">Cancelar</button>
+                                <button type="button" class="btn btn-theme" [disabled]="isSavingCreditNote" (click)="submitCreditNote()" data-testid="credit-note-submit">Emitir nota crédito</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-backdrop fade show"></div>
+            }
         </div>
     `,
 })
@@ -247,6 +300,12 @@ export class FinanceBillingComponent implements OnInit {
     errorMessage = "";
     exportFrom = "";
     exportTo = "";
+    // Fase 5b: nota crédito (única reversa de una factura emitida/bloqueada).
+    creditNoteTarget: BillingInvoice | null = null;
+    creditNoteAmount = 0;
+    creditNoteNote = "";
+    creditNoteError = "";
+    isSavingCreditNote = false;
     private apiBaseUrl = resolveApiBaseUrl();
 
     constructor(
@@ -326,6 +385,13 @@ export class FinanceBillingComponent implements OnInit {
             createdAt: new Date().toISOString(),
             status: "Borrador",
             referenceCode: "--",
+            // La copia es un borrador nuevo: sin bloqueo, sin número externo y
+            // sin heredar el tipo/referencias del documento duplicado.
+            externalNumber: "",
+            documentType: "factura",
+            creditNoteRef: null,
+            locked: false,
+            sourceQuoteId: "",
         };
 
         try {
@@ -345,6 +411,13 @@ export class FinanceBillingComponent implements OnInit {
         if (!sourceInvoice) {
             return;
         }
+        // Factura emitida: "no hay reversa". El servidor también la rechaza
+        // con 409; este guarda evita la llamada inútil y explica el motivo.
+        if (sourceInvoice.locked) {
+            this.message = "";
+            this.errorMessage = "La factura esta bloqueada por estar emitida: no se puede editar; la unica reversa es una nota credito.";
+            return;
+        }
 
         try {
             this.errorMessage = "";
@@ -354,6 +427,57 @@ export class FinanceBillingComponent implements OnInit {
         } catch (error) {
             this.message = "";
             this.errorMessage = error instanceof Error ? error.message : "No se pudo actualizar la factura en el servidor.";
+        }
+    }
+
+    /** Fase 5b: solo las facturas (no NC/canceladas) con saldo admiten nota crédito. */
+    canCreateCreditNote(invoice: BillingInvoice): boolean {
+        return (invoice.documentType || "factura") === "factura" && invoice.status !== "Cancelado" && invoice.balanceAmount > 0;
+    }
+
+    openCreditNoteModal(invoice: BillingInvoice): void {
+        this.creditNoteTarget = invoice;
+        this.creditNoteAmount = invoice.balanceAmount;
+        this.creditNoteNote = "";
+        this.creditNoteError = "";
+    }
+
+    closeCreditNoteModal(): void {
+        this.creditNoteTarget = null;
+        this.creditNoteError = "";
+    }
+
+    async submitCreditNote(): Promise<void> {
+        const target = this.creditNoteTarget;
+        if (!target || this.isSavingCreditNote) {
+            return;
+        }
+        this.creditNoteError = "";
+        if (!(this.creditNoteAmount > 0)) {
+            this.creditNoteError = "El valor de la nota credito debe ser mayor que cero.";
+            return;
+        }
+        if (this.creditNoteAmount > target.balanceAmount) {
+            this.creditNoteError = "La nota credito no puede exceder el saldo pendiente de la factura.";
+            return;
+        }
+
+        try {
+            this.isSavingCreditNote = true;
+            await firstValueFrom(
+                this.financeBillingApi.createCreditNote({
+                    invoiceId: target.id,
+                    amount: this.creditNoteAmount,
+                    note: this.creditNoteNote.trim(),
+                }),
+            );
+            this.message = `Nota credito emitida contra ${this.invoiceCode(target)}; el saldo pendiente quedo ajustado.`;
+            this.closeCreditNoteModal();
+            await this.loadInvoices();
+        } catch (error) {
+            this.creditNoteError = error instanceof Error ? error.message : "No se pudo emitir la nota credito en el servidor.";
+        } finally {
+            this.isSavingCreditNote = false;
         }
     }
 

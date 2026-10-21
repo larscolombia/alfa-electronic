@@ -21,6 +21,8 @@ import { FinanceBillingApiService } from "../../../services/finance-billing-api.
 interface InvoiceDraft {
     seriesPrefix: string;
     sequenceNumber: number;
+    /** Fase 5b: número de factura externa Oasis (persistido, editable sin bloqueo). */
+    externalNumber: string;
     issueDate: string;
     dueDate: string;
     currencyCode: BillingCurrencyCode;
@@ -129,6 +131,10 @@ interface InvoiceDraft {
                                 <span class="input-group-text">{{ draft.seriesPrefix }}</span>
                                 <input class="form-control" type="number" min="1" [(ngModel)]="draft.sequenceNumber" name="sequenceNumber" />
                             </div>
+                        </div>
+                        <div class="col-12 col-lg-3">
+                            <label class="form-label">Número externo (Oasis)</label>
+                            <input class="form-control" type="text" maxlength="80" placeholder="Número de la factura externa Oasis" [(ngModel)]="draft.externalNumber" name="externalNumber" data-testid="external-number-input" />
                         </div>
                         <div class="col-12 col-lg-2">
                             <label class="form-label">Fecha de la factura</label>
@@ -535,6 +541,7 @@ export class FinanceInvoiceCreateComponent implements OnDestroy {
             attachmentName: this.draft.attachmentName,
             receivedPayment: this.draft.receivedPayment,
             source: "manual",
+            externalNumber: this.draft.externalNumber.trim(),
             createdAt: new Date().toISOString(),
         };
 
@@ -558,6 +565,7 @@ export class FinanceInvoiceCreateComponent implements OnDestroy {
         return {
             seriesPrefix: FinanceBillingStore.getInvoiceSeriesPrefix(today),
             sequenceNumber: FinanceBillingStore.getNextSequenceNumber(today),
+            externalNumber: "",
             issueDate: today,
             dueDate: dueDate.toISOString().slice(0, 10),
             currencyCode: "COP",

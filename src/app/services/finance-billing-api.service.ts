@@ -48,8 +48,26 @@ export interface FinanceInvoiceRecord {
     attachmentName: string;
     receivedPayment: boolean;
     source: string;
+    /** Fase 5b: número de factura externa Oasis (editable sin bloquear). */
+    externalNumber?: string;
+    /** Fase 5b: 'factura' | 'nota_credito'. */
+    documentType?: string;
+    /** Fase 5b: factura origen cuando es nota crédito. */
+    creditNoteRef?: number | null;
+    /** Fase 5b: factura emitida — no admite edición ni eliminación (409). */
+    locked?: boolean;
+    /** Fase 5b: cotización de origen cuando se generó por conversión. */
+    sourceQuoteId?: string;
     createdAt?: string;
     updatedAt?: string;
+}
+
+/** Fase 5b: cuerpo de POST /finance/invoices/credit-note. */
+export interface FinanceCreditNoteRequest {
+    invoiceId: number;
+    amount: number;
+    note?: string;
+    issueDate?: string;
 }
 
 export interface FinanceRecurringInvoiceRecord {
@@ -120,6 +138,22 @@ export class FinanceBillingApiService {
 
     deleteInvoice(id: number): Observable<void> {
         return from(this.request<Record<string, never>>(`/api/v1/finance/invoices/${encodeURIComponent(String(id))}`, { method: "DELETE" })).pipe(map(() => void 0));
+    }
+
+    /**
+     * Fase 5b: convierte una cotización aprobada/aceptada en factura.
+     * Idempotente en el servidor: si ya fue convertida responde 409 con la
+     * factura existente en `invoice` (se relanza como error con mensaje).
+     */
+    createInvoiceFromQuote(quoteId: string): Observable<FinanceInvoiceRecord> {
+        return from(
+            this.request<FinanceInvoiceRecord>(`/api/v1/finance/invoices/from-quote/${encodeURIComponent(quoteId)}`, { method: "POST", body: "{}" }),
+        );
+    }
+
+    /** Fase 5b: nota crédito contra una factura; ajusta su saldo pendiente. */
+    createCreditNote(payload: FinanceCreditNoteRequest): Observable<FinanceInvoiceRecord> {
+        return from(this.request<FinanceInvoiceRecord>("/api/v1/finance/invoices/credit-note", { method: "POST", body: JSON.stringify(payload) }));
     }
 
     listRecurringInvoices(status = ""): Observable<FinanceRecurringInvoiceRecord[]> {
