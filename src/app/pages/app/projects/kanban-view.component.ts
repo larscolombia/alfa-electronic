@@ -6357,7 +6357,10 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
             this.detailProject = normalizedProject;
           }
         },
-        error: () => {
+        error: (error) => {
+          // Sin este mensaje un 400 de transicion ilegal quedaba invisible y el
+          // tecnico creia que el move habia funcionado.
+          this.boardActionMessage = `No se pudo mover el caso: ${this.errorMessage(error)}`;
           this.syncDragAndDrop();
         },
       });
@@ -6404,6 +6407,11 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
             this.detailProject = this.normalizeProject(savedProject);
           }
         },
+        error: (error) => {
+          // El estado ya fue escrito por el drag; si esta segunda escritura
+          // (respuestas del lote de pruebas) falla, el tecnico debe verlo.
+          this.boardActionMessage = `El caso se movio, pero no se pudieron registrar las respuestas de la transicion: ${this.errorMessage(error)}`;
+        },
       });
     });
   }
@@ -6434,7 +6442,10 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
           this.detailProject = this.normalizeProject(revertedProject);
         }
       },
-      error: () => {
+      error: (error) => {
+        // Si la reversa falla el caso queda en la columna destino: hay que
+        // decirselo al tecnico, no re-sincronizar dragula en silencio.
+        this.boardActionMessage = `No se pudo revertir el movimiento del caso: ${this.errorMessage(error)}`;
         this.syncDragAndDrop();
       },
     });

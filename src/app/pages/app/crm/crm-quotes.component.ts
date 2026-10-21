@@ -968,7 +968,13 @@ export class CrmQuotesComponent implements OnInit {
                     this.projectService.updateProject(project.id, {
                         properties: nextProperties,
                         status: targetStatus ?? project.status,
-                    }).subscribe();
+                    }).subscribe({
+                        error: (error) => {
+                            // Sin handler este 400 quedaba silencioso: la OC se guardaba
+                            // pero el caso no avanzaba a pedir-reupertino.
+                            console.error(`[CRM] No se pudo sincronizar la OC con el proyecto ${project.id}:`, error);
+                        },
+                    });
                 });
         });
     }
