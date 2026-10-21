@@ -15,6 +15,7 @@ export interface CrmProspectFollowup {
     recordatorio: string;
     observacion: string;
     estado: CrmProspectFollowupStatus;
+    registradoPor?: string;
     softDelete: boolean;
     createdAt: string;
     updatedAt: string;
@@ -27,6 +28,7 @@ export interface UpsertCrmProspectFollowupRequest {
     recordatorio: string;
     observacion: string;
     estado: CrmProspectFollowupStatus;
+    registradoPor?: string;
 }
 
 @Injectable({

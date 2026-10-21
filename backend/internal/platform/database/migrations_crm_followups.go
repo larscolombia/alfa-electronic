@@ -18,5 +18,6 @@ func migrationStatementsCRMFollowups() []string {
 		`CREATE INDEX IF NOT EXISTS idx_crm_prospect_followups_prospect ON crm_prospect_followups(company_id, prospect_id, fecha, hora);`,
 		`ALTER TABLE crm_prospect_followups ADD COLUMN IF NOT EXISTS soft_delete BOOLEAN NOT NULL DEFAULT false;`,
 		`CREATE INDEX IF NOT EXISTS idx_crm_prospect_followups_soft_delete ON crm_prospect_followups(company_id, soft_delete);`,
+		`ALTER TABLE crm_prospect_followups ADD COLUMN IF NOT EXISTS registrado_por VARCHAR(180) NOT NULL DEFAULT '';`,
 	}
 }

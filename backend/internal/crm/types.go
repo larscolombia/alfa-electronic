@@ -144,26 +144,28 @@ type UpsertClientContactRequest struct {
 }
 
 type ProspectFollowup struct {
-	ID           string `json:"id"`
-	ProspectID   string `json:"prospectId"`
-	Tipo         string `json:"tipo"`
-	Fecha        string `json:"fecha"`
-	Hora         string `json:"hora"`
-	Recordatorio string `json:"recordatorio"`
-	Observacion  string `json:"observacion"`
-	Estado       string `json:"estado"`
-	SoftDelete   bool   `json:"softDelete"`
-	CreatedAt    string `json:"createdAt"`
-	UpdatedAt    string `json:"updatedAt"`
+	ID            string `json:"id"`
+	ProspectID    string `json:"prospectId"`
+	Tipo          string `json:"tipo"`
+	Fecha         string `json:"fecha"`
+	Hora          string `json:"hora"`
+	Recordatorio  string `json:"recordatorio"`
+	Observacion   string `json:"observacion"`
+	Estado        string `json:"estado"`
+	RegistradoPor string `json:"registradoPor"`
+	SoftDelete    bool   `json:"softDelete"`
+	CreatedAt     string `json:"createdAt"`
+	UpdatedAt     string `json:"updatedAt"`
 }
 
 type UpsertProspectFollowupRequest struct {
-	Tipo         string `json:"tipo"`
-	Fecha        string `json:"fecha"`
-	Hora         string `json:"hora"`
-	Recordatorio string `json:"recordatorio"`
-	Observacion  string `json:"observacion"`
-	Estado       string `json:"estado"`
+	Tipo          string `json:"tipo"`
+	Fecha         string `json:"fecha"`
+	Hora          string `json:"hora"`
+	Recordatorio  string `json:"recordatorio"`
+	Observacion   string `json:"observacion"`
+	Estado        string `json:"estado"`
+	RegistradoPor string `json:"registradoPor"`
 }
 
 type ClientCreditProfile struct {

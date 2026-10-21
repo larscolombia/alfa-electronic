@@ -16,6 +16,7 @@ import { ConfirmationModalService } from "../../../services/confirmation-modal.s
 import { FormDraftService } from "../../../services/form-draft.service";
 import { WorkEquipmentHistoryContextService } from "../../../services/work-equipment-history-context.service";
 import { CrmAttachmentsApiService, ProspectAttachment } from "../../../services/crm-attachments-api.service";
+import { AuthService } from "../../../services/auth.service";
 
 type DetailTab = "perfil" | "contactos-relacionados" | "acciones-comerciales" | "equipos" | "cotizacion" | "archivos" | "notas" | "trazabilidad" | "sucursales";
 type ActivityTab = "actividad" | "notas" | "correos" | "llamadas" | "tareas" | "reuniones";
@@ -72,6 +73,7 @@ type CommercialActionRecord = {
     remindBeforeUnit: ReminderUnit;
     observation: string;
     status: CommercialActionStatus;
+    registeredBy: string;
     softDelete: boolean;
     employee?: string; // [CM7] Comercial responsable
 };
@@ -368,6 +370,7 @@ type EditableProfileFieldConfig = {
                                             <th>Cliente potencial</th>
                                             <th>Empresa</th>
                                             <th>Contacto relacionado</th>
+                                            <th>Registrado por</th>
                                             <th>Proxima accion</th>
                                             <th>Observacion</th>
                                             <th>Estado</th>
@@ -381,6 +384,7 @@ type EditableProfileFieldConfig = {
                                                 <td>{{ action.prospectName }}</td>
                                                 <td>{{ action.companyName || "Sin empresa" }}</td>
                                                 <td>{{ action.relatedContactName }}</td>
+                                                <td>{{ action.registeredBy || "Sin registrar" }}</td>
                                                 <td>{{ formatCommercialActionNext(action) }}</td>
                                                 <td>{{ action.observation || "Sin observacion" }}</td>
                                                 <td>
@@ -396,7 +400,7 @@ type EditableProfileFieldConfig = {
                                             </tr>
                                         } @empty {
                                             <tr>
-                                                <td colspan="8" class="text-center py-4 text-secondary">Ningun dato disponible en esta tabla</td>
+                                                <td colspan="9" class="text-center py-4 text-secondary">Ningun dato disponible en esta tabla</td>
                                             </tr>
                                         }
                                     </tbody>
@@ -1001,6 +1005,7 @@ export class CrmProspectDetailComponent {
     branchDraft = { name: "", contactName: "", contactRole: "", email: "", phone: "", country: "", city: "", address: "", isPrimary: false };
 
     private readonly crmFollowupsApi = inject(CrmFollowupsApiService);
+    private readonly authService = inject(AuthService);
     private readonly crmProspectsApi = inject(CrmProspectsApiService);
     private readonly crmQuotesApi = inject(CrmQuotesApiService);
     private readonly crmEquipmentApi = inject(CrmEquipmentApiService);
@@ -1688,6 +1693,7 @@ export class CrmProspectDetailComponent {
             recordatorio: this.commercialActionDraft.sendReminder ? `${Math.trunc(reminderValue)} ${this.commercialActionDraft.remindBeforeUnit}` : "",
             observacion: observation,
             estado: "Pendiente",
+            registradoPor: this.authService.getCurrentUserName(),
         };
 
         this.commercialActionValidationMessage = "";
@@ -1925,6 +1931,7 @@ export class CrmProspectDetailComponent {
             remindBeforeUnit: reminder.remindBeforeUnit,
             observation: item.observacion,
             status: item.estado,
+            registeredBy: item.registradoPor || "",
             softDelete: item.softDelete ?? false,
         };
     }
