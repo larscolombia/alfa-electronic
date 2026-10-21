@@ -26,6 +26,7 @@ var (
 	errProjectIDRequired             = errors.New("el id del proyecto es obligatorio")
 	errProjectNotFound               = errors.New("proyecto no encontrado")
 	errProjectStatusInvalid          = errors.New("estado de proyecto invalido")
+	errProjectTransitionInvalid      = errors.New("transicion de estado invalida")
 	errProjectPropertiesInvalid      = errors.New("las propiedades del proyecto no son validas")
 	errProjectsListLimitInvalid      = errors.New("el limite debe ser mayor que cero")
 	errDiagnosisFaultRequired        = errors.New("debes marcar falla identificada para cerrar diagnostico")
@@ -144,6 +145,30 @@ func (s *Service) UpsertProject(companyID string, req UpsertProjectRequest) (Pro
 	normalizedStatus, ok := normalizeStatus(status)
 	if !ok {
 		return Project{}, errProjectStatusInvalid
+	}
+
+	// La regla de flujo vive en el servidor: todo cambio de estado sobre un
+	// proyecto existente se valida contra legalProjectTransitions antes de
+	// escribir (transitions.go). Crear no tiene origen que validar, y reenviar
+	// el mismo estado es un no-op legitimo. La fila reservada board-config no
+	// es un proyecto y queda fuera de la regla.
+	if normalizedProjectID != reservedBoardConfigProjectID {
+		var currentStatus string
+		err := s.db.QueryRow(
+			`SELECT status FROM projects WHERE company_id = $1 AND id = $2`,
+			strings.TrimSpace(companyID),
+			normalizedProjectID,
+		).Scan(&currentStatus)
+		switch {
+		case err == nil:
+			if !canTransition(currentStatus, normalizedStatus) {
+				return Project{}, newTransitionError(currentStatus, normalizedStatus)
+			}
+		case errors.Is(err, sql.ErrNoRows):
+			// Proyecto nuevo: cualquier estado del catalogo es un inicio legal.
+		default:
+			return Project{}, err
+		}
 	}
 
 	properties := req.Properties

@@ -91,6 +91,7 @@ func (h *Handler) createProject(c echo.Context) error {
 		switch {
 		case errors.Is(err, errProjectIDRequired),
 			errors.Is(err, errProjectStatusInvalid),
+			errors.Is(err, errProjectTransitionInvalid),
 			errors.Is(err, errProjectPropertiesInvalid):
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 		default:
@@ -116,6 +117,7 @@ func (h *Handler) updateProject(c echo.Context) error {
 		switch {
 		case errors.Is(err, errProjectIDRequired),
 			errors.Is(err, errProjectStatusInvalid),
+			errors.Is(err, errProjectTransitionInvalid),
 			errors.Is(err, errProjectPropertiesInvalid):
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 		default:
