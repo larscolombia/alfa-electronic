@@ -26,6 +26,11 @@ export interface FinancePaymentRecord {
     bankAccountName: string;
     receiptFileName: string;
     notes: string;
+    reteFuente: number;
+    reteIva: number;
+    reteIca: number;
+    retentionComments: string;
+    paymentDate: string;
     createdAt?: string;
     updatedAt?: string;
 }

@@ -4,7 +4,7 @@ import { FormsModule } from "@angular/forms";
 import { Router } from "@angular/router";
 import { BrowserMultiFormatReader } from "@zxing/browser";
 import { forkJoin, of } from "rxjs";
-import { catchError } from "rxjs/operators";
+import { catchError, take } from "rxjs/operators";
 
 import {
     EquipmentLocationRecord,
@@ -40,6 +40,7 @@ import { CrmEquipmentApiService, EquipmentTechnicianOption } from "../../../serv
 import { CrmProspectContact, CrmProspectRecord, CrmProspectsApiService } from "../../../services/crm-prospects-api.service";
 import { AuthService } from "../../../services/auth.service";
 import { FormDraftService } from "../../../services/form-draft.service";
+import { EmailsApiService } from "../../../services/emails-api.service";
 import { resolveApiBaseUrl } from "../../../services/api-base-url.util";
 import { backupAvailableForModel, findPreviousReception, isUnderLegalWarranty, warrantyMonthsRemaining } from "./warranty.logic";
 
@@ -399,6 +400,11 @@ type SoftwareBackupInfo = {
                                                         data-testid="software-backup-icon"
                                                         [ngClass]="softwareBackupFor(item) ? 'bi-cloud-check-fill text-success' : 'bi-cloud text-secondary'"
                                                         [title]="softwareBackupFor(item) ? 'Hay backup de software para este modelo' : 'Sin backup de software para este modelo'"></i>
+                                                    <i
+                                                        *ngIf="item.priorityBilling"
+                                                        class="bi bi-bell-fill text-warning ms-1"
+                                                        data-testid="priority-billing-badge"
+                                                        title="Marcado para facturación urgente"></i>
                                                 </h6>
                                                 <p class="text-secondary small mb-0">Servicio {{ item.serviceTypeName || "pendiente" }} · Ubicación {{ item.storageLocationName || "pendiente" }}</p>
                                                 <a
@@ -519,6 +525,14 @@ type SoftwareBackupInfo = {
                                                             <div class="form-check mb-0">
                                                                 <input class="form-check-input" type="checkbox" [id]="'label-issue-' + item.id" [(ngModel)]="item.identifierLabelIssue" [ngModelOptions]="{ standalone: true }" />
                                                                 <label class="form-check-label" [for]="'label-issue-' + item.id">Etiqueta rota o ilegible</label>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-12 col-lg-4">
+                                                            <div class="form-check mb-0">
+                                                                <input class="form-check-input" type="checkbox" [id]="'priority-billing-' + item.id" [(ngModel)]="item.priorityBilling" [ngModelOptions]="{ standalone: true }" data-testid="priority-billing-toggle" />
+                                                                <label class="form-check-label" [for]="'priority-billing-' + item.id">
+                                                                    <i class="bi bi-bell text-warning me-1"></i>Facturación urgente (priority billing)
+                                                                </label>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1553,6 +1567,8 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
         private readonly authService: AuthService,
         private readonly formDraftService: FormDraftService,
         private readonly changeDetectorRef: ChangeDetectorRef,
+        // Fase 5c: acuse de recepción por correo.
+        private readonly emailsApi: EmailsApiService,
     ) { }
 
     get currentWizardStep(): WizardStepDefinition {
@@ -1994,6 +2010,16 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
             return;
         }
 
+        // La recepcion ya quedo guardada y el fallo de los proyectos ya se
+        // mostro en validationMessage: el boton solo cierra el modal de forma
+        // segura (emite saved y limpia el borrador) sin volver a guardar, para
+        // no duplicar la recepcion ni los proyectos que si se crearon.
+        if (this.receptionSavedWithProjectErrors) {
+            this.receptionSavedWithProjectErrors = false;
+            this.finalizeSave(this.pendingCreatedProjectIds, this.pendingRecordId, false);
+            return;
+        }
+
         void this.saveRecord(openPrintAfterSave);
     }
 
@@ -2106,6 +2132,12 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
                 this.crmEquipmentApi.finalizeRecord(savedRecord.id).subscribe({
                     next: () => {
                         this.finalizeAfterBackendSave(savedRecord, openPrintAfterSave);
+                        // Fase 5c: acuse de recepción por correo, con los
+                        // identificadores de los equipos. Es un paso aparte del
+                        // finalize porque la recepción ya es un hecho válido
+                        // aunque el cliente no tenga correo — pero la ausencia de
+                        // correo se muestra, no se esconde.
+                        this.sendReceptionAckEmail(savedRecord.id);
                     },
                     error: (error: Error) => {
                         this.validationMessage = error?.message || "No se pudo finalizar la recepción de equipos.";
@@ -2116,6 +2148,47 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
                 this.validationMessage = "No se pudo guardar el registro en la base de datos. Intenta nuevamente.";
             },
         });
+    }
+
+    /**
+     * Dispara el acuse de recepción y refleja el estado REAL del correo.
+     *
+     * No sobrescribe `validationMessage` si la recepción salió bien y sólo falló
+     * el correo: se anexa, porque ambos hechos importan. Y nunca reporta el
+     * acuse como enviado cuando el servidor no tiene SMTP configurado.
+     */
+    private sendReceptionAckEmail(recordId: string): void {
+        this.emailsApi.sendReceptionAck(recordId).pipe(take(1)).subscribe({
+            next: (result) => {
+                if (result.delivered) {
+                    this.appendReceptionNotice(`Acuse de recepción enviado a ${result.toEmail}.`);
+                } else if (result.emailStatus === "desactivado") {
+                    this.appendReceptionNotice(
+                        `El acuse de recepción NO se envió al cliente: ${result.warning ?? "el servidor no tiene SMTP configurado"}. ` +
+                        `Quedó registrado en el outbox de correos.`,
+                    );
+                } else {
+                    this.appendReceptionNotice(
+                        `Acuse de recepción en cola para ${result.toEmail}; saldrá en el próximo envío del servidor.`,
+                    );
+                }
+            },
+            error: (error: Error) => {
+                // 422 = el cliente no tiene correo registrado. La recepción sí
+                // quedó guardada, pero el cliente no recibió comprobante y el
+                // usuario debe saberlo (ese acuse es la prueba en caso de
+                // disputa por un equipo o accesorio faltante).
+                this.appendReceptionNotice(
+                    `La recepción quedó guardada, pero el acuse NO se envió: ${error?.message || "el cliente no tiene correo registrado"}.`,
+                );
+            },
+        });
+    }
+
+    private appendReceptionNotice(notice: string): void {
+        const current = String(this.validationMessage ?? "").trim();
+        this.validationMessage = current ? `${current} ${notice}` : notice;
+        this.changeDetectorRef.detectChanges();
     }
 
     trackByCompanyOption(_: number, option: CompanyCatalogOption): string {
@@ -2334,6 +2407,11 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
         });
     }
 
+    /** Fase 4: recepcion guardada pero con proyectos de reparacion fallidos. */
+    private receptionSavedWithProjectErrors = false;
+    private pendingCreatedProjectIds: string[] = [];
+    private pendingRecordId = "";
+
     private finalizeAfterBackendSave(record: ProspectEquipmentRecord, openPrintAfterSave = false): void {
         if (!this.generateRepairProjectsOnSave) {
             this.finalizeSave([], record.id, openPrintAfterSave);
@@ -2348,6 +2426,7 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
 
         this.creatingRepairProjects = true;
 
+        const failedProjects: string[] = [];
         const createRequests = repairItems.map((item, index) =>
             this.projectService
                 .createProject(
@@ -2359,7 +2438,17 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
                         initialProperties: this.buildRepairProjectProperties(record, item),
                     },
                 )
-                .pipe(catchError(() => of(null))),
+                .pipe(
+                    catchError((error) => {
+                        // Sin tragar el fallo: antes catchError(() => of(null))
+                        // dejaba la recepcion "bien" aunque el proyecto nunca
+                        // llegara al tablero. Ahora se registra y se muestra.
+                        failedProjects.push(
+                            `${this.buildRepairProjectTitle(item, index)}: ${error?.message ?? error}`,
+                        );
+                        return of(null);
+                    }),
+                ),
         );
 
         forkJoin(createRequests).subscribe({
@@ -2368,6 +2457,17 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
                 const createdProjectIds = projects
                     .filter((project): project is Project => project !== null)
                     .map((project) => project.id);
+
+                if (failedProjects.length > 0) {
+                    this.receptionSavedWithProjectErrors = true;
+                    this.pendingCreatedProjectIds = createdProjectIds;
+                    this.pendingRecordId = record.id;
+                    this.validationMessage =
+                        `La recepción quedó guardada, pero ${failedProjects.length} proyecto(s) de reparación NO se pudieron crear y no llegarán al tablero: ${failedProjects.join(" | ")}. ` +
+                        `Pulsa "Guardar asociación" para cerrar de forma segura (no volverá a guardar).`;
+                    return;
+                }
+
                 this.finalizeSave(createdProjectIds, record.id, openPrintAfterSave);
             },
             error: () => {

@@ -22,6 +22,12 @@ export interface ListEquipmentItemsQuery {
     identifier?: string;
     /** Bandeja "mis equipos": filtra por tecnico asignado (id o nombre). */
     assignedToId?: string;
+    /**
+     * Fase 5c: campanita de facturación urgente. Con true el backend devuelve
+     * SOLO los ítems marcados con priorityBilling, así que el conteo lo hace el
+     * servidor y no el navegador sobre el listado completo.
+     */
+    priorityBilling?: boolean;
 }
 
 export interface EquipmentInsightQuery {
@@ -209,7 +215,7 @@ export class CrmEquipmentApiService {
         );
     }
 
-    private buildQueryString(query: { prospectId?: string | number; clientNit?: string; clientName?: string; includeArchived?: boolean; identifier?: string; assignedToId?: string }): string {
+    private buildQueryString(query: { prospectId?: string | number; clientNit?: string; clientName?: string; includeArchived?: boolean; identifier?: string; assignedToId?: string; priorityBilling?: boolean }): string {
         const searchParams = new URLSearchParams();
 
         const prospectId = String(query.prospectId ?? "").trim();

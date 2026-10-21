@@ -51,6 +51,18 @@ func (s *Service) ListRecords(companyID string, query ListRecordsQuery) ([]Recor
 		nextArg++
 	}
 
+	// Fase 5c: campanita de facturación urgente. Los ítems viven serializados
+	// en items_json, así que el filtro es un EXISTS sobre el JSONB (mismo
+	// patrón que el filtro por identificador de arriba): devuelve los REGISTROS
+	// con al menos un ítem marcado, y ListItems recorta después a esos ítems.
+	if query.PriorityBilling {
+		filters = append(filters, `EXISTS (
+			SELECT 1
+			FROM jsonb_array_elements(items_json) AS item
+			WHERE coalesce((item->>'priorityBilling')::boolean, false) = true
+		)`)
+	}
+
 	statement := buildListRecordsStatement(filters)
 
 	rows, err := s.db.QueryContext(ctx, statement, args...)
@@ -240,12 +252,26 @@ func (s *Service) ListItems(companyID string, query ListItemsQuery) ([]Summary, 
 		IncludeArchived: query.IncludeArchived,
 		Identifier:      query.Identifier,
 		AssignedToID:    query.AssignedToID,
+		PriorityBilling: query.PriorityBilling,
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	summaries := flattenSummaries(records)
+
+	// Fase 5c: el EXISTS de arriba filtra REGISTROS, y un registro puede
+	// mezclar equipos urgentes con equipos que no lo son. La campanita cuenta
+	// equipos, no recepciones, así que aquí se recorta a los ítems marcados.
+	if query.PriorityBilling {
+		marked := make([]Summary, 0, len(summaries))
+		for _, summary := range summaries {
+			if summary.PriorityBilling {
+				marked = append(marked, summary)
+			}
+		}
+		summaries = marked
+	}
 
 	// El filtro de tecnico es por item: un registro puede mezclar equipos de
 	// varios tecnicos, asi que la bandeja "mis equipos" solo devuelve los items

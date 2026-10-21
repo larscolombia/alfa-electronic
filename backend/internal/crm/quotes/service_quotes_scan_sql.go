@@ -15,6 +15,7 @@ func scanQuote(scanner interface{ Scan(dest ...any) error }) (Quote, error) {
 		rawLines                []byte
 		rawSelectedEquipment    []byte
 		purchaseOrderUploadedAt sql.NullTime
+		invoicedAt              sql.NullTime
 		createdAt               time.Time
 		updatedAt               time.Time
 	)
@@ -58,6 +59,8 @@ func scanQuote(scanner interface{ Scan(dest ...any) error }) (Quote, error) {
 		&purchaseOrderUploadedAt,
 		&createdAt,
 		&updatedAt,
+		&item.InvoiceID,
+		&invoicedAt,
 	); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return Quote{}, errQuoteNotFound
@@ -74,6 +77,9 @@ func scanQuote(scanner interface{ Scan(dest ...any) error }) (Quote, error) {
 	item.UpdatedAt = updatedAt.UTC().Format(time.RFC3339)
 	if purchaseOrderUploadedAt.Valid {
 		item.PurchaseOrderUploadedAt = purchaseOrderUploadedAt.Time.UTC().Format(time.RFC3339)
+	}
+	if invoicedAt.Valid {
+		item.InvoicedAt = invoicedAt.Time.UTC().Format(time.RFC3339)
 	}
 
 	if len(rawLines) > 0 {

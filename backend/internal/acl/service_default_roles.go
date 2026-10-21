@@ -127,6 +127,9 @@ ON CONFLICT (role_id, module_id) DO NOTHING;
 		return RoleSeedSummary{}, err
 	}
 
+	// "administracion" cubre HR y gestion de usuarios: datos personales de los
+	// empleados. Se siembra denegada para todo rol y es el administrador quien
+	// concede acceso desde el panel, en vez de nacer visible por defecto.
 	actionPermissionsResult, err := tx.ExecContext(ctx, `
 INSERT INTO acl_role_permissions (id, role_id, module_id, action_id, scope_id, created_at, updated_at)
 SELECT
@@ -134,8 +137,9 @@ CONCAT($1::text, '-', m.id, '-', a.id),
 $1::text,
 m.id,
 a.id,
-CASE a.name
-WHEN 'ver' THEN 1
+CASE
+WHEN m.slug = 'administracion' THEN 0
+WHEN a.name = 'ver' THEN 1
 ELSE 0
 END,
 NOW(),

@@ -144,6 +144,7 @@ export class FinanceRecurringInvoicesComponent {
     statusFilter = "";
     searchTerm = "";
     message = "";
+    errorMessage = "";
 
     constructor(private readonly financeBillingApi: FinanceBillingApiService) {
         void this.loadRecurringInvoices();
@@ -174,25 +175,26 @@ export class FinanceRecurringInvoicesComponent {
     async toggleStatus(invoice: BillingRecurringInvoice): Promise<void> {
         const nextStatus = invoice.status === "Activa" ? "Pausada" : "Activa";
         try {
+            this.errorMessage = "";
             await firstValueFrom(this.financeBillingApi.updateRecurringInvoice(invoice.id, { ...invoice, status: nextStatus }));
             this.message = `La factura recurrente quedó ${nextStatus.toLowerCase()}.`;
             await this.loadRecurringInvoices();
-        } catch {
-            FinanceBillingStore.updateRecurringStatus(invoice.id, nextStatus);
-            this.message = `La factura recurrente quedó ${nextStatus.toLowerCase()}.`;
-            await this.loadRecurringInvoices();
+        } catch (error) {
+            // Sin fallback local: el cambio solo vale si quedó en el servidor.
+            this.message = "";
+            this.errorMessage = error instanceof Error ? error.message : "No se pudo actualizar la factura recurrente en el servidor.";
         }
     }
 
     async removeInvoice(invoiceId: number): Promise<void> {
         try {
+            this.errorMessage = "";
             await firstValueFrom(this.financeBillingApi.deleteRecurringInvoice(invoiceId));
             this.message = "Se eliminó la automatización seleccionada.";
             await this.loadRecurringInvoices();
-        } catch {
-            FinanceBillingStore.removeRecurringInvoice(invoiceId);
-            this.message = "Se eliminó la automatización seleccionada.";
-            await this.loadRecurringInvoices();
+        } catch (error) {
+            this.message = "";
+            this.errorMessage = error instanceof Error ? error.message : "No se pudo eliminar la factura recurrente en el servidor.";
         }
     }
 
@@ -216,8 +218,10 @@ export class FinanceRecurringInvoicesComponent {
         try {
             this.recurringInvoices = await firstValueFrom(this.financeBillingApi.listRecurringInvoices()) as BillingRecurringInvoice[];
             FinanceBillingStore.saveRecurringInvoices(this.recurringInvoices);
-        } catch {
+            this.errorMessage = "";
+        } catch (error) {
             this.recurringInvoices = FinanceBillingStore.getRecurringInvoices();
+            this.errorMessage = error instanceof Error ? error.message : "No se pudieron cargar las facturas recurrentes del servidor.";
         }
     }
 }

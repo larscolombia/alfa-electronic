@@ -2,6 +2,7 @@ import { getEquipmentFamilyName, getEquipmentServiceTypes, getIndustrialEquipmen
 import { buildCommercialSeriesPrefix } from "../company/company-commercial-settings.store";
 import { CrmClientRecord, getCrmClients } from "../crm/crm-clients.store";
 import { CRM_PROSPECTS_MOCK, ProspectRecord } from "../crm/crm-prospects.store";
+import { financeStoreFetch, isBrowserEnv } from "../../../services/finance-store-fetch.util";
 
 export type BillingCurrencyCode = "COP" | "USD" | "EUR";
 export type BillingInvoiceStatus = "Borrador" | "Pendiente" | "Pago parcial" | "Pagado" | "Cancelado" | "Enviado";
@@ -79,7 +80,17 @@ export interface BillingInvoice {
     terms: string;
     attachmentName: string;
     receivedPayment: boolean;
-    source: "manual" | "timesheet";
+    source: "manual" | "timesheet" | "quote";
+    /** Fase 5b: número de factura externa Oasis. */
+    externalNumber?: string;
+    /** Fase 5b: 'factura' | 'nota_credito'. */
+    documentType?: string;
+    /** Fase 5b: factura origen cuando es nota crédito. */
+    creditNoteRef?: number | null;
+    /** Fase 5b: emitida ⇒ sin edición ni eliminación (409 en el servidor). */
+    locked?: boolean;
+    /** Fase 5b: cotización de origen cuando se generó por conversión. */
+    sourceQuoteId?: string;
     createdAt: string;
 }
 
@@ -124,8 +135,16 @@ export interface BillingSummary {
     total: number;
 }
 
-const BILLING_STORAGE_KEY = "adminux.finance.billing.v1";
-const RECURRING_STORAGE_KEY = "adminux.finance.billing.recurring.v1";
+// Claves legacy: SOLO se leen una vez para migrar al servidor y se borran
+// cuando la migración termina sin errores. Ya no se escribe dato de negocio.
+const LEGACY_BILLING_STORAGE_KEY = "adminux.finance.billing.v1";
+const LEGACY_RECURRING_STORAGE_KEY = "adminux.finance.billing.recurring.v1";
+
+// Firmas de la semilla mock que este store solía inyectar (funciones
+// buildDefault* eliminadas en Fase 5a). Las filas locales con estas firmas NO
+// se migran al servidor: eran datos inventados, no del usuario.
+const SEED_INVOICE_CREATED_AT = new Set(["2026-04-06T09:30:00.000Z", "2026-04-01T12:00:00.000Z"]);
+const SEED_RECURRING_CREATED_AT = new Set(["2026-04-01T08:00:00.000Z", "2026-04-15T10:30:00.000Z"]);
 
 const DEFAULT_TERMS =
     "El beneficiario del servicio debe suministrar la informacion, soportes y aprobaciones relacionadas con la orden. Cualquier cambio de alcance, tiempos o entregables debera acordarse por escrito antes de su ejecucion. Los pagos vencidos podran suspender entregas futuras hasta la normalizacion de la cartera.";
@@ -133,14 +152,6 @@ const DEFAULT_TERMS =
 const GENERATED_BY_OPTIONS = ["Equipo comercial", "Coordinacion de proyectos", "Backoffice financiero"] as const;
 const PROJECT_NAME_TEMPLATES = ["Proyecto Atlas", "Proyecto Orion", "Proyecto Mercury", "Soporte interno", "Implementacion comercial", "Servicio en sitio", "Manufactura especial"] as const;
 const PROJECT_RATE_TEMPLATES = [140000, 125000, 160000, 110000, 135000, 150000, 175000] as const;
-
-function isBrowser(): boolean {
-    return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
-}
-
-function cloneValue<T>(value: T): T {
-    return JSON.parse(JSON.stringify(value)) as T;
-}
 
 function sanitizeText(value: string | undefined | null, fallback = ""): string {
     const sanitized = (value ?? "").trim();
@@ -161,32 +172,6 @@ function toPositiveNumber(value: unknown): number {
     }
 
     return numeric;
-}
-
-function restoreArray<T>(storageKey: string, defaultValue: T[]): T[] {
-    if (!isBrowser()) {
-        return cloneValue(defaultValue);
-    }
-
-    const rawValue = window.localStorage.getItem(storageKey);
-    if (!rawValue) {
-        return cloneValue(defaultValue);
-    }
-
-    try {
-        const parsedValue = JSON.parse(rawValue) as T[];
-        return Array.isArray(parsedValue) ? parsedValue : cloneValue(defaultValue);
-    } catch {
-        return cloneValue(defaultValue);
-    }
-}
-
-function saveArray<T>(storageKey: string, value: T[]): void {
-    if (!isBrowser()) {
-        return;
-    }
-
-    window.localStorage.setItem(storageKey, JSON.stringify(value));
 }
 
 function addDays(dateValue: string, days: number): string {
@@ -443,241 +428,9 @@ export function computeNextIssueDate(startDate: string, frequency: BillingFreque
     }
 }
 
-function buildDefaultInvoices(): BillingInvoice[] {
-    const clients = buildBillingClients();
-    const projects = buildBillingProjects(clients);
-    const catalog = buildBillingCatalog();
-
-    const restrepoClient = clients.find((client) => client.id === buildProspectClientId(2)) ?? clients[0];
-    const techSolutionsClient = clients.find((client) => client.id === buildCrmClientId(1)) ?? clients[1] ?? clients[0];
-    const restrepoProject = projects.find((project) => project.clientId === restrepoClient.id) ?? projects[0];
-    const techSolutionsProject = projects.find((project) => project.clientId === techSolutionsClient.id) ?? projects[1] ?? projects[0];
-    const onsiteService = catalog.find((item) => item.id === "service-servicio-sitio") ?? catalog[0];
-    const manufacturingService = catalog.find((item) => item.id === "service-manufactura") ?? catalog[0];
-    const siemensProduct = catalog.find((item) => item.id === "model-siemens-g120") ?? catalog[catalog.length - 1];
-    const plcProduct = catalog.find((item) => item.id === "model-allenbradley-compactlogix") ?? catalog[catalog.length - 1];
-
-    const firstInvoiceItems: BillingInvoiceItem[] = [
-        {
-            id: "default-invoice-item-1",
-            name: onsiteService.label.replace("Servicio - ", ""),
-            description: `${onsiteService.description} Equipo asociado: ${siemensProduct.label.replace("Producto - ", "")}`,
-            quantity: 1,
-            unitLabel: onsiteService.unitLabel,
-            unitPrice: onsiteService.unitPrice,
-            taxRate: onsiteService.taxRate,
-            attachmentName: "",
-        },
-        {
-            id: "default-invoice-item-2",
-            name: siemensProduct.label.replace("Producto - ", ""),
-            description: siemensProduct.description,
-            quantity: 1,
-            unitLabel: siemensProduct.unitLabel,
-            unitPrice: siemensProduct.unitPrice,
-            taxRate: siemensProduct.taxRate,
-            attachmentName: "",
-        },
-    ];
-    const firstSummary = computeInvoiceSummary(firstInvoiceItems, 0, "percent", "Despues del descuento");
-
-    const secondInvoiceItems: BillingInvoiceItem[] = [
-        {
-            id: "default-invoice-item-3",
-            name: manufacturingService.label.replace("Servicio - ", ""),
-            description: manufacturingService.description,
-            quantity: 1,
-            unitLabel: manufacturingService.unitLabel,
-            unitPrice: manufacturingService.unitPrice,
-            taxRate: manufacturingService.taxRate,
-            attachmentName: "",
-        },
-        {
-            id: "default-invoice-item-4",
-            name: plcProduct.label.replace("Producto - ", ""),
-            description: plcProduct.description,
-            quantity: 1,
-            unitLabel: plcProduct.unitLabel,
-            unitPrice: plcProduct.unitPrice,
-            taxRate: plcProduct.taxRate,
-            attachmentName: "",
-        },
-    ];
-    const secondSummary = computeInvoiceSummary(secondInvoiceItems, 0, "percent", "Despues del descuento");
-
-    return [
-        {
-            id: 1,
-            referenceCode: "--",
-            seriesPrefix: buildInvoiceSeriesPrefix("2026-04-06"),
-            sequenceNumber: 1,
-            projectId: restrepoProject.id,
-            projectName: restrepoProject.name,
-            clientId: restrepoClient.id,
-            clientName: restrepoClient.name,
-            billingAddress: restrepoClient.billingAddress,
-            shippingAddress: restrepoClient.shippingAddress,
-            issueDate: "2026-04-06",
-            dueDate: "2026-04-20",
-            currencyCode: "COP",
-            exchangeRate: 1,
-            bankAccountId: null,
-            bankAccountName: "--",
-            taxCalculation: "Despues del descuento",
-            generatedBy: GENERATED_BY_OPTIONS[0],
-            items: firstInvoiceItems,
-            discountValue: 0,
-            discountMode: "percent",
-            subtotal: firstSummary.subtotal,
-            taxTotal: firstSummary.taxTotal,
-            total: firstSummary.total,
-            paidAmount: 0,
-            balanceAmount: firstSummary.total,
-            status: "Cancelado",
-            note: "Servicio cancelado por reprogramacion del cliente antes del despacho final.",
-            terms: DEFAULT_TERMS,
-            attachmentName: "",
-            receivedPayment: false,
-            source: "manual",
-            createdAt: "2026-04-06T09:30:00.000Z",
-        },
-        {
-            id: 2,
-            referenceCode: "--",
-            seriesPrefix: buildInvoiceSeriesPrefix("2026-04-01"),
-            sequenceNumber: 2,
-            projectId: techSolutionsProject.id,
-            projectName: techSolutionsProject.name,
-            clientId: techSolutionsClient.id,
-            clientName: techSolutionsClient.name,
-            billingAddress: techSolutionsClient.billingAddress,
-            shippingAddress: techSolutionsClient.shippingAddress,
-            issueDate: "2026-04-01",
-            dueDate: "2026-04-15",
-            currencyCode: "COP",
-            exchangeRate: 1,
-            bankAccountId: null,
-            bankAccountName: "--",
-            taxCalculation: "Despues del descuento",
-            generatedBy: GENERATED_BY_OPTIONS[1],
-            items: secondInvoiceItems,
-            discountValue: 0,
-            discountMode: "percent",
-            subtotal: secondSummary.subtotal,
-            taxTotal: secondSummary.taxTotal,
-            total: secondSummary.total,
-            paidAmount: 2500000,
-            balanceAmount: Math.max(secondSummary.total - 2500000, 0),
-            status: "Pago parcial",
-            note: "Abono recibido y saldo pendiente contra entrega final.",
-            terms: DEFAULT_TERMS,
-            attachmentName: "",
-            receivedPayment: false,
-            source: "manual",
-            createdAt: "2026-04-01T12:00:00.000Z",
-        },
-    ];
-}
-
-function buildDefaultRecurringInvoices(): BillingRecurringInvoice[] {
-    const clients = buildBillingClients();
-    const projects = buildBillingProjects(clients);
-    const catalog = buildBillingCatalog();
-    const digitalClient = clients.find((client) => client.id === buildCrmClientId(2)) ?? clients[0];
-    const imukoClient = clients.find((client) => client.id === buildProspectClientId(1)) ?? clients[1] ?? clients[0];
-    const digitalProject = projects.find((project) => project.clientId === digitalClient.id) ?? projects[0];
-    const imukoProject = projects.find((project) => project.clientId === imukoClient.id) ?? projects[1] ?? projects[0];
-    const repairService = catalog.find((item) => item.id === "service-reparacion") ?? catalog[0];
-    const onsiteService = catalog.find((item) => item.id === "service-servicio-sitio") ?? catalog[0];
-
-    const firstItems: BillingInvoiceItem[] = [
-        {
-            id: "default-recurring-item-1",
-            name: repairService.label.replace("Servicio - ", ""),
-            description: repairService.description,
-            quantity: 1,
-            unitLabel: repairService.unitLabel,
-            unitPrice: repairService.unitPrice,
-            taxRate: repairService.taxRate,
-            attachmentName: "",
-        },
-    ];
-    const firstSummary = computeInvoiceSummary(firstItems, 0, "percent", "Despues del descuento");
-
-    const secondItems: BillingInvoiceItem[] = [
-        {
-            id: "default-recurring-item-2",
-            name: onsiteService.label.replace("Servicio - ", ""),
-            description: onsiteService.description,
-            quantity: 2,
-            unitLabel: onsiteService.unitLabel,
-            unitPrice: onsiteService.unitPrice,
-            taxRate: onsiteService.taxRate,
-            attachmentName: "",
-        },
-    ];
-    const secondSummary = computeInvoiceSummary(secondItems, 0, "percent", "Despues del descuento");
-
-    return [
-        {
-            id: 1,
-            clientId: digitalClient.id,
-            clientName: digitalClient.name,
-            projectId: digitalProject.id,
-            projectName: digitalProject.name,
-            currencyCode: "COP",
-            taxCalculation: "Despues del descuento",
-            bankAccountId: null,
-            bankAccountName: "--",
-            frequency: "Mensual",
-            startDate: "2026-04-01",
-            nextIssueDate: computeNextIssueDate("2026-04-01", "Mensual"),
-            cycles: -1,
-            allowClientStop: true,
-            showShippingAddress: false,
-            generatedBy: GENERATED_BY_OPTIONS[2],
-            items: firstItems,
-            discountValue: 0,
-            discountMode: "percent",
-            subtotal: firstSummary.subtotal,
-            taxTotal: firstSummary.taxTotal,
-            total: firstSummary.total,
-            status: "Activa",
-            note: "Servicio recurrente de mantenimiento preventivo para cartera activa.",
-            terms: DEFAULT_TERMS,
-            createdAt: "2026-04-01T08:00:00.000Z",
-        },
-        {
-            id: 2,
-            clientId: imukoClient.id,
-            clientName: imukoClient.name,
-            projectId: imukoProject.id,
-            projectName: imukoProject.name,
-            currencyCode: "COP",
-            taxCalculation: "Despues del descuento",
-            bankAccountId: null,
-            bankAccountName: "--",
-            frequency: "Quincenal",
-            startDate: "2026-04-15",
-            nextIssueDate: computeNextIssueDate("2026-04-15", "Quincenal"),
-            cycles: 6,
-            allowClientStop: false,
-            showShippingAddress: true,
-            generatedBy: GENERATED_BY_OPTIONS[0],
-            items: secondItems,
-            discountValue: 0,
-            discountMode: "percent",
-            subtotal: secondSummary.subtotal,
-            taxTotal: secondSummary.taxTotal,
-            total: secondSummary.total,
-            status: "Pausada",
-            note: "Cobro quincenal por visitas tecnicas programadas en sitio.",
-            terms: DEFAULT_TERMS,
-            createdAt: "2026-04-15T10:30:00.000Z",
-        },
-    ];
-}
-
+// normalizeInvoice/normalizeRecurringInvoice se conservan SOLO para limpiar las
+// formas legacy durante la migración única de localStorage. Los datos que
+// devuelve el servidor son la fuente de verdad y no se renormalizan.
 function normalizeInvoice(invoice: BillingInvoice, clients: BillingClient[], projects: BillingProject[]): BillingInvoice {
     const safeIssueDate = sanitizeText(invoice.issueDate, new Date().toISOString().slice(0, 10));
     const matchedClient = findBillingClient(clients, invoice.clientId, invoice.clientName);
@@ -761,18 +514,67 @@ function normalizeRecurringInvoice(invoice: BillingRecurringInvoice, clients: Bi
     };
 }
 
-function normalizeInvoices(invoices: BillingInvoice[]): BillingInvoice[] {
-    const clients = buildBillingClients();
-    const projects = buildBillingProjects(clients);
-    return invoices.map((invoice) => normalizeInvoice(invoice, clients, projects));
+function isSeedInvoice(invoice: BillingInvoice): boolean {
+    return (invoice.id === 1 || invoice.id === 2) && SEED_INVOICE_CREATED_AT.has(invoice.createdAt);
 }
 
-function normalizeRecurringInvoices(invoices: BillingRecurringInvoice[]): BillingRecurringInvoice[] {
-    const clients = buildBillingClients();
-    const projects = buildBillingProjects(clients);
-    return invoices.map((invoice) => normalizeRecurringInvoice(invoice, clients, projects));
+function isSeedRecurringInvoice(invoice: BillingRecurringInvoice): boolean {
+    return (invoice.id === 1 || invoice.id === 2) && SEED_RECURRING_CREATED_AT.has(invoice.createdAt);
 }
 
+function readLegacyArray<T>(storageKey: string): T[] | null {
+    if (!isBrowserEnv()) {
+        return null;
+    }
+    const raw = window.localStorage.getItem(storageKey);
+    if (!raw) {
+        return null;
+    }
+    try {
+        const parsed = JSON.parse(raw) as T[];
+        return Array.isArray(parsed) ? parsed : [];
+    } catch {
+        // Clave corrupta: nada rescatable; se elimina para no reintentar una
+        // migración imposible en cada arranque.
+        window.localStorage.removeItem(storageKey);
+        return null;
+    }
+}
+
+function storeErrorMessage(error: unknown): string {
+    return error instanceof Error && error.message.trim() ? error.message : String(error);
+}
+
+function sortByCreatedAtDesc<T extends { createdAt: string }>(items: T[]): T[] {
+    return items.slice().sort((left, right) => sanitizeText(right.createdAt).localeCompare(sanitizeText(left.createdAt)));
+}
+
+// ── Caché en memoria respaldada por la API ──────────────────────────────────
+
+let invoicesCache: BillingInvoice[] = [];
+let recurringCache: BillingRecurringInvoice[] = [];
+let lastError: string | null = null;
+let loaded = false;
+let loadPromise: Promise<void> | null = null;
+let migrationStarted = false;
+const listeners = new Set<() => void>();
+
+function notifyListeners(): void {
+    listeners.forEach((listener) => listener());
+}
+
+/**
+ * Store de facturación respaldado por el servidor (GET/POST /finance/invoices y
+ * /finance/recurring-invoices). getInvoices() es síncrono sobre la caché;
+ * ensureLoaded() la puebla y avisa a los suscriptores. Ya no existe semilla
+ * mock: si el servidor no tiene facturas, la lista está vacía en vez de
+ * inventada.
+ *
+ * Migración única de 'adminux.finance.billing.v1' y '...recurring.v1': sube
+ * solo lo que no exista en el servidor (dedupe por serie+consecutivo /
+ * cliente+inicio+frecuencia), NUNCA sube la semilla mock, y borra cada clave
+ * SOLO si su migración terminó sin errores.
+ */
 export class FinanceBillingStore {
     static getClients(): BillingClient[] {
         return buildBillingClients();
@@ -831,53 +633,67 @@ export class FinanceBillingStore {
         return buildInvoiceSeriesPrefix(dateValue);
     }
 
-    static getInvoices(): BillingInvoice[] {
-        const rawInvoices = restoreArray(BILLING_STORAGE_KEY, buildDefaultInvoices());
-        const normalizedInvoices = normalizeInvoices(rawInvoices).sort((leftInvoice, rightInvoice) => rightInvoice.createdAt.localeCompare(leftInvoice.createdAt));
-
-        if (isBrowser()) {
-            saveArray(BILLING_STORAGE_KEY, normalizedInvoices);
-        }
-
-        return normalizedInvoices;
+    static getLastError(): string | null {
+        return lastError;
     }
 
-    static saveInvoices(invoices: BillingInvoice[]): void {
-        saveArray(BILLING_STORAGE_KEY, normalizeInvoices(invoices));
-    }
-
-    static addInvoice(invoice: BillingInvoice): BillingInvoice {
-        const normalizedInvoice = normalizeInvoice(invoice, this.getClients(), this.getProjects());
-        const invoices = this.getInvoices();
-        this.saveInvoices([normalizedInvoice, ...invoices]);
-        return normalizedInvoice;
-    }
-
-    static duplicateInvoice(invoiceId: number): BillingInvoice | null {
-        const sourceInvoice = this.getInvoices().find((invoice) => invoice.id === invoiceId);
-        if (!sourceInvoice) {
-            return null;
-        }
-
-        const todayValue = new Date().toISOString().slice(0, 10);
-        const clonedInvoice: BillingInvoice = {
-            ...cloneValue(sourceInvoice),
-            id: this.getNextInvoiceId(),
-            seriesPrefix: buildInvoiceSeriesPrefix(todayValue),
-            sequenceNumber: this.getNextSequenceNumber(todayValue),
-            issueDate: todayValue,
-            dueDate: addDays(todayValue, 15),
-            paidAmount: 0,
-            balanceAmount: sourceInvoice.total,
-            status: "Borrador",
-            createdAt: new Date().toISOString(),
+    static subscribe(listener: () => void): () => void {
+        listeners.add(listener);
+        return () => {
+            listeners.delete(listener);
         };
-
-        return this.addInvoice(clonedInvoice);
     }
 
+    static ensureLoaded(): Promise<void> {
+        if (loaded) {
+            return Promise.resolve();
+        }
+        if (!loadPromise) {
+            loadPromise = this.reload().finally(() => {
+                loadPromise = null;
+            });
+        }
+        return loadPromise;
+    }
+
+    static async reload(): Promise<void> {
+        try {
+            const [invoicesResponse, recurringResponse] = await Promise.all([
+                financeStoreFetch<{ items: BillingInvoice[] }>("/api/v1/finance/invoices"),
+                financeStoreFetch<{ items: BillingRecurringInvoice[] }>("/api/v1/finance/recurring-invoices"),
+            ]);
+            invoicesCache = sortByCreatedAtDesc(invoicesResponse.items ?? []);
+            recurringCache = sortByCreatedAtDesc(recurringResponse.items ?? []);
+            loaded = true;
+            notifyListeners();
+            await this.migrateLegacyState();
+        } catch (error) {
+            loaded = false;
+            lastError = `No se pudo cargar la facturacion del servidor: ${storeErrorMessage(error)}`;
+            notifyListeners();
+        }
+    }
+
+    static getInvoices(): BillingInvoice[] {
+        return invoicesCache;
+    }
+
+    /** Actualiza solo la caché (p. ej. tras recargar desde la API). */
+    static saveInvoices(invoices: BillingInvoice[]): void {
+        invoicesCache = sortByCreatedAtDesc(invoices);
+        notifyListeners();
+    }
+
+    /** Inserta en la caché un registro ya creado en el servidor. */
+    static addInvoice(invoice: BillingInvoice): BillingInvoice {
+        invoicesCache = sortByCreatedAtDesc([invoice, ...invoicesCache]);
+        notifyListeners();
+        return invoice;
+    }
+
+    /** Actualiza la caché tras un cambio confirmado por la API. */
     static updateInvoiceStatus(invoiceId: number, status: BillingInvoiceStatus): void {
-        const invoices = this.getInvoices().map((invoice) => {
+        invoicesCache = invoicesCache.map((invoice) => {
             if (invoice.id !== invoiceId) {
                 return invoice;
             }
@@ -890,56 +706,49 @@ export class FinanceBillingStore {
                 balanceAmount: Math.max(invoice.total - paidAmount, 0),
             };
         });
-
-        this.saveInvoices(invoices);
+        notifyListeners();
     }
 
     static getRecurringInvoices(): BillingRecurringInvoice[] {
-        const rawInvoices = restoreArray(RECURRING_STORAGE_KEY, buildDefaultRecurringInvoices());
-        const normalizedInvoices = normalizeRecurringInvoices(rawInvoices).sort((leftInvoice, rightInvoice) => rightInvoice.createdAt.localeCompare(leftInvoice.createdAt));
-
-        if (isBrowser()) {
-            saveArray(RECURRING_STORAGE_KEY, normalizedInvoices);
-        }
-
-        return normalizedInvoices;
+        return recurringCache;
     }
 
     static saveRecurringInvoices(invoices: BillingRecurringInvoice[]): void {
-        saveArray(RECURRING_STORAGE_KEY, normalizeRecurringInvoices(invoices));
+        recurringCache = sortByCreatedAtDesc(invoices);
+        notifyListeners();
     }
 
     static addRecurringInvoice(invoice: BillingRecurringInvoice): BillingRecurringInvoice {
-        const normalizedInvoice = normalizeRecurringInvoice(invoice, this.getClients(), this.getProjects());
-        const recurringInvoices = this.getRecurringInvoices();
-        this.saveRecurringInvoices([normalizedInvoice, ...recurringInvoices]);
-        return normalizedInvoice;
+        recurringCache = sortByCreatedAtDesc([invoice, ...recurringCache]);
+        notifyListeners();
+        return invoice;
     }
 
     static updateRecurringStatus(invoiceId: number, status: BillingRecurringStatus): void {
-        const recurringInvoices = this.getRecurringInvoices().map((invoice) => (invoice.id === invoiceId ? { ...invoice, status } : invoice));
-        this.saveRecurringInvoices(recurringInvoices);
+        recurringCache = recurringCache.map((invoice) => (invoice.id === invoiceId ? { ...invoice, status } : invoice));
+        notifyListeners();
     }
 
     static removeRecurringInvoice(invoiceId: number): void {
-        this.saveRecurringInvoices(this.getRecurringInvoices().filter((invoice) => invoice.id !== invoiceId));
+        recurringCache = recurringCache.filter((invoice) => invoice.id !== invoiceId);
+        notifyListeners();
     }
 
     static getNextInvoiceId(): number {
-        const currentIds = this.getInvoices().map((invoice) => invoice.id);
+        const currentIds = invoicesCache.map((invoice) => Number(invoice.id) || 0);
         return currentIds.length ? Math.max(...currentIds) + 1 : 1;
     }
 
     static getNextRecurringId(): number {
-        const currentIds = this.getRecurringInvoices().map((invoice) => invoice.id);
+        const currentIds = recurringCache.map((invoice) => Number(invoice.id) || 0);
         return currentIds.length ? Math.max(...currentIds) + 1 : 1;
     }
 
     static getNextSequenceNumber(dateValue?: string): number {
         const targetPrefix = buildInvoiceSeriesPrefix(dateValue);
-        const matchingSequences = this.getInvoices()
+        const matchingSequences = invoicesCache
             .filter((invoice) => invoice.seriesPrefix === targetPrefix)
-            .map((invoice) => invoice.sequenceNumber);
+            .map((invoice) => Number(invoice.sequenceNumber) || 0);
 
         return matchingSequences.length ? Math.max(...matchingSequences) + 1 : 1;
     }
@@ -954,5 +763,89 @@ export class FinanceBillingStore {
 
     static buildInvoiceCode(seriesPrefix: string, sequenceNumber: number): string {
         return `${sanitizeText(seriesPrefix, buildInvoiceSeriesPrefix())}${padSequenceNumber(sequenceNumber)}`;
+    }
+
+    // ── Migración única de localStorage ─────────────────────────────────────
+
+    private static async migrateLegacyState(): Promise<void> {
+        if (migrationStarted || !isBrowserEnv()) {
+            return;
+        }
+
+        const legacyInvoices = readLegacyArray<BillingInvoice>(LEGACY_BILLING_STORAGE_KEY);
+        const legacyRecurring = readLegacyArray<BillingRecurringInvoice>(LEGACY_RECURRING_STORAGE_KEY);
+        if (legacyInvoices === null && legacyRecurring === null) {
+            return;
+        }
+
+        migrationStarted = true;
+        const failures: string[] = [];
+        const clients = buildBillingClients();
+        const projects = buildBillingProjects(clients);
+
+        if (legacyInvoices !== null) {
+            const existingKeys = new Set(invoicesCache.map((invoice) => `${invoice.seriesPrefix}|${invoice.sequenceNumber}`));
+            for (const rawInvoice of legacyInvoices) {
+                if (!rawInvoice || isSeedInvoice(rawInvoice)) {
+                    continue;
+                }
+                const invoice = normalizeInvoice(rawInvoice, clients, projects);
+                const dedupeKey = `${invoice.seriesPrefix}|${invoice.sequenceNumber}`;
+                if (existingKeys.has(dedupeKey)) {
+                    continue;
+                }
+                try {
+                    const created = await financeStoreFetch<BillingInvoice>("/api/v1/finance/invoices", {
+                        method: "POST",
+                        body: JSON.stringify(invoice),
+                    });
+                    invoicesCache = sortByCreatedAtDesc([created, ...invoicesCache]);
+                    existingKeys.add(`${created.seriesPrefix}|${created.sequenceNumber}`);
+                } catch (error) {
+                    failures.push(`factura ${invoice.seriesPrefix}${invoice.sequenceNumber}: ${storeErrorMessage(error)}`);
+                }
+            }
+            if (!failures.some((failure) => failure.startsWith("factura "))) {
+                window.localStorage.removeItem(LEGACY_BILLING_STORAGE_KEY);
+            }
+        }
+
+        if (legacyRecurring !== null) {
+            const recurringFailures: string[] = [];
+            const existingKeys = new Set(recurringCache.map((invoice) => `${invoice.clientName}|${invoice.startDate}|${invoice.frequency}|${invoice.total}`));
+            for (const rawRecurring of legacyRecurring) {
+                if (!rawRecurring || isSeedRecurringInvoice(rawRecurring)) {
+                    continue;
+                }
+                const recurring = normalizeRecurringInvoice(rawRecurring, clients, projects);
+                const dedupeKey = `${recurring.clientName}|${recurring.startDate}|${recurring.frequency}|${recurring.total}`;
+                if (existingKeys.has(dedupeKey)) {
+                    continue;
+                }
+                try {
+                    const created = await financeStoreFetch<BillingRecurringInvoice>("/api/v1/finance/recurring-invoices", {
+                        method: "POST",
+                        body: JSON.stringify(recurring),
+                    });
+                    recurringCache = sortByCreatedAtDesc([created, ...recurringCache]);
+                    existingKeys.add(`${created.clientName}|${created.startDate}|${created.frequency}|${created.total}`);
+                } catch (error) {
+                    recurringFailures.push(`recurrente de ${recurring.clientName}: ${storeErrorMessage(error)}`);
+                }
+            }
+            if (recurringFailures.length === 0) {
+                window.localStorage.removeItem(LEGACY_RECURRING_STORAGE_KEY);
+            } else {
+                failures.push(...recurringFailures);
+            }
+        }
+
+        if (failures.length > 0) {
+            // Las claves con fallos SE CONSERVAN y se reintenta en el próximo
+            // arranque; el error queda visible para la UI.
+            migrationStarted = false;
+            lastError = `La migracion de tu facturacion local fallo y se reintentara mas tarde. Detalles: ${failures.join(" | ")}`;
+        }
+        notifyListeners();
     }
 }

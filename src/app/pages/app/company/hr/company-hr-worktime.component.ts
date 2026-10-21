@@ -1,6 +1,8 @@
 import { Component, OnInit } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { RouterLink } from "@angular/router";
+import { firstValueFrom } from "rxjs";
+import { WorktimeApiService } from "../../../../services/worktime-api.service";
 import {
     buildBusinessCalendar,
     estimateBusinessDaysForYear,
@@ -8,6 +10,7 @@ import {
     HolidayEntry,
     loadBusinessDayLabelsFromStorage,
     persistBusinessDayLabels,
+    refreshHolidaysFromServer,
     WorkDayLabel,
     WorkScheduleTemplate,
     WORKTIME_BUSINESS_DAYS_STORAGE_KEY,
@@ -44,7 +47,7 @@ import {
 
         <div class="container mt-3" id="main-content">
             @if (message) {
-                <div class="alert alert-success border mb-3">{{ message }}</div>
+                <div class="alert border mb-3" [ngClass]="messageType === 'success' ? 'alert-success' : 'alert-danger'">{{ message }}</div>
             }
 
             <div class="row gx-3 gx-lg-4 mb-3">
@@ -167,7 +170,7 @@ import {
                     <div class="row gx-3 gy-3 align-items-end mb-3">
                         <div class="col-12 col-md-2">
                             <label class="form-label">Ano</label>
-                            <input class="form-control" type="number" min="2024" [(ngModel)]="holidayYear" />
+                            <input class="form-control" type="number" min="2024" [(ngModel)]="holidayYear" (ngModelChange)="onHolidayYearChange()" />
                         </div>
                         <div class="col-12 col-md-3">
                             <label class="form-label">Fecha</label>
@@ -223,6 +226,7 @@ export class CompanyHrWorktimeComponent implements OnInit {
     private readonly businessDaysStorageKey = WORKTIME_BUSINESS_DAYS_STORAGE_KEY;
 
     message = "";
+    messageType: "success" | "danger" = "success";
     holidayYear = new Date().getFullYear();
 
     readonly weekDays: WorkDayLabel[] = ["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"];
@@ -236,11 +240,127 @@ export class CompanyHrWorktimeComponent implements OnInit {
     draftHolidayName = "";
     draftHolidayPaid = true;
 
+    // Fase 6 (pendiente): los horarios y los dias habiles siguen en localStorage
+    // ('lars.hr.worktime.schedules' y 'lars.hr.worktime.business-days.v1'); su
+    // migracion a configuracion por empresa en el servidor NO hace parte de la
+    // Fase 4. Solo los festivos pasaron al servidor (GET/PUT /worktime/holidays).
     scheduleTemplates: WorkScheduleTemplate[] = this.defaultSchedules();
-    holidays: HolidayEntry[] = this.defaultHolidays();
+
+    /** Festivos reales del servidor (tabla holidays, Ley 51 de Colombia). */
+    holidays: HolidayEntry[] = [];
+
+    private legacyHolidayMigrationStarted = false;
+
+    constructor(private readonly worktimeApi: WorktimeApiService) { }
 
     ngOnInit(): void {
         this.restoreStorage();
+        this.loadHolidaysFromServer();
+    }
+
+    onHolidayYearChange(): void {
+        this.loadHolidaysFromServer();
+    }
+
+    private loadHolidaysFromServer(): void {
+        const year = Number(this.holidayYear);
+        if (!Number.isFinite(year) || year < 1900 || year > 3000) {
+            return;
+        }
+
+        this.worktimeApi.listHolidays(year).subscribe({
+            next: (items) => {
+                this.holidays = items.map((item) => ({
+                    id: item.id,
+                    date: item.date,
+                    name: item.name,
+                    paid: Boolean(item.paid),
+                }));
+                void this.migrateLegacyHolidays();
+                // Refresca la cache global que consumen los semaforos SLA.
+                void refreshHolidaysFromServer();
+            },
+            error: (error) => {
+                this.messageType = "danger";
+                this.message = `No se pudieron cargar los festivos del servidor: ${this.errorMessage(error)}`;
+            },
+        });
+    }
+
+    /**
+     * Migracion unica de 'lars.hr.worktime.holidays': sube solo los festivos
+     * locales cuya fecha no exista en el servidor (nunca pisa los oficiales) y
+     * borra la clave SOLO si todo salio bien; si falla, se conserva y reintenta.
+     */
+    private async migrateLegacyHolidays(): Promise<void> {
+        if (this.legacyHolidayMigrationStarted || typeof window === "undefined") {
+            return;
+        }
+
+        const raw = window.localStorage.getItem(this.holidayStorageKey);
+        if (!raw) {
+            return;
+        }
+
+        this.legacyHolidayMigrationStarted = true;
+
+        let legacy: HolidayEntry[] = [];
+        try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+                legacy = parsed as HolidayEntry[];
+            }
+        } catch {
+            legacy = [];
+        }
+
+        if (legacy.length === 0) {
+            window.localStorage.removeItem(this.holidayStorageKey);
+            return;
+        }
+
+        const years = Array.from(
+            new Set(
+                legacy
+                    .map((entry) => String(entry?.date ?? "").slice(0, 4))
+                    .filter((year) => /^\d{4}$/.test(year))
+            )
+        );
+
+        let failed = false;
+        for (const year of years) {
+            try {
+                const serverItems = await firstValueFrom(this.worktimeApi.listHolidays(Number(year)));
+                const serverDates = new Set(serverItems.map((item) => item.date));
+
+                for (const entry of legacy) {
+                    const date = String(entry?.date ?? "").trim();
+                    const name = String(entry?.name ?? "").trim();
+                    if (!date.startsWith(year) || !name || serverDates.has(date)) {
+                        continue;
+                    }
+                    await firstValueFrom(
+                        this.worktimeApi.upsertHoliday({ country: "CO", date, name, paid: entry.paid !== false })
+                    );
+                }
+            } catch (error) {
+                failed = true;
+                this.messageType = "danger";
+                this.message = `La migracion de tus festivos locales fallo y se reintentara mas tarde: ${this.errorMessage(error)}`;
+            }
+        }
+
+        if (failed) {
+            this.legacyHolidayMigrationStarted = false;
+            return;
+        }
+
+        window.localStorage.removeItem(this.holidayStorageKey);
+        this.loadHolidaysFromServer();
+    }
+
+    private errorMessage(error: unknown): string {
+        return error instanceof Error ? error.message : String(error);
     }
 
     get holidaysForYear(): HolidayEntry[] {
@@ -323,27 +443,42 @@ export class CompanyHrWorktimeComponent implements OnInit {
     addHoliday(): void {
         const name = this.draftHolidayName.trim();
         if (!this.draftHolidayDate || !name) {
+            this.messageType = "danger";
             this.message = "Define fecha y nombre del festivo para agregarlo.";
             return;
         }
 
-        this.holidays.unshift({
-            id: this.buildId("holiday"),
-            date: this.draftHolidayDate,
-            name,
-            paid: this.draftHolidayPaid,
-        });
-
-        this.message = "Festivo agregado correctamente.";
-        this.draftHolidayDate = "";
-        this.draftHolidayName = "";
-        this.persistStorage();
+        // Fase 4: el festivo se guarda en el servidor (upsert por country+date).
+        this.worktimeApi
+            .upsertHoliday({ country: "CO", date: this.draftHolidayDate, name, paid: this.draftHolidayPaid })
+            .subscribe({
+                next: () => {
+                    this.messageType = "success";
+                    this.message = "Festivo guardado en el servidor.";
+                    this.draftHolidayDate = "";
+                    this.draftHolidayName = "";
+                    this.loadHolidaysFromServer();
+                },
+                error: (error) => {
+                    this.messageType = "danger";
+                    this.message = `No se pudo guardar el festivo en el servidor: ${this.errorMessage(error)}`;
+                },
+            });
     }
 
     removeHoliday(id: string): void {
-        this.holidays = this.holidays.filter((holiday) => holiday.id !== id);
-        this.message = "Festivo eliminado.";
-        this.persistStorage();
+        this.worktimeApi.deleteHoliday(id).subscribe({
+            next: () => {
+                this.messageType = "success";
+                this.message = "Festivo eliminado del servidor.";
+                this.holidays = this.holidays.filter((holiday) => holiday.id !== id);
+                void refreshHolidaysFromServer();
+            },
+            error: (error) => {
+                this.messageType = "danger";
+                this.message = `No se pudo eliminar el festivo: ${this.errorMessage(error)}`;
+            },
+        });
     }
 
     estimatedWorkingDays(year: number): number {
@@ -353,18 +488,19 @@ export class CompanyHrWorktimeComponent implements OnInit {
 
     saveMockConfig(): void {
         this.persistStorage();
-        this.message = `Configuracion mock guardada para el ano ${this.holidayYear}.`;
+        this.message = `Configuracion de horarios y dias habiles guardada para el ano ${this.holidayYear}. Los festivos viven en el servidor.`;
     }
 
     restoreDefaults(): void {
+        // Los festivos NO se restauran aqui: viven en el servidor (tabla
+        // holidays, sembrada con la Ley 51). Este boton solo restablece la
+        // configuracion local de horarios y dias habiles (Fase 6 los migrara).
         this.scheduleTemplates = this.defaultSchedules();
-        this.holidays = this.defaultHolidays();
         this.businessDayLabels = getDefaultWorkDayLabels();
-        this.message = "Configuracion mock restaurada a valores base.";
+        this.message = "Horarios y dias habiles restaurados a valores base.";
 
         if (typeof window !== "undefined") {
             window.localStorage.removeItem(this.scheduleStorageKey);
-            window.localStorage.removeItem(this.holidayStorageKey);
             window.localStorage.removeItem(this.businessDaysStorageKey);
         }
     }
@@ -387,8 +523,9 @@ export class CompanyHrWorktimeComponent implements OnInit {
             return;
         }
 
+        // Solo horarios y dias habiles siguen en localStorage (Fase 6 los
+        // migrara). Los festivos se cargan del servidor en loadHolidaysFromServer.
         const scheduleRaw = window.localStorage.getItem(this.scheduleStorageKey);
-        const holidayRaw = window.localStorage.getItem(this.holidayStorageKey);
 
         try {
             const schedules = scheduleRaw ? (JSON.parse(scheduleRaw) as WorkScheduleTemplate[]) : null;
@@ -399,15 +536,6 @@ export class CompanyHrWorktimeComponent implements OnInit {
             this.scheduleTemplates = this.defaultSchedules();
         }
 
-        try {
-            const holidays = holidayRaw ? (JSON.parse(holidayRaw) as HolidayEntry[]) : null;
-            if (Array.isArray(holidays)) {
-                this.holidays = holidays;
-            }
-        } catch {
-            this.holidays = this.defaultHolidays();
-        }
-
         this.businessDayLabels = loadBusinessDayLabelsFromStorage(this.scheduleTemplates);
     }
 
@@ -416,8 +544,8 @@ export class CompanyHrWorktimeComponent implements OnInit {
             return;
         }
 
+        // Los festivos ya NO se escriben en localStorage: viven en el servidor.
         window.localStorage.setItem(this.scheduleStorageKey, JSON.stringify(this.scheduleTemplates));
-        window.localStorage.setItem(this.holidayStorageKey, JSON.stringify(this.holidays));
         persistBusinessDayLabels(this.businessDayLabels);
     }
 
@@ -441,15 +569,6 @@ export class CompanyHrWorktimeComponent implements OnInit {
                 endTime: "16:00",
                 days: ["Lun", "Mar", "Mie", "Jue", "Vie", "Sab"],
             },
-        ];
-    }
-
-    private defaultHolidays(): HolidayEntry[] {
-        const year = new Date().getFullYear();
-        return [
-            { id: "holiday-001", date: `${year}-01-01`, name: "Ano Nuevo", paid: true },
-            { id: "holiday-002", date: `${year}-05-01`, name: "Dia del Trabajo", paid: true },
-            { id: "holiday-003", date: `${year}-12-25`, name: "Navidad", paid: true },
         ];
     }
 }

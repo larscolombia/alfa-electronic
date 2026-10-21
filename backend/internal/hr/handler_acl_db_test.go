@@ -115,6 +115,29 @@ func TestEmployeeResponsesNeverLeakEmailPassword(t *testing.T) {
 			t.Fatalf("ListRoles seed: %v", err)
 		}
 
+		// El seed deniega 'administracion' a los roles no admin (datos personales de
+		// empleados), asi que el acceso se concede de forma explicita igual que lo
+		// haria el administrador desde el panel. De paso queda probada la ruta de
+		// concesion, no solo la de denegacion.
+		grant, err := db.Exec(`
+UPDATE acl_role_permissions rp
+SET scope_id = 1, updated_at = NOW()
+FROM acl_roles r, acl_modules m, acl_actions a
+WHERE rp.role_id = r.id
+  AND rp.module_id = m.id
+  AND rp.action_id = a.id
+  AND r.company_id = $1
+  AND LOWER(r.name) = 'ventas'
+  AND m.slug = 'administracion'
+  AND a.name = 'ver';
+`, companyID)
+		if err != nil {
+			t.Fatalf("conceder ver a ventas: %v", err)
+		}
+		if affected, _ := grant.RowsAffected(); affected == 0 {
+			t.Fatalf("no se concedio el permiso: el seed no creo la fila de permiso")
+		}
+
 		// Marca documentnumber (slug del seed) como 'oculto' para el rol ventas.
 		result, err := db.Exec(`
 UPDATE acl_role_field_permissions rfp

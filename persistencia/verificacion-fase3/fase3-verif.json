@@ -1,0 +1,76 @@
+{
+  "pasos": [
+    {
+      "paso": "login",
+      "detalle": "HTTP 200, rol=admin, expiresAt=1792577632052"
+    },
+    {
+      "paso": "crear proyecto por API",
+      "detalle": "HTTP 201"
+    },
+    {
+      "paso": "A: url",
+      "detalle": "http://127.0.0.1:4200/app/work-projects"
+    },
+    {
+      "paso": "A: ve el proyecto del servidor",
+      "detalle": true
+    },
+    {
+      "paso": "A: no fue redirigido a signin",
+      "detalle": true
+    },
+    {
+      "paso": "B: tras recargar sigue el proyecto",
+      "detalle": true
+    },
+    {
+      "paso": "C: tras borrar localStorage sigue el proyecto",
+      "detalle": true
+    },
+    {
+      "paso": "D: segundo contexto ve el mismo proyecto",
+      "detalle": true
+    },
+    {
+      "paso": "E: columnas",
+      "detalle": "{\"porSelector\":12,\"textoListoEntrega\":true}"
+    },
+    {
+      "paso": "F: GET /projects devuelve el proyecto",
+      "detalle": true
+    },
+    {
+      "paso": "F: limpieza DELETE proyecto de prueba",
+      "detalle": "HTTP 200"
+    }
+  ],
+  "localStorageKeys": {
+    "A_inicial": [
+      "lars.work.time.tracker.v1",
+      "pika.apiBaseUrl",
+      "pika.auth.session"
+    ],
+    "B_tras_reload": [
+      "lars.work.time.tracker.v1",
+      "pika.apiBaseUrl",
+      "pika.auth.session"
+    ],
+    "C_tras_borrar_storage": [
+      "lars.work.time.tracker.v1",
+      "pika.apiBaseUrl",
+      "pika.auth.session"
+    ],
+    "D_segundo_contexto": [
+      "lars.work.time.tracker.v1",
+      "pika.apiBaseUrl",
+      "pika.auth.session"
+    ]
+  },
+  "erroresConsola": [],
+  "screenshots": [
+    "/tmp/pw-artifacts/fase3-A-tablero.png",
+    "/tmp/pw-artifacts/fase3-C-tras-borrar-storage.png",
+    "/tmp/pw-artifacts/fase3-D-segundo-contexto.png"
+  ]
+}

@@ -1,5 +1,5 @@
 import { CommonModule } from "@angular/common";
-import { Component } from "@angular/core";
+import { Component, OnDestroy } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { Router, RouterLink } from "@angular/router";
 import { firstValueFrom } from "rxjs";
@@ -21,6 +21,8 @@ import { FinanceBillingApiService } from "../../../services/finance-billing-api.
 interface InvoiceDraft {
     seriesPrefix: string;
     sequenceNumber: number;
+    /** Fase 5b: número de factura externa Oasis (persistido, editable sin bloqueo). */
+    externalNumber: string;
     issueDate: string;
     dueDate: string;
     currencyCode: BillingCurrencyCode;
@@ -129,6 +131,10 @@ interface InvoiceDraft {
                                 <span class="input-group-text">{{ draft.seriesPrefix }}</span>
                                 <input class="form-control" type="number" min="1" [(ngModel)]="draft.sequenceNumber" name="sequenceNumber" />
                             </div>
+                        </div>
+                        <div class="col-12 col-lg-3">
+                            <label class="form-label">Número externo (Oasis)</label>
+                            <input class="form-control" type="text" maxlength="80" placeholder="Número de la factura externa Oasis" [(ngModel)]="draft.externalNumber" name="externalNumber" data-testid="external-number-input" />
                         </div>
                         <div class="col-12 col-lg-2">
                             <label class="form-label">Fecha de la factura</label>
@@ -356,7 +362,7 @@ interface InvoiceDraft {
         </div>
     `,
 })
-export class FinanceInvoiceCreateComponent {
+export class FinanceInvoiceCreateComponent implements OnDestroy {
     readonly clients = FinanceBillingStore.getClients();
     readonly catalog = FinanceBillingStore.getCatalog();
     readonly taxOptions = FinanceBillingStore.getTaxOptions();
@@ -364,7 +370,7 @@ export class FinanceInvoiceCreateComponent {
     readonly taxCalculationOptions = FinanceBillingStore.getTaxCalculationOptions();
     readonly generatedByOptions = FinanceBillingStore.getGeneratedByOptions();
     readonly unitOptions = FinanceBillingStore.getUnitOptions();
-    readonly bankAccounts = FinanceAccountsStore.getAccounts();
+    bankAccounts: FinanceAccount[] = FinanceAccountsStore.getAccounts();
 
     draft = this.createDraft();
     items: BillingInvoiceItem[] = [this.createEmptyItem()];
@@ -374,10 +380,24 @@ export class FinanceInvoiceCreateComponent {
 
     isSaving = false;
 
+    private readonly accountsUnsubscribe: () => void;
+
     constructor(
         private readonly router: Router,
         private readonly financeBillingApi: FinanceBillingApiService,
-    ) {}
+    ) {
+        this.accountsUnsubscribe = FinanceAccountsStore.subscribe(() => {
+            this.bankAccounts = FinanceAccountsStore.getAccounts();
+        });
+        void FinanceAccountsStore.ensureLoaded();
+        // Recalcula prefijo/consecutivo cuando la caché de facturas del
+        // servidor esté disponible (el consecutivo en servidor es Fase 6).
+        void FinanceBillingStore.ensureLoaded().then(() => this.onIssueDateChange());
+    }
+
+    ngOnDestroy(): void {
+        this.accountsUnsubscribe();
+    }
 
     get availableProjects() {
         return FinanceBillingStore.getProjects(this.draft.clientId || undefined);
@@ -521,6 +541,7 @@ export class FinanceInvoiceCreateComponent {
             attachmentName: this.draft.attachmentName,
             receivedPayment: this.draft.receivedPayment,
             source: "manual",
+            externalNumber: this.draft.externalNumber.trim(),
             createdAt: new Date().toISOString(),
         };
 
@@ -544,6 +565,7 @@ export class FinanceInvoiceCreateComponent {
         return {
             seriesPrefix: FinanceBillingStore.getInvoiceSeriesPrefix(today),
             sequenceNumber: FinanceBillingStore.getNextSequenceNumber(today),
+            externalNumber: "",
             issueDate: today,
             dueDate: dueDate.toISOString().slice(0, 10),
             currencyCode: "COP",

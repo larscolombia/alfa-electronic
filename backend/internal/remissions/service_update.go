@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
+	"time"
 )
 
 func (s *Service) Update(companyID, id string, req UpsertRemissionRequest) (*Remission, error) {
@@ -23,14 +25,14 @@ func (s *Service) Update(companyID, id string, req UpsertRemissionRequest) (*Rem
 			carrier_name = $6, guide_number = $7, purchase_order = $8,
 			youtube_link = $9, dispatch_photos = $10, items = $11,
 			valued = $12, total_value = $13, warranty_months = $14,
-			notes = $15, updated_at = NOW()
+			notes = $15, updated_at = NOW(), invoice_id = $16
 		WHERE company_id = $1 AND id = $2`,
 		companyID, id,
 		req.ClientName, req.ClientNIT, req.DispatchType,
 		req.CarrierName, req.GuideNumber, req.PurchaseOrder,
 		req.YoutubeLink, photosJSON, itemsJSON,
 		req.Valued, computeTotalValue(req.Items), req.WarrantyMonths,
-		req.Notes,
+		req.Notes, normalizeInvoiceID(req.InvoiceID),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("actualizar remision: %w", err)
@@ -45,9 +47,16 @@ func (s *Service) Update(companyID, id string, req UpsertRemissionRequest) (*Rem
 	return s.Get(companyID, id)
 }
 
-func (s *Service) UpdateDeliveryStatus(companyID, id, status string) (*Remission, error) {
+// UpdateDeliveryStatus cambia el estado de entrega aplicando la puerta de pago
+// de la Fase 5c dentro de la MISMA transacción (el FOR UPDATE sobre la remisión
+// evita que dos usuarios despachen a la vez una factura que apenas se pagó).
+//
+// actor y req.PaymentOverride vienen del JWT y del cuerpo de la petición: el
+// override sólo se honra para rol admin y queda grabado con quién y cuándo.
+func (s *Service) UpdateDeliveryStatus(companyID, id string, req DeliveryStatusRequest, actor Actor) (*Remission, error) {
+	status := strings.TrimSpace(req.DeliveryStatus)
 	if status != "entregado" && status != "pendiente" {
-		return nil, fmt.Errorf("estado de entrega invalido: %s", status)
+		return nil, fmt.Errorf("estado de entrega invalido: %s", req.DeliveryStatus)
 	}
 
 	tx, err := s.db.Begin()
@@ -56,31 +65,109 @@ func (s *Service) UpdateDeliveryStatus(companyID, id, status string) (*Remission
 	}
 	defer tx.Rollback()
 
-	var current string
-	err = tx.QueryRow(
-		`SELECT delivery_status FROM remissions WHERE company_id = $1 AND id = $2 FOR UPDATE`,
+	// Se lee la remisión completa (no sólo delivery_status) porque la puerta
+	// necesita la modalidad, el NIT/nombre del cliente y la factura vinculada.
+	current := Remission{CompanyID: companyID, ID: id}
+	err = tx.QueryRow(`
+		SELECT r.delivery_status, r.dispatch_type, r.client_nit, r.client_name,
+			r.invoice_id, r.payment_override,
+			COALESCE(cc.credit_enabled, false)
+		FROM remissions r
+		LEFT JOIN LATERAL (
+			SELECT credit_enabled
+			FROM crm_clients cc
+			WHERE cc.company_id = r.company_id
+			  AND cc.soft_delete = false
+			  AND (
+				(r.client_nit <> '' AND lower(cc.nit) = lower(r.client_nit))
+				OR (r.client_nit = '' AND r.client_name <> ''
+					AND (lower(cc.empresa) = lower(r.client_name) OR lower(cc.nombre) = lower(r.client_name)))
+			  )
+			ORDER BY cc.updated_at DESC
+			LIMIT 1
+		) cc ON true
+		WHERE r.company_id = $1 AND r.id = $2 FOR UPDATE OF r`,
 		companyID, id,
-	).Scan(&current)
+	).Scan(
+		&current.DeliveryStatus, &current.DispatchType, &current.ClientNIT, &current.ClientName,
+		&current.InvoiceID, &current.PaymentOverride, &current.CreditClient,
+	)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, errRemissionNotFound
 	}
 	if err != nil {
 		return nil, err
 	}
-	if current == "entregado" && status == "pendiente" {
+	if current.DeliveryStatus == "entregado" && status == "pendiente" {
 		return nil, fmt.Errorf("no se puede revertir una remision ya entregada")
 	}
 
-	if _, err := tx.Exec(
-		`UPDATE remissions SET delivery_status = $3, updated_at = NOW() WHERE company_id = $1 AND id = $2`,
-		companyID, id, status,
-	); err != nil {
+	// La puerta sólo aplica al despachar. Revertir a 'pendiente' no libera
+	// mercancía, así que no se le exige factura pagada.
+	overrideApplied := false
+	if status == "entregado" {
+		invoiceStatus, linked, err := readInvoiceStatus(tx, companyID, current.InvoiceID)
+		if err != nil {
+			return nil, err
+		}
+		current.InvoiceStatus = invoiceStatus
+		if linked && current.InvoiceID != nil {
+			var reference sql.NullString
+			if refErr := tx.QueryRow(
+				`SELECT reference_code FROM finance_invoices WHERE company_id = $1 AND id = $2`,
+				companyID, *current.InvoiceID,
+			).Scan(&reference); refErr == nil && reference.Valid {
+				current.InvoiceReference = reference.String
+			}
+		}
+
+		if err := enforcePaymentGate(&current, actor, req.PaymentOverride); err != nil {
+			return nil, err
+		}
+
+		// Queda rastro sólo cuando el override fue lo que destrabó el despacho:
+		// si la factura ya estaba Pagada no hubo nada que autorizar.
+		overrideApplied = req.PaymentOverride && !current.PaymentOverride &&
+			!invoicePaid(current.InvoiceStatus) && isAdminRole(actor.Role)
+	}
+
+	var overrideBy any
+	var overrideAt any
+	if overrideApplied {
+		overrideBy = firstNonEmptyString(actor.Email, "admin")
+		overrideAt = time.Now().UTC()
+	}
+
+	query := `UPDATE remissions SET delivery_status = $3, updated_at = NOW() WHERE company_id = $1 AND id = $2`
+	args := []any{companyID, id, status}
+	if overrideApplied {
+		query = `UPDATE remissions SET delivery_status = $3, updated_at = NOW(),
+			payment_override = true, payment_override_by = $4, payment_override_at = $5
+			WHERE company_id = $1 AND id = $2`
+		args = append(args, overrideBy, overrideAt)
+	}
+
+	if _, err := tx.Exec(query, args...); err != nil {
 		return nil, fmt.Errorf("actualizar estado de entrega: %w", err)
 	}
 	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
 	return s.Get(companyID, id)
+}
+
+// invoicePaid reporta si el estado leído ya libera la puerta.
+func invoicePaid(status string) bool {
+	return strings.EqualFold(strings.TrimSpace(status), InvoiceStatusPaid)
+}
+
+func firstNonEmptyString(values ...string) string {
+	for _, value := range values {
+		if strings.TrimSpace(value) != "" {
+			return strings.TrimSpace(value)
+		}
+	}
+	return ""
 }
 
 func (s *Service) Delete(companyID, id string) error {

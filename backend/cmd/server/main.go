@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
@@ -19,11 +20,13 @@ import (
 	"pika.software.net.co/backend/internal/hr"
 	"pika.software.net.co/backend/internal/inventory"
 	"pika.software.net.co/backend/internal/platform/database"
+	"pika.software.net.co/backend/internal/platform/mailer"
 	"pika.software.net.co/backend/internal/projects"
 	"pika.software.net.co/backend/internal/remissions"
 	"pika.software.net.co/backend/internal/search"
 	"pika.software.net.co/backend/internal/security"
 	"pika.software.net.co/backend/internal/suppliers"
+	"pika.software.net.co/backend/internal/worktime"
 )
 
 func main() {
@@ -55,6 +58,23 @@ func main() {
 		log.Fatalf("database migration error: %v", err)
 	}
 
+	// Fase 5c: correos transaccionales con outbox durable.
+	//
+	// SMTP_HOST vacío ⇒ modo desactivado: NewSender devuelve nil y el worker
+	// marca las filas como 'desactivado' con last_error "SMTP no configurado".
+	// Nunca se marcan 'enviado' ni se descartan: un correo que no salió tiene
+	// que seguir siendo visible en GET /emails.
+	mailerConfig := mailer.ConfigFromEnv()
+	emailOutbox := mailer.NewOutbox(db, mailerConfig, mailer.NewSender(mailerConfig))
+	if !mailerConfig.Enabled() {
+		log.Printf("mailer: SMTP_HOST vacio, correos en modo DESACTIVADO (se registran en email_outbox y se marcan 'desactivado')")
+	}
+
+	// Worker del outbox: goroutine con parada limpia al apagar el servidor.
+	emailWorkerStop := make(chan struct{})
+	defer close(emailWorkerStop)
+	go mailer.NewWorker(emailOutbox, mailer.DefaultInterval).Run(emailWorkerStop)
+
 	aclService := acl.NewService(db)
 	aclHandler := acl.NewHandler(aclService)
 
@@ -73,9 +93,13 @@ func main() {
 		os.Getenv("DEEPSEEK_MODEL"),
 	)
 	crmEquipmentService := crmequipment.NewService(db, crmEquipmentInsightClient)
+	// Fase 5c: acuse de recepción por correo.
+	crmEquipmentService.SetEmailOutbox(emailOutbox)
 	crmEquipmentHandler := crmequipment.NewHandler(crmEquipmentService)
 
 	crmQuotesService := crmquotes.NewService(db)
+	// Fase 5c: correo de la cotización "Guardar y enviar".
+	crmQuotesService.SetEmailOutbox(emailOutbox)
 	crmQuotesHandler := crmquotes.NewHandler(crmQuotesService)
 
 	financeService := finance.NewService(db)
@@ -109,14 +133,34 @@ func main() {
 	documentationService := docs.NewService(db)
 	documentationHandler := docs.NewHandler(documentationService)
 
-	authService := auth.NewService(auth.Config{
-		DB:            db,
-		JWTSecret:     os.Getenv("JWT_SECRET"),
-		AdminEmail:    os.Getenv("AUTH_ADMIN_EMAIL"),
-		AdminPassword: os.Getenv("AUTH_ADMIN_PASSWORD"),
-		AdminName:     os.Getenv("AUTH_ADMIN_NAME"),
-		AdminRole:     os.Getenv("AUTH_ADMIN_ROLE"),
+	// Fase 4: horas de trabajo, telemetria de uso, pruebas funcionales y festivos.
+	worktimeService := worktime.NewService(db)
+	worktimeHandler := worktime.NewHandler(worktimeService)
+
+	// Fase 2b: identidad de usuario real. NewService falla si no hay JWT_SECRET
+	// (se elimino el secreto de desarrollo por defecto) y siembra la cuenta admin
+	// del entorno solo si ese email no existe todavia.
+	authService, err := auth.NewService(auth.Config{
+		DB:             db,
+		JWTSecret:      os.Getenv("JWT_SECRET"),
+		AdminEmail:     os.Getenv("AUTH_ADMIN_EMAIL"),
+		AdminPassword:  os.Getenv("AUTH_ADMIN_PASSWORD"),
+		AdminName:      os.Getenv("AUTH_ADMIN_NAME"),
+		AdminRole:      os.Getenv("AUTH_ADMIN_ROLE"),
+		AdminCompanyID: os.Getenv("AUTH_ADMIN_COMPANY_ID"),
+		SignupRole:     os.Getenv("AUTH_SIGNUP_ROLE"),
 	})
+	if err != nil {
+		log.Fatalf("auth service error: %v", err)
+	}
+	// El ACL siembra sus roles por defecto de forma perezosa; auth los necesita
+	// asegurados antes de validar el rol de un usuario nuevo. Se inyecta aqui para
+	// que auth no importe el paquete acl.
+	authService.SetRoleReadiness(func(ctx context.Context, companyID string) error {
+		_, err := aclService.ListRoles(companyID)
+		return err
+	})
+
 	securityService := security.NewService(db)
 	securityHandler := security.NewHandler(securityService)
 	authHandler := auth.NewHandler(authService, securityService)
@@ -137,8 +181,14 @@ func main() {
 	// (login/onboarding no pueden requerir permisos).
 	requireAdminModule := aclService.RequireModule("administracion")
 
+	// /users lleva dos handlers sobre el mismo prefijo y el mismo guard admin-only:
+	// el de acl (PATCH /soft-delete, eventos) y el de auth (GET/POST de usuarios
+	// reales con rol elegido por el admin, Fase 2b). Sin rutas en conflicto.
+	userRoutes := protectedAPI.Group("/users", requireAdminModule)
+	aclHandler.RegisterUserRoutes(userRoutes)
+	authHandler.RegisterUserRoutes(userRoutes)
+
 	aclHandler.RegisterRoutes(protectedAPI.Group("/acl", requireAdminModule))
-	aclHandler.RegisterUserRoutes(protectedAPI.Group("/users", requireAdminModule))
 	hrHandler.RegisterRoutes(protectedAPI.Group("/hr", requireAdminModule))
 	calendarHandler.RegisterRoutes(protectedAPI.Group("/calendar"))
 	crmHandler.RegisterRoutes(protectedAPI.Group("/crm"))
@@ -152,6 +202,21 @@ func main() {
 	securityHandler.RegisterRoutes(protectedAPI.Group("/security"))
 	remissionsHandler.RegisterRoutes(protectedAPI.Group("/remissions"))
 	documentationHandler.RegisterRoutes(protectedAPI.Group("/documentation"))
+	worktimeHandler.RegisterRoutes(protectedAPI.Group("/worktime", aclService.RequireModule("registro-horas")))
+
+	// Fase 5c: correos transaccionales.
+	//
+	// GET /emails va solo para administración: contiene destinatarios y errores
+	// de toda la empresa, y es la única ventana a un correo que no salió (sin
+	// esto un fallo de SMTP sería invisible).
+	//
+	// Los disparadores van fuera de ese guard a propósito: quien despacha desde
+	// el kanban no es necesariamente admin, y exigirle `administracion` para
+	// avisarle al cliente habría dejado el trigger muerto para el usuario real
+	// del flujo.
+	mailerHandler := mailer.NewHandler(emailOutbox)
+	mailerHandler.RegisterAdminRoutes(protectedAPI.Group("/emails", requireAdminModule))
+	mailerHandler.RegisterTriggerRoutes(protectedAPI)
 
 	port := os.Getenv("PORT")
 	if port == "" {

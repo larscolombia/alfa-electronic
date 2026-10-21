@@ -82,6 +82,7 @@ func (s *Service) GetClient(companyID, clientID string) (Client, error) {
 
 	row := s.db.QueryRowContext(ctx, `
 SELECT id, nombre, correo, empresa, nit, zona, estado, website, office_phone, country, city, address,
+	COALESCE(dv, ''), COALESCE(postal_code, ''), COALESCE(billing_email, ''), grand_contributor, id_type,
 	credit_enabled, credit_limit, credit_consumed, last_payment_date, payment_term_days, created_at
 FROM crm_clients
 WHERE company_id = $1
@@ -154,14 +155,19 @@ SET nombre = $1,
 	country = $9,
 	city = $10,
 	address = $11,
-	credit_enabled = $12,
-	credit_limit = $13,
-	credit_consumed = $14,
-	last_payment_date = $15,
-	payment_term_days = $16,
+	dv = $12,
+	postal_code = $13,
+	billing_email = $14,
+	grand_contributor = $15,
+	id_type = $16,
+	credit_enabled = $17,
+	credit_limit = $18,
+	credit_consumed = $19,
+	last_payment_date = $20,
+	payment_term_days = $21,
 	updated_at = NOW()
-WHERE company_id = $17
-  AND id = $18
+WHERE company_id = $22
+  AND id = $23
   AND soft_delete = false;
 `,
 		payload.Nombre,
@@ -175,6 +181,11 @@ WHERE company_id = $17
 		payload.Country,
 		payload.City,
 		payload.Address,
+		payload.DV,
+		payload.PostalCode,
+		payload.BillingEmail,
+		payload.GrandContributor,
+		payload.IDType,
 		payload.CreditEnabled,
 		payload.CreditLimit,
 		payload.CreditConsumed,

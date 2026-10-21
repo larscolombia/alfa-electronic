@@ -103,23 +103,29 @@ type normalizedProspectInput struct {
 }
 
 type normalizedClientInput struct {
-	Nombre          string
-	Correo          string
-	Empresa         string
-	Nit             string
-	Zona            string
-	Estado          string
-	Website         string
-	OfficePhone     string
-	Country         string
-	City            string
-	Address         string
-	CreditEnabled   bool
-	CreditLimit     float64
-	CreditConsumed  float64
-	LastPaymentDate string
-	PaymentTermDays int
-	Branches        []normalizedBranchInput
+	Nombre      string
+	Correo      string
+	Empresa     string
+	Nit         string
+	Zona        string
+	Estado      string
+	Website     string
+	OfficePhone string
+	Country     string
+	City        string
+	Address     string
+	// Fase 5b: datos fiscales.
+	DV               string
+	PostalCode       string
+	BillingEmail     string
+	GrandContributor bool
+	IDType           string
+	CreditEnabled    bool
+	CreditLimit      float64
+	CreditConsumed   float64
+	LastPaymentDate  string
+	PaymentTermDays  int
+	Branches         []normalizedBranchInput
 }
 
 // validationError represents an input validation failure that handlers return as HTTP 400.

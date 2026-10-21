@@ -3,7 +3,9 @@ import { Component, OnDestroy, OnInit } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { RouterLink } from "@angular/router";
 import { Subscription } from "rxjs";
+import { CrmEquipmentApiService } from "../../../services/crm-equipment-api.service";
 import { HrApiService } from "../../../services/hr-api.service";
+import { WeeklyEmployeeTotal, WorktimeApiService } from "../../../services/worktime-api.service";
 import { CreateWorkTimesheetEntry, DailyUsage, WorkTimesheetEntry, WorkTimeTrackerService } from "../../../services/work-time-tracker.service";
 import { accumulateQuarterHours, calculateDailyBalance, calculateTimeKpi, summarizeByEntryType, TimeKpiResult, WorkEntryType } from "./work-time.logic";
 
@@ -71,6 +73,11 @@ interface ChartBar {
                     {{ message }}
                 </div>
             }
+            @if (migrationError) {
+                <div class="alert alert-danger border mb-3" data-testid="timesheet-migration-error">
+                    <i class="bi bi-exclamation-triangle me-1"></i>{{ migrationError }}
+                </div>
+            }
 
             <div class="card adminuiux-card mb-3 mb-lg-4">
                 <div class="card-header">
@@ -100,6 +107,15 @@ interface ChartBar {
                             <select class="form-select" data-testid="timesheet-employee-select" [(ngModel)]="employee">
                                 @for (item of employees; track item) {
                                     <option [value]="item">{{ item }}</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label">Equipo</label>
+                            <select class="form-select" data-testid="timesheet-equipment-select" [(ngModel)]="equipmentId">
+                                <option value="">Sin equipo</option>
+                                @for (option of equipmentOptions; track option.value) {
+                                    <option [value]="option.value">{{ option.label }}</option>
                                 }
                             </select>
                         </div>
@@ -248,6 +264,45 @@ interface ChartBar {
 
             <div class="card adminuiux-card mb-3 mb-lg-4">
                 <div class="card-header">
+                    <h6 class="mb-0">Horas por empleado y semana</h6>
+                    <p class="text-secondary small mb-0">Agregado del servidor por semana ISO (datos de toda la empresa).</p>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Semana</th>
+                                    <th>Empleado</th>
+                                    <th>Inicio de semana</th>
+                                    <th>Entradas</th>
+                                    <th class="text-end">Horas</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (weeklySummary.length) {
+                                    @for (row of weeklySummary; track row.employee + row.isoWeek) {
+                                        <tr>
+                                            <td>{{ row.isoWeek }}</td>
+                                            <td>{{ row.employee }}</td>
+                                            <td>{{ row.weekStart }}</td>
+                                            <td>{{ row.entryCount }}</td>
+                                            <td class="text-end">{{ row.totalHours | number: '1.2-2' }}</td>
+                                        </tr>
+                                    }
+                                } @else {
+                                    <tr>
+                                        <td colspan="5" class="text-center text-secondary py-4">Aun no hay horas agregadas por semana.</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card adminuiux-card mb-3 mb-lg-4">
+                <div class="card-header">
                     <h6 class="mb-0">Bitacora de registros</h6>
                     <p class="text-secondary small mb-0">Entradas de hoja de tiempo para la fecha seleccionada.</p>
                 </div>
@@ -259,6 +314,7 @@ interface ChartBar {
                                     <th>Proyecto</th>
                                     <th>Tarea</th>
                                     <th>Empleado</th>
+                                    <th>Equipo</th>
                                     <th>Inicio</th>
                                     <th>Fin</th>
                                     <th>Horas</th>
@@ -273,6 +329,7 @@ interface ChartBar {
                                             <td>{{ entry.project }}</td>
                                             <td>{{ entry.task }}</td>
                                             <td>{{ entry.employee }}</td>
+                                            <td>{{ equipmentLabel(entry.equipmentId) }}</td>
                                             <td>{{ entry.startAt | date: 'dd/MM/yyyy hh:mm a' }}</td>
                                             <td>{{ entry.endAt | date: 'dd/MM/yyyy hh:mm a' }}</td>
                                             <td>{{ entry.totalHours | number: '1.2-2' }}</td>
@@ -286,7 +343,7 @@ interface ChartBar {
                                     }
                                 } @else {
                                     <tr>
-                                        <td colspan="8" class="text-center text-secondary py-4">No hay registros de hoja de tiempo para esta fecha.</td>
+                                        <td colspan="9" class="text-center text-secondary py-4">No hay registros de hoja de tiempo para esta fecha.</td>
                                     </tr>
                                 }
                             </tbody>
@@ -331,17 +388,27 @@ export class WorkTimesheetComponent implements OnInit, OnDestroy {
     message = "";
     messageType: "success" | "danger" = "success";
 
+    /** Error de la migracion unica desde localStorage (visible, se reintenta). */
+    migrationError: string | null = null;
+
     selectedDate = this.todayKey();
 
     project = this.projects[0];
     task = this.tasksByProject[this.projects[0]][0];
     employee = this.employees[0];
+    equipmentId = "";
     startDate = this.todayKey();
     startTime = "08:00";
     endDate = this.todayKey();
     endTime = "09:00";
     memo = "";
     entryType: WorkEntryType = "normal";
+
+    /** Equipos reales de la API de crm-equipment para el campo equipo. */
+    equipmentOptions: Array<{ value: string; label: string }> = [];
+
+    /** Agregado del servidor: horas por empleado y semana ISO. */
+    weeklySummary: WeeklyEmployeeTotal[] = [];
 
     entriesForDate: WorkTimesheetEntry[] = [];
     projectBars: ChartBar[] = [];
@@ -355,17 +422,25 @@ export class WorkTimesheetComponent implements OnInit, OnDestroy {
     focusRate = 0;
 
     private stateSubscription?: Subscription;
+    private migrationErrorSubscription?: Subscription;
 
     constructor(
         private readonly tracker: WorkTimeTrackerService,
         private readonly hrApi: HrApiService,
+        private readonly crmEquipmentApi: CrmEquipmentApiService,
+        private readonly worktimeApi: WorktimeApiService,
     ) { }
 
     ngOnInit(): void {
         this.tracker.startTracking();
         this.stateSubscription = this.tracker.state$.subscribe(() => this.refreshAnalytics());
+        this.migrationErrorSubscription = this.tracker.migrationError$.subscribe((error) => {
+            this.migrationError = error;
+        });
         this.refreshAnalytics();
         this.loadEmployees();
+        this.loadEquipmentOptions();
+        this.loadWeeklySummary();
     }
 
     private loadEmployees(): void {
@@ -385,8 +460,45 @@ export class WorkTimesheetComponent implements OnInit, OnDestroy {
         });
     }
 
+    private loadEquipmentOptions(): void {
+        this.crmEquipmentApi.listItems().subscribe({
+            next: (items) => {
+                this.equipmentOptions = items.map((item) => ({
+                    value: item.itemId,
+                    label: [item.displayName || item.serie || item.itemId, item.receivedIdentifier]
+                        .filter((part) => !!part && part.trim())
+                        .join(" · "),
+                }));
+            },
+            error: (error) => {
+                // El select queda sin opciones, pero el registro de horas sigue
+                // funcionando con "Sin equipo". El error se hace visible.
+                this.showError(`No se pudo cargar el listado de equipos: ${this.errorMessage(error)}`);
+            },
+        });
+    }
+
+    private loadWeeklySummary(): void {
+        this.worktimeApi.getSummary().subscribe({
+            next: (summary) => {
+                this.weeklySummary = summary.weekly ?? [];
+            },
+            error: (error) => {
+                this.showError(`No se pudo cargar el agregado semanal: ${this.errorMessage(error)}`);
+            },
+        });
+    }
+
+    equipmentLabel(equipmentId: string): string {
+        if (!equipmentId) {
+            return "-";
+        }
+        return this.equipmentOptions.find((option) => option.value === equipmentId)?.label ?? equipmentId;
+    }
+
     ngOnDestroy(): void {
         this.stateSubscription?.unsubscribe();
+        this.migrationErrorSubscription?.unsubscribe();
     }
 
     get availableTasks(): string[] {
@@ -490,6 +602,8 @@ export class WorkTimesheetComponent implements OnInit, OnDestroy {
             project: this.project,
             task: this.task,
             employee: this.employee,
+            equipmentId: this.equipmentId,
+            entryType: this.entryType,
             startDate: this.startDate,
             startTime: this.startTime,
             endDate: this.endDate,
@@ -497,36 +611,41 @@ export class WorkTimesheetComponent implements OnInit, OnDestroy {
             memo: this.memo,
         };
 
-        try {
-            const entry = this.tracker.saveTimesheetEntry(payload);
-            // El servicio calcula totalHours sin redondeo y no conoce el tipo de
-            // registro. El objeto retornado es la misma referencia guardada en el
-            // estado, asi que aqui se ajustan las horas redondeadas a cuartos y
-            // el tipo; ambos se persisten en el siguiente flush del servicio.
-            const stored = entry as WorkTimesheetEntry & { entryType?: WorkEntryType };
-            stored.totalHours = this.totalHoursPreview;
-            stored.entryType = this.entryType;
-
-            this.messageType = "success";
-            this.message = `Registro de hoja de tiempo guardado correctamente (${this.formatHours(stored.totalHours)} h redondeadas a cuartos de hora).`;
-            this.memo = "";
-            this.refreshAnalytics();
-        } catch {
-            this.showError("No fue posible guardar el registro. Revisa las fechas y horas.");
-        }
+        // Fase 4: la entrada se guarda en el servidor. El backend calcula las
+        // horas (redondeo a cuartos de hora) y asigna el usuario desde el JWT.
+        this.tracker.saveTimesheetEntry(payload).subscribe({
+            next: (entry) => {
+                this.messageType = "success";
+                this.message = `Registro de hoja de tiempo guardado en el servidor (${this.formatHours(entry.totalHours)} h redondeadas a cuartos de hora).`;
+                this.memo = "";
+                this.loadWeeklySummary();
+                this.refreshAnalytics();
+            },
+            error: (error) => {
+                this.showError(`No fue posible guardar el registro en el servidor: ${this.errorMessage(error)}`);
+            },
+        });
     }
 
     deleteEntry(entryId: string): void {
-        this.tracker.deleteTimesheetEntry(entryId);
-        this.messageType = "success";
-        this.message = "Registro eliminado.";
-        this.refreshAnalytics();
+        this.tracker.deleteTimesheetEntry(entryId).subscribe({
+            next: () => {
+                this.messageType = "success";
+                this.message = "Registro eliminado del servidor.";
+                this.loadWeeklySummary();
+                this.refreshAnalytics();
+            },
+            error: (error) => {
+                this.showError(`No fue posible eliminar el registro: ${this.errorMessage(error)}`);
+            },
+        });
     }
 
     resetDraft(): void {
         this.project = this.projects[0];
         this.task = this.tasksByProject[this.projects[0]][0];
         this.employee = this.employees[0];
+        this.equipmentId = "";
         this.startDate = this.todayKey();
         this.startTime = "08:00";
         this.endDate = this.todayKey();
@@ -538,19 +657,38 @@ export class WorkTimesheetComponent implements OnInit, OnDestroy {
 
     refreshAnalytics(): void {
         const snapshot = this.tracker.getSnapshot();
-        const currentDay = this.tracker.getDailyUsage(this.selectedDate);
+        const todayKey = this.todayKey();
 
         this.allTimesheetEntries = snapshot.timesheetEntries;
-        this.entriesForDate = snapshot.timesheetEntries
-            .filter((entry) => this.toDateKey(new Date(entry.startAt)) === this.selectedDate)
-            .sort((a, b) => b.startAt.localeCompare(a.startAt));
 
-        this.recordedHours = Number(this.entriesForDate.reduce((sum, entry) => sum + entry.totalHours, 0).toFixed(2));
-        this.platformHours = Number((currentDay.platformDurationMs / 3600000).toFixed(2));
-        this.focusRate = this.platformHours > 0 ? Math.round((this.recordedHours / this.platformHours) * 100) : 0;
+        const paint = (currentDay: DailyUsage) => {
+            this.entriesForDate = snapshot.timesheetEntries
+                .filter((entry) => this.toDateKey(new Date(entry.startAt)) === this.selectedDate)
+                .sort((a, b) => b.startAt.localeCompare(a.startAt));
 
-        this.projectBars = this.buildProjectBars(this.entriesForDate);
-        this.pageBars = this.buildPageBars(currentDay);
+            this.recordedHours = Number(this.entriesForDate.reduce((sum, entry) => sum + entry.totalHours, 0).toFixed(2));
+            this.platformHours = Number((currentDay.platformDurationMs / 3600000).toFixed(2));
+            this.focusRate = this.platformHours > 0 ? Math.round((this.recordedHours / this.platformHours) * 100) : 0;
+
+            this.projectBars = this.buildProjectBars(this.entriesForDate);
+            this.pageBars = this.buildPageBars(currentDay);
+        };
+
+        if (this.selectedDate === todayKey) {
+            // El dia en curso vive en memoria (flush al servidor cada 15 s).
+            paint(this.tracker.getDailyUsage(this.selectedDate));
+            return;
+        }
+
+        // Dias pasados: la telemetria viene del servidor.
+        this.tracker.loadDailyUsage(this.selectedDate).subscribe({
+            next: (day) => paint(day),
+            error: () => paint(this.tracker.getDailyUsage(this.selectedDate)),
+        });
+    }
+
+    private errorMessage(error: unknown): string {
+        return error instanceof Error ? error.message : String(error);
     }
 
     private buildProjectBars(entries: WorkTimesheetEntry[]): ChartBar[] {

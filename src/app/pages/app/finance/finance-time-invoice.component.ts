@@ -1,11 +1,12 @@
 import { CommonModule } from "@angular/common";
-import { Component } from "@angular/core";
+import { Component, OnDestroy } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { Router, RouterLink } from "@angular/router";
 import { firstValueFrom } from "rxjs";
 
 import { WorkTimesheetEntry, WorkTimeTrackerService } from "../../../services/work-time-tracker.service";
 import { FinanceBillingApiService } from "../../../services/finance-billing-api.service";
+import { FINANCE_HOURLY_RATE_KEY, FinanceSettingsApiService } from "../../../services/finance-settings-api.service";
 import { FinanceAccount, FinanceAccountsStore } from "./finance-accounts.store";
 import {
     BillingCurrencyCode,
@@ -132,7 +133,12 @@ interface TimeInvoiceDraft {
                             </div>
                             <div class="col-12 col-lg-2">
                                 <label class="form-label">Tarifa por hora</label>
-                                <input class="form-control" type="number" min="0" step="1000" [(ngModel)]="draft.hourlyRate" name="hourlyRate" />
+                                <div class="input-group">
+                                    <input class="form-control" type="number" min="0" step="1000" [(ngModel)]="draft.hourlyRate" name="hourlyRate" data-testid="hourly-rate-input" />
+                                    <button class="btn btn-outline-theme" type="button" (click)="saveHourlyRate()" title="Guardar tarifa por hora para la empresa" data-testid="save-hourly-rate-btn">
+                                        <i class="bi bi-save"></i>
+                                    </button>
+                                </div>
                             </div>
                             <div class="col-12 col-lg-2">
                                 <label class="form-label">Moneda</label>
@@ -248,12 +254,12 @@ interface TimeInvoiceDraft {
         </div>
     `,
 })
-export class FinanceTimeInvoiceComponent {
+export class FinanceTimeInvoiceComponent implements OnDestroy {
     readonly clients = FinanceBillingStore.getClients();
     readonly currencyOptions = FinanceBillingStore.getCurrencyOptions();
     readonly taxCalculationOptions = FinanceBillingStore.getTaxCalculationOptions();
     readonly generatedByOptions = FinanceBillingStore.getGeneratedByOptions();
-    readonly bankAccounts = FinanceAccountsStore.getAccounts();
+    bankAccounts: FinanceAccount[] = FinanceAccountsStore.getAccounts();
 
     readonly timesheetEntries = this.workTimeTrackerService
         .getSnapshot()
@@ -266,12 +272,60 @@ export class FinanceTimeInvoiceComponent {
     selectedEntryIds: string[] = [];
     formError = "";
     isSaving = false;
+    /** True cuando la tarifa ya vino del servidor o el usuario la tocó. */
+    private hourlyRateResolved = false;
+
+    private readonly accountsUnsubscribe: () => void;
 
     constructor(
         private readonly workTimeTrackerService: WorkTimeTrackerService,
         private readonly router: Router,
-        private readonly financeBillingApi: FinanceBillingApiService
-    ) {}
+        private readonly financeBillingApi: FinanceBillingApiService,
+        private readonly financeSettingsApi: FinanceSettingsApiService,
+    ) {
+        this.accountsUnsubscribe = FinanceAccountsStore.subscribe(() => {
+            this.bankAccounts = FinanceAccountsStore.getAccounts();
+        });
+        void FinanceAccountsStore.ensureLoaded();
+        void FinanceBillingStore.ensureLoaded().then(() => this.onIssueDateChange());
+        void this.loadHourlyRate();
+    }
+
+    ngOnDestroy(): void {
+        this.accountsUnsubscribe();
+    }
+
+    /**
+     * La tarifa por hora sale de company_settings (clave finance.hourlyRate).
+     * El valor fijo 140.000 de createDraft() se conserva SOLO como fallback
+     * cuando no existe fila en el servidor.
+     */
+    private async loadHourlyRate(): Promise<void> {
+        try {
+            const stored = await firstValueFrom(this.financeSettingsApi.getSetting<number>(FINANCE_HOURLY_RATE_KEY));
+            if (typeof stored === "number" && Number.isFinite(stored) && stored > 0) {
+                this.draft.hourlyRate = stored;
+            }
+        } catch {
+            // Sin fila o sin servidor: se mantiene el fallback del draft.
+        } finally {
+            this.hourlyRateResolved = true;
+        }
+    }
+
+    async saveHourlyRate(): Promise<void> {
+        this.formError = "";
+        const rate = Number(this.draft.hourlyRate);
+        if (!Number.isFinite(rate) || rate <= 0) {
+            this.formError = "La tarifa por hora debe ser mayor que cero para guardarla.";
+            return;
+        }
+        try {
+            await firstValueFrom(this.financeSettingsApi.putSetting(FINANCE_HOURLY_RATE_KEY, rate));
+        } catch (error) {
+            this.formError = error instanceof Error ? error.message : "No se pudo guardar la tarifa por hora en el servidor.";
+        }
+    }
 
     get filteredEntries(): WorkTimesheetEntry[] {
         return this.timesheetEntries.filter((entry) => {
@@ -314,10 +368,9 @@ export class FinanceTimeInvoiceComponent {
     }
 
     onProjectChange(): void {
-        const selectedProject = FinanceBillingStore.findProject(this.draft.projectId);
-        if (selectedProject) {
-            this.draft.hourlyRate = selectedProject.hourlyRate;
-        }
+        // La tarifa por hora ya NO se sobreescribe con las plantillas del
+        // proyecto (valores inventados): sale de company_settings
+        // (finance.hourlyRate) o de lo que el usuario escriba.
     }
 
     isSelected(entryId: string): boolean {

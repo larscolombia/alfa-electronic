@@ -7,6 +7,9 @@ register();
 import DataTable from "datatables.net-dt";
 import "datatables.net-responsive-dt";
 
+import { CrmEquipmentApiService } from "../../../services/crm-equipment-api.service";
+import type { ProspectEquipmentSummary } from "../crm/crm-prospect-equipment.store";
+
 import { DaterangePickerRangesComponent } from "../../../components/input-fields/daterange-picker/daterange-picker-ranges.component";
 import { CircleProgressBlueBlankComponent } from "../../../components/charts/circle-progress-blue-blank.component";
 import { CircleProgressYellowBlankComponent } from "../../../components/charts/circle-progress-yellow-blank.component";
@@ -126,6 +129,35 @@ import { DoughnutChartjs180Component } from "../../../components/charts/doughnut
 
         <!-- content -->
         <div class="container mt-3" id="main-content">
+            <!-- Fase 5b/5c: campanita de facturación urgente (priority billing).
+                 El badge persiste mientras haya equipos marcados; el toast
+                 aparece cuando un sondeo de 10 minutos encuentra trabajo nuevo. -->
+            @if (priorityBillingToast) {
+                <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080;" data-testid="priority-billing-toast">
+                    <div class="toast show align-items-center text-bg-warning border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                <i class="bi bi-bell-fill me-2"></i>{{ priorityBillingToast }}
+                            </div>
+                            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Cerrar" (click)="priorityBillingToast = ''"></button>
+                        </div>
+                    </div>
+                </div>
+            }
+            @if (priorityBillingItems.length > 0) {
+                <div class="alert alert-warning border d-flex align-items-start gap-2 mb-3" data-testid="priority-billing-alert">
+                    <i class="bi bi-bell-fill text-warning fs-5"></i>
+                    <div>
+                        <strong>Facturación urgente:</strong> {{ priorityBillingItems.length }} equipo(s) marcados para facturar con prioridad.
+                        <span class="badge bg-warning text-dark ms-2" data-testid="priority-billing-badge">{{ priorityBillingItems.length }}</span>
+                        <ul class="mb-0 small mt-1">
+                            @for (item of priorityBillingItems; track item.itemId) {
+                                <li>{{ item.displayName || item.receivedIdentifier || item.itemId }} — {{ item.prospectName }} ({{ item.repairStatusLabel }})</li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            }
             <div class="row gx-3 gx-lg-4">
                 <!-- summary blocks -->
                 <div class="col-12 col-md-6 col-lg-6 col-xxl-3">
@@ -1574,8 +1606,99 @@ import { DoughnutChartjs180Component } from "../../../components/charts/doughnut
     `,
     schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
-export class FinanceDashboardComponent {
+export class FinanceDashboardComponent implements OnInit, OnDestroy {
     @ViewChild("choices") mySelect!: ElementRef;
+
+    /**
+     * Fase 5b/5c: equipos marcados para facturación urgente (campanita).
+     *
+     * Fase 5c añade lo que faltaba: el cliente pidió que la campanita suene
+     * PERIÓDICAMENTE ("cada 10 minutos"), y la Fase 5b sólo cargaba una vez al
+     * entrar al dashboard — o sea que un equipo marcado urgente mientras la
+     * pestaña estaba abierta no se veía hasta recargar. Sin polling no hay
+     * campanita.
+     */
+    priorityBillingItems: ProspectEquipmentSummary[] = [];
+
+    /** Último conteo conocido, para avisar sólo cuando APARECE trabajo nuevo. */
+    private lastPriorityCount = 0;
+    /** Mensaje transitorio del aviso (toast) de la campanita. */
+    priorityBillingToast = "";
+    private priorityToastTimer: ReturnType<typeof setTimeout> | null = null;
+    private priorityPollTimer: ReturnType<typeof setInterval> | null = null;
+
+    /**
+     * 10 minutos, que es lo que pidió el cliente. Se declara como constante con
+     * nombre para que el intervalo sea verificable y no un número mágico.
+     */
+    private static readonly PRIORITY_POLL_INTERVAL_MS = 10 * 60 * 1000;
+
+    constructor(private readonly crmEquipmentApi: CrmEquipmentApiService) {}
+
+    ngOnInit(): void {
+        // Carga inicial + sondeo cada 10 minutos. El filtro priorityBilling=true
+        // va en el backend (Fase 5c): antes se traían TODOS los ítems y se
+        // filtraba en el navegador, que es el patrón que el plan prohíbe.
+        this.loadPriorityBillingItems(true);
+
+        this.priorityPollTimer = setInterval(
+            () => this.loadPriorityBillingItems(false),
+            FinanceDashboardComponent.PRIORITY_POLL_INTERVAL_MS,
+        );
+    }
+
+    ngOnDestroy(): void {
+        // Sin esto el intervalo sigue disparando peticiones después de salir
+        // del dashboard, que es justo lo que el requisito de "no martillar el
+        // servidor" busca evitar.
+        if (this.priorityPollTimer !== null) {
+            clearInterval(this.priorityPollTimer);
+            this.priorityPollTimer = null;
+        }
+        if (this.priorityToastTimer !== null) {
+            clearTimeout(this.priorityToastTimer);
+            this.priorityToastTimer = null;
+        }
+    }
+
+    /**
+     * @param initial en la carga inicial no se muestra toast (el badge ya está
+     *   visible al entrar); en los sondeos siguientes sí, porque es la única
+     *   señal de que apareció trabajo urgente mientras la pestaña estaba abierta.
+     */
+    private loadPriorityBillingItems(initial: boolean): void {
+        this.crmEquipmentApi.listItems({ includeArchived: false, priorityBilling: true }).subscribe({
+            next: (items) => {
+                this.priorityBillingItems = items;
+
+                const count = items.length;
+                const grew = count > this.lastPriorityCount;
+                this.lastPriorityCount = count;
+
+                if (!initial && grew) {
+                    this.showPriorityToast(count);
+                }
+            },
+            error: () => {
+                // Un fallo de red no debe borrar la campanita y hacer creer que
+                // ya no hay nada urgente: se conserva lo último conocido.
+            },
+        });
+    }
+
+    private showPriorityToast(count: number): void {
+        this.priorityBillingToast = count === 1
+            ? "Facturación urgente: 1 equipo nuevo marcado para facturar con prioridad."
+            : `Facturación urgente: ${count} equipos marcados para facturar con prioridad.`;
+
+        if (this.priorityToastTimer !== null) {
+            clearTimeout(this.priorityToastTimer);
+        }
+        this.priorityToastTimer = setTimeout(() => {
+            this.priorityBillingToast = "";
+            this.priorityToastTimer = null;
+        }, 12000);
+    }
 
     ngAfterViewInit() {
         const choices = new Choices(this.mySelect.nativeElement, {

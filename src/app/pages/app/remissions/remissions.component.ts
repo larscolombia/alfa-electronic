@@ -50,6 +50,35 @@ interface Remission {
     status: string;
     deliveryStatus: string;
     createdAt: string;
+
+    // ── Fase 5c: puente pago → despacho ──────────────────────────────────
+    // Todo esto lo calcula el backend. La UI NO reimplementa la regla: si la
+    // regla viviera aquí, marcar "entregado" seguiría sin validar nada.
+    invoiceId: number | null;
+    invoiceStatus: string;
+    invoiceReference: string;
+    creditClient: boolean;
+    /** true cuando la modalidad exige pago antes de despachar. */
+    paymentGate: boolean;
+    /** true cuando la puerta está activa Y aún no se cumple (sin pagar). */
+    paymentHeld: boolean;
+    paymentHeldReason: string;
+    paymentOverride: boolean;
+    paymentOverrideBy: string;
+    paymentOverrideAt: string;
+}
+
+/** Factura del cliente, opción del selector "qué factura debe pagarse". */
+interface InvoiceOption {
+    id: number;
+    referenceCode: string;
+    externalNumber: string;
+    clientName: string;
+    issueDate: string;
+    total: number;
+    balanceAmount: number;
+    status: string;
+    paid: boolean;
 }
 
 interface DispatchReadyGroup {
@@ -99,6 +128,17 @@ const REMISSIONS_TEMPLATE = `
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Fase 5c: resultado de intentar despachar. Va arriba del listado porque
+         el rechazo por pago no pagado tiene que verse: antes la petición
+         ignoraba cualquier respuesta no-OK y un rechazo se veía igual que un
+         despacho exitoso. -->
+    <div class="alert mb-3" *ngIf="dispatchActionMessage"
+         [ngClass]="dispatchActionIsError ? 'alert-danger' : 'alert-success'"
+         data-testid="dispatch-action-message">
+        <i class="bi me-2" [ngClass]="dispatchActionIsError ? 'bi-exclamation-octagon' : 'bi-check-circle'"></i>{{ dispatchActionMessage }}
+        <button type="button" class="btn-close float-end" (click)="dispatchActionMessage = ''" aria-label="Cerrar"></button>
     </div>
 
     <div class="card mb-3" *ngIf="showForm">
@@ -238,8 +278,30 @@ const REMISSIONS_TEMPLATE = `
                             <span class="badge" [ngClass]="(r.deliveryStatus || 'pendiente') === 'entregado' ? 'bg-success' : 'bg-warning text-dark'" data-testid="delivery-status-badge">
                                 {{ r.deliveryStatus || 'pendiente' }}
                             </span>
+
+                            <!-- Fase 5c: puente pago → despacho. El indicador y
+                                 el motivo los calcula el backend; aquí sólo se
+                                 muestran, para que la regla no pueda
+                                 reimplementarse (mal) en el navegador. -->
+                            <div *ngIf="r.paymentHeld" class="mt-1" data-testid="payment-held-indicator">
+                                <span class="badge bg-danger">
+                                    <i class="bi bi-lock-fill me-1"></i>Retenida por pago
+                                </span>
+                                <div class="small text-danger mt-1" data-testid="payment-held-reason">{{ r.paymentHeldReason }}</div>
+                            </div>
+                            <div *ngIf="r.invoiceStatus && !r.paymentHeld" class="small text-success mt-1" data-testid="payment-cleared">
+                                <i class="bi bi-check-circle me-1"></i>Factura {{ r.invoiceReference || r.invoiceId }}: {{ r.invoiceStatus }}
+                            </div>
+                            <div *ngIf="r.paymentOverride" class="small text-warning mt-1" data-testid="payment-override-trail">
+                                <i class="bi bi-exclamation-triangle me-1"></i>Despacho autorizado sin pago confirmado por {{ r.paymentOverrideBy }}
+                                <span *ngIf="r.paymentOverrideAt"> el {{ r.paymentOverrideAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                            </div>
+
                             <button class="btn btn-sm btn-outline-success ms-1" *ngIf="(r.deliveryStatus || 'pendiente') !== 'entregado'" (click)="markDelivered(r)" data-testid="mark-delivered-btn">
                                 Marcar entregado
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary ms-1" *ngIf="r.paymentGate && (r.deliveryStatus || 'pendiente') !== 'entregado'" (click)="openInvoiceLinker(r)" data-testid="link-invoice-btn">
+                                <i class="bi bi-receipt me-1"></i>Vincular factura
                             </button>
                             <button class="btn btn-sm btn-outline-secondary ms-1" *ngIf="(r.deliveryStatus || 'pendiente') === 'entregado'" (click)="viewDeliveredDetail(r)" data-testid="view-delivered-detail">
                                 <i class="bi bi-eye"></i> Ver detalle
@@ -276,6 +338,96 @@ const REMISSIONS_TEMPLATE = `
                 <button class="btn btn-success" [disabled]="!accessoriesDeliveredConfirmed" (click)="confirmMarkDelivered()" data-testid="confirm-delivered-btn">
                     <i class="bi bi-check-lg me-1"></i>Confirmar entrega
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fase 5c: selector de la factura que debe pagarse antes de despachar.
+         Las opciones vienen de GET /remissions/:id/invoice-options (sólo las del
+         cliente de esta remisión), no de filtrar todas las facturas en el
+         navegador. -->
+    <div class="preview-modal-backdrop" *ngIf="showInvoiceLinker" data-testid="invoice-linker-modal">
+        <div class="preview-modal card shadow" style="width: 640px;">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-receipt me-2"></i>Vincular factura al despacho</h5>
+                <button class="btn btn-sm btn-outline-secondary" (click)="cancelInvoiceLinker()" data-testid="cancel-invoice-linker-btn"><i class="bi bi-x-lg"></i> Cerrar</button>
+            </div>
+            <div class="card-body">
+                <p class="mb-2">
+                    Remision <strong>{{ invoiceLinkerRemission?.consecutive }}</strong> ·
+                    {{ invoiceLinkerRemission?.clientName }} ·
+                    <span class="badge bg-info">{{ dispatchTypeLabel(invoiceLinkerRemission?.dispatchType || '') }}</span>
+                </p>
+                <p class="text-secondary small">
+                    Esta remision se despacha solo cuando la factura vinculada este en estado <strong>Pagado</strong>.
+                    <span *ngIf="invoiceLinkerRemission?.creditClient">El cliente es de credito, pero la modalidad contra-entrega exige el pago primero.</span>
+                </p>
+
+                <div class="alert alert-danger py-2" *ngIf="invoiceLinkerError" data-testid="invoice-linker-error">{{ invoiceLinkerError }}</div>
+
+                <div *ngIf="invoiceOptionsLoading" class="text-secondary py-3">Cargando facturas del cliente...</div>
+
+                <div *ngIf="!invoiceOptionsLoading && invoiceOptions.length === 0" class="alert alert-warning" data-testid="invoice-options-empty">
+                    El cliente no tiene facturas registradas. Cree la factura primero: sin factura vinculada el despacho contra-entrega queda retenido.
+                </div>
+
+                <div class="list-group mb-3" *ngIf="invoiceOptions.length > 0">
+                    <label class="list-group-item d-flex gap-2 align-items-start" *ngFor="let option of invoiceOptions" data-testid="invoice-option">
+                        <input class="form-check-input mt-1" type="radio" name="invoiceToLink"
+                               [value]="option.id" [(ngModel)]="selectedInvoiceId" />
+                        <span class="flex-grow-1">
+                            <strong>{{ option.referenceCode || ('Factura #' + option.id) }}</strong>
+                            <span class="badge ms-2" [ngClass]="option.paid ? 'bg-success' : 'bg-warning text-dark'">{{ option.status }}</span>
+                            <div class="small text-secondary">
+                                {{ option.issueDate }} · {{ getCurrencySymbol() }}{{ option.total | number:'1.0-0' }}
+                                <span *ngIf="option.balanceAmount > 0"> · saldo {{ getCurrencySymbol() }}{{ option.balanceAmount | number:'1.0-0' }}</span>
+                            </div>
+                        </span>
+                    </label>
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <button class="btn btn-outline-secondary" (click)="unlinkInvoice()" [disabled]="!invoiceLinkerRemission?.invoiceId" data-testid="unlink-invoice-btn">
+                        Quitar factura vinculada
+                    </button>
+                    <button class="btn btn-theme" (click)="confirmLinkInvoice()" [disabled]="!selectedInvoiceId" data-testid="confirm-link-invoice-btn">
+                        <i class="bi bi-link-45deg me-1"></i>Vincular factura
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fase 5c: override de admin. Confirmación explícita con casilla, porque
+         saltar la puerta de pago es autorizar que salga mercancía sin cobrar. -->
+    <div class="preview-modal-backdrop" *ngIf="showOverrideConfirm" data-testid="payment-override-modal">
+        <div class="preview-modal card shadow" style="width: 620px;">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Autorizar despacho sin pago confirmado</h5>
+                <button class="btn btn-sm btn-outline-secondary" (click)="cancelOverride()" data-testid="cancel-override-btn"><i class="bi bi-x-lg"></i> Cerrar</button>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-danger" data-testid="override-block-reason">{{ overrideBlockReason }}</div>
+                <p class="mb-2">
+                    La remision <strong>{{ overrideRemission?.consecutive }}</strong> de
+                    <strong>{{ overrideRemission?.clientName }}</strong> esta retenida por pago.
+                </p>
+                <p class="text-secondary small mb-3">
+                    Como administrador puede autorizar el despacho de todos modos. Quedara registrado
+                    <strong>quien</strong> lo autorizo y <strong>cuando</strong>, y sera visible en el listado de remisiones.
+                </p>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="overrideConfirmedCheck" [(ngModel)]="overrideConfirmed" data-testid="override-confirm-check" />
+                    <label class="form-check-label" for="overrideConfirmedCheck">
+                        Entiendo que el equipo saldra sin el pago confirmado y asumo la autorizacion
+                    </label>
+                </div>
+                <div class="d-flex justify-content-end gap-2">
+                    <button class="btn btn-outline-secondary" (click)="cancelOverride()">Cancelar</button>
+                    <button class="btn btn-danger" [disabled]="!overrideConfirmed" (click)="confirmOverride()" data-testid="confirm-override-btn">
+                        <i class="bi bi-unlock me-1"></i>Autorizar y despachar
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -420,10 +572,166 @@ export class RemissionsComponent implements OnInit {
     deliveryConfirmRemission: Remission | null = null;
     accessoriesDeliveredConfirmed = false;
 
+    // ── Fase 5c: puente pago → despacho ──────────────────────────────────
+    /** Mensaje visible del resultado de despachar (éxito, rechazo o error). */
+    dispatchActionMessage = "";
+    dispatchActionIsError = false;
+
+    showInvoiceLinker = false;
+    invoiceLinkerRemission: Remission | null = null;
+    invoiceOptions: InvoiceOption[] = [];
+    invoiceOptionsLoading = false;
+    invoiceLinkerError = "";
+    selectedInvoiceId: number | null = null;
+
+    showOverrideConfirm = false;
+    overrideRemission: Remission | null = null;
+    overrideConfirmed = false;
+    /** Motivo textual que devolvió el backend al rechazar el despacho. */
+    overrideBlockReason = "";
+
     readonly dispatchTypeLabel = dispatchTypeLabel;
     readonly anchoredAlert = buildAnchoredAlert;
 
     constructor(private cdr: ChangeDetectorRef, private router: Router) {}
+
+    /**
+     * Rol del usuario autenticado, leído de la sesión persistida.
+     *
+     * Es sólo para decidir si se OFRECE el botón de override: la autorización
+     * real la hace el backend con el rol del JWT, así que un usuario que mienta
+     * aquí recibe un 403 igual. Sin este chequeo el botón se le mostraría a
+     * cualquiera y siempre fallaría.
+     */
+    private isAdminUser(): boolean {
+        try {
+            const session = JSON.parse(localStorage.getItem("pika.auth.session") || "{}");
+            const role = String(session?.user?.role ?? "").trim().toLowerCase();
+            return role === "admin" || role === "administrador" || role === "superadmin" || role === "super-admin";
+        } catch {
+            return false;
+        }
+    }
+
+    private setDispatchMessage(message: string, isError: boolean): void {
+        this.dispatchActionMessage = message;
+        this.dispatchActionIsError = isError;
+        this.cdr.detectChanges();
+    }
+
+    /** Abre el selector de factura con las facturas del cliente de la remisión. */
+    async openInvoiceLinker(remission: Remission) {
+        this.invoiceLinkerRemission = remission;
+        this.invoiceOptions = [];
+        this.invoiceLinkerError = "";
+        this.selectedInvoiceId = remission.invoiceId ?? null;
+        this.invoiceOptionsLoading = true;
+        this.showInvoiceLinker = true;
+        this.cdr.detectChanges();
+
+        try {
+            const res = await fetch(
+                this.apiBaseUrl + "/api/v1/remissions/remissions/" + encodeURIComponent(remission.id) + "/invoice-options",
+                { headers: this.authHeaders() },
+            );
+            if (!res.ok) {
+                this.invoiceLinkerError = await this.readErrorMessage(res, "No se pudieron cargar las facturas del cliente.");
+                return;
+            }
+            const data = await res.json();
+            this.invoiceOptions = data.items || [];
+        } catch {
+            this.invoiceLinkerError = "No se pudieron cargar las facturas del cliente.";
+        } finally {
+            this.invoiceOptionsLoading = false;
+            this.cdr.detectChanges();
+        }
+    }
+
+    cancelInvoiceLinker() {
+        this.showInvoiceLinker = false;
+        this.invoiceLinkerRemission = null;
+        this.invoiceOptions = [];
+        this.invoiceLinkerError = "";
+        this.selectedInvoiceId = null;
+    }
+
+    async confirmLinkInvoice() {
+        if (!this.invoiceLinkerRemission || !this.selectedInvoiceId) {
+            return;
+        }
+        const ok = await this.linkInvoice(this.invoiceLinkerRemission, this.selectedInvoiceId);
+        if (ok) {
+            this.setDispatchMessage(
+                "Factura vinculada a la remision " + (this.invoiceLinkerRemission.consecutive || "") +
+                ". El despacho se libera cuando quede en estado Pagado.",
+                false,
+            );
+            this.cancelInvoiceLinker();
+        }
+    }
+
+    async unlinkInvoice() {
+        if (!this.invoiceLinkerRemission) {
+            return;
+        }
+        const ok = await this.linkInvoice(this.invoiceLinkerRemission, null);
+        if (ok) {
+            this.setDispatchMessage("Se quito la factura vinculada.", false);
+            this.cancelInvoiceLinker();
+        }
+    }
+
+    private async linkInvoice(remission: Remission, invoiceId: number | null): Promise<boolean> {
+        this.invoiceLinkerError = "";
+        try {
+            const res = await fetch(
+                this.apiBaseUrl + "/api/v1/remissions/remissions/" + encodeURIComponent(remission.id) + "/invoice",
+                {
+                    method: "PUT",
+                    headers: this.authHeaders(),
+                    body: JSON.stringify({ invoiceId }),
+                },
+            );
+            if (!res.ok) {
+                this.invoiceLinkerError = await this.readErrorMessage(res, "No se pudo vincular la factura.");
+                this.cdr.detectChanges();
+                return false;
+            }
+            await this.loadRemissions();
+            return true;
+        } catch {
+            this.invoiceLinkerError = "No se pudo vincular la factura.";
+            this.cdr.detectChanges();
+            return false;
+        }
+    }
+
+    cancelOverride() {
+        this.showOverrideConfirm = false;
+        this.overrideRemission = null;
+        this.overrideConfirmed = false;
+        this.overrideBlockReason = "";
+    }
+
+    async confirmOverride() {
+        if (!this.overrideRemission || !this.overrideConfirmed) {
+            return;
+        }
+        const remission = this.overrideRemission;
+        this.cancelOverride();
+        await this.patchDelivered(remission, true);
+    }
+
+    /** Extrae el mensaje de error del backend (que es el que hay que mostrar textual). */
+    private async readErrorMessage(res: Response, fallback: string): Promise<string> {
+        try {
+            const body = await res.json();
+            return String(body?.error || fallback);
+        } catch {
+            return fallback;
+        }
+    }
 
     goBack(): void {
         if (typeof window !== "undefined" && window.history.length > 1) {
@@ -655,7 +963,7 @@ export class RemissionsComponent implements OnInit {
             this.showDeliveryConfirm = true;
             return;
         }
-        await this.patchDelivered(remission);
+        await this.patchDelivered(remission, false);
     }
 
     accessoriesPendingItems(): RemissionItem[] {
@@ -674,20 +982,61 @@ export class RemissionsComponent implements OnInit {
         }
         const remission = this.deliveryConfirmRemission;
         this.cancelDeliveryConfirm();
-        await this.patchDelivered(remission);
+        await this.patchDelivered(remission, false);
     }
 
-    private async patchDelivered(remission: Remission) {
+    /**
+     * Marca entregado. Fase 5c: el backend puede rechazarlo (409) porque la
+     * modalidad exige que la factura esté Pagada primero.
+     *
+     * Antes de esta fase la petición descartaba en silencio cualquier respuesta
+     * distinta de res.ok (el catch iba vacío), o sea que un rechazo del
+     * servidor se veía igual que un despacho exitoso. Ahora el rechazo se
+     * muestra con el mensaje textual del backend y, si el usuario es admin, se
+     * le ofrece el override con confirmación explícita.
+     */
+    private async patchDelivered(remission: Remission, paymentOverride: boolean) {
         try {
             const res = await fetch(this.apiBaseUrl + "/api/v1/remissions/remissions/" + remission.id + "/delivery-status", {
                 method: "PATCH",
                 headers: this.authHeaders(),
-                body: JSON.stringify({ deliveryStatus: "entregado" }),
+                body: JSON.stringify({ deliveryStatus: "entregado", paymentOverride }),
             });
+
             if (res.ok) {
-                this.loadRemissions();
+                this.setDispatchMessage(
+                    paymentOverride
+                        ? "Despacho autorizado SIN pago confirmado por un administrador. Quedo registrado quien y cuando."
+                        : "Remision " + (remission.consecutive || "") + " marcada como entregada.",
+                    !paymentOverride ? false : true,
+                );
+                await this.loadRemissions();
+                return;
             }
-        } catch { /* ignore */ }
+
+            const message = await this.readErrorMessage(res, "No se pudo marcar la remision como entregada.");
+
+            // 409 = puerta de pago. Se ofrece el override sólo a un admin y sólo
+            // cuando no se venía ya de un override (si con override también
+            // falló, insistir no sirve de nada).
+            if (res.status === 409 && !paymentOverride && this.isAdminUser()) {
+                this.overrideRemission = remission;
+                this.overrideBlockReason = message;
+                this.overrideConfirmed = false;
+                this.showOverrideConfirm = true;
+                this.setDispatchMessage(message, true);
+                this.cdr.detectChanges();
+                return;
+            }
+
+            this.setDispatchMessage(message, true);
+            await this.loadRemissions();
+        } catch {
+            this.setDispatchMessage(
+                "No se pudo contactar al servidor para marcar la entrega. La remision NO fue despachada.",
+                true,
+            );
+        }
     }
 
     async save() {

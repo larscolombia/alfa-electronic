@@ -14,6 +14,8 @@ import { ProjectService } from "../projects/services/project.service";
 import { CrmEquipmentApiService } from "../../../services/crm-equipment-api.service";
 import { CrmProspectRecord, CrmProspectsApiService } from "../../../services/crm-prospects-api.service";
 import { CrmQuoteRecord, CrmQuotesApiService } from "../../../services/crm-quotes-api.service";
+import { EmailsApiService } from "../../../services/emails-api.service";
+import { FinanceBillingApiService } from "../../../services/finance-billing-api.service";
 import { FormDraftService } from "../../../services/form-draft.service";
 
 const CRM_QUOTES_FORM_DRAFT_KEY = "app.crm.quotes.form";
@@ -85,6 +87,8 @@ type QuoteLine = {
                     <div class="alert alert-danger border mb-3" *ngIf="quoteDeleteErrorMessage">{{ quoteDeleteErrorMessage }}</div>
                     <div class="alert alert-success border mb-3" *ngIf="quotePurchaseOrderSuccessMessage">{{ quotePurchaseOrderSuccessMessage }}</div>
                     <div class="alert alert-danger border mb-3" *ngIf="quotePurchaseOrderErrorMessage">{{ quotePurchaseOrderErrorMessage }}</div>
+                    <div class="alert alert-success border mb-3" *ngIf="quoteConversionMessage" data-testid="quote-conversion-success">{{ quoteConversionMessage }}</div>
+                    <div class="alert alert-danger border mb-3" *ngIf="quoteConversionError" data-testid="quote-conversion-error">{{ quoteConversionError }}</div>
 
                     <div class="table-responsive border rounded">
                         <table class="table align-middle mb-0">
@@ -120,6 +124,15 @@ type QuoteLine = {
                                         <button class="btn btn-sm btn-outline-primary me-2" type="button" (click)="openPurchaseOrderModal(row)">
                                             <i class="bi bi-file-earmark-arrow-up me-1"></i>{{ row.purchaseOrderNumber ? 'Actualizar OC' : 'Cargar OC' }}
                                         </button>
+                                        <button
+                                            class="btn btn-sm btn-outline-success me-2"
+                                            type="button"
+                                            *ngIf="row.estado === 'Aprobado'"
+                                            [disabled]="convertingQuoteToken === row.token"
+                                            (click)="convertQuoteToInvoice(row)"
+                                            data-testid="convert-to-invoice-btn">
+                                            <i class="bi bi-receipt me-1"></i>{{ convertingQuoteToken === row.token ? 'Convirtiendo…' : 'Convertir en factura' }}
+                                        </button>
                                         <a
                                             class="btn btn-sm btn-outline-secondary me-2"
                                             [routerLink]="['/estimate', row.token]"
@@ -152,6 +165,13 @@ type QuoteLine = {
                 <div class="card-body">
                     <div class="alert alert-danger border mb-3" *ngIf="prospectsLoadErrorMessage || catalogsLoadErrorMessage || quoteSaveErrorMessage">
                         {{ quoteSaveErrorMessage || prospectsLoadErrorMessage || catalogsLoadErrorMessage }}
+                    </div>
+                    <!-- Fase 5c: estado real del correo de la cotización. Verde
+                         sólo cuando el envío sí va a salir; cuando el servidor
+                         no tiene SMTP el mensaje va al alert rojo de arriba,
+                         porque un "enviada" en verde sería un éxito falso. -->
+                    <div class="alert alert-info border mb-3" *ngIf="quoteEmailMessage" data-testid="quote-email-status">
+                        <i class="bi bi-envelope-check me-2"></i>{{ quoteEmailMessage }}
                     </div>
                     <div class="row gx-3">
                         <div class="col-12 col-lg-3 mb-3">
@@ -489,6 +509,16 @@ export class CrmQuotesComponent implements OnInit {
     prospectsLoadErrorMessage = "";
     catalogsLoadErrorMessage = "";
     quoteSaveErrorMessage = "";
+    /**
+     * Fase 5c: estado real del correo de la cotización. Se llena sólo cuando el
+     * envío sí va a salir; cuando no sale el mensaje va a
+     * `quoteSaveErrorMessage`, que es el que se muestra en rojo.
+     */
+    quoteEmailMessage = "";
+    // Fase 5b: conversión cotización→factura.
+    convertingQuoteToken: string | null = null;
+    quoteConversionMessage = "";
+    quoteConversionError = "";
 
     quoteLines: QuoteLine[] = [
         {
@@ -517,9 +547,12 @@ export class CrmQuotesComponent implements OnInit {
         private readonly crmProspectsApi: CrmProspectsApiService,
         private readonly crmQuotesApi: CrmQuotesApiService,
         private readonly crmEquipmentApi: CrmEquipmentApiService,
+        private readonly financeBillingApi: FinanceBillingApiService,
         private readonly projectService: ProjectService,
         private readonly cdr: ChangeDetectorRef,
         private readonly formDraftService: FormDraftService,
+        // Fase 5c: correo transaccional de la cotización.
+        private readonly emailsApi: EmailsApiService,
     ) {}
 
     ngOnInit(): void {
@@ -660,6 +693,38 @@ export class CrmQuotesComponent implements OnInit {
         this.quoteDeleteErrorMessage = "";
         this.pendingDeleteRow = row;
         this.showDeleteModal = true;
+    }
+
+    /**
+     * Fase 5b: convierte la cotización aprobada en factura del módulo de
+     * facturación (POST /finance/invoices/from-quote/:id). El servidor es
+     * idempotente: si la cotización ya tiene factura responde 409 y aquí se
+     * muestra el mensaje sin duplicar nada.
+     */
+    convertQuoteToInvoice(row: QuoteRow): void {
+        const quoteId = this.quoteIdByToken[row.token];
+        if (!quoteId) {
+            this.quoteConversionMessage = "";
+            this.quoteConversionError = "No se puede convertir: ID de cotizacion no encontrado.";
+            return;
+        }
+
+        this.convertingQuoteToken = row.token;
+        this.quoteConversionMessage = "";
+        this.quoteConversionError = "";
+        this.financeBillingApi.createInvoiceFromQuote(quoteId).subscribe({
+            next: (invoice) => {
+                this.convertingQuoteToken = null;
+                const code = `${invoice.seriesPrefix || ""}${String(invoice.sequenceNumber).padStart(3, "0")}`;
+                this.quoteConversionMessage = `Cotizacion ${row.codigo} convertida en la factura ${code} (borrador) en Facturacion.`;
+                this.cdr.detectChanges();
+            },
+            error: (error) => {
+                this.convertingQuoteToken = null;
+                this.quoteConversionError = this.resolveErrorMessage(error, "No se pudo convertir la cotizacion en factura.");
+                this.cdr.detectChanges();
+            },
+        });
     }
 
     closeDeleteModal(): void {
@@ -991,14 +1056,21 @@ export class CrmQuotesComponent implements OnInit {
     }
 
     saveAndSend(): void {
-        this.upsertCurrentQuote("Enviado");
+        // Fase 5c: "Guardar y enviar" ahora ENVÍA. Antes sólo cambiaba el
+        // estado a 'Enviado' y la UI daba por hecho que el cliente recibió la
+        // cotización, cuando el backend no tenía SMTP (0 resultados de
+        // smtp|sendmail|mailer en todo el backend).
+        this.upsertCurrentQuote("Enviado", true);
     }
 
     saveAndMarkSent(): void {
-        this.upsertCurrentQuote("Enviado");
+        // Este botón sigue siendo sólo el cambio de estado: existe justamente
+        // para marcar una cotización enviada por otro medio (WhatsApp, llamada)
+        // sin que el sistema pretenda haber mandado un correo.
+        this.upsertCurrentQuote("Enviado", false);
     }
 
-    private upsertCurrentQuote(status: QuoteStatus): void {
+    private upsertCurrentQuote(status: QuoteStatus, sendEmail = false): void {
         this.quoteSaveErrorMessage = "";
 
         // ── Frontend validation ──────────────────────────────────────────────
@@ -1062,11 +1134,61 @@ export class CrmQuotesComponent implements OnInit {
                 this.editingQuotePurchaseOrderUploadedAt = "";
                 this.isSavingQuote = false;
                 this.formDraftService.remove(CRM_QUOTES_FORM_DRAFT_KEY);
+
+                // Fase 5c: el guardado ya quedó; el correo es un paso aparte
+                // porque puede fallar por su cuenta. Un fallo de correo NO
+                // revierte la cotización guardada, pero TAMPOCO se oculta: se
+                // muestra arriba como error visible.
+                if (sendEmail) {
+                    this.sendQuoteEmail(saved.id);
+                }
+
                 this.cdr.detectChanges();
             },
             error: (error) => {
                 this.isSavingQuote = false;
                 this.quoteSaveErrorMessage = this.resolveErrorMessage(error, "No se pudo guardar la cotizacion en backend.");
+                this.cdr.detectChanges();
+            },
+        });
+    }
+
+    /**
+     * Dispara el correo de la cotización y refleja el estado REAL del envío.
+     *
+     * El contrato del backend es que encolar no es enviar, así que `delivered`
+     * llega en false y `emailStatus` dice si saldrá ('pendiente') o si el
+     * servidor no tiene SMTP y no va a salir ('desactivado'). Mostrar "enviada"
+     * en ambos casos sería exactamente el éxito falso que la Fase 5c vino a
+     * eliminar.
+     */
+    private sendQuoteEmail(quoteId: string): void {
+        this.emailsApi.sendQuoteEmail(quoteId).pipe(take(1)).subscribe({
+            next: (result) => {
+                if (result.delivered) {
+                    this.quoteEmailMessage = `Correo enviado a ${result.toEmail}.`;
+                    this.quoteSaveErrorMessage = "";
+                } else if (result.emailStatus === "desactivado") {
+                    this.quoteEmailMessage = "";
+                    this.quoteSaveErrorMessage =
+                        `La cotizacion quedo guardada y marcada como Enviada, pero el correo NO salio: ` +
+                        `${result.warning ?? "el servidor no tiene SMTP configurado"}. ` +
+                        `Quedo registrada en el outbox de correos para cuando se configure.`;
+                } else {
+                    this.quoteEmailMessage =
+                        `Correo en cola para ${result.toEmail}; saldra en el proximo envio del servidor.`;
+                    this.quoteSaveErrorMessage = "";
+                }
+                this.cdr.detectChanges();
+            },
+            error: (error) => {
+                this.quoteEmailMessage = "";
+                // 422 = el cliente no tiene correo registrado. La cotización sí
+                // se guardó, pero el usuario debe saber que el cliente no se
+                // enteró: reportarlo como éxito sería mentir.
+                this.quoteSaveErrorMessage =
+                    `La cotizacion quedo guardada, pero el correo NO se envio: ` +
+                    this.resolveErrorMessage(error, "no se pudo enviar el correo de la cotizacion");
                 this.cdr.detectChanges();
             },
         });

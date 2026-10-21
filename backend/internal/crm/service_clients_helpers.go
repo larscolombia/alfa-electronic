@@ -74,6 +74,32 @@ func (s *Service) normalizeClientPayload(req UpsertClientRequest) (normalizedCli
 		return normalizedClientInput{}, newValidationError("la direccion no puede superar 500 caracteres")
 	}
 
+	// Fase 5b: datos fiscales del cliente.
+	dv := strings.TrimSpace(req.DV)
+	if len(dv) > 4 {
+		return normalizedClientInput{}, newValidationError("el digito de verificacion no puede superar 4 caracteres")
+	}
+
+	postalCode := strings.TrimSpace(req.PostalCode)
+	if len(postalCode) > 20 {
+		return normalizedClientInput{}, newValidationError("el codigo postal no puede superar 20 caracteres")
+	}
+
+	billingEmail := strings.TrimSpace(req.BillingEmail)
+	if billingEmail != "" {
+		if len(billingEmail) > 180 {
+			return normalizedClientInput{}, newValidationError("el correo de facturacion electronica no puede superar 180 caracteres")
+		}
+		if !reEmail.MatchString(billingEmail) {
+			return normalizedClientInput{}, newValidationError("el formato del correo de facturacion electronica no es valido")
+		}
+	}
+
+	idType := normalizeClientIDType(req.IDType)
+	if idType == "" {
+		return normalizedClientInput{}, newValidationError("el tipo de identificacion no es valido (NIT, CC, CE o PASAPORTE)")
+	}
+
 	zona := strings.TrimSpace(req.Zona)
 	if zona == "" {
 		return normalizedClientInput{}, errClientZoneRequired
@@ -118,24 +144,46 @@ func (s *Service) normalizeClientPayload(req UpsertClientRequest) (normalizedCli
 	}
 
 	return normalizedClientInput{
-		Nombre:          nombre,
-		Correo:          correo,
-		Empresa:         empresa,
-		Nit:             nit,
-		Zona:            zona,
-		Estado:          estado,
-		Website:         website,
-		OfficePhone:     officePhone,
-		Country:         country,
-		City:            city,
-		Address:         address,
-		CreditEnabled:   req.Credito.Enabled,
-		CreditLimit:     creditLimit,
-		CreditConsumed:  creditConsumed,
-		LastPaymentDate: lastPaymentDate,
-		PaymentTermDays: paymentTermDays,
-		Branches:        branches,
+		Nombre:           nombre,
+		Correo:           correo,
+		Empresa:          empresa,
+		Nit:              nit,
+		Zona:             zona,
+		Estado:           estado,
+		Website:          website,
+		OfficePhone:      officePhone,
+		Country:          country,
+		City:             city,
+		Address:          address,
+		DV:               dv,
+		PostalCode:       postalCode,
+		BillingEmail:     billingEmail,
+		GrandContributor: req.GrandContributor,
+		IDType:           idType,
+		CreditEnabled:    req.Credito.Enabled,
+		CreditLimit:      creditLimit,
+		CreditConsumed:   creditConsumed,
+		LastPaymentDate:  lastPaymentDate,
+		PaymentTermDays:  paymentTermDays,
+		Branches:         branches,
 	}, nil
+}
+
+// normalizeClientIDType valida el tipo de identificación fiscal (Fase 5b).
+// Vacío se interpreta como NIT (el default de la columna).
+func normalizeClientIDType(raw string) string {
+	switch strings.ToUpper(strings.TrimSpace(raw)) {
+	case "", "NIT":
+		return "NIT"
+	case "CC":
+		return "CC"
+	case "CE":
+		return "CE"
+	case "PASAPORTE":
+		return "PASAPORTE"
+	default:
+		return ""
+	}
 }
 
 func normalizeClientStatus(raw string) (string, error) {
@@ -152,6 +200,7 @@ func normalizeClientStatus(raw string) (string, error) {
 func buildClientsListStatement(filters []string, limitArg int) string {
 	statement := fmt.Sprintf(`
 SELECT id, nombre, correo, empresa, nit, zona, estado, website, office_phone, country, city, address,
+	COALESCE(dv, ''), COALESCE(postal_code, ''), COALESCE(billing_email, ''), grand_contributor, id_type,
 	credit_enabled, credit_limit, credit_consumed, last_payment_date, payment_term_days, created_at
 FROM crm_clients
 WHERE %s

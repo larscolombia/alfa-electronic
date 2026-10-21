@@ -13,6 +13,8 @@ import { PurchaseLine, ReservationRecord, StockReference } from '../../../servic
 import { WorkEquipmentHistoryContextService } from '../../../services/work-equipment-history-context.service';
 import { CrmEquipmentApiService } from '../../../services/crm-equipment-api.service';
 import { ProjectsApiService } from '../../../services/projects-api.service';
+import { EmailsApiService } from '../../../services/emails-api.service';
+import { WorktimeApiService } from '../../../services/worktime-api.service';
 import { buildCommercialDocumentCode } from '../company/company-commercial-settings.store';
 import { buildEquipmentQrShortCode, generateEquipmentQrDataUrl } from '../crm/equipment-qr.util';
 import { ProspectEquipmentAttachment, ProspectEquipmentEvidencePhoto, ProspectEquipmentItem, ProspectEquipmentRepairStatus } from '../crm/crm-prospect-equipment.store';
@@ -3342,11 +3344,13 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
     private projectEquipmentService: ProjectEquipmentService,
     private crmEquipmentApi: CrmEquipmentApiService,
     private projectsApi: ProjectsApiService,
+    private emailsApi: EmailsApiService,
     private authService: AuthService,
     private inventoryWorkflowService: InventoryWorkflowService,
     private inventoryRbacService: InventoryRbacService,
     private inventoryApiService: InventoryApiService,
     private workTestBatchService: WorkTestBatchService,
+    private worktimeApi: WorktimeApiService,
     private equipmentHistoryContextService: WorkEquipmentHistoryContextService,
     private route: ActivatedRoute,
     private router: Router,
@@ -3879,7 +3883,8 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
 
     this.equipmentSessionProjectId = '';
 
-    const elapsedMinutes = (Date.now() - startedAt) / 60000;
+    const endedAt = Date.now();
+    const elapsedMinutes = (endedAt - startedAt) / 60000;
     const extraHours = accumulateQuarterHours(elapsedMinutes);
     if (extraHours <= 0) {
       return;
@@ -3906,6 +3911,27 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
         this.boardActionMessage = `El tiempo de sesion (+${extraHours} h) NO se guardo en el servidor: ${this.errorMessage(error)}`;
       },
     });
+
+    // Fase 4: el pointage tambien queda como entrada de horas en el servidor
+    // (work_time_entries) por tecnico/dia, no solo en actualHours del proyecto.
+    // El backend redondea a cuartos de hora y asigna el usuario desde el JWT.
+    this.worktimeApi
+      .createEntry({
+        projectId: project.id,
+        equipmentId: String(project.properties?.['equipmentIdentifier'] ?? '').trim(),
+        task: 'Sesion kanban',
+        entryType: 'normal',
+        employee: this.authService.getCurrentUserName(),
+        memo: `Pointage de sesion en tablero: +${extraHours} h (cuartos de hora).`,
+        startAt: new Date(startedAt).toISOString(),
+        endAt: new Date(endedAt).toISOString(),
+      })
+      .subscribe({
+        error: (error) => {
+          // Error visible: sin esta entrada el pointage no existe para RRHH.
+          this.boardActionMessage = `El pointage (+${extraHours} h) NO se guardo en el registro de horas: ${this.errorMessage(error)}`;
+        },
+      });
   }
 
   saveProjectDetail(): void {
@@ -5889,9 +5915,18 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
   }
 
   /**
-   * Convierte el flag notifyClient en una notificacion real persistida en el
-   * servidor (POST /api/v1/projects/notifications), que queda como pendiente
-   * de aviso/correo al cliente para administracion.
+   * Convierte el flag notifyClient en dos cosas (Fase 5c):
+   *
+   *  1. La notificacion interna persistida en el servidor
+   *     (POST /api/v1/projects/notifications), que ya existia desde la Fase 3 y
+   *     se CONSERVA: es el pendiente de seguimiento para administracion.
+   *  2. El correo real al cliente con transportadora y numero de guia, que es lo
+   *     que faltaba. Antes el flag solo creaba la notificacion interna y nadie
+   *     le escribia al cliente (el backend no tenia SMTP).
+   *
+   * El destinatario NO se manda desde aqui: el backend lo resuelve del cliente
+   * en BD. Si el cliente no tiene correo, el endpoint responde 422 y se muestra
+   * como error visible en vez de dar el aviso por enviado.
    */
   private notifyClientDispatch(dispatchRecord: ProjectDispatchRecord): void {
     if (!dispatchRecord.notifyClient) {
@@ -5913,6 +5948,38 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
       .subscribe({
         error: (error) => {
           this.boardActionMessage = `El despacho quedo registrado, pero la notificacion al cliente NO se guardo en el servidor: ${this.errorMessage(error)}`;
+        },
+      });
+
+    this.emailsApi
+      .sendDispatchNotice({
+        clientName: dispatchRecord.clientName || '',
+        dispatchCode: dispatchRecord.code || '',
+        equipmentName: dispatchRecord.equipmentName || '',
+        carrier: dispatchRecord.carrier || '',
+        guideNumber: dispatchRecord.guideNumber || '',
+        deliveryNote: deliveryDetail,
+        refType: 'project-dispatch',
+        refID: dispatchRecord.id || dispatchRecord.code || '',
+      })
+      .pipe(take(1))
+      .subscribe({
+        next: (result) => {
+          // delivered llega en false porque encolar no es enviar: emailStatus
+          // es el que dice si el correo saldra o si el servidor no tiene SMTP.
+          if (result.emailStatus === 'desactivado') {
+            this.boardActionMessage =
+              `El despacho quedo registrado, pero el correo al cliente NO salio: ` +
+              `${result.warning ?? 'el servidor no tiene SMTP configurado'}. ` +
+              `Quedo en el outbox de correos (/emails) y la notificacion interna si se creo.`;
+          } else {
+            this.boardActionMessage =
+              `Aviso de despacho en cola para ${result.toEmail}; saldra en el proximo envio del servidor.`;
+          }
+        },
+        error: (error) => {
+          this.boardActionMessage =
+            `El despacho quedo registrado, pero el correo al cliente NO se envio: ${this.errorMessage(error)}`;
         },
       });
   }

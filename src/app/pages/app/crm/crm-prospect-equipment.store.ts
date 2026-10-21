@@ -184,6 +184,8 @@ export interface ProspectEquipmentSummary {
     repairStatus: ProspectEquipmentRepairStatus;
     repairStatusLabel: string;
     repairStatusUpdatedAt: string;
+    /** Fase 5b: marcado para facturación urgente (badge en listados y dashboard). */
+    priorityBilling: boolean;
 }
 
 export interface ProspectEquipmentWorkflowUpdate {
@@ -571,6 +573,7 @@ function buildEquipmentSummaries(records: ProspectEquipmentRecord[]): ProspectEq
                 repairStatus,
                 repairStatusLabel: getProspectEquipmentRepairStatusLabel(repairStatus),
                 repairStatusUpdatedAt: item.repairStatusUpdatedAt ?? "",
+                priorityBilling: Boolean(item.priorityBilling),
             };
         }),
     );
@@ -801,6 +804,9 @@ function normalizeStoredItem(item: Partial<ProspectEquipmentItem>): ProspectEqui
         repairStatus: normalizeRepairStatus(item.repairStatus),
         repairStatusUpdatedAt: String(item.repairStatusUpdatedAt ?? "").trim(),
         repairStatusUpdatedBy: String(item.repairStatusUpdatedBy ?? "").trim(),
+        // Fase 5b: facturación urgente — antes se declaraba en la interfaz y
+        // se perdía al normalizar los ítems leídos del servidor.
+        priorityBilling: Boolean(item.priorityBilling),
     };
 }
 

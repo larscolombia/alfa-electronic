@@ -1,5 +1,7 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { Injectable, inject } from '@angular/core';
+import { BehaviorSubject, Observable, catchError, filter, firstValueFrom, throwError } from 'rxjs';
+import { AuthService } from '../../../services/auth.service';
+import { WorktimeApiService } from '../../../services/worktime-api.service';
 import {
   WorkTestBatch,
   WorkTestBatchState,
@@ -9,21 +11,52 @@ import {
   WorkTestTransitionPrompt,
 } from './work-test-batch.models';
 
+// Fase 4: los lotes de pruebas funcionales y sus reglas de flujo viven en el
+// servidor (backend internal/worktime). El localStorage['lars.work.test-batches.v2']
+// solo se lee UNA vez para migrar lo que el usuario ya tuviera y se borra
+// unicamente si la migracion termino sin errores; si falla se conserva y se
+// reintenta en el proximo arranque con el error visible (lastError$). Ya no se
+// hace setItem de datos de negocio.
+//
+// La API publica sigue siendo sincrona (state$, getSnapshot, upsertBatch,
+// getTransitionPrompt) porque sus consumidores (work-test-batches.component y
+// el kanban) la usan en caliente: las mutaciones son optimistas sobre la cache
+// y se revierten si el servidor falla.
 @Injectable({
   providedIn: 'root',
 })
 export class WorkTestBatchService {
-  private readonly storageKey = 'lars.work.test-batches.v2';
-  private readonly stateSubject = new BehaviorSubject<WorkTestBatchState>(this.restoreState());
+  private readonly legacyStorageKey = 'lars.work.test-batches.v2';
+
+  private readonly api = inject(WorktimeApiService);
+  private readonly auth = inject(AuthService);
+  private readonly stateSubject = new BehaviorSubject<WorkTestBatchState>({ batches: [], flowRules: [] });
 
   readonly state$ = this.stateSubject.asObservable();
+
+  private readonly lastErrorSubject = new BehaviorSubject<string | null>(null);
+  /** Ultimo error de sincronizacion con el servidor (null si todo fue bien). */
+  readonly lastError$: Observable<string | null> = this.lastErrorSubject.asObservable();
+
+  private initializationStarted = false;
+
+  constructor() {
+    void this.initialize();
+
+    // El servicio puede instanciarse antes del login (la SPA no recarga la
+    // pagina al autenticarse): cuando aparece una sesion se reintenta la carga
+    // del servidor y la migracion unica desde localStorage.
+    this.auth.session$
+      .pipe(filter((session): session is NonNullable<typeof session> => session !== null))
+      .subscribe(() => void this.initialize());
+  }
 
   getSnapshot(): WorkTestBatchState {
     return this.cloneState(this.stateSubject.value);
   }
 
   upsertBatch(batch: Omit<WorkTestBatch, 'id' | 'updatedAt'> & { id?: string }): WorkTestBatch {
-    const draft = this.cloneState(this.stateSubject.value);
+    const previous = this.cloneState(this.stateSubject.value);
     const nextBatch: WorkTestBatch = {
       id: batch.id?.trim() || this.buildId('batch'),
       name: batch.name.trim(),
@@ -33,14 +66,35 @@ export class WorkTestBatchService {
       updatedAt: new Date().toISOString(),
     };
 
+    const draft = this.cloneState(previous);
     draft.batches = [nextBatch, ...draft.batches.filter((item) => item.id !== nextBatch.id)]
       .sort((left, right) => left.name.localeCompare(right.name));
     this.commit(draft);
+
+    this.api.upsertTestBatch(nextBatch).pipe(
+      catchError((error) => {
+        // Sin fallback silencioso: se revierte la cache y el error queda
+        // expuesto en lastError$.
+        this.commit(previous);
+        this.lastErrorSubject.next(`No se pudo guardar el grupo de preguntas en el servidor: ${this.errorMessage(error)}`);
+        return throwError(() => error);
+      }),
+    ).subscribe({
+      next: (saved) => {
+        this.lastErrorSubject.next(null);
+        const current = this.cloneState(this.stateSubject.value);
+        current.batches = current.batches.map((item) => (item.id === saved.id ? this.normalizeBatch(saved) : item));
+        this.commit(current);
+      },
+      error: () => { /* ya revertido en catchError */ },
+    });
+
     return nextBatch;
   }
 
   deleteBatch(batchId: string): void {
-    const draft = this.cloneState(this.stateSubject.value);
+    const previous = this.cloneState(this.stateSubject.value);
+    const draft = this.cloneState(previous);
     draft.batches = draft.batches.filter((batch) => batch.id !== batchId);
     draft.flowRules = draft.flowRules.map((rule) => ({
       ...rule,
@@ -48,10 +102,21 @@ export class WorkTestBatchService {
       updatedAt: new Date().toISOString(),
     }));
     this.commit(draft);
+
+    this.api.deleteTestBatch(batchId).pipe(
+      catchError((error) => {
+        this.commit(previous);
+        this.lastErrorSubject.next(`No se pudo eliminar el grupo de preguntas del servidor: ${this.errorMessage(error)}`);
+        return throwError(() => error);
+      }),
+    ).subscribe({
+      next: () => this.lastErrorSubject.next(null),
+      error: () => { /* ya revertido en catchError */ },
+    });
   }
 
   upsertFlowRule(rule: Omit<WorkTestFlowRule, 'id' | 'updatedAt'> & { id?: string }): WorkTestFlowRule {
-    const draft = this.cloneState(this.stateSubject.value);
+    const previous = this.cloneState(this.stateSubject.value);
     const nextRule: WorkTestFlowRule = {
       id: rule.id?.trim() || this.buildId('flow'),
       name: rule.name.trim(),
@@ -64,16 +129,46 @@ export class WorkTestBatchService {
       updatedAt: new Date().toISOString(),
     };
 
+    const draft = this.cloneState(previous);
     draft.flowRules = [nextRule, ...draft.flowRules.filter((item) => item.id !== nextRule.id)]
       .sort((left, right) => left.name.localeCompare(right.name));
     this.commit(draft);
+
+    this.api.upsertFlowRule(nextRule).pipe(
+      catchError((error) => {
+        this.commit(previous);
+        this.lastErrorSubject.next(`No se pudo guardar el flujo en el servidor: ${this.errorMessage(error)}`);
+        return throwError(() => error);
+      }),
+    ).subscribe({
+      next: (saved) => {
+        this.lastErrorSubject.next(null);
+        const current = this.cloneState(this.stateSubject.value);
+        current.flowRules = current.flowRules.map((item) => (item.id === saved.id ? this.normalizeFlowRule(saved) : item));
+        this.commit(current);
+      },
+      error: () => { /* ya revertido en catchError */ },
+    });
+
     return nextRule;
   }
 
   deleteFlowRule(ruleId: string): void {
-    const draft = this.cloneState(this.stateSubject.value);
+    const previous = this.cloneState(this.stateSubject.value);
+    const draft = this.cloneState(previous);
     draft.flowRules = draft.flowRules.filter((rule) => rule.id !== ruleId);
     this.commit(draft);
+
+    this.api.deleteFlowRule(ruleId).pipe(
+      catchError((error) => {
+        this.commit(previous);
+        this.lastErrorSubject.next(`No se pudo eliminar el flujo del servidor: ${this.errorMessage(error)}`);
+        return throwError(() => error);
+      }),
+    ).subscribe({
+      next: () => this.lastErrorSubject.next(null),
+      error: () => { /* ya revertido en catchError */ },
+    });
   }
 
   getTransitionPrompt(fromStatusId: string, toStatusId: string, priority: string): WorkTestTransitionPrompt | null {
@@ -117,35 +212,177 @@ export class WorkTestBatchService {
     };
   }
 
-  private restoreState(): WorkTestBatchState {
-    const fallback = this.seedState();
-    if (typeof window === 'undefined') {
-      return fallback;
+  // ── Carga inicial y migracion unica ────────────────────────────────────────
+
+  private async initialize(): Promise<void> {
+    if (this.initializationStarted) {
+      return;
+    }
+    this.initializationStarted = true;
+
+    if (!this.api.isAuthenticated()) {
+      // Sin sesion no hay servidor; se reintenta en la primera mutacion o al
+      // recargar la pagina ya autenticado.
+      this.initializationStarted = false;
+      return;
     }
 
-    const raw = window.localStorage.getItem(this.storageKey);
+    const legacy = this.readLegacyState();
+
+    try {
+      const remote = await firstValueFrom(this.api.getTestBatchState());
+      const remoteState: WorkTestBatchState = {
+        batches: (remote.batches ?? []).map((batch) => this.normalizeBatch(batch)),
+        flowRules: (remote.flowRules ?? []).map((rule) => this.normalizeFlowRule(rule)),
+      };
+
+      if (legacy) {
+        await this.migrateLegacyState(legacy, remoteState);
+        return;
+      }
+
+      if (remoteState.batches.length === 0 && remoteState.flowRules.length === 0) {
+        // Empresa nueva en el servidor: se siembran los lotes y flujos por
+        // defecto (antes los sembraba el navegador en cada perfil nuevo).
+        await this.seedServerState();
+        return;
+      }
+
+      this.commit(remoteState);
+      this.lastErrorSubject.next(null);
+    } catch (error) {
+      this.lastErrorSubject.next(`No se pudieron cargar los lotes de prueba del servidor: ${this.errorMessage(error)}`);
+      this.initializationStarted = false;
+    }
+  }
+
+  /**
+   * Migracion unica de 'lars.work.test-batches.v2': sube solo lo que no exista
+   * en el servidor (por id) y borra la clave SOLO si todo salio bien. Si algo
+   * falla, la clave se conserva y se reintenta en el proximo arranque.
+   */
+  private async migrateLegacyState(legacy: WorkTestBatchState, remote: WorkTestBatchState): Promise<void> {
+    const failures: string[] = [];
+    const remoteBatchIds = new Set(remote.batches.map((batch) => batch.id));
+    const remoteRuleIds = new Set(remote.flowRules.map((rule) => rule.id));
+
+    const merged: WorkTestBatchState = {
+      batches: [...remote.batches],
+      flowRules: [...remote.flowRules],
+    };
+
+    for (const batch of legacy.batches) {
+      if (remoteBatchIds.has(batch.id)) {
+        continue;
+      }
+      try {
+        const saved = await firstValueFrom(this.api.upsertTestBatch(batch));
+        merged.batches.push(this.normalizeBatch(saved));
+      } catch (error) {
+        failures.push(`grupo ${batch.id}: ${this.errorMessage(error)}`);
+      }
+    }
+
+    for (const rule of legacy.flowRules) {
+      if (remoteRuleIds.has(rule.id)) {
+        continue;
+      }
+      try {
+        const saved = await firstValueFrom(this.api.upsertFlowRule(rule));
+        merged.flowRules.push(this.normalizeFlowRule(saved));
+      } catch (error) {
+        failures.push(`flujo ${rule.id}: ${this.errorMessage(error)}`);
+      }
+    }
+
+    if (failures.length > 0) {
+      // La clave SE CONSERVA: se reintenta en el proximo arranque.
+      this.lastErrorSubject.next(
+        `La migracion de tus lotes de prueba locales fallo y se reintentara mas tarde. Detalles: ${failures.join(' | ')}`,
+      );
+      this.commit(merged);
+      this.initializationStarted = false;
+      return;
+    }
+
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem(this.legacyStorageKey);
+    }
+    this.lastErrorSubject.next(null);
+    this.commit(merged);
+  }
+
+  private async seedServerState(): Promise<void> {
+    const seed = this.seedState();
+    const failures: string[] = [];
+
+    for (const batch of seed.batches) {
+      try {
+        await firstValueFrom(this.api.upsertTestBatch(batch));
+      } catch (error) {
+        failures.push(`grupo ${batch.id}: ${this.errorMessage(error)}`);
+      }
+    }
+    for (const rule of seed.flowRules) {
+      try {
+        await firstValueFrom(this.api.upsertFlowRule(rule));
+      } catch (error) {
+        failures.push(`flujo ${rule.id}: ${this.errorMessage(error)}`);
+      }
+    }
+
+    if (failures.length > 0) {
+      this.lastErrorSubject.next(`No se pudieron sembrar los lotes de prueba por defecto: ${failures.join(' | ')}`);
+      this.initializationStarted = false;
+      return;
+    }
+
+    try {
+      const remote = await firstValueFrom(this.api.getTestBatchState());
+      this.commit({
+        batches: (remote.batches ?? []).map((batch) => this.normalizeBatch(batch)),
+        flowRules: (remote.flowRules ?? []).map((rule) => this.normalizeFlowRule(rule)),
+      });
+      this.lastErrorSubject.next(null);
+    } catch (error) {
+      this.commit(seed);
+      this.lastErrorSubject.next(`No se pudieron recargar los lotes de prueba: ${this.errorMessage(error)}`);
+    }
+  }
+
+  private readLegacyState(): WorkTestBatchState | null {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+
+    const raw = window.localStorage.getItem(this.legacyStorageKey);
     if (!raw) {
-      return fallback;
+      return null;
     }
 
     try {
       const parsed = JSON.parse(raw) as Partial<WorkTestBatchState>;
-      const batches = Array.isArray(parsed.batches) ? parsed.batches.map((batch) => this.normalizeBatch(batch)) : fallback.batches;
-      const flowRules = Array.isArray(parsed.flowRules) ? parsed.flowRules.map((rule) => this.normalizeFlowRule(rule)) : fallback.flowRules;
+      const batches = Array.isArray(parsed.batches) ? parsed.batches.map((batch) => this.normalizeBatch(batch)) : [];
+      const flowRules = Array.isArray(parsed.flowRules) ? parsed.flowRules.map((rule) => this.normalizeFlowRule(rule)) : [];
 
+      if (batches.length === 0 && flowRules.length === 0) {
+        // Clave vacia/corrupta: no hay nada rescatable.
+        window.localStorage.removeItem(this.legacyStorageKey);
+        return null;
+      }
       return { batches, flowRules };
     } catch {
-      return fallback;
+      window.localStorage.removeItem(this.legacyStorageKey);
+      return null;
     }
   }
 
   private commit(state: WorkTestBatchState): void {
-    const snapshot = this.cloneState(state);
-    this.stateSubject.next(snapshot);
+    this.stateSubject.next(this.cloneState(state));
+  }
 
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem(this.storageKey, JSON.stringify(snapshot));
-    }
+  private errorMessage(error: unknown): string {
+    return error instanceof Error ? error.message : String(error);
   }
 
   private cloneState(state: WorkTestBatchState): WorkTestBatchState {

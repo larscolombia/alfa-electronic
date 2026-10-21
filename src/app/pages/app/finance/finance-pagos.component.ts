@@ -1,10 +1,13 @@
 import { CommonModule } from "@angular/common";
-import { Component, HostListener, inject } from "@angular/core";
+import { Component, HostListener, OnDestroy, inject } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { RouterLink } from "@angular/router";
+import { firstValueFrom } from "rxjs";
 
 import { FinanceAccount, FinanceAccountsStore } from "./finance-accounts.store";
+import { FinanceBillingStore } from "./finance-billing.store";
 import { FinancePaymentsApiService, UpsertFinancePaymentRequest } from "../../../services/finance-payments-api.service";
+import { FinanceBillingApiService } from "../../../services/finance-billing-api.service";
 
 type PaymentStatus = "Completado" | "Parcial" | "Pendiente";
 type CurrencyCode = "COP" | "USD" | "EUR";
@@ -28,6 +31,11 @@ interface PaymentRecord {
     bankAccountName: string;
     receiptFileName: string;
     notes: string;
+    reteFuente: number;
+    reteIva: number;
+    reteIca: number;
+    retentionComments: string;
+    paymentDate: string;
 }
 
 interface PaymentDraft {
@@ -43,11 +51,11 @@ interface PaymentDraft {
     receiptFileName: string;
     notes: string;
     status: PaymentStatus;
-    reteFuente?: number;
-    reteIva?: number;
-    reteIca?: number;
-    paymentDate?: string;
-    retentionComments?: string;
+    reteFuente: number;
+    reteIva: number;
+    reteIca: number;
+    paymentDate: string;
+    retentionComments: string;
 }
 
 interface InvoiceOption {
@@ -216,6 +224,8 @@ interface InvoiceOption {
                                         <option value="">--</option>
                                         @for (invoice of invoiceOptions; track invoice.number) {
                                             <option [value]="invoice.number">{{ invoice.number }} - {{ invoice.client }}</option>
+                                        } @empty {
+                                            <option value="" disabled>No hay facturas registradas</option>
                                         }
                                     </select>
                                 </div>
@@ -319,8 +329,9 @@ interface InvoiceOption {
         </div>
     `,
 })
-export class FinancePagosComponent {
+export class FinancePagosComponent implements OnDestroy {
     private readonly financePaymentsApi = inject(FinancePaymentsApiService);
+    private readonly financeBillingApi = inject(FinanceBillingApiService);
 
     readonly currencyOptions = [
         { value: "COP", label: "COP ($)" },
@@ -330,33 +341,10 @@ export class FinancePagosComponent {
 
     readonly paymentGateways = ["Transferencia bancaria", "Wompi", "PayU", "Stripe", "Efectivo"];
     readonly statusFilters: PaymentStatus[] = ["Completado", "Parcial", "Pendiente"];
-    readonly projectOptions = ["Sitio Web Corporativo", "Portal Ecommerce", "Campana Digital"];
-    readonly invoiceOptions: InvoiceOption[] = [
-        {
-            number: "LARS#3377",
-            project: "Portal Ecommerce",
-            client: "AMD AGENCIA DE MARKETING DIGITAL S.A.S",
-            amount: 407700,
-        },
-        {
-            number: "LARS#3388",
-            project: "Portal Ecommerce",
-            client: "AMD AGENCIA DE MARKETING DIGITAL S.A.S",
-            amount: 407700,
-        },
-        {
-            number: "LARS#3389",
-            project: "Sitio Web Corporativo",
-            client: "Vektor ink sas",
-            amount: 4382326,
-        },
-        {
-            number: "LARS#3411",
-            project: "Campana Digital",
-            client: "Webbo",
-            amount: 2499000,
-        },
-    ];
+    // Las opciones de factura y proyecto salen de GET /finance/invoices: ya no
+    // hay facturas hardcodeadas. Si no hay facturas, el dropdown lo dice en
+    // vez de inventar.
+    invoiceOptions: InvoiceOption[] = [];
 
     viewMode: "list" | "form" = "list";
     payments: PaymentRecord[] = [];
@@ -372,9 +360,42 @@ export class FinancePagosComponent {
     formError = "";
     draft: PaymentDraft = this.getDefaultDraft();
 
+    private readonly accountsUnsubscribe: () => void;
+
     constructor() {
         this.financeAccounts = FinanceAccountsStore.getAccounts();
+        this.accountsUnsubscribe = FinanceAccountsStore.subscribe(() => {
+            this.financeAccounts = FinanceAccountsStore.getAccounts();
+        });
+        void FinanceAccountsStore.ensureLoaded();
         this.loadPaymentsFromApi();
+        void this.loadInvoiceOptions();
+    }
+
+    ngOnDestroy(): void {
+        this.accountsUnsubscribe();
+    }
+
+    get projectOptions(): string[] {
+        return Array.from(new Set(this.invoiceOptions.map((invoice) => invoice.project).filter((project) => project !== ""))).sort((first, second) =>
+            first.localeCompare(second),
+        );
+    }
+
+    private async loadInvoiceOptions(): Promise<void> {
+        try {
+            const invoices = await firstValueFrom(this.financeBillingApi.listInvoices());
+            this.invoiceOptions = invoices
+                .filter((invoice) => invoice.status !== "Cancelado" && invoice.status !== "Borrador")
+                .map((invoice) => ({
+                    number: FinanceBillingStore.buildInvoiceCode(invoice.seriesPrefix, invoice.sequenceNumber),
+                    project: invoice.projectName || "",
+                    client: invoice.clientName,
+                    amount: invoice.balanceAmount > 0 ? invoice.balanceAmount : invoice.total,
+                }));
+        } catch {
+            this.invoiceOptions = [];
+        }
     }
 
     get clientFilters(): string[] {
@@ -475,6 +496,11 @@ export class FinancePagosComponent {
             bankAccountName: this.resolveAccountName(this.draft.bankAccountId),
             receiptFileName: this.draft.receiptFileName,
             notes: this.draft.notes.trim(),
+            reteFuente: this.toPositiveNumber(this.draft.reteFuente),
+            reteIva: this.toPositiveNumber(this.draft.reteIva),
+            reteIca: this.toPositiveNumber(this.draft.reteIca),
+            retentionComments: (this.draft.retentionComments ?? "").trim(),
+            paymentDate: (this.draft.paymentDate ?? "").trim(),
         };
 
         const payload = this.toPaymentPayload(recordToSave);
@@ -531,6 +557,11 @@ export class FinancePagosComponent {
             receiptFileName: payment.receiptFileName,
             notes: payment.notes,
             status: payment.status,
+            reteFuente: payment.reteFuente,
+            reteIva: payment.reteIva,
+            reteIca: payment.reteIca,
+            paymentDate: payment.paymentDate,
+            retentionComments: payment.retentionComments,
         };
         this.viewMode = "form";
     }
@@ -635,6 +666,11 @@ export class FinancePagosComponent {
             receiptFileName: "",
             notes: "",
             status: "Completado",
+            reteFuente: 0,
+            reteIva: 0,
+            reteIca: 0,
+            paymentDate: "",
+            retentionComments: "",
         };
     }
 
@@ -646,7 +682,9 @@ export class FinancePagosComponent {
                 this.payments = items.map((item) => this.normalizePaymentRecord(item));
             },
             error: (error) => {
-                this.payments = this.getDefaultPayments();
+                // Sin fallback mock: si el servidor falla, la lista queda vacía
+                // y el error es visible.
+                this.payments = [];
                 this.formError = this.resolveErrorMessage(error, "No se pudieron cargar pagos desde backend.");
             },
         });
@@ -671,6 +709,11 @@ export class FinancePagosComponent {
             bankAccountName: record.bankAccountName.trim(),
             receiptFileName: record.receiptFileName.trim(),
             notes: record.notes.trim(),
+            reteFuente: this.toPositiveNumber(record.reteFuente),
+            reteIva: this.toPositiveNumber(record.reteIva),
+            reteIca: this.toPositiveNumber(record.reteIca),
+            retentionComments: record.retentionComments.trim(),
+            paymentDate: record.paymentDate.trim(),
         };
     }
 
@@ -695,116 +738,16 @@ export class FinancePagosComponent {
             bankAccountName: String(record.bankAccountName || "").trim(),
             receiptFileName: String(record.receiptFileName || "").trim(),
             notes: String(record.notes || "").trim(),
+            reteFuente: this.toPositiveNumber(record.reteFuente),
+            reteIva: this.toPositiveNumber(record.reteIva),
+            reteIca: this.toPositiveNumber(record.reteIca),
+            retentionComments: String(record.retentionComments || "").trim(),
+            paymentDate: String(record.paymentDate || "").trim(),
         };
     }
 
     private resolveErrorMessage(error: unknown, fallback: string): string {
         return error instanceof Error && error.message.trim() ? error.message : fallback;
-    }
-
-    private getDefaultPayments(): PaymentRecord[] {
-        return [
-            {
-                id: 1,
-                orderNumber: 1,
-                code: "PAY-0001",
-                project: "--",
-                invoiceNumber: "LARS#3411",
-                client: "Webbo",
-                purchaseOrder: "--",
-                amount: 300000,
-                paidAt: "2025-01-28",
-                paymentGateway: "Transferencia bancaria",
-                status: "Completado",
-                currencyCode: "COP",
-                exchangeRate: 1,
-                transactionId: "TRX-0281",
-                bankAccountId: null,
-                bankAccountName: "",
-                receiptFileName: "",
-                notes: "Abono inicial",
-            },
-            {
-                id: 2,
-                orderNumber: 2,
-                code: "PAY-0002",
-                project: "Portal Ecommerce",
-                invoiceNumber: "LARS#3377",
-                client: "AMD AGENCIA DE MARKETING DIGITAL S.A.S",
-                purchaseOrder: "--",
-                amount: 407700,
-                paidAt: "2025-01-02",
-                paymentGateway: "PayU",
-                status: "Completado",
-                currencyCode: "COP",
-                exchangeRate: 1,
-                transactionId: "TRX-0102",
-                bankAccountId: null,
-                bankAccountName: "",
-                receiptFileName: "recibo-3377.pdf",
-                notes: "Pago completo",
-            },
-            {
-                id: 3,
-                orderNumber: 3,
-                code: "PAY-0003",
-                project: "Portal Ecommerce",
-                invoiceNumber: "LARS#3388",
-                client: "AMD AGENCIA DE MARKETING DIGITAL S.A.S",
-                purchaseOrder: "--",
-                amount: 407700,
-                paidAt: "2025-01-22",
-                paymentGateway: "Wompi",
-                status: "Completado",
-                currencyCode: "COP",
-                exchangeRate: 1,
-                transactionId: "TRX-0122",
-                bankAccountId: null,
-                bankAccountName: "",
-                receiptFileName: "",
-                notes: "Pago por pasarela",
-            },
-            {
-                id: 4,
-                orderNumber: 4,
-                code: "PAY-0004",
-                project: "Sitio Web Corporativo",
-                invoiceNumber: "LARS#3389",
-                client: "Vektor ink sas",
-                purchaseOrder: "--",
-                amount: 4382326,
-                paidAt: "2025-01-17",
-                paymentGateway: "Transferencia bancaria",
-                status: "Completado",
-                currencyCode: "COP",
-                exchangeRate: 1,
-                transactionId: "TRX-0117",
-                bankAccountId: null,
-                bankAccountName: "",
-                receiptFileName: "",
-                notes: "Transferencia confirmada",
-            },
-            {
-                id: 5,
-                orderNumber: 5,
-                code: "PAY-0005",
-                project: "Sitio Web Corporativo",
-                invoiceNumber: "LARS#3387",
-                client: "Vektor ink sas",
-                purchaseOrder: "--",
-                amount: 4382326,
-                paidAt: "2025-01-17",
-                paymentGateway: "Transferencia bancaria",
-                status: "Parcial",
-                currencyCode: "COP",
-                exchangeRate: 1,
-                transactionId: "TRX-0117B",
-                bankAccountId: null,
-                bankAccountName: "",
-                receiptFileName: "",
-                notes: "Pago parcial registrado",
-            },
-        ];
     }
 
     private getNextOrderNumber(): number {

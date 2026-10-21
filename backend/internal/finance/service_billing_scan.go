@@ -47,6 +47,11 @@ func scanInvoice(scanner interface{ Scan(dest ...any) error }) (Invoice, error) 
 		&item.AttachmentName,
 		&item.ReceivedPay,
 		&item.Source,
+		&item.ExternalNumber,
+		&item.DocumentType,
+		&item.CreditNoteRef,
+		&item.Locked,
+		&item.SourceQuoteID,
 		&createdAt,
 		&updatedAt,
 	); err != nil {

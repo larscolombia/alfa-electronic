@@ -1,6 +1,7 @@
-import { Component, OnInit, AfterViewInit, ViewChild, ElementRef, CUSTOM_ELEMENTS_SCHEMA } from "@angular/core";
+import { Component, OnInit, AfterViewInit, OnDestroy, ViewChild, ElementRef, CUSTOM_ELEMENTS_SCHEMA, inject } from "@angular/core";
 import { CurrencyPipe, NgFor } from "@angular/common";
 import { RouterLink } from "@angular/router";
+import { firstValueFrom } from "rxjs";
 import Swiper from "swiper";
 import { register } from "swiper/element/bundle";
 register();
@@ -12,8 +13,8 @@ import { CircleProgressYellowBlankComponent } from "../../../components/charts/c
 import { CircleProgressBlueBlankComponent } from "../../../components/charts/circle-progress-blue-blank.component";
 import { AreaRedChartjs1000tComponent } from "../../../components/charts/area-red-chartjs-100-0t.component";
 import { CrmClientRecord, calculateDaysInArrears, getCrmClients } from "../crm/crm-clients.store";
-import { getAllProspectEquipmentItems } from "../crm/crm-prospect-equipment.store";
 import { FinanceAccount, FinanceAccountsStore } from "../finance/finance-accounts.store";
+import { FinanceBillingApiService } from "../../../services/finance-billing-api.service";
 
 type RiskProjectStatus = "bien" | "terminado" | "problemas";
 
@@ -831,7 +832,7 @@ interface HomeCreditChartRow {
                                 <div class="col">
                                     <h6>
                                         <i class="bi bi-hdd-rack h5 me-1 avatar avatar-40 bg-theme-1-subtle text-theme-1 rounded me-2"></i>
-                                        Equipos
+                                        Cartera
                                     </h6>
                                 </div>
                                 <div class="col-auto"></div>
@@ -840,8 +841,8 @@ interface HomeCreditChartRow {
                         <div class="card-body">
                             <app-area-red-chartjs-100-0t class="height-100 d-block mb-2"></app-area-red-chartjs-100-0t>
 
-                            <p class="mb-1">Equipos pendientes de facturar <span class="text-secondary">(conteo en dashboard)</span></p>
-                            <p class="text-secondary">{{ pendingInvoiceEquipmentCount }} registros activos</p>
+                            <p class="mb-1">Facturas pendientes de cobro <span class="text-secondary">(dato real del servidor)</span></p>
+                            <p class="text-secondary">{{ portfolioPendingCount }} facturas en cartera</p>
                             <div class="card adminuiux-card mt-3">
                                 <div class="card-body">
                                     <div class="row gx-3 align-items-center">
@@ -849,32 +850,32 @@ interface HomeCreditChartRow {
                                             <div class="position-relative">
                                                 <div id="circleprogressred" class="avatar avatar-50 rounded-circle"></div>
                                                 <div class="avatar avatar-30 h5 bg-theme-1-subtle text-theme-1 theme-red rounded-circle position-absolute start-50 top-50 translate-middle">
-                                                    <i class="bi bi-bug"></i>
+                                                    <i class="bi bi-cash-coin"></i>
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="col">
-                                            <p class="text-secondary small mb-1">Pendientes de facturar</p>
-                                            <p>{{ pendingInvoiceEquipmentCount }}<small> en dashboard</small></p>
+                                            <p class="text-secondary small mb-1">Saldo en cartera</p>
+                                            <p>{{ portfolioBalanceTotal | currency: "COP" : "symbol" : "1.0-0" }}</p>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="card-footer border-top py-0">
                                     <div class="row gx-3 ">
                                         <div class="col py-2">
-                                            <p class="text-secondary small mb-1">Listos para facturar</p>
-                                            <p class="text-success">{{ readyToInvoiceEquipmentCount }}</p>
+                                            <p class="text-secondary small mb-1">Pendientes de cobro</p>
+                                            <p class="text-success">{{ portfolioPendingCount }}</p>
                                         </div>
                                         <div class="col border-start py-2">
-                                            <p class="text-secondary small mb-1">En proceso</p>
-                                            <p class="text-theme-1 theme-yellow">{{ inProcessEquipmentCount }}</p>
+                                            <p class="text-secondary small mb-1">Vencidas</p>
+                                            <p [class.text-danger]="portfolioOverdueCount > 0" [class.text-success]="portfolioOverdueCount === 0">{{ portfolioOverdueCount }}</p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <div class="card-footer justify-content-center text-center">
-                            <a routerLink="/app/work-teams" class="btn btn-sm btn-link">Ver Equipos <i class="bi bi-arrow-right vm"></i></a>
+                            <a routerLink="/app/finance-facturacion" class="btn btn-sm btn-link">Ver Facturación <i class="bi bi-arrow-right vm"></i></a>
                         </div>
                     </div>
                 </div>
@@ -1304,18 +1305,23 @@ interface HomeCreditChartRow {
     ],
     schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
-export class DashboardComponent implements OnInit, AfterViewInit {
+export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     @ViewChild("choices") mySelect?: ElementRef<HTMLSelectElement>;
     @ViewChild("choices2") mySelect2?: ElementRef<HTMLSelectElement>;
+
+    private readonly financeBillingApi = inject(FinanceBillingApiService);
+    private accountsUnsubscribe: (() => void) | null = null;
 
     completedProjects = 24;
     inProgressProjects = 9;
     delayedProjects = 3;
     financeAccounts: FinanceAccount[] = [];
     homeCreditClients: CrmClientRecord[] = [];
-    pendingInvoiceEquipmentCount = 0;
-    readyToInvoiceEquipmentCount = 0;
-    inProcessEquipmentCount = 0;
+    // Cartera real desde GET /finance/portfolio (antes: contadores "para
+    // facturar" leídos del store local de equipos del CRM).
+    portfolioPendingCount = 0;
+    portfolioOverdueCount = 0;
+    portfolioBalanceTotal = 0;
 
     selectedCommercialPeriod: CommercialPeriod = "mensual";
     readonly commercialPeriodOptions: Array<{ value: CommercialPeriod; label: string }> = [
@@ -1542,7 +1548,12 @@ export class DashboardComponent implements OnInit, AfterViewInit {
         this.loadLastViewedProjectFromStorage();
         this.loadFinanceAccounts();
         this.loadHomeCreditClients();
-        this.loadEquipmentPendingInvoiceKpis();
+        void this.loadPortfolioKpis();
+    }
+
+    ngOnDestroy(): void {
+        this.accountsUnsubscribe?.();
+        this.accountsUnsubscribe = null;
     }
 
     ngAfterViewInit() {
@@ -1650,18 +1661,31 @@ export class DashboardComponent implements OnInit, AfterViewInit {
         this.homeCreditClients = getCrmClients().filter((client) => client.credito.enabled && client.credito.creditLimit > 0);
     }
 
-    private loadEquipmentPendingInvoiceKpis() {
-        const allItems = getAllProspectEquipmentItems();
-        const pendingItems = allItems.filter((item) => item.repairStatus !== "entregado");
-        const readyCount = pendingItems.filter((item) => item.repairStatus === "listo-entrega").length;
-
-        this.pendingInvoiceEquipmentCount = pendingItems.length;
-        this.readyToInvoiceEquipmentCount = readyCount;
-        this.inProcessEquipmentCount = Math.max(0, pendingItems.length - readyCount);
+    /**
+     * Contadores de cartera reales desde GET /finance/portfolio: facturas
+     * pendientes, vencidas (overdue calculado en el servidor) y saldo total.
+     * Antes se leían del store local de equipos del CRM.
+     */
+    private async loadPortfolioKpis(): Promise<void> {
+        try {
+            const items = await firstValueFrom(this.financeBillingApi.getPortfolio());
+            this.portfolioPendingCount = items.length;
+            this.portfolioOverdueCount = items.filter((item) => item.overdue).length;
+            this.portfolioBalanceTotal = items.reduce((total, item) => total + (Number(item.balanceAmount) || 0), 0);
+        } catch {
+            // Sin servidor los contadores quedan en 0: no se inventan números.
+            this.portfolioPendingCount = 0;
+            this.portfolioOverdueCount = 0;
+            this.portfolioBalanceTotal = 0;
+        }
     }
 
     private loadFinanceAccounts() {
         this.financeAccounts = FinanceAccountsStore.getAccounts();
+        this.accountsUnsubscribe = FinanceAccountsStore.subscribe(() => {
+            this.financeAccounts = FinanceAccountsStore.getAccounts();
+        });
+        void FinanceAccountsStore.ensureLoaded();
     }
 
     get primaryFinanceAccount(): FinanceAccount | null {

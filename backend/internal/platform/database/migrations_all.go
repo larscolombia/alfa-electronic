@@ -2,7 +2,9 @@ package database
 
 func migrationStatements() []string {
 	statements := make([]string, 0, 64)
+	statements = append(statements, migrationStatementsUsers()...)
 	statements = append(statements, migrationStatementsACLAndSecurity()...)
+	statements = append(statements, migrationStatementsACLHardening()...)
 	statements = append(statements, migrationStatementsHR()...)
 	statements = append(statements, migrationStatementsCRMCatalogsAndProspects()...)
 	statements = append(statements, migrationStatementsCRMEquipmentAndQuotes()...)
@@ -23,5 +25,9 @@ func migrationStatements() []string {
 	statements = append(statements, migrationStatementsPurchaseLinesEquipment()...)
 	statements = append(statements, migrationStatementsRemissions()...)
 	statements = append(statements, migrationStatementsServerPersistence()...)
+	statements = append(statements, migrationStatementsWorktime()...)
+	statements = append(statements, migrationStatementsFinanceGaps()...)
+	statements = append(statements, migrationStatementsFinance5b()...)
+	statements = append(statements, migrationStatementsEmails5c()...)
 	return statements
 }

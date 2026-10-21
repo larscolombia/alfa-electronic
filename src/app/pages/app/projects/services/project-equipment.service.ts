@@ -323,6 +323,7 @@ export class ProjectEquipmentService {
         repairStatus,
         repairStatusLabel: getProspectEquipmentRepairStatusLabel(repairStatus),
         repairStatusUpdatedAt: item.repairStatusUpdatedAt ?? '',
+        priorityBilling: Boolean(item.priorityBilling),
       };
 
       const option = this.toOption(summary);

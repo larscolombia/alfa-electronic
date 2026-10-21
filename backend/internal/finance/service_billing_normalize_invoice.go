@@ -30,6 +30,25 @@ func normalizeInvoice(input Invoice) (Invoice, error) {
 	n.IssueDate = strings.TrimSpace(n.IssueDate)
 	n.DueDate = strings.TrimSpace(n.DueDate)
 	n.Status = InvoiceStatus(normalizeInvoiceStatus(string(n.Status)))
+	// Fase 5b: número externo Oasis, tipo de documento y cotización de origen.
+	n.ExternalNumber = strings.TrimSpace(n.ExternalNumber)
+	n.SourceQuoteID = strings.TrimSpace(n.SourceQuoteID)
+	rawDocumentType := strings.TrimSpace(n.DocumentType)
+	n.DocumentType = normalizeInvoiceDocumentType(rawDocumentType)
+
+	if len(n.ExternalNumber) > 80 {
+		return Invoice{}, errInvoiceExternalNumberInvalid
+	}
+	if n.DocumentType == "" {
+		if rawDocumentType != "" {
+			return Invoice{}, errInvoiceDocumentTypeInvalid
+		}
+		n.DocumentType = "factura"
+	}
+	// El bloqueo se deriva del estado: una factura Enviada/Pagada/Pago parcial
+	// queda emitida y no tiene reversa (solo nota crédito). El cliente no
+	// puede desbloquear por payload.
+	n.Locked = isInvoiceStatusLocked(n.Status)
 
 	if n.ClientID == "" || n.ClientName == "" {
 		return Invoice{}, errInvoiceClientRequired
@@ -169,8 +188,35 @@ func normalizeInvoiceSource(value string) string {
 		return "manual"
 	case "timesheet":
 		return "timesheet"
+	case "quote":
+		// Fase 5b: factura generada por conversión de una cotización aprobada.
+		return "quote"
 	default:
 		return ""
+	}
+}
+
+// normalizeInvoiceDocumentType valida el tipo de documento: 'factura' (por
+// defecto) o 'nota_credito' (Fase 5b).
+func normalizeInvoiceDocumentType(value string) string {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "", "factura":
+		return "factura"
+	case "nota_credito", "nota-credito", "notacredito":
+		return "nota_credito"
+	default:
+		return ""
+	}
+}
+
+// isInvoiceStatusLocked deriva la bandera de bloqueo: los estados que
+// implican factura emitida bloquean la edición y la eliminación.
+func isInvoiceStatusLocked(status InvoiceStatus) bool {
+	switch status {
+	case InvoiceStatusSent, InvoiceStatusPaid, InvoiceStatusPartial:
+		return true
+	default:
+		return false
 	}
 }
 

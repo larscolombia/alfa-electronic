@@ -3,6 +3,8 @@ package equipment
 import (
 	"database/sql"
 	"errors"
+
+	"pika.software.net.co/backend/internal/platform/mailer"
 )
 
 const equipmentRecordSelectColumns = `id, prospect_id, prospect_name,
@@ -37,6 +39,11 @@ var repairStatusLabels = map[string]string{
 type Service struct {
 	db            *sql.DB
 	insightClient *InsightClient
+
+	// Fase 5c: outbox de correos transaccionales (acuse de recepción). Se
+	// inyecta con SetEmailOutbox desde main.go; nil significa que el envío no
+	// está cableado y SendReceptionAck lo reporta en vez de fingir éxito.
+	emailOutbox *mailer.Outbox
 }
 
 func NewService(db *sql.DB, insightClient *InsightClient) *Service {

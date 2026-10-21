@@ -8,6 +8,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"pika.software.net.co/backend/internal/platform/company"
+	"pika.software.net.co/backend/internal/platform/mailer"
 )
 
 var errIndustrialOverrideRequired = errors.New("autorizacion de jefe obligatoria para equipos no industriales con costo <= 2M")
@@ -26,6 +27,10 @@ func (h *Handler) RegisterRoutes(group *echo.Group) {
 	group.POST("/records", h.upsertRecord)
 	group.PUT("/records/:recordID", h.upsertRecord)
 	group.POST("/records/:recordID/finalize", h.finalizeRecord)
+	// Fase 5c: acuse de recepción por correo. Endpoint propio (no un efecto de
+	// finalize) para que la ausencia de correo del cliente sea un error visible
+	// en la UI en vez de un acuse que nadie recibió.
+	group.POST("/records/:recordID/reception-ack", h.sendReceptionAck)
 	group.PATCH("/records/:recordID/archive", h.archiveRecord)
 	group.POST("/records/:recordID/restore", h.restoreRecord)
 
@@ -123,6 +128,41 @@ func (h *Handler) finalizeRecord(c echo.Context) error {
 	return c.JSON(http.StatusOK, item)
 }
 
+// sendReceptionAck (Fase 5c) encola el acuse de recepción por correo.
+//
+// 422 cuando el cliente no tiene correo en el registro: la recepción sigue
+// siendo válida y ya quedó persistida, pero la UI debe decir que el acuse no
+// salió en vez de darlo por enviado.
+func (h *Handler) sendReceptionAck(c echo.Context) error {
+	companyID := company.IDFromRequest(c)
+	recordID := c.Param("recordID")
+
+	message, err := h.service.SendReceptionAck(companyID, recordID, currentUserEmail(c))
+	if err != nil {
+		switch {
+		case errors.Is(err, errRecordIDRequired):
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+		case errors.Is(err, errRecordNotFound):
+			return c.JSON(http.StatusNotFound, map[string]string{"error": err.Error()})
+		case errors.Is(err, errRecordEmailNotAvailable):
+			return c.JSON(http.StatusUnprocessableEntity, map[string]string{"error": err.Error()})
+		default:
+			return mailer.EnqueueErrorResponse(c, err)
+		}
+	}
+
+	return c.JSON(http.StatusCreated, mailer.EnqueueResult(message))
+}
+
+// currentUserEmail lee la identidad real del JWT (Fase 2b) para el rastro de
+// quién disparó el correo.
+func currentUserEmail(c echo.Context) string {
+	if email, ok := c.Get("auth.email").(string); ok && strings.TrimSpace(email) != "" {
+		return strings.TrimSpace(email)
+	}
+	return "sistema"
+}
+
 func (h *Handler) archiveRecord(c echo.Context) error {
 	companyID := company.IDFromRequest(c)
 	recordID := c.Param("recordID")
@@ -177,6 +217,8 @@ func (h *Handler) listItems(c echo.Context) error {
 		IncludeArchived: parseBool(c.QueryParam("includeArchived")),
 		Identifier:      identifier,
 		AssignedToID:    strings.TrimSpace(c.QueryParam("assignedToId")),
+		// Fase 5c: campanita de facturación urgente (GET /crm-equipment/items?priorityBilling=true).
+		PriorityBilling: parseBool(c.QueryParam("priorityBilling")),
 	})
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "no se pudieron cargar los items de equipos"})

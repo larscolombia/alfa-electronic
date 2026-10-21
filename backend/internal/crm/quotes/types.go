@@ -46,8 +46,12 @@ type Quote struct {
 	PurchaseOrderFileDataURL string   `json:"purchaseOrderFileDataUrl"`
 	PurchaseOrderDate        string   `json:"purchaseOrderDate"`
 	PurchaseOrderUploadedAt  string   `json:"purchaseOrderUploadedAt"`
-	CreatedAt                string   `json:"createdAt"`
-	UpdatedAt                string   `json:"updatedAt"`
+	// Fase 5b: marca de cotización facturada (la escribe el servicio de
+	// finance al convertir; aquí es de solo lectura).
+	InvoiceID  *int64 `json:"invoiceId"`
+	InvoicedAt string `json:"invoicedAt"`
+	CreatedAt  string `json:"createdAt"`
+	UpdatedAt  string `json:"updatedAt"`
 }
 
 type ListQuotesQuery struct {

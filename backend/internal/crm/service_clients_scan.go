@@ -25,6 +25,11 @@ func scanClient(scanner interface{ Scan(dest ...any) error }) (Client, error) {
 		&item.Country,
 		&item.City,
 		&item.Address,
+		&item.DV,
+		&item.PostalCode,
+		&item.BillingEmail,
+		&item.GrandContributor,
+		&item.IDType,
 		&item.Credito.Enabled,
 		&item.Credito.CreditLimit,
 		&item.Credito.Consumed,
@@ -38,6 +43,9 @@ func scanClient(scanner interface{ Scan(dest ...any) error }) (Client, error) {
 	item.Creado = createdAt.UTC().Format("2006-01-02")
 	if lastPaymentDate.Valid {
 		item.Credito.LastPaymentDate = lastPaymentDate.Time.UTC().Format("2006-01-02")
+	}
+	if item.IDType == "" {
+		item.IDType = "NIT"
 	}
 
 	return item, nil
