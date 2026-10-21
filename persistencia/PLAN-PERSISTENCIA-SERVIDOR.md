@@ -18,9 +18,25 @@ Versión: v2 — incorpora Recepción (Fase 8B) y Despacho/Facturación (Fase 5,
 | 5a — finanzas sin mock (caja menor, garantías, retenciones, cartera) | `36b5bb90` | build/vet 0, 6 tests finance con BD real, `tsc` 0, greps de mocks y `setItem` vacíos, prueba de fuego propia cross-session + reinicio | ✅ |
 | 5b — facturación como módulo | `5a4ea20e` | build/vet 0, tests finance+crm con BD real, `tsc` 0, fire test propio: Enviado→locked, PUT/DELETE→409, NC ajusta saldo, sobrevive reinicio | ✅ |
 | 5c — correos con outbox, puente pago→despacho, campanita | `4f437c22` | build/vet 0, tests mailer+remissions+crm+finance con BD real, `tsc` 0, fire test propio sin SMTP: `desactivado` visible, 401 sin token, contra-entrega→409 hasta factura Pagada | ✅ |
-| 6-9 | pendientes | — | — |
+| docs — plan, auditorías y evidencia al repo | `17af3ea6` | — | ✅ |
+| extra — autor de la acción comercial desde la sesión | `e7f17e91` | — | ✅ |
+| fix(hr) — `CommonModule` faltante rompía `ng build` en HEAD | `a0440452` | `ng build` pasa de NG8002 a 0 errores | ✅ |
+| 6 (parcial) — consecutivos generados en el servidor | `2458ccc7` | build/vet 0, `go test ./...` con `RUN_DB_TESTS=1` (13 paquetes ok, concurrencia 8 goroutines), `ng build` 0, fire test HTTP real: 8 POST concurrentes → `[2..9]` sin duplicados, cotización con código vacío → `COT-2026-001` | ✅ |
+| 6 (resto) - 9 | pendientes | — | — |
 
-Todo lo commiteado está subido a `origin/cambios-Anderson` (HEAD remoto `4f437c22`).
+Todo lo commiteado está subido a `origin/cambios-Anderson` (último push de código `2458ccc7`).
+
+**Abierto de la Fase 6:** sólo se hizo el ítem 3 (consecutivos). Los prefijos comerciales siguen en
+localStorage (`company-commercial-settings.store.ts`) y **nada escribe `company_settings`**, así que
+el servidor cae al fallback `COT` / `FAC-<año>-` y un prefijo personalizado en la UI no se aplica.
+Ese puente es el ítem 2 de la Fase 6 y conviene hacerlo antes de demostrar cotizaciones. Pendientes
+también: ítem 1 (migración de `company_settings` por ámbito), ítem 2 (los 6 stores a la API) e
+ítem 4 (`personalization.component.ts`).
+
+**Ojo con los cambios de contrato para quien trabaje sobre esta rama:** `normalizeInvoice` ahora
+acepta `sequenceNumber == 0` (= asignación automática), `POST /finance/invoices` ya no exige un
+número mayor que cero, `UpsertQuote` acepta `codigo` vacío, y `nextInvoiceSequenceTx` desapareció
+(su lugar lo ocupa `allocateInvoiceSequence`). `Migrate()` ahora toma `pg_advisory_lock`.
 
 **Abierto de 5c:** el envío SMTP real nunca se probó contra un servidor de correo (solo `Sender`
 falso en tests); la UI de la 5c no se verificó en navegador; `GET /emails` con rol no-admin no se
