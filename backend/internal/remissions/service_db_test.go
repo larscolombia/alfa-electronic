@@ -45,9 +45,85 @@ func testCompany(t *testing.T, db *sql.DB, name string) string {
 	t.Cleanup(func() {
 		db.Exec(`DELETE FROM remissions WHERE company_id = $1`, companyID)
 		db.Exec(`DELETE FROM remission_sequences WHERE company_id = $1`, companyID)
+		// Fase 5c: el puente pago→despacho lee crm_clients y finance_invoices,
+		// y el outbox también se siembra desde este paquete.
+		db.Exec(`DELETE FROM finance_invoices WHERE company_id = $1`, companyID)
+		db.Exec(`DELETE FROM crm_clients WHERE company_id = $1`, companyID)
+		db.Exec(`DELETE FROM email_outbox WHERE company_id = $1`, companyID)
 	})
 	return companyID
 }
+
+// adminActor es un actor con rol admin del JWT: el único que puede autorizar un
+// override de la puerta de pago.
+func adminActor() Actor {
+	return Actor{Email: "admin@qa.local", Role: "admin"}
+}
+
+// operatorActor es un actor sin privilegios: la puerta lo rechaza.
+func operatorActor() Actor {
+	return Actor{Email: "operario@qa.local", Role: "tecnico"}
+}
+
+// deliver es el atajo de los tests para "marcar entregado" sin override.
+func deliver(s *Service, companyID, id string, actor Actor) (*Remission, error) {
+	return s.UpdateDeliveryStatus(companyID, id, DeliveryStatusRequest{DeliveryStatus: "entregado"}, actor)
+}
+
+// seedCreditClient registra un cliente CON crédito habilitado (30/45 días).
+//
+// Es necesario en los tests de transiciones porque la Fase 5c añadió la puerta
+// de pago: sin fila en crm_clients el JOIN resuelve credit_enabled=false y la
+// puerta aplica, así que estos tests (que prueban transiciones, no la regla de
+// pago) quedarían bloqueados por una regla que no están ejerciendo.
+func seedCreditClient(t *testing.T, db *sql.DB, companyID, nit, name string) {
+	t.Helper()
+	_, err := db.Exec(`
+INSERT INTO crm_clients (company_id, id, nombre, empresa, nit, estado, credit_enabled, soft_delete, created_at, updated_at)
+VALUES ($1, $2, $3, $3, $4, 'Activo', true, false, NOW(), NOW())`,
+		companyID, fmt.Sprintf("cli-%s-%d", name, time.Now().UnixNano()), name, nit)
+	if err != nil {
+		t.Fatalf("sembrar cliente con credito: %v", err)
+	}
+}
+
+// seedInvoice inserta una factura de prueba y devuelve su id.
+//
+// Los casts explícitos son necesarios: $3 aparece en contextos NUMERIC y en un
+// CASE con rama entera, y Postgres no logra deducir un tipo único
+// ("inconsistent types deduced for parameter $3").
+func seedInvoice(t *testing.T, db *sql.DB, companyID, clientID, status string, total float64) int64 {
+	t.Helper()
+	var id int64
+	err := db.QueryRow(`
+INSERT INTO finance_invoices (
+	company_id, client_id, client_name, reference_code, document_type,
+	issue_date, currency_code, subtotal, tax_total, total, paid_amount,
+	balance_amount, status, soft_delete, created_at, updated_at
+) VALUES ($1, $2, 'Cliente QA', 'FV-QA-' || floor(random()*100000)::int::text, 'factura',
+	CURRENT_DATE, 'COP', $3::numeric, 0::numeric, $3::numeric,
+	CASE WHEN $4::text = 'Pagado' THEN $3::numeric ELSE 0::numeric END,
+	CASE WHEN $4::text = 'Pagado' THEN 0::numeric ELSE $3::numeric END,
+	$4::text, false, NOW(), NOW())
+RETURNING id`, companyID, clientID, total, status).Scan(&id)
+	if err != nil {
+		t.Fatalf("sembrar factura: %v", err)
+	}
+	return id
+}
+
+func setInvoiceStatus(t *testing.T, db *sql.DB, companyID string, invoiceID int64, status string) {
+	t.Helper()
+	if _, err := db.Exec(
+		`UPDATE finance_invoices SET status = $3, updated_at = NOW() WHERE company_id = $1 AND id = $2`,
+		companyID, invoiceID, status,
+	); err != nil {
+		t.Fatalf("cambiar estado de factura: %v", err)
+	}
+}
+
+// invoiceIDPtr existe porque `InvoiceID *int64` no se puede escribir como literal.
+func invoiceIDPtr(value int64) *int64 { return &value }
 
 func TestCreateAndGetIntegration(t *testing.T) {
 	db := openTestDB(t)
@@ -142,11 +218,15 @@ func TestUpdatePreservesStatusesIntegration(t *testing.T) {
 	s := NewService(db)
 	companyID := testCompany(t, db, "update")
 
+	// Cliente a crédito: este test prueba que Update preserva los estados, no
+	// la puerta de pago de la Fase 5c (esa tiene su propio test).
+	seedCreditClient(t, db, companyID, "900123456", "Cliente Demo")
+
 	r, err := s.Create(companyID, sampleRequest(), "tester")
 	if err != nil {
 		t.Fatalf("Create: %v", err)
 	}
-	if _, err := s.UpdateDeliveryStatus(companyID, r.ID, "entregado"); err != nil {
+	if _, err := deliver(s, companyID, r.ID, operatorActor()); err != nil {
 		t.Fatalf("UpdateDeliveryStatus: %v", err)
 	}
 
@@ -172,25 +252,29 @@ func TestDeliveryStatusTransitionsIntegration(t *testing.T) {
 	s := NewService(db)
 	companyID := testCompany(t, db, "delivery")
 
+	seedCreditClient(t, db, companyID, "900123456", "Cliente Demo")
+
 	r, err := s.Create(companyID, sampleRequest(), "tester")
 	if err != nil {
 		t.Fatalf("Create: %v", err)
 	}
 	for _, status := range []string{"", "despachado", "ENTREGADO"} {
-		if _, err := s.UpdateDeliveryStatus(companyID, r.ID, status); err == nil {
+		req := DeliveryStatusRequest{DeliveryStatus: status}
+		if _, err := s.UpdateDeliveryStatus(companyID, r.ID, req, operatorActor()); err == nil {
 			t.Errorf("esperaba error para estado %q", status)
 		}
 	}
-	if _, err := s.UpdateDeliveryStatus(companyID, r.ID, "entregado"); err != nil {
+	if _, err := deliver(s, companyID, r.ID, operatorActor()); err != nil {
 		t.Fatalf("pendiente->entregado: %v", err)
 	}
-	if _, err := s.UpdateDeliveryStatus(companyID, r.ID, "entregado"); err != nil {
+	if _, err := deliver(s, companyID, r.ID, operatorActor()); err != nil {
 		t.Fatalf("entregado->entregado: %v", err)
 	}
-	if _, err := s.UpdateDeliveryStatus(companyID, r.ID, "pendiente"); err == nil {
+	revert := DeliveryStatusRequest{DeliveryStatus: "pendiente"}
+	if _, err := s.UpdateDeliveryStatus(companyID, r.ID, revert, operatorActor()); err == nil {
 		t.Error("esperaba error al revertir entregado a pendiente")
 	}
-	if _, err := s.UpdateDeliveryStatus(companyID, "rem-inexistente", "entregado"); err == nil {
+	if _, err := deliver(s, companyID, "rem-inexistente", operatorActor()); err == nil {
 		t.Error("esperaba error para remision inexistente")
 	}
 }
@@ -201,6 +285,8 @@ func TestGetAndDeleteAreCompanyScopedIntegration(t *testing.T) {
 	companyA := testCompany(t, db, "scopea")
 	companyB := testCompany(t, db, "scopeb")
 
+	seedCreditClient(t, db, companyA, "900123456", "Cliente Demo")
+
 	r, err := s.Create(companyA, sampleRequest(), "tester")
 	if err != nil {
 		t.Fatalf("Create: %v", err)
@@ -209,7 +295,7 @@ func TestGetAndDeleteAreCompanyScopedIntegration(t *testing.T) {
 	if _, err := s.Get(companyB, r.ID); err == nil {
 		t.Error("Get en otra empresa debe fallar")
 	}
-	if _, err := s.UpdateDeliveryStatus(companyB, r.ID, "entregado"); err == nil {
+	if _, err := deliver(s, companyB, r.ID, operatorActor()); err == nil {
 		t.Error("UpdateDeliveryStatus en otra empresa debe fallar")
 	}
 	if err := s.Delete(companyB, r.ID); err == nil {

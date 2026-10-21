@@ -8,6 +8,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"pika.software.net.co/backend/internal/platform/company"
+	"pika.software.net.co/backend/internal/platform/mailer"
 )
 
 type Handler struct {
@@ -24,6 +25,10 @@ func (h *Handler) RegisterRoutes(group *echo.Group) {
 	group.GET("/quotes/:quoteID", h.getQuote)
 	group.PUT("/quotes/:quoteID", h.updateQuote)
 	group.DELETE("/quotes/:quoteID", h.deleteQuote)
+	// Fase 5c: envío real del correo de la cotización. Es un paso separado del
+	// guardado a propósito — guardar no debe fallar por falta de correo, pero
+	// la ausencia de correo tampoco puede reportarse como envío exitoso.
+	group.POST("/quotes/:quoteID/send", h.sendQuoteEmail)
 }
 
 func (h *Handler) RegisterPublicRoutes(group *echo.Group) {
@@ -176,6 +181,41 @@ func (h *Handler) deleteQuote(c echo.Context) error {
 	}
 
 	return c.NoContent(http.StatusNoContent)
+}
+
+// sendQuoteEmail es el disparador de la Fase 5c para "Guardar y enviar".
+//
+// Devuelve el estado real de la fila del outbox. Ojo con el contrato: encolar
+// NO es enviar, así que `delivered` sale false y `emailStatus` dice 'pendiente'
+// (hay SMTP, saldrá en el próximo barrido del worker) o 'desactivado' (no hay
+// SMTP configurado, el correo no va a salir). La UI usa eso para no mostrar un
+// éxito falso.
+func (h *Handler) sendQuoteEmail(c echo.Context) error {
+	companyID := company.IDFromRequest(c)
+	quoteID := strings.TrimSpace(c.Param("quoteID"))
+
+	message, err := h.service.SendQuoteEmail(companyID, quoteID, currentUserEmail(c))
+	if err != nil {
+		switch {
+		case errors.Is(err, errQuoteIDRequired):
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+		case errors.Is(err, errQuoteNotFound):
+			return c.JSON(http.StatusNotFound, map[string]string{"error": "cotizacion no encontrada"})
+		default:
+			return mailer.EnqueueErrorResponse(c, err)
+		}
+	}
+
+	return c.JSON(http.StatusCreated, mailer.EnqueueResult(message))
+}
+
+// currentUserEmail lee la identidad real del JWT (Fase 2b) para el rastro de
+// quién disparó el correo.
+func currentUserEmail(c echo.Context) string {
+	if email, ok := c.Get("auth.email").(string); ok && strings.TrimSpace(email) != "" {
+		return strings.TrimSpace(email)
+	}
+	return "sistema"
 }
 
 func (h *Handler) updateDecisionByToken(c echo.Context) error {

@@ -149,6 +149,10 @@ type ListRecordsQuery struct {
 	IncludeArchived bool
 	Identifier      string
 	AssignedToID    string
+	// Fase 5c: restringe a registros con al menos un ítem marcado para
+	// facturación urgente. Es un filtro de registro (EXISTS sobre el JSONB);
+	// el recorte a los ítems marcados lo hace ListItems.
+	PriorityBilling bool
 }
 
 type ListItemsQuery struct {
@@ -158,6 +162,11 @@ type ListItemsQuery struct {
 	IncludeArchived bool
 	Identifier      string
 	AssignedToID    string
+	// Fase 5c: campanita de facturación urgente. Con true el endpoint devuelve
+	// SOLO los ítems marcados con priorityBilling, no todos los ítems de los
+	// registros que tengan alguno marcado — que es el conteo que el dashboard
+	// de facturación muestra en la campanita.
+	PriorityBilling bool
 }
 
 type InsightQuery struct {

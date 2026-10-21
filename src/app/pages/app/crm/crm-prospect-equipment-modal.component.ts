@@ -4,7 +4,7 @@ import { FormsModule } from "@angular/forms";
 import { Router } from "@angular/router";
 import { BrowserMultiFormatReader } from "@zxing/browser";
 import { forkJoin, of } from "rxjs";
-import { catchError } from "rxjs/operators";
+import { catchError, take } from "rxjs/operators";
 
 import {
     EquipmentLocationRecord,
@@ -40,6 +40,7 @@ import { CrmEquipmentApiService, EquipmentTechnicianOption } from "../../../serv
 import { CrmProspectContact, CrmProspectRecord, CrmProspectsApiService } from "../../../services/crm-prospects-api.service";
 import { AuthService } from "../../../services/auth.service";
 import { FormDraftService } from "../../../services/form-draft.service";
+import { EmailsApiService } from "../../../services/emails-api.service";
 import { resolveApiBaseUrl } from "../../../services/api-base-url.util";
 import { backupAvailableForModel, findPreviousReception, isUnderLegalWarranty, warrantyMonthsRemaining } from "./warranty.logic";
 
@@ -1566,6 +1567,8 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
         private readonly authService: AuthService,
         private readonly formDraftService: FormDraftService,
         private readonly changeDetectorRef: ChangeDetectorRef,
+        // Fase 5c: acuse de recepción por correo.
+        private readonly emailsApi: EmailsApiService,
     ) { }
 
     get currentWizardStep(): WizardStepDefinition {
@@ -2129,6 +2132,12 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
                 this.crmEquipmentApi.finalizeRecord(savedRecord.id).subscribe({
                     next: () => {
                         this.finalizeAfterBackendSave(savedRecord, openPrintAfterSave);
+                        // Fase 5c: acuse de recepción por correo, con los
+                        // identificadores de los equipos. Es un paso aparte del
+                        // finalize porque la recepción ya es un hecho válido
+                        // aunque el cliente no tenga correo — pero la ausencia de
+                        // correo se muestra, no se esconde.
+                        this.sendReceptionAckEmail(savedRecord.id);
                     },
                     error: (error: Error) => {
                         this.validationMessage = error?.message || "No se pudo finalizar la recepción de equipos.";
@@ -2139,6 +2148,47 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
                 this.validationMessage = "No se pudo guardar el registro en la base de datos. Intenta nuevamente.";
             },
         });
+    }
+
+    /**
+     * Dispara el acuse de recepción y refleja el estado REAL del correo.
+     *
+     * No sobrescribe `validationMessage` si la recepción salió bien y sólo falló
+     * el correo: se anexa, porque ambos hechos importan. Y nunca reporta el
+     * acuse como enviado cuando el servidor no tiene SMTP configurado.
+     */
+    private sendReceptionAckEmail(recordId: string): void {
+        this.emailsApi.sendReceptionAck(recordId).pipe(take(1)).subscribe({
+            next: (result) => {
+                if (result.delivered) {
+                    this.appendReceptionNotice(`Acuse de recepción enviado a ${result.toEmail}.`);
+                } else if (result.emailStatus === "desactivado") {
+                    this.appendReceptionNotice(
+                        `El acuse de recepción NO se envió al cliente: ${result.warning ?? "el servidor no tiene SMTP configurado"}. ` +
+                        `Quedó registrado en el outbox de correos.`,
+                    );
+                } else {
+                    this.appendReceptionNotice(
+                        `Acuse de recepción en cola para ${result.toEmail}; saldrá en el próximo envío del servidor.`,
+                    );
+                }
+            },
+            error: (error: Error) => {
+                // 422 = el cliente no tiene correo registrado. La recepción sí
+                // quedó guardada, pero el cliente no recibió comprobante y el
+                // usuario debe saberlo (ese acuse es la prueba en caso de
+                // disputa por un equipo o accesorio faltante).
+                this.appendReceptionNotice(
+                    `La recepción quedó guardada, pero el acuse NO se envió: ${error?.message || "el cliente no tiene correo registrado"}.`,
+                );
+            },
+        });
+    }
+
+    private appendReceptionNotice(notice: string): void {
+        const current = String(this.validationMessage ?? "").trim();
+        this.validationMessage = current ? `${current} ${notice}` : notice;
+        this.changeDetectorRef.detectChanges();
     }
 
     trackByCompanyOption(_: number, option: CompanyCatalogOption): string {

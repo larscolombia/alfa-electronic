@@ -3,6 +3,8 @@ package quotes
 import (
 	"database/sql"
 	"errors"
+
+	"pika.software.net.co/backend/internal/platform/mailer"
 )
 
 const (
@@ -38,6 +40,11 @@ var (
 
 type Service struct {
 	db *sql.DB
+
+	// Fase 5c: outbox de correos transaccionales. Se inyecta con
+	// SetEmailOutbox desde main.go; nil significa que el envío de correos no
+	// está cableado y SendQuoteEmail lo reporta en vez de fingir éxito.
+	emailOutbox *mailer.Outbox
 }
 
 func NewService(db *sql.DB) *Service {

@@ -26,6 +26,31 @@ type Remission struct {
 	CreatedAt       string          `json:"createdAt"`
 	CreatedBy       string          `json:"createdBy"`
 	Status          string          `json:"status"`
+
+	// ── Fase 5c: puente pago → despacho ──────────────────────────────────
+	// La regla del cliente es POR MODALIDAD, no universal: "despachos
+	// Servientrega son solo los clientes créditos... se despacha de una...
+	// si son contra entregas, se quedan ahí empacaditos en la oficina hasta
+	// que el cliente paga primero".
+
+	// InvoiceID es la factura que debe estar Pagada antes de despachar.
+	InvoiceID *int64 `json:"invoiceId"`
+	// PaymentOverride es el escape de admin para saltar la puerta. Persistido
+	// con quién y cuándo porque salta un control de plata.
+	PaymentOverride   bool   `json:"paymentOverride"`
+	PaymentOverrideBy string `json:"paymentOverrideBy"`
+	PaymentOverrideAt string `json:"paymentOverrideAt"`
+
+	// Campos COMPUTADOS (JOINs, no tienen columna propia). La UI los necesita
+	// para mostrar "retenida por pago" con el estado real de la factura en vez
+	// de recalcular la regla en el navegador, que es justo lo que permitía
+	// despachar sin pagar.
+	InvoiceStatus     string `json:"invoiceStatus"`
+	InvoiceReference  string `json:"invoiceReference"`
+	CreditClient      bool   `json:"creditClient"`
+	PaymentGate       bool   `json:"paymentGate"`
+	PaymentHeld       bool   `json:"paymentHeld"`
+	PaymentHeldReason string `json:"paymentHeldReason"`
 }
 
 type RemissionItem struct {
@@ -52,4 +77,15 @@ type UpsertRemissionRequest struct {
 	PurchaseOrder  string          `json:"purchaseOrder"`
 	YoutubeLink    string          `json:"youtubeLink"`
 	DispatchPhotos []Attachment    `json:"dispatchPhotos"`
+	// Fase 5c: factura que debe estar Pagada antes de despachar (puente
+	// pago→despacho). nil/0 = sin vincular.
+	InvoiceID *int64 `json:"invoiceId"`
+}
+
+// DeliveryStatusRequest es el cuerpo de PATCH .../delivery-status.
+type DeliveryStatusRequest struct {
+	DeliveryStatus string `json:"deliveryStatus"`
+	// PaymentOverride salta la puerta de pago. Sólo la honra un rol admin del
+	// JWT, y queda grabada con quién y cuándo.
+	PaymentOverride bool `json:"paymentOverride"`
 }
