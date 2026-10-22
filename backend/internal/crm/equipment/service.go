@@ -29,7 +29,6 @@ var repairStatusLabels = map[string]string{
 	"pedir-repuestos":     "Pedir componentes",
 	"esperando-proveedor": "Esperando proveedor",
 	"reparacion":          "En reparación",
-	"pruebas":             "Pruebas QA",
 	"garantia":            "Garantía",
 	"prestamo":            "Material en préstamo",
 	"listo-entrega":       "Listo para entrega",

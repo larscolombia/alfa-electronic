@@ -31,8 +31,7 @@ func TestCanTransitionRules(t *testing.T) {
 		{"por-cotizar a pedir-reupertino (OC vinculada)", "por-cotizar", "pedir-reupertino", true},
 		{"pedir-reupertino a esperando-proveedor", "pedir-reupertino", "esperando-proveedor", true},
 		{"esperando-proveedor a reparacion (llego el material)", "esperando-proveedor", "reparacion", true},
-		{"reparacion a pruebas", "reparacion", "pruebas", true},
-		{"pruebas a listo-entrega (cerrar pruebas)", "pruebas", "listo-entrega", true},
+		{"reparacion a listo-entrega (cierre con informe de intervencion)", "reparacion", "listo-entrega", true},
 		{"listo-entrega a entregado (despacho)", "listo-entrega", "entregado", true},
 		{"entregado a listo-entrega (cancelacion de despacho)", "entregado", "listo-entrega", true},
 
@@ -53,8 +52,8 @@ func TestCanTransitionRules(t *testing.T) {
 
 		// Saltos largos: antes nada los impedía, ahora son ilegales.
 		{"recibido no salta a entregado", "recibido", "entregado", false},
-		{"recibido no salta a pruebas", "recibido", "pruebas", false},
 		{"diagnostico no salta directo a listo-entrega", "diagnostico", "listo-entrega", false},
+		{"reparacion no salta directo a entregado (va por listo)", "reparacion", "entregado", false},
 		{"reparacion no cierra directo en garantia", "reparacion", "garantia", false},
 		{"entregado no regresa directo a reparacion (va por garantia)", "entregado", "reparacion", false},
 

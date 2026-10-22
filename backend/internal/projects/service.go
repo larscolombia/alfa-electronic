@@ -42,7 +42,6 @@ var allowedProjectStatuses = map[string]struct{}{
 	"pedir-repuestos":           {},
 	"esperando-proveedor":       {},
 	"reparacion":                {},
-	"pruebas":                   {},
 	"garantia":                  {},
 	"prestamo":                  {},
 	"listo-entrega":             {},
@@ -478,7 +477,6 @@ var defaultSLAConfig = []SLAConfig{
 	{Stage: "diagnostico", GreenDays: 2, YellowDays: 2},
 	{Stage: "por-cotizar", GreenDays: 2, YellowDays: 1},
 	{Stage: "reparacion", GreenDays: 3, YellowDays: 1},
-	{Stage: "pruebas", GreenDays: 1, YellowDays: 1},
 	{Stage: "listo-entrega", GreenDays: 1, YellowDays: 1},
 }
 

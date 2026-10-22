@@ -20,7 +20,10 @@ import (
 // Evidencia de las reglas codificadas:
 //  - Flujo principal bidireccional entre columnas adyacentes:
 //    recibido -> diagnostico -> por-cotizar -> pedir-repuestos ->
-//    esperando-proveedor -> reparacion -> pruebas -> listo-entrega.
+//    esperando-proveedor -> reparacion -> listo-entrega.
+//    La etapa "pruebas" (QA) se elimino del flujo: el cierre directo
+//    reparacion -> listo-entrega queda cubierto por la regla de transicion
+//    y su checklist de informe de intervencion (flow-reparacion-listo).
 //    La bidireccionalidad cubre correcciones y el reverso del drag & drop.
 //  - Auto-avance tras solicitud exitosa de repuestos con material disponible
 //    (project-auto-transitions.logic.ts: diagnostico/por-cotizar a reparacion),
@@ -30,7 +33,7 @@ import (
 //    entregado ademas abre hacia garantia, la puerta documentada de reclamo.
 //  - Garantia (TranscriptTecnica0303 @25:52): desde garantia se solicita un
 //    componente y el caso pasa a espera de proveedor; al llegar el material
-//    vuelve por reparacion -> pruebas -> listo-entrega -> entregado.
+//    vuelve por reparacion -> listo-entrega -> entregado.
 //    garantia-espera-reupertino es la pausa visible del mismo estado mientras
 //    faltan repuestos, no una etapa independiente.
 //  - prestamo NO es una etapa del flujo sino un estado de estacionamiento para
@@ -44,13 +47,12 @@ var legalProjectTransitions = map[string][]string{
 	"por-cotizar":               {"diagnostico", "pedir-reupertino", "reparacion", "prestamo"},
 	"pedir-reupertino":          {"por-cotizar", "esperando-proveedor", "prestamo"},
 	"esperando-proveedor":       {"pedir-reupertino", "reparacion", "garantia", "garantia-espera-reupertino", "prestamo"},
-	"reparacion":                {"diagnostico", "por-cotizar", "esperando-proveedor", "pruebas", "garantia-espera-reupertino", "prestamo"},
-	"pruebas":                   {"reparacion", "listo-entrega", "prestamo"},
-	"listo-entrega":             {"pruebas", "entregado", "prestamo"},
+	"reparacion":                {"diagnostico", "por-cotizar", "esperando-proveedor", "listo-entrega", "garantia-espera-reupertino", "prestamo"},
+	"listo-entrega":             {"entregado", "prestamo"},
 	"entregado":                 {"listo-entrega", "garantia", "prestamo"},
 	"garantia":                  {"entregado", "esperando-proveedor", "garantia-espera-reupertino", "prestamo"},
 	"garantia-espera-reupertino":  {"garantia", "esperando-proveedor", "reparacion", "prestamo"},
-	"prestamo":                  {"recibido", "diagnostico", "por-cotizar", "pedir-reupertino", "esperando-proveedor", "reparacion", "pruebas", "listo-entrega", "entregado", "garantia", "garantia-espera-reupertino"},
+	"prestamo":                  {"recibido", "diagnostico", "por-cotizar", "pedir-reupertino", "esperando-proveedor", "reparacion", "listo-entrega", "entregado", "garantia", "garantia-espera-reupertino"},
 }
 
 // canTransition reporta si mover un proyecto desde fromStatus hacia toStatus

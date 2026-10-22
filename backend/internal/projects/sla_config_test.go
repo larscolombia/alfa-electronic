@@ -80,7 +80,7 @@ func TestSlaConfigRejectsInvalidPayloads(t *testing.T) {
 			name: "un item invalido rechaza todo el lote",
 			configs: []SLAConfig{
 				{Stage: "diagnostico", GreenDays: 2, YellowDays: 2},
-				{Stage: "pruebas", GreenDays: 1, YellowDays: -1},
+				{Stage: "listo-entrega", GreenDays: 1, YellowDays: -1},
 			},
 		},
 	}
@@ -130,8 +130,8 @@ func TestSlaConfigUpdatePersistsAndGetReflects(t *testing.T) {
 		},
 		{
 			name:    "dias en cero son validos",
-			configs: []SLAConfig{{Stage: "pruebas", GreenDays: 0, YellowDays: 0}},
-			want:    []SLAConfig{{Stage: "pruebas", GreenDays: 0, YellowDays: 0}},
+			configs: []SLAConfig{{Stage: "garantia", GreenDays: 0, YellowDays: 0}},
+			want:    []SLAConfig{{Stage: "garantia", GreenDays: 0, YellowDays: 0}},
 		},
 		{
 			name:    "stage con espacios se normaliza",
@@ -168,7 +168,7 @@ func TestSlaConfigUpdatePreservesStageOrder(t *testing.T) {
 	companyID := slaTestCompany(t, db, "order")
 
 	configs := []SLAConfig{
-		{Stage: "pruebas", GreenDays: 1, YellowDays: 1},
+		{Stage: "garantia", GreenDays: 1, YellowDays: 1},
 		{Stage: "diagnostico", GreenDays: 2, YellowDays: 2},
 		{Stage: "reparacion", GreenDays: 3, YellowDays: 3},
 	}
@@ -224,7 +224,7 @@ func TestSlaConfigInvalidBatchDoesNotMutateStore(t *testing.T) {
 	}
 
 	invalid := []SLAConfig{
-		{Stage: "pruebas", GreenDays: 1, YellowDays: 1},
+		{Stage: "entregado", GreenDays: 1, YellowDays: 1},
 		{Stage: "reparacion", GreenDays: -3, YellowDays: 1},
 	}
 	if err := s.UpdateSLAConfig(companyID, invalid); !errors.Is(err, errSLAConfigInvalid) {

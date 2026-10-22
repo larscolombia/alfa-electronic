@@ -170,6 +170,11 @@ func normalizeIdentifierSource(value string) string {
 
 func normalizeRepairStatus(value string) string {
 	normalized := strings.TrimSpace(strings.ToLower(value))
+	// Estado legado del flujo QA eliminado: se normaliza al estado vivo mas
+	// cercano en vez de caer a 'recibido' (misma semantica que el store CRM).
+	if normalized == "pruebas" {
+		return "reparacion"
+	}
 	if _, ok := repairStatusLabels[normalized]; ok {
 		return normalized
 	}

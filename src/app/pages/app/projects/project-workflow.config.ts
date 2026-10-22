@@ -8,7 +8,6 @@ export type ProjectWorkflowStatusId =
   | 'pedir-repuestos'
   | 'esperando-proveedor'
   | 'reparacion'
-  | 'pruebas'
   | 'garantia'
   | 'garantia-espera-repuestos'
   | 'prestamo'
@@ -66,11 +65,6 @@ export const PROJECT_WORKFLOW_STATUS_OPTIONS: ProjectWorkflowStatusOption[] = [
     id: 'reparacion',
     label: 'Reparacion',
     description: 'Position 1. Equipo con material listo o intervencion en curso.',
-  },
-  {
-    id: 'pruebas',
-    label: 'Pruebas QA',
-    description: 'Validaciones en banco, laboratorio o QA tecnico.',
   },
   {
     id: 'garantia',
@@ -216,19 +210,6 @@ export function buildTechnicalBoardColumns(): BoardColumn[] {
       trackAging: true,
     },
     {
-      id: 'pruebas',
-      name: 'Pruebas QA',
-      color: '#0f766e',
-      order: 7,
-      description: 'Pruebas finales en banco, laboratorio o QA.',
-      equipmentStatusId: 'pruebas',
-      equipmentStatusLabel: 'Pruebas QA',
-      greenDays: 1,
-      yellowDays: 1,
-      includeInWorkload: true,
-      trackAging: true,
-    },
-    {
       id: 'listo-entrega',
       name: 'Listo para entrega',
       color: '#10b981',
@@ -316,7 +297,8 @@ export function mapLegacyProjectStatus(status: string): ProjectWorkflowStatusId 
     case 'in-progress':
       return 'reparacion';
     case 'review':
-      return 'pruebas';
+      // La etapa pruebas (QA) se elimino del flujo: el equivalente es listo-entrega.
+      return 'listo-entrega';
     case 'completed':
       return 'entregado';
     case 'pedir-repuestos':
@@ -338,7 +320,9 @@ export function mapLegacyProjectStatus(status: string): ProjectWorkflowStatusId 
     case 'reparacion':
       return 'reparacion';
     case 'pruebas':
-      return 'pruebas';
+      // Estado legado heredado de antes de eliminar la etapa QA: se normaliza
+      // al estado vivo equivalente en lugar de caer a default.
+      return 'listo-entrega';
     case 'recibido':
       return 'recibido';
     default:

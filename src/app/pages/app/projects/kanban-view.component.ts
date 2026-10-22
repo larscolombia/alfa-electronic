@@ -1698,12 +1698,12 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
               <button
                 type="button"
                 class="btn btn-outline-theme"
-                *ngIf="detailProject.status === 'pruebas'"
+                *ngIf="detailProject.status === 'reparacion'"
                 data-testid="finish-tests-btn"
                 [attr.title]="'Valida la prueba de cierre registrada y mueve el caso a Listo para entrega'"
                 [disabled]="saving"
                 (click)="finishTestsAndMarkReady()">
-                Finalizar pruebas y marcar listo
+                Validar cierre y marcar listo
               </button>
               <button type="button" class="btn btn-outline-secondary" (click)="closeProjectDetail()">
                 Cancelar
@@ -4122,8 +4122,14 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
       });
   }
 
+  /**
+   * Puerta de calidad antes de entregar (antes "Finalizar pruebas y marcar
+   * listo", cuando la etapa QA era una columna propia). La etapa se elimino:
+   * ahora se valida en Reparacion, exige prueba de cierre real o checklist de
+   * informe completado, y mueve el caso directo a Listo para entrega.
+   */
   finishTestsAndMarkReady(): void {
-    if (!this.detailProject || this.detailProject.status !== 'pruebas' || this.saving) {
+    if (!this.detailProject || this.detailProject.status !== 'reparacion' || this.saving) {
       return;
     }
 
@@ -4139,9 +4145,9 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
     const nextProject = this.applyProjectStatusChange(this.detailProject, 'listo-entrega');
     this.persistProjectDetail(nextProject, {
       closeOnSuccess: false,
-      successMessage: 'Pruebas finalizadas y caso movido a Listo para entrega.',
+      successMessage: 'Cierre validado y caso movido a Listo para entrega.',
       onSuccess: () => {
-        this.testsCloseMessage = 'Pruebas finalizadas correctamente. El caso ya paso a Listo para entrega.';
+        this.testsCloseMessage = 'Cierre validado correctamente. El caso ya paso a Listo para entrega.';
       },
     });
   }
@@ -5259,7 +5265,9 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
       case 'reparacion':
         return 'reparacion';
       case 'pruebas':
-        return 'pruebas';
+        // Estado legado del flujo QA eliminado: se normaliza al estado vivo
+        // mas cercano para no perder la tarjeta en el tablero.
+        return 'reparacion';
       case 'garantia':
         return 'garantia';
       case 'garantia-espera-repuestos':

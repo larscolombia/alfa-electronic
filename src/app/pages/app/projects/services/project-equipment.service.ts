@@ -42,7 +42,6 @@ export class ProjectEquipmentService {
     { id: 'pedir-repuestos', label: 'Pedir componentes' },
     { id: 'esperando-proveedor', label: 'Esperando proveedor' },
     { id: 'reparacion', label: 'En reparacion' },
-    { id: 'pruebas', label: 'Pruebas QA' },
     { id: 'garantia', label: 'Garantia' },
     { id: 'garantia-espera-repuestos', label: 'Garantia esp. repuestos' },
     { id: 'prestamo', label: 'Material en prestamo' },

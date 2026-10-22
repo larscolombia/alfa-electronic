@@ -44,12 +44,12 @@ function isRealTestType(value: unknown): boolean {
 }
 
 /**
- * A project in pruebas can move to listo-entrega when it has a closing test
- * type other than "sin-pruebas" in the testType property, or a completed
- * intervention-report checklist run (transitionTestRuns) whose
- * "inf-pruebas-realizadas" answer records a real test type. The modal stores
- * single-select answers as option labels, so both id and label forms of
- * "sin pruebas" are rejected.
+ * Gate de cierre: reparacion puede pasar a listo-entrega cuando tiene una
+ * prueba de cierre distinta de 'sin-pruebas' en testType, o un checklist de
+ * informe de intervencion (transitionTestRuns) cuya respuesta
+ * 'inf-pruebas-realizadas' registra un tipo real de prueba. El modal guarda las
+ * respuestas single-select como labels, por eso se rechazan el id y el label
+ * de 'sin pruebas'.
  */
 export function validateReadyForDelivery(project: any): ReadyForDeliveryValidation {
     const properties = (project?.properties ?? {}) as Record<string, any>;

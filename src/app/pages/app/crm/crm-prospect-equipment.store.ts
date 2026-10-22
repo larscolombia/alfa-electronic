@@ -24,7 +24,6 @@ export type ProspectEquipmentRepairStatus =
     | "pedir-repuestos"
     | "esperando-proveedor"
     | "reparacion"
-    | "pruebas"
     | "garantia"
     | "garantia-espera-repuestos"
     | "prestamo"
@@ -283,7 +282,6 @@ const REPAIR_STATUS_LABELS: Record<ProspectEquipmentRepairStatus, string> = {
     "pedir-repuestos": "Pedir componentes",
     "esperando-proveedor": "Esperando proveedor",
     reparacion: "En reparación",
-    pruebas: "Pruebas QA",
     garantia: "Garantía",
     "garantia-espera-repuestos": "Garantia esp. repuestos",
     prestamo: "Material en préstamo",
@@ -592,7 +590,9 @@ function normalizeRepairStatus(value: unknown): ProspectEquipmentRepairStatus {
         case "reparacion":
             return "reparacion";
         case "pruebas":
-            return "pruebas";
+            // Estado legado del flujo QA eliminado: se normaliza al estado vivo
+            // mas cercano en vez de caer a 'recibido'.
+            return "reparacion";
         case "garantia":
             return "garantia";
         case "garantia-espera-repuestos":

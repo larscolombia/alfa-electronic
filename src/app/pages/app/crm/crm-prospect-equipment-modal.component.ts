@@ -930,7 +930,7 @@ type SoftwareBackupInfo = {
                                             </div>
                                         </div>
 
-                                        <div class="mb-3" *ngIf="item.repairStatus === 'listo-entrega' || item.repairStatus === 'pruebas'">
+                                        <div class="mb-3" *ngIf="item.repairStatus === 'listo-entrega'">
                                             <label class="form-label small fw-bold">
                                                 <i class="bi bi-youtube text-danger me-1"></i>Link YouTube (video de prueba)
                                             </label>
