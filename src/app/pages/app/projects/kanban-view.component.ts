@@ -1707,6 +1707,17 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
               <button type="button" class="btn btn-outline-secondary" (click)="closeProjectDetail()">
                 Cancelar
               </button>
+              @if (detailProject.status === 'por-cotizar') {
+                <button
+                  type="button"
+                  class="btn btn-success"
+                  [disabled]="saving || !detailProject.title.trim()"
+                  data-testid="save-and-quote-btn"
+                  attr.title="Guarda el caso y abre la cotización con los datos del proyecto precargados"
+                  (click)="saveAndGoToQuote()">
+                  {{ saving ? 'Guardando...' : 'Guardar y cotizar' }}
+                </button>
+              }
               <button
                 type="button"
                 class="btn btn-theme"
@@ -3947,6 +3958,72 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
     }
 
     this.persistProjectDetail(this.detailProject, { closeOnSuccess: true });
+  }
+
+  /**
+   * Etapa Cotización: guarda el caso y salta a /app/crm-cotizaciones con el
+   * formulario precargado desde los campos del proyecto. La navegación va por
+   * router state (no query string) porque no debe quedar en la URL ni en el
+   * historial; la vista de cotizaciones lo lee una sola vez.
+   */
+  saveAndGoToQuote(): void {
+    if (!this.detailProject || this.saving) {
+      return;
+    }
+
+    const prefill = this.buildQuotePrefill(this.detailProject);
+
+    this.persistProjectDetail(this.detailProject, {
+      closeOnSuccess: false,
+      successMessage: 'Caso guardado. Abriendo cotización precargada...',
+      onSuccess: () => {
+        void this.router.navigate(['/app/crm-cotizaciones'], {
+          state: { prefillQuoteFromProject: prefill },
+        });
+      },
+    });
+  }
+
+  /**
+   * Mapeo proyecto → cotización aprobado con el equipo:
+   * - prospecto, moneda, vigencia y descripción general (síntoma de la falla)
+   *   sí pasan al formulario;
+   * - budget (si > 0) precarga el precio unitario de la línea 1;
+   * - los valores internos del diagnóstico (repuestos USD, materia prima,
+   *   horas) viajan solo como `reference` para la ficha visual de referencia:
+   *   NUNCA se serializan en el payload ni en el PDF (política de
+   *   confidencialidad de partes).
+   */
+  private buildQuotePrefill(project: Project): Record<string, unknown> {
+    const properties = project.properties ?? {};
+    const num = (key: string): number | null => {
+      const value = Number(properties[key]);
+      return Number.isFinite(value) && value > 0 ? value : null;
+    };
+
+    let validUntil = '';
+    if (!properties['noDeadline']) {
+      const due = String(properties['dueDate'] ?? '').trim();
+      if (/^\d{4}-\d{2}-\d{2}/.test(due)) {
+        validUntil = due.slice(0, 10);
+      }
+    }
+
+    return {
+      prospectoName: String(properties['client'] ?? '').trim(),
+      currency: String(properties['currency'] ?? 'COP').trim() === 'USD' ? 'USD' : 'COP',
+      validUntil,
+      description: String(properties['equipmentFailureDescription'] ?? '').trim(),
+      linePrice: num('budget'),
+      equipmentItemId: String(properties['equipmentItemId'] ?? '').trim(),
+      sourceTitle: String(project.title ?? '').trim(),
+      reference: {
+        budget: num('budget'),
+        partsBudgetUsd: num('partsBudgetUsd'),
+        estimatedMaterialCost: num('estimatedMaterialCost'),
+        estimatedHours: num('estimatedHours'),
+      },
+    };
   }
 
   selectStatus(statusId: string): void {

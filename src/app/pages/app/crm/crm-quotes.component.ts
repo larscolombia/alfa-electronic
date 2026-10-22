@@ -1,7 +1,7 @@
 import { DecimalPipe, NgFor, NgIf } from "@angular/common";
 import { ChangeDetectorRef, Component, OnInit } from "@angular/core";
 import { FormsModule } from "@angular/forms";
-import { RouterLink } from "@angular/router";
+import { Router, RouterLink } from "@angular/router";
 import { take } from "rxjs/operators";
 
 import { ProspectEquipmentSummary } from "./crm-prospect-equipment.store";
@@ -179,6 +179,25 @@ type QuoteLine = {
                          porque un "enviada" en verde sería un éxito falso. -->
                     <div class="alert alert-info border mb-3" *ngIf="quoteEmailMessage" data-testid="quote-email-status">
                         <i class="bi bi-envelope-check me-2"></i>{{ quoteEmailMessage }}
+                    </div>
+                    <!-- Ficha de referencia interna del proyecto origen. SOLO visual:
+                         no se serializa en el payload ni aparece en la cotización que
+                         recibe el cliente (política de confidencialidad de partes). -->
+                    <div class="alert alert-info border mb-3" *ngIf="prefillReference" data-testid="quote-prefill-reference">
+                        <div class="fw-semibold mb-1">
+                            <i class="bi bi-card-checklist me-2"></i>
+                            Referencia interna del diagnóstico{{ prefillReference.sourceTitle ? ' · ' + prefillReference.sourceTitle : '' }}
+                        </div>
+                        <small class="d-block">Valores solo para que definas el precio sobre ellos; NO se incluyen en la cotización enviada al cliente.</small>
+                        <ul class="mb-0 mt-2">
+                            <li *ngIf="prefillReference.budget != null">Presupuesto del proyecto: {{ prefillReference.budget | number: '1.0-2' }} COP</li>
+                            <li *ngIf="prefillReference.partsBudgetUsd != null">Repuestos estimados: {{ prefillReference.partsBudgetUsd | number: '1.0-2' }} USD</li>
+                            <li *ngIf="prefillReference.estimatedMaterialCost != null">Materia prima estimada: {{ prefillReference.estimatedMaterialCost | number: '1.0-2' }}</li>
+                            <li *ngIf="prefillReference.estimatedHours != null">Horas hombre estimadas: {{ prefillReference.estimatedHours | number: '1.0-2' }}</li>
+                        </ul>
+                    </div>
+                    <div class="alert alert-warning border mb-3" *ngIf="prefillNotice" data-testid="quote-prefill-notice">
+                        <i class="bi bi-exclamation-triangle me-2"></i>{{ prefillNotice }}
                     </div>
                     <div class="row gx-3">
                         <div class="col-12 col-lg-3 mb-3">
@@ -482,6 +501,26 @@ export class CrmQuotesComponent implements OnInit {
     taxRates: number[] = [0, 5, 10, 19];
 
     showQuoteForm = false;
+
+    /**
+     * Prefill desde la vista de proyectos (botón "Guardar y cotizar", columna
+     * por-cotizar). `prefillReference` es SOLO estado visual local: vive en esta
+     * ficha informativa y NUNCA entra en buildApiQuotePayload ni en el PDF,
+     * porque los valores de partes/materia prima son información confidencial
+     * que no se comparte con el cliente. Los campos que SÍ pasan al documento
+     * (prospecto, moneda, vigencia, descripción general, línea 1) se aplican a
+     * los modelos normales del formulario.
+     */
+    prefillReference: {
+        sourceTitle?: string;
+        budget?: number | null;
+        partsBudgetUsd?: number | null;
+        estimatedMaterialCost?: number | null;
+        estimatedHours?: number | null;
+    } | null = null;
+    /** Aviso visible cuando el prefill no pudo resolverse al 100% (p. ej.
+     *  el cliente del proyecto no existe aún como prospecto en CRM). */
+    prefillNotice = "";
     editingQuoteId: string | null = null;
     editingQuoteToken: string | null = null;
     isSavingQuote = false;
@@ -556,11 +595,18 @@ export class CrmQuotesComponent implements OnInit {
     private editingQuotePurchaseOrderUploadedAt = "";
     private stopDraftWatch: () => void = () => undefined;
 
+    // Estado transitorio del prefill "Guardar y cotizar" (se consume en el
+    // load de prospectos/equipos y no debe reaplicarse en interacciones posteriores).
+    private projectPrefillPending = false;
+    private prefillProspectName = "";
+    private pendingEquipmentItemId = "";
+
     constructor(
         private readonly crmProspectsApi: CrmProspectsApiService,
         private readonly crmQuotesApi: CrmQuotesApiService,
         private readonly crmEquipmentApi: CrmEquipmentApiService,
         private readonly financeBillingApi: FinanceBillingApiService,
+        private readonly router: Router,
         private readonly projectService: ProjectService,
         private readonly cdr: ChangeDetectorRef,
         private readonly formDraftService: FormDraftService,
@@ -604,6 +650,10 @@ export class CrmQuotesComponent implements OnInit {
             this.recipientNote = String(draft.recipientNote ?? this.recipientNote);
             this.termsAndConditions = String(draft.termsAndConditions ?? this.termsAndConditions);
         }
+
+        // Prefill "Guardar y cotizar": se consume una sola vez, después del
+        // bloque de draft (el prefill tiene prioridad: es un flujo nuevo).
+        this.applyProjectQuotePrefillIfPresent();
 
         this.stopDraftWatch = this.formDraftService.watch(CRM_QUOTES_FORM_DRAFT_KEY, () => ({
             showQuoteForm: this.showQuoteForm,
@@ -983,8 +1033,86 @@ export class CrmQuotesComponent implements OnInit {
         this.openDeleteModal(row);
     }
 
+    /**
+     * Prefill del botón "Guardar y cotizar" (kanban-view). Lee el router state
+     * una sola vez. Los campos que SÍ van al documento (prospecto, moneda,
+     * vigencia, descripción general, línea 1) se aplican a los modelos normales
+     * del formulario; `reference` queda solo en la ficha visual y NUNCA entra
+     * en buildApiQuotePayload ni en el PDF.
+     */
+    private applyProjectQuotePrefillIfPresent(): void {
+        const state = (this.router.getCurrentNavigation()?.extras?.state ?? null) as Record<string, unknown> | null;
+        const raw = state ? (state['prefillQuoteFromProject'] as unknown) : null;
+        if (!raw || typeof raw !== 'object') {
+            return;
+        }
+
+        const record = raw as Record<string, unknown>;
+        const text = (key: string): string => String(record[key] ?? '').trim();
+        const positiveNumber = (value: unknown): number | null => {
+            const num = Number(value);
+            return Number.isFinite(num) && num > 0 ? num : null;
+        };
+        const referenceRaw = (record['reference'] ?? {}) as Record<string, unknown>;
+
+        // Moneda y vigencia: se aplican de inmediato (no dependen de loads).
+        const currencyValue = text('currency');
+        if (currencyValue === 'COP' || currencyValue === 'USD') {
+            this.currency = currencyValue;
+        }
+        const validUntil = text('validUntil');
+        if (/^\d{4}-\d{2}-\d{2}$/.test(validUntil)) {
+            this.validUntil = validUntil;
+        }
+
+        // Descripción general (síntoma de la falla) como borrador editable.
+        const description = text('description');
+        if (description) {
+            this.quoteDescription = description;
+            const firstLine = this.quoteLines[0];
+            if (firstLine && !String(firstLine.descripcion ?? '').trim()) {
+                firstLine.descripcion = description;
+            }
+        }
+
+        // Budget del proyecto → precio unitario de la línea 1 (Maribel lo ajusta).
+        const linePrice = positiveNumber(record['linePrice']);
+        if (linePrice != null) {
+            const firstLine = this.quoteLines[0];
+            if (firstLine) {
+                firstLine.cantidad = 1;
+                firstLine.precioUnitario = linePrice;
+            }
+        }
+
+        // Ficha de referencia: solo estado visual local.
+        this.prefillReference = {
+            sourceTitle: text('sourceTitle'),
+            budget: positiveNumber(referenceRaw['budget']),
+            partsBudgetUsd: positiveNumber(referenceRaw['partsBudgetUsd']),
+            estimatedMaterialCost: positiveNumber(referenceRaw['estimatedMaterialCost']),
+            estimatedHours: positiveNumber(referenceRaw['estimatedHours']),
+        };
+
+        this.prefillProspectName = text('prospectoName');
+        const equipmentItemId = text('equipmentItemId');
+        if (equipmentItemId) {
+            // Se consume en loadEquipmentForSelectedProspect cuando la lista llega.
+            this.pendingEquipmentItemId = equipmentItemId;
+        }
+
+        this.projectPrefillPending = true;
+    }
+
+    private normalizeProspectMatchKey(name: string): string {
+        return name.trim().toLowerCase().replace(/\s+/g, ' ');
+    }
+
     cancelQuoteForm(): void {
         this.showQuoteForm = false;
+        // El prefill ya fue consumido; no debe reaparecer en la próxima creación.
+        this.prefillReference = null;
+        this.prefillNotice = "";
         this.editingQuoteId = null;
         this.editingQuoteToken = null;
         this.editingQuotePurchaseOrderDataUrl = "";
@@ -1175,6 +1303,9 @@ export class CrmQuotesComponent implements OnInit {
                 this.upsertRowFromApi(saved);
                 upsertPublicQuotePreview(this.mapApiQuoteToPreview(saved));
                 this.showQuoteForm = false;
+                // El prefill cumplió su ciclo; limpiar la ficha de referencia.
+                this.prefillReference = null;
+                this.prefillNotice = "";
                 this.editingQuoteId = null;
                 this.editingQuoteToken = null;
                 this.editingQuotePurchaseOrderDataUrl = "";
@@ -1252,7 +1383,29 @@ export class CrmQuotesComponent implements OnInit {
                 }
 
                 this.prospectsLoadErrorMessage = "";
-                this.handleProspectChange(this.selectedProspecto);
+
+                // Prefill del proyecto: emparejar el cliente por nombre (case-
+                // insensitive) y, si no existe en CRM, dejar aviso visible en vez
+                // de bloquear — la decisión D2 aprobada.
+                if (this.projectPrefillPending && this.prefillProspectName) {
+                    const wanted = this.normalizeProspectMatchKey(this.prefillProspectName);
+                    const match = this.prospectOptions.find((name) => this.normalizeProspectMatchKey(name) === wanted);
+                    if (match) {
+                        this.selectedProspecto = match;
+                        // Re-correr el handler: equipos y preview deben corresponder
+                        // al prospecto correcto, no al default de la lista.
+                        this.handleProspectChange(match);
+                    } else {
+                        this.prefillNotice = `El cliente "${this.prefillProspectName}" del proyecto aún no existe como prospecto en CRM. Se abrió el formulario con "${this.selectedProspecto || 'sin prospecto'}"; verifica el prospecto antes de guardar.`;
+                    }
+                }
+
+                if (this.projectPrefillPending) {
+                    this.projectPrefillPending = false;
+                    // openQuoteForm re-valida selectedProspecto contra la lista ya poblada.
+                    this.openQuoteForm();
+                }
+
                 this.cdr.detectChanges();
             },
             error: (error) => {
@@ -1333,6 +1486,16 @@ export class CrmQuotesComponent implements OnInit {
                 this.availableEquipmentItemsApi = items;
                 const availableIds = new Set(items.map((item) => item.itemId));
                 this.selectedQuoteEquipmentIds = this.selectedQuoteEquipmentIds.filter((itemId) => availableIds.has(itemId));
+
+                // Prefill del proyecto: preselecciona el equipo del caso si está en la lista.
+                if (this.pendingEquipmentItemId) {
+                    const wanted = this.pendingEquipmentItemId;
+                    if (availableIds.has(wanted)) {
+                        this.selectedQuoteEquipmentIds = Array.from(new Set([...this.selectedQuoteEquipmentIds, wanted]));
+                    }
+                    // One-shot: un cambio de prospecto posterior no lo re-aplica.
+                    this.pendingEquipmentItemId = "";
+                }
                 this.cdr.detectChanges();
             },
             error: () => {
