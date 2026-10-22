@@ -167,6 +167,12 @@ type ListItemsQuery struct {
 	// registros que tengan alguno marcado — que es el conteo que el dashboard
 	// de facturación muestra en la campanita.
 	PriorityBilling bool
+	// La ficha "Nueva cotización" usa esto para no re-ofrecer equipos ya
+	// vinculados a una cotización existente (selected_equipment_ids_json).
+	// Al editar una cotización, ExceptQuoteID deja visibles los equipos de ESA
+	// misma cotización para poder revisarlos y mantenerlos seleccionados.
+	ExcludeQuoted bool
+	ExceptQuoteID string
 }
 
 type InsightQuery struct {

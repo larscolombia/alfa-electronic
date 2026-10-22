@@ -2,6 +2,7 @@ package equipment
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -260,6 +261,16 @@ func (s *Service) ListItems(companyID string, query ListItemsQuery) ([]Summary, 
 
 	summaries := flattenSummaries(records)
 
+	// La ficha "Nueva cotización" no debe re-ofrecer equipos que ya figuran en
+	// otra cotización existente; al editar, ExceptQuoteID conserva los suyos.
+	if query.ExcludeQuoted {
+		quotedFiltered, err := s.excludeAlreadyQuotedItems(companyID, query.ExceptQuoteID, summaries)
+		if err != nil {
+			return nil, err
+		}
+		summaries = quotedFiltered
+	}
+
 	// Fase 5c: el EXISTS de arriba filtra REGISTROS, y un registro puede
 	// mezclar equipos urgentes con equipos que no lo son. La campanita cuenta
 	// equipos, no recepciones, así que aquí se recorta a los ítems marcados.
@@ -304,5 +315,61 @@ func (s *Service) ListItems(companyID string, query ListItemsQuery) ([]Summary, 
 		}
 	}
 
+	return filtered, nil
+}
+
+// excludeAlreadyQuotedItems descarta los items cuyo id aparece en el
+// selected_equipment_ids_json de cualquier cotización activa (no soft-delete)
+// de la empresa. ExceptQuoteID excluye a la cotización que se está editando
+// para que sus equipos sigan visibles y seleccionables.
+func (s *Service) excludeAlreadyQuotedItems(companyID string, exceptQuoteID string, summaries []Summary) ([]Summary, error) {
+	if s.db == nil || len(summaries) == 0 {
+		return summaries, nil
+	}
+
+	var rows *sql.Rows
+	var err error
+
+	base := `SELECT elem
+			   FROM crm_quotes q,
+			        jsonb_array_elements_text(q.selected_equipment_ids_json) AS elem
+			  WHERE q.company_id = $1
+			    AND NOT COALESCE(q.soft_delete, false)`
+
+	if strings.TrimSpace(exceptQuoteID) != "" {
+		rows, err = s.db.Query(base+`
+			AND q.id <> $2`, companyID, strings.TrimSpace(exceptQuoteID))
+	} else {
+		rows, err = s.db.Query(base, companyID)
+	}
+	if err != nil {
+		return summaries, fmt.Errorf("consultar equipos ya cotizados: %w", err)
+	}
+	defer rows.Close()
+
+	referenced := make(map[string]struct{})
+	for rows.Next() {
+		var itemID string
+		if scanErr := rows.Scan(&itemID); scanErr != nil {
+			return summaries, fmt.Errorf("leer equipos ya cotizados: %w", scanErr)
+		}
+		if itemID = strings.TrimSpace(itemID); itemID != "" {
+			referenced[itemID] = struct{}{}
+		}
+	}
+	if rowsErr := rows.Err(); rowsErr != nil {
+		return summaries, fmt.Errorf("leer equipos ya cotizados: %w", rowsErr)
+	}
+
+	if len(referenced) == 0 {
+		return summaries, nil
+	}
+
+	filtered := make([]Summary, 0, len(summaries))
+	for _, summary := range summaries {
+		if _, ok := referenced[summary.ItemID]; !ok {
+			filtered = append(filtered, summary)
+		}
+	}
 	return filtered, nil
 }

@@ -28,6 +28,14 @@ export interface ListEquipmentItemsQuery {
      * servidor y no el navegador sobre el listado completo.
      */
     priorityBilling?: boolean;
+    /**
+     * Ficha "Nueva cotización": con true el backend descarta los equipos cuyo id
+     * ya figura en selected_equipment_ids_json de otra cotización activa, para no
+     * re-ofrecer equipos que ya se cotizaron.
+     */
+    excludeQuoted?: boolean;
+    /** Al editar, conserva visibles los equipos de la propia cotización. */
+    exceptQuoteId?: string;
 }
 
 export interface EquipmentInsightQuery {
@@ -215,7 +223,7 @@ export class CrmEquipmentApiService {
         );
     }
 
-    private buildQueryString(query: { prospectId?: string | number; clientNit?: string; clientName?: string; includeArchived?: boolean; identifier?: string; assignedToId?: string; priorityBilling?: boolean }): string {
+    private buildQueryString(query: ListEquipmentItemsQuery): string {
         const searchParams = new URLSearchParams();
 
         const prospectId = String(query.prospectId ?? "").trim();
@@ -245,6 +253,21 @@ export class CrmEquipmentApiService {
         const assignedToId = String(query.assignedToId ?? "").trim();
         if (assignedToId) {
             searchParams.set("assignedToId", assignedToId);
+        }
+
+        // Bug previo: priorityBilling estaba en la firma pero nunca se serializaba,
+        // así que la campanita de facturación urgente contaba TODOS los equipos.
+        if (query.priorityBilling) {
+            searchParams.set("priorityBilling", "true");
+        }
+
+        if (query.excludeQuoted) {
+            searchParams.set("excludeQuoted", "true");
+        }
+
+        const exceptQuoteId = String(query.exceptQuoteId ?? "").trim();
+        if (exceptQuoteId) {
+            searchParams.set("exceptQuoteId", exceptQuoteId);
         }
 
         return searchParams.toString();

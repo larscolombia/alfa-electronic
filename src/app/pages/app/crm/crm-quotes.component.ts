@@ -1477,7 +1477,15 @@ export class CrmQuotesComponent implements OnInit {
         }
 
         const criteria = buildEquipmentMatchCriteria(prospect);
-        this.crmEquipmentApi.listItems(criteria).subscribe({
+        // La ficha de cotización no debe re-ofrecer equipos que ya figuran en
+        // otra cotización activa (el backend los filtra por el vínculo
+        // selected_equipment_ids_json). Al editar, exceptQuoteId conserva
+        // visibles los propios de la cotización abierta.
+        this.crmEquipmentApi.listItems({
+            ...criteria,
+            excludeQuoted: true,
+            exceptQuoteId: this.editingQuoteId ?? undefined,
+        }).subscribe({
             next: (items) => {
                 this.availableEquipmentItemsApi = items;
                 const availableIds = new Set(items.map((item) => item.itemId));

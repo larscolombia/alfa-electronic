@@ -219,6 +219,8 @@ func (h *Handler) listItems(c echo.Context) error {
 		AssignedToID:    strings.TrimSpace(c.QueryParam("assignedToId")),
 		// Fase 5c: campanita de facturación urgente (GET /crm-equipment/items?priorityBilling=true).
 		PriorityBilling: parseBool(c.QueryParam("priorityBilling")),
+		ExcludeQuoted:   parseBool(c.QueryParam("excludeQuoted")),
+		ExceptQuoteID:   strings.TrimSpace(c.QueryParam("exceptQuoteId")),
 	})
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "no se pudieron cargar los items de equipos"})
