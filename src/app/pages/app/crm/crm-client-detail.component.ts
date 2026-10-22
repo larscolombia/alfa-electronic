@@ -2,11 +2,14 @@ import { CommonModule } from "@angular/common";
 import { ChangeDetectorRef, Component, inject } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { ActivatedRoute, RouterLink } from "@angular/router";
-import { Subscription } from "rxjs";
+import { catchError, forkJoin, map, of, Subscription } from "rxjs";
 import { CrmClientRecord, CrmClientsApiService, UpsertCrmClientRequest } from "../../../services/crm-clients-api.service";
 import { CrmClientContactsComponent } from "./crm-client-contacts.component";
+import { CrmProspectsApiService, CrmProspectRecord } from "../../../services/crm-prospects-api.service";
+import { CrmFollowupsApiService, CrmProspectFollowup } from "../../../services/crm-followups-api.service";
+import { CrmAttachmentsApiService, ProspectAttachment } from "../../../services/crm-attachments-api.service";
 
-type ClientDetailTab = "perfil" | "contactos" | "credito";
+type ClientDetailTab = "perfil" | "contactos" | "credito" | "historial";
 type EditableClientField = "nombre" | "correo" | "empresa" | "nit" | "website" | "officePhone" | "country" | "city" | "address" | "zona";
 
 type EditableClientFieldConfig = {
@@ -55,6 +58,11 @@ type EditableClientFieldConfig = {
                     </li>
                     <li class="nav-item">
                         <button class="nav-link" type="button" [class.active]="activeTab === 'credito'" (click)="activeTab = 'credito'">Crédito</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" type="button"
+                            [class.active]="activeTab === 'historial'"
+                            (click)="activeTab = 'historial'">Historial comercial</button>
                     </li>
                 </ul>
 
@@ -161,6 +169,132 @@ type EditableClientFieldConfig = {
                         <app-crm-client-contacts [clientId]="client.id" [empresa]="client.empresa" />
                     }
 
+                    @if (activeTab === 'historial') {
+                        <div class="row gx-3 gx-lg-4">
+                            <div class="col-12">
+                                @if (historyLoading) {
+                                    <div class="card adminuiux-card mb-3">
+                                        <div class="card-body text-center py-4">
+                                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                                            Cargando historial comercial y documentos...
+                                        </div>
+                                    </div>
+                                }
+
+                                @if (historyErrorMessage) {
+                                    <div class="alert alert-danger">{{ historyErrorMessage }}</div>
+                                }
+                                @if (historyPartialError) {
+                                    <div class="alert alert-warning">{{ historyPartialError }}</div>
+                                }
+                            </div>
+
+                            @if (!historyLoading && !historyErrorMessage) {
+                                <div class="col-12">
+                                    <div class="card adminuiux-card mb-3">
+                                        <div class="card-header border-bottom d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0">Acciones comerciales y seguimientos</h6>
+                                            <span class="badge text-bg-secondary">{{ historyFollowups.length }}</span>
+                                        </div>
+                                        <div class="card-body">
+                                            @if (historyFollowups.length === 0) {
+                                                <p class="text-secondary text-center py-3 mb-0">
+                                                    No hay acciones comerciales registradas para este cliente.
+                                                </p>
+                                            } @else {
+                                                <div class="table-responsive">
+                                                    <table class="table table-hover align-middle">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Fecha</th>
+                                                                <th>Hora</th>
+                                                                <th>Tipo</th>
+                                                                <th>Observación</th>
+                                                                <th>Estado</th>
+                                                                <th>Responsable</th>
+                                                                <th>Prospecto</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            @for (entry of historyFollowups; track entry.followup.id) {
+                                                                <tr>
+                                                                    <td>{{ formatHistoryDate(entry.followup.fecha) }}</td>
+                                                                    <td>{{ entry.followup.hora || '--' }}</td>
+                                                                    <td>{{ entry.followup.tipo || '--' }}</td>
+                                                                    <td class="text-wrap" style="min-width: 180px">{{ entry.followup.observacion || '--' }}</td>
+                                                                    <td>
+                                                                        <span class="badge"
+                                                                            [class.text-bg-success]="entry.followup.estado === 'Completado'"
+                                                                            [class.text-bg-warning]="entry.followup.estado === 'Pendiente'">
+                                                                            {{ entry.followup.estado }}
+                                                                        </span>
+                                                                    </td>
+                                                                    <td>{{ entry.followup.registradoPor || '--' }}</td>
+                                                                    <td>{{ entry.prospectName }}</td>
+                                                                </tr>
+                                                            }
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-12">
+                                    <div class="card adminuiux-card">
+                                        <div class="card-header border-bottom d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0">Documentos asociados</h6>
+                                            <span class="badge text-bg-secondary">{{ historyAttachments.length }}</span>
+                                        </div>
+                                        <div class="card-body">
+                                            @if (historyAttachments.length === 0) {
+                                                <p class="text-secondary text-center py-3 mb-0">
+                                                    No hay documentos asociados a los prospectos de este cliente.
+                                                </p>
+                                            } @else {
+                                                <div class="table-responsive">
+                                                    <table class="table table-hover align-middle">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Documento</th>
+                                                                <th>Tipo de archivo</th>
+                                                                <th>Fecha de carga</th>
+                                                                <th>Cargado por</th>
+                                                                <th>Prospecto</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            @for (entry of historyAttachments; track entry.attachment.id) {
+                                                                <tr>
+                                                                    <td>
+                                                                        @if (entry.attachment.storageUrl) {
+                                                                            <a [href]="entry.attachment.storageUrl"
+                                                                                target="_blank" rel="noopener noreferrer">
+                                                                                {{ entry.attachment.filename }}
+                                                                            </a>
+                                                                        } @else {
+                                                                            {{ entry.attachment.filename }}
+                                                                            <div class="small text-secondary">No hay enlace de descarga disponible.</div>
+                                                                        }
+                                                                    </td>
+                                                                    <td>{{ entry.attachment.mimeType || '--' }}</td>
+                                                                    <td>{{ formatHistoryDate(entry.attachment.createdAt) }}</td>
+                                                                    <td>{{ entry.attachment.uploadedBy || '--' }}</td>
+                                                                    <td>{{ entry.prospectName }}</td>
+                                                                </tr>
+                                                            }
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+
                     @if (activeTab === 'credito') {
                         <div class="row gx-3 gx-lg-4">
                             <div class="col-12 col-xl-5 mb-3 mb-xl-0">
@@ -227,6 +361,20 @@ export class CrmClientDetailComponent {
     client: CrmClientRecord | undefined;
     activeTab: ClientDetailTab = "perfil";
 
+    historyLoading = false;
+    historyErrorMessage = "";
+    historyPartialError = "";
+    historyFollowups: Array<{
+        prospectName: string;
+        companyName: string;
+        followup: CrmProspectFollowup;
+    }> = [];
+    historyAttachments: Array<{
+        prospectName: string;
+        companyName: string;
+        attachment: ProspectAttachment;
+    }> = [];
+
     editingField: EditableClientField | null = null;
     editingValue = "";
     isSavingField = false;
@@ -247,6 +395,9 @@ export class CrmClientDetailComponent {
     ];
 
     private readonly crmClientsApi = inject(CrmClientsApiService);
+    private readonly crmProspectsApi = inject(CrmProspectsApiService);
+    private readonly crmFollowupsApi = inject(CrmFollowupsApiService);
+    private readonly crmAttachmentsApi = inject(CrmAttachmentsApiService);
     private readonly cdr = inject(ChangeDetectorRef);
     private routeSub?: Subscription;
 
@@ -354,6 +505,7 @@ export class CrmClientDetailComponent {
                 this.client = client;
                 this.editingField = null;
                 this.editingValue = "";
+                this.loadCommercialHistory(client);
                 this.cdr.detectChanges();
             },
             error: () => {
@@ -361,6 +513,138 @@ export class CrmClientDetailComponent {
                 this.cdr.detectChanges();
             },
         });
+    }
+
+    private loadCommercialHistory(client: CrmClientRecord): void {
+        this.historyLoading = true;
+        this.historyErrorMessage = "";
+        this.historyPartialError = "";
+        this.historyFollowups = [];
+        this.historyAttachments = [];
+
+        const companyKey = this.normalizeCompanyName(client.empresa);
+        if (!companyKey) {
+            this.historyLoading = false;
+            this.cdr.detectChanges();
+            return;
+        }
+
+        this.crmProspectsApi.listProspects().subscribe({
+            next: (prospects) => {
+                const related = prospects.filter(
+                    (prospect) => this.normalizeCompanyName(prospect.compania) === companyKey,
+                );
+
+                if (related.length === 0) {
+                    this.historyLoading = false;
+                    this.cdr.detectChanges();
+                    return;
+                }
+
+                let requestHadErrors = false;
+                const requests = related.map((prospect) =>
+                    forkJoin({
+                        followups: this.crmFollowupsApi.listProspectFollowups(prospect.backendId).pipe(
+                            catchError(() => {
+                                requestHadErrors = true;
+                                return of([] as CrmProspectFollowup[]);
+                            }),
+                        ),
+                        attachments: this.crmAttachmentsApi.listAttachments(prospect.backendId).pipe(
+                            catchError(() => {
+                                requestHadErrors = true;
+                                return of([] as ProspectAttachment[]);
+                            }),
+                        ),
+                    }).pipe(map((data) => ({ prospect, ...data }))),
+                );
+
+                forkJoin(requests).subscribe({
+                    next: (results) => {
+                        const followups: typeof this.historyFollowups = [];
+                        const attachments: typeof this.historyAttachments = [];
+
+                        for (const result of results) {
+                            for (const followup of result.followups) {
+                                if (!followup.softDelete) {
+                                    followups.push({
+                                        prospectName: result.prospect.nombre || "--",
+                                        companyName: result.prospect.compania || "",
+                                        followup,
+                                    });
+                                }
+                            }
+
+                            for (const attachment of result.attachments) {
+                                attachments.push({
+                                    prospectName: result.prospect.nombre || "--",
+                                    companyName: result.prospect.compania || "",
+                                    attachment,
+                                });
+                            }
+                        }
+
+                        this.historyFollowups = followups.sort(
+                            (a, b) =>
+                                this.historyFollowupTimestamp(b.followup.fecha, b.followup.hora) -
+                                this.historyFollowupTimestamp(a.followup.fecha, a.followup.hora),
+                        );
+                        this.historyAttachments = attachments.sort(
+                            (a, b) =>
+                                this.historyDateTimestamp(b.attachment.createdAt) -
+                                this.historyDateTimestamp(a.attachment.createdAt),
+                        );
+
+                        if (requestHadErrors) {
+                            this.historyPartialError =
+                                "No se pudieron cargar algunos seguimientos o documentos. Los registros disponibles se muestran a continuación.";
+                        }
+                        this.historyLoading = false;
+                        this.cdr.detectChanges();
+                    },
+                    error: () => {
+                        this.historyErrorMessage = "No se pudo cargar el historial comercial.";
+                        this.historyLoading = false;
+                        this.cdr.detectChanges();
+                    },
+                });
+            },
+            error: () => {
+                this.historyErrorMessage =
+                    "No se pudo consultar la lista de prospectos para relacionar su historial con este cliente.";
+                this.historyLoading = false;
+                this.cdr.detectChanges();
+            },
+        });
+    }
+
+    private normalizeCompanyName(value: string | null | undefined): string {
+        return String(value ?? "").trim().toLocaleLowerCase();
+    }
+
+    private historyFollowupTimestamp(fecha: string, hora: string): number {
+        const date = String(fecha ?? "").trim();
+        const time = String(hora ?? "").trim();
+        const parsed = new Date(`${date}T${time || "00:00"}:00`);
+        return Number.isNaN(parsed.getTime()) ? 0 : parsed.getTime();
+    }
+
+    private historyDateTimestamp(value: string): number {
+        const parsed = new Date(value);
+        return Number.isNaN(parsed.getTime()) ? 0 : parsed.getTime();
+    }
+
+    formatHistoryDate(value: string | null | undefined): string {
+        const text = String(value ?? "").trim();
+        if (!text) return "--";
+
+        const match = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (match) return `${match[3]}/${match[2]}/${match[1]}`;
+
+        const parsed = new Date(text);
+        if (Number.isNaN(parsed.getTime())) return text;
+
+        return `${String(parsed.getDate()).padStart(2, "0")}/${String(parsed.getMonth() + 1).padStart(2, "0")}/${parsed.getFullYear()}`;
     }
 
     private buildPayload(client: CrmClientRecord, field: EditableClientField, value: string): UpsertCrmClientRequest {

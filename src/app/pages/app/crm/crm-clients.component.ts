@@ -9,6 +9,7 @@ import { CrmBranchRecord, CrmClientRecord, CrmClientsApiService, UpsertCrmClient
 import { CrmProspectContact, CrmProspectRecord, CrmProspectsApiService } from "../../../services/crm-prospects-api.service";
 import { replaceCrmClients } from "./crm-clients.store";
 import { CrmClientsImportComponent } from "./crm-clients-import.component";
+import * as XLSX from "xlsx";
 
 interface ClientBranchDraft {
     id?: string;
@@ -101,21 +102,70 @@ interface ClientDraft {
                     <div class="d-flex flex-wrap gap-2 mb-3">
                         <button class="btn btn-theme" type="button" (click)="openCreateClient()"><i class="bi bi-plus-lg me-1"></i> Agregar Cliente</button>
                         <button class="btn btn-outline-secondary" type="button" (click)="showImport = true"><i class="bi bi-upload me-1"></i> Importar clientes</button>
+                        <button class="btn btn-outline-success" type="button"
+                            [disabled]="exportandoClientes"
+                            (click)="exportClientsToExcel()">
+                            <i class="bi bi-file-earmark-excel me-1"></i>
+                            {{ exportandoClientes ? "Exportando..." : "Exportar a Excel" }}
+                        </button>
+                    </div>
+
+<div class="row g-2 align-items-center mb-3">
+                        <div class="col-12 col-md-8 col-lg-6">
+                            <label for="clientSearchTerm" class="form-label small mb-1">Buscar clientes</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                <input
+                                    id="clientSearchTerm"
+                                    type="search"
+                                    class="form-control"
+                                    placeholder="Nombre, empresa, correo, NIT, teléfono..."
+                                    [(ngModel)]="clientSearchTerm"
+                                    autocomplete="off">
+                                <button
+                                    *ngIf="clientSearchTerm"
+                                    class="btn btn-outline-secondary"
+                                    type="button"
+                                    aria-label="Limpiar búsqueda"
+                                    (click)="clientSearchTerm = ''">
+                                    Limpiar
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md text-md-end small text-secondary">
+                            {{ filteredClients.length }} de {{ clients.length }} clientes
+                        </div>
                     </div>
 
                     <div class="table-responsive border rounded">
                         <table class="table align-middle mb-0">
                             <thead>
                                 <tr>
-                                    <th>Cliente</th>
-                                    <th>Contacto</th>
-                                    <th>Detalles</th>
-                                    <th>Estado</th>
+                                    <th>
+                                        <button class="btn btn-link p-0 text-reset text-decoration-none fw-semibold" type="button" (click)="toggleClientSort('cliente')">
+                                            Cliente <i class="bi" [ngClass]="sortColumn === 'cliente' ? (sortDirection === 'asc' ? 'bi-arrow-up' : 'bi-arrow-down') : 'bi-arrow-down-up'"></i>
+                                        </button>
+                                    </th>
+                                    <th>
+                                        <button class="btn btn-link p-0 text-reset text-decoration-none fw-semibold" type="button" (click)="toggleClientSort('contacto')">
+                                            Contacto <i class="bi" [ngClass]="sortColumn === 'contacto' ? (sortDirection === 'asc' ? 'bi-arrow-up' : 'bi-arrow-down') : 'bi-arrow-down-up'"></i>
+                                        </button>
+                                    </th>
+                                    <th>
+                                        <button class="btn btn-link p-0 text-reset text-decoration-none fw-semibold" type="button" (click)="toggleClientSort('detalles')">
+                                            Detalles <i class="bi" [ngClass]="sortColumn === 'detalles' ? (sortDirection === 'asc' ? 'bi-arrow-up' : 'bi-arrow-down') : 'bi-arrow-down-up'"></i>
+                                        </button>
+                                    </th>
+                                    <th>
+                                        <button class="btn btn-link p-0 text-reset text-decoration-none fw-semibold" type="button" (click)="toggleClientSort('estado')">
+                                            Estado <i class="bi" [ngClass]="sortColumn === 'estado' ? (sortDirection === 'asc' ? 'bi-arrow-up' : 'bi-arrow-down') : 'bi-arrow-down-up'"></i>
+                                        </button>
+                                    </th>
                                     <th class="text-end">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr *ngFor="let client of clients">
+                                <tr *ngFor="let client of filteredClients">
                                     <td>
                                         <a class="text-decoration-none fw-semibold" [routerLink]="['/app/crm-clientes', client.id]">{{ client.nombre }}</a>
                                         <div class="small text-secondary">{{ client.empresa || '--' }}</div>
@@ -142,10 +192,10 @@ interface ClientDraft {
                                     </td>
                                     <td class="text-end position-relative">
                                         <div class="dropdown d-inline-block">
-                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-boundary="window">
+                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-boundary="window" data-bs-popper-config='{"strategy":"fixed","modifiers":[{"name":"computeStyles","options":{"gpuAcceleration":false}}]}'>
                                                 Acciones
                                             </button>
-                                            <ul class="dropdown-menu dropdown-menu-end" style="z-index: 1055;">
+                                            <ul class="dropdown-menu dropdown-menu-end" style="z-index: 2000;">
                                                 <li><a class="dropdown-item" [routerLink]="['/app/crm-clientes', client.id]">Abrir ficha</a></li>
                                                 <li><button class="dropdown-item" type="button" (click)="editClient(client.id)">Editar</button></li>
                                                 <li><button class="dropdown-item text-danger" type="button" (click)="removeClient(client.id)">Eliminar</button></li>
@@ -410,9 +460,36 @@ interface ClientDraft {
 })
 export class CrmClientsComponent {
     clients: CrmClientRecord[] = [];
+    clientSearchTerm = "";
+    sortColumn: "cliente" | "contacto" | "detalles" | "estado" = "cliente";
+    sortDirection: "asc" | "desc" = "asc";
+
+    toggleClientSort(column: "cliente" | "contacto" | "detalles" | "estado"): void {
+        if (this.sortColumn === column) {
+            this.sortDirection = this.sortDirection === "asc" ? "desc" : "asc";
+            return;
+        }
+
+        this.sortColumn = column;
+        this.sortDirection = "asc";
+    }
+
+    private getClientSortValue(client: CrmClientRecord, column: "cliente" | "contacto" | "detalles" | "estado"): string {
+        switch (column) {
+            case "cliente":
+                return `${client.nombre ?? ""} ${client.empresa ?? ""}`.trim();
+            case "contacto":
+                return `${client.correo ?? ""} ${client.nit ?? ""}`.trim();
+            case "detalles":
+                return `${client.zona ?? ""} ${client.creado ?? ""}`.trim();
+            case "estado":
+                return String(client.estado ?? "");
+        }
+    }
     zoneOptions: CrmZoneRecord[] = [];
     showAddClient = false;
     showImport = false;
+    exportandoClientes = false;
     editingClientId: string | null = null;
     successMessage = "";
     formError = "";
@@ -738,6 +815,152 @@ export class CrmClientsComponent {
             return 0;
         }
         return numeric;
+    }
+
+
+    exportClientsToExcel(): void {
+        if (this.exportandoClientes) {
+            return;
+        }
+
+        this.exportandoClientes = true;
+        this.formError = "";
+        this.successMessage = "";
+
+        this.crmClientsApi.listClients().subscribe({
+            next: (allClients) => {
+                try {
+                    const clientRows = allClients.map((client) => ({
+                        "ID del cliente": client.id ?? "",
+                        "Nombre del cliente": client.nombre ?? "",
+                        "Empresa": client.empresa ?? "",
+                        "Tipo de identificación": client.idType || "NIT",
+                        "NIT": client.nit ?? "",
+                        
+                        "Zona": client.zona ?? "",
+                        "Estado": client.estado ?? "",
+                        "Correo electrónico": client.correo ?? "",
+                        
+                        "Teléfono de oficina": client.officePhone ?? "",
+                        "Sitio web": client.website ?? "",
+                        "País": client.country ?? "",
+                        "Ciudad": client.city ?? "",
+                        "Dirección": client.address ?? "",
+                        
+                        "Gran contribuyente": client.grandContributor ? "Sí" : "No",
+                        "Crédito habilitado": client.credito?.enabled ? "Sí" : "No",
+                        "Cupo de crédito (COP)": Number(client.credito?.creditLimit ?? 0),
+                        "Crédito consumido (COP)": Number(client.credito?.consumed ?? 0),
+                        "Plazo de pago (días)": Number(client.credito?.paymentTermDays ?? 0),
+                        "Fecha del último pago": client.credito?.lastPaymentDate ?? "",
+                        "Fecha de creación": client.creado ?? "",
+                    }));
+
+                    const workbook = XLSX.utils.book_new();
+                    const clientsSheet = XLSX.utils.json_to_sheet(clientRows);
+                    clientsSheet["!cols"] = [
+                        { wch: 24 }, { wch: 28 }, { wch: 28 }, { wch: 22 },
+                        { wch: 20 }, { wch: 18 }, { wch: 20 }, { wch: 14 },
+                        { wch: 32 }, { wch: 32 }, { wch: 20 }, { wch: 30 },
+                        { wch: 18 }, { wch: 20 }, { wch: 36 }, { wch: 16 },
+                        { wch: 20 }, { wch: 18 }, { wch: 22 }, { wch: 24 },
+                        { wch: 20 }, { wch: 24 }, { wch: 22 },
+                    ];
+                    XLSX.utils.book_append_sheet(workbook, clientsSheet, "Clientes");
+
+                    const branchRows = allClients.flatMap((client) =>
+                        (client.branches ?? []).map((branch) => ({
+                            "ID del cliente": client.id ?? "",
+                            "Cliente": client.nombre ?? "",
+                            "Empresa": client.empresa ?? "",
+                            "Sucursal": branch.name ?? "",
+                            "Contacto": branch.contactName ?? "",
+                            "Cargo del contacto": branch.contactRole ?? "",
+                            "Correo": branch.email ?? "",
+                            "Teléfono": branch.phone ?? "",
+                            "País": branch.country ?? "",
+                            "Ciudad": branch.city ?? "",
+                            "Dirección": branch.address ?? "",
+                            "Sucursal principal": branch.isPrimary ? "Sí" : "No",
+                        }))
+                    );
+
+                    if (branchRows.length > 0) {
+                        const branchesSheet = XLSX.utils.json_to_sheet(branchRows);
+                        branchesSheet["!cols"] = [
+                            { wch: 24 }, { wch: 28 }, { wch: 28 }, { wch: 24 },
+                            { wch: 28 }, { wch: 22 }, { wch: 32 }, { wch: 20 },
+                            { wch: 18 }, { wch: 20 }, { wch: 36 }, { wch: 20 },
+                        ];
+                        XLSX.utils.book_append_sheet(workbook, branchesSheet, "Sucursales");
+                    }
+
+                    const date = new Date();
+                    const dateStamp = [
+                        date.getFullYear(),
+                        String(date.getMonth() + 1).padStart(2, "0"),
+                        String(date.getDate()).padStart(2, "0"),
+                    ].join("-");
+                    XLSX.writeFile(workbook, `clientes_PIKA_OS_${dateStamp}.xlsx`);
+
+                    this.successMessage =
+                        `Exportación completada: ${allClients.length} clientes incluidos` +
+                        (branchRows.length ? ` y ${branchRows.length} sucursales.` : ".");
+                } catch (error) {
+                    console.error("Error al generar el Excel de clientes:", error);
+                    this.formError = "No se pudo generar el archivo Excel de clientes.";
+                } finally {
+                    this.exportandoClientes = false;
+                    this.cdr.detectChanges();
+                }
+            },
+            error: (error) => {
+                this.exportandoClientes = false;
+                this.formError = this.resolveErrorMessage(
+                    error,
+                    "No se pudieron obtener todos los clientes para exportarlos."
+                );
+                this.cdr.detectChanges();
+            },
+        });
+    }
+
+    get filteredClients(): CrmClientRecord[] {
+        const term = this.clientSearchTerm.trim().toLocaleLowerCase();
+
+        const filtered = this.clients.filter((client) => {
+            if (!term) {
+                return true;
+            }
+            const searchableValues = [
+                client.nombre,
+                client.empresa,
+                client.correo,
+                client.nit,
+                client.officePhone,
+                client.zona,
+                client.city,
+                client.country,
+                client.address,
+                client.website,
+                client.estado,
+            ];
+
+            return searchableValues.some((value) =>
+                String(value ?? "").toLocaleLowerCase().includes(term),
+            );
+        });
+
+        return filtered.sort((a, b) => {
+            const left = this.getClientSortValue(a, this.sortColumn);
+            const right = this.getClientSortValue(b, this.sortColumn);
+            const comparison = left.localeCompare(right, undefined, {
+                numeric: true,
+                sensitivity: "base",
+            });
+
+            return this.sortDirection === "asc" ? comparison : -comparison;
+        });
     }
 
     private loadClients(): void {

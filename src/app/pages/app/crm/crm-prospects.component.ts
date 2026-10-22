@@ -110,10 +110,20 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
                             <thead>
                                 <tr>
                                     <th style="width: 40px;"><input type="checkbox" class="form-check-input" /></th>
-                                    <th>Nombre</th>
+                                    <th>
+                                        <button class="btn btn-link p-0 text-decoration-none fw-semibold" type="button" (click)="toggleSort('nombre')">
+                                            Nombre
+                                            <i class="bi" [class.bi-sort-alpha-down]="sortKey === 'nombre' && sortDirection === 'asc'" [class.bi-sort-alpha-up]="sortKey === 'nombre' && sortDirection === 'desc'" [class.bi-arrow-down-up]="sortKey !== 'nombre'"></i>
+                                        </button>
+                                    </th>
                                     <th>Correo Electronico</th>
                                     <th>Movil</th>
-                                    <th>Creado</th>
+                                    <th>
+                                        <button class="btn btn-link p-0 text-decoration-none fw-semibold" type="button" (click)="toggleSort('creado')">
+                                            Creado
+                                            <i class="bi" [class.bi-sort-numeric-down]="sortKey === 'creado' && sortDirection === 'asc'" [class.bi-sort-numeric-up]="sortKey === 'creado' && sortDirection === 'desc'" [class.bi-arrow-down-up]="sortKey !== 'creado'"></i>
+                                        </button>
+                                    </th>
                                     <th>Estado</th>
                                     <th>Accion</th>
                                 </tr>
@@ -496,8 +506,41 @@ export class CrmProspectsComponent {
 
     prospectRows: ProspectRecord[] = [];
 
+    sortKey: "nombre" | "creado" | null = null;
+    sortDirection: "asc" | "desc" = "asc";
+
     get visibleProspectRows(): ProspectRecord[] {
-        return this.prospectRows.filter((row) => !this.convertedProspectIds.has(row.id));
+        const rows = this.prospectRows.filter((row) => !this.convertedProspectIds.has(row.id));
+        if (!this.sortKey) {
+            return rows;
+        }
+        return [...rows].sort((a, b) => this.compareProspectRows(a, b, this.sortKey!) * (this.sortDirection === "asc" ? 1 : -1));
+    }
+
+    toggleSort(key: "nombre" | "creado"): void {
+        if (this.sortKey === key) {
+            this.sortDirection = this.sortDirection === "asc" ? "desc" : "asc";
+        } else {
+            this.sortKey = key;
+            this.sortDirection = "asc";
+        }
+    }
+
+    private compareProspectRows(a: ProspectRecord, b: ProspectRecord, key: "nombre" | "creado"): number {
+        if (key === "creado") {
+            return this.parseDisplayDate(a.creado) - this.parseDisplayDate(b.creado);
+        }
+        return (a.nombre || "").localeCompare(b.nombre || "", "es", { sensitivity: "base" });
+    }
+
+    private parseDisplayDate(value: string): number {
+        const match = /^([0-9]{1,2})[/-]([0-9]{1,2})[/-]([0-9]{2,4})/.exec((value || "").trim());
+        if (match) {
+            const year = match[3].length === 2 ? 2000 + Number(match[3]) : Number(match[3]);
+            return new Date(year, Number(match[2]) - 1, Number(match[1])).getTime();
+        }
+        const parsed = Date.parse(value || "");
+        return Number.isNaN(parsed) ? 0 : parsed;
     }
 
     zoneOptions: CrmZoneRecord[] = [];
