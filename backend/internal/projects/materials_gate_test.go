@@ -257,6 +257,63 @@ func TestUpsertProjectBlocksRepairThroughApprovedRequestLine(t *testing.T) {
 	}
 }
 
+// La regla del usuario es por material recibido: si la totalidad ya llego
+// (received_quantity cubre quantity), Reparacion debe abrirse aunque nadie le
+// haya dado al boton Cerrar aun.
+func TestUpsertProjectAllowsRepairWhenLineFullyReceived(t *testing.T) {
+	db := openSLATestDB(t)
+	s := NewService(db)
+
+	const companyID = "qa-gate-recibido-100"
+	t.Cleanup(func() { cleanupGateRows(t, db, companyID) })
+
+	const projectID = "proj-gate-recib100"
+	const lineID = "po-qa-gate-recib100"
+
+	if _, err := s.UpsertProject(companyID, UpsertProjectRequest{ID: projectID, Status: "esperando-proveedor"}); err != nil {
+		t.Fatalf("crear proyecto en esperando-proveedor: %v", err)
+	}
+
+	insertGatePurchaseLine(t, db, companyID, lineID, "BOBINA-0101", projectID, "pendiente")
+	if _, err := db.Exec(`UPDATE inventory_purchase_lines SET received_quantity = quantity WHERE company_id = $1 AND id = $2`, companyID, lineID); err != nil {
+		t.Fatalf("marcar linea recibida al 100%%: %v", err)
+	}
+
+	saved, err := s.UpsertProject(companyID, UpsertProjectRequest{ID: projectID, Status: "reparacion"})
+	if err != nil {
+		t.Fatalf("linea recibida al 100%% no debe bloquear Reparacion: %v", err)
+	}
+	if saved.Status != "reparacion" {
+		t.Fatalf("status = %q, esperaba reparacion", saved.Status)
+	}
+}
+
+// Recibido PARCIAL sigue bloqueando: faltan unidades por llegar.
+func TestUpsertProjectBlocksRepairWhenLinePartiallyReceived(t *testing.T) {
+	db := openSLATestDB(t)
+	s := NewService(db)
+
+	const companyID = "qa-gate-recibido-parcial"
+	t.Cleanup(func() { cleanupGateRows(t, db, companyID) })
+
+	const projectID = "proj-gate-recibparc"
+	const lineID = "po-qa-gate-recibparc"
+
+	if _, err := s.UpsertProject(companyID, UpsertProjectRequest{ID: projectID, Status: "esperando-proveedor"}); err != nil {
+		t.Fatalf("crear proyecto en esperando-proveedor: %v", err)
+	}
+
+	insertGatePurchaseLine(t, db, companyID, lineID, "BOBINA-0101", projectID, "pendiente")
+	if _, err := db.Exec(`UPDATE inventory_purchase_lines SET quantity = 2, received_quantity = 1 WHERE company_id = $1 AND id = $2`, companyID, lineID); err != nil {
+		t.Fatalf("marcar linea recibida parcialmente (1 de 2): %v", err)
+	}
+
+	err := upsertToRepair(t, s, companyID, projectID, nil)
+	if !errors.Is(err, errMaterialsPending) {
+		t.Fatalf("linea con faltante de material = %v, esperaba errMaterialsPending", err)
+	}
+}
+
 func TestMaterialsPendingErrorMessageIsActionable(t *testing.T) {
 	items := []materialsGateItem{
 		{kind: "reserva activa", label: "ABC-500 x1"},

@@ -374,6 +374,10 @@ export class InventoryApiService {
         return from(this.request<OperationResultResponse>(`/api/v1/inventory/purchase-lines/${encodeURIComponent(lineId)}/reject`, { method: "POST" }));
     }
 
+    receivePurchaseLine(lineId: string, quantity: number): Observable<OperationResultResponse> {
+        return from(this.request<OperationResultResponse>(`/api/v1/inventory/purchase-lines/${encodeURIComponent(lineId)}/receive`, { method: "POST", body: JSON.stringify({ quantity }) }));
+    }
+
     // ─── LINK TO ORDER (Gap 1) ───────────────────────────────────────────────
 
     linkPurchaseLineToOrder(lineId: string, orderId: number): Observable<OperationResultResponse> {

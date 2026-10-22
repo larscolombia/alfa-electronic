@@ -10,6 +10,12 @@ func migrationStatementsComprasGaps() []string {
 		`ALTER TABLE inventory_purchase_lines ADD COLUMN IF NOT EXISTS approved_at TIMESTAMPTZ;`,
 		`ALTER TABLE inventory_purchase_lines ADD COLUMN IF NOT EXISTS linked_order_id BIGINT NOT NULL DEFAULT 0;`,
 
+		// Cantidad recibida del pedido (recibos parciales registrados contra la linea).
+		// Invariante: nunca se acredita a stock mas unidades que `quantity`; cada unidad
+		// entra o por un recibo (received_quantity) o por el faltante al cerrar, no ambos.
+		`ALTER TABLE inventory_purchase_lines ADD COLUMN IF NOT EXISTS received_quantity INTEGER NOT NULL DEFAULT 0;`,
+		`CREATE INDEX IF NOT EXISTS idx_inventory_purchase_lines_supplier ON inventory_purchase_lines(company_id, supplier);`,
+
 		`CREATE TABLE IF NOT EXISTS purchase_requests (
 			company_id TEXT NOT NULL,
 			id TEXT NOT NULL,

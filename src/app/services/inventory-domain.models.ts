@@ -130,6 +130,7 @@ export interface PurchaseLine {
     description: string;
     supplier: string;
     quantity: number;
+    receivedQuantity?: number;
     unitPrice: number;
     neededBy: string;
     source?: "minimo" | "manual" | "escalamiento";

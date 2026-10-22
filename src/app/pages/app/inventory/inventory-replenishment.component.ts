@@ -1,3 +1,5 @@
+import * as XLSX from "xlsx";
+
 import { CommonModule } from "@angular/common";
 import { ChangeDetectorRef, Component, OnDestroy, OnInit } from "@angular/core";
 import { FormsModule } from "@angular/forms";
@@ -253,16 +255,34 @@ import { projectOriginLabel } from "./project-origin-label.util";
                 <div class="card-header">
                     <h6 class="mb-0">Lineas de compra</h6>
                 </div>
+                <div class="card-body border-bottom py-2">
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <label class="form-label mb-0 me-1 small text-secondary" for="line-supplier-filter">Proveedores</label>
+                        <select id="line-supplier-filter" class="form-select form-select-sm w-auto" [(ngModel)]="lineSupplierFilter">
+                            <option value="">Todos los proveedores ({{ purchaseLines.length }})</option>
+                            <option *ngFor="let name of lineSuppliers" [value]="name">{{ name }}</option>
+                        </select>
+                        <span class="small text-secondary">{{ visiblePurchaseLines.length }} linea(s) en la vista</span>
+                        <div class="ms-auto d-flex align-items-center gap-2">
+                            <button class="btn btn-outline-theme" type="button" [disabled]="visiblePurchaseLines.length === 0 || !canManageReplenishment" (click)="downloadSupplierExcel()" data-testid="download-purchase-lines-excel">
+                                <i class="bi bi-file-earmark-spreadsheet me-1"></i>Descargar Excel de repuestos
+                            </button>
+                        </div>
+                    </div>
+                    <p class="small text-secondary mt-2 mb-0">Marca con el checkbox las lineas que necesitas; sin selecciones se exporta todo lo visible. El archivo incluye solicitado vs. recibido por linea, listo para enviar al proveedor.</p>
+                </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table align-middle mb-0" data-testid="purchase-lines-table">
                             <thead>
                                 <tr>
+                                    <th class="text-center"><input type="checkbox" class="form-check-input m-0" [checked]="allVisibleSelected" (change)="toggleSelectAllVisible($event)" aria-label="Seleccionar todas las lineas visibles" /></th>
                                     <th>Referencia</th>
                                     <th>Componente</th>
                                     <th>Tipo</th>
                                     <th>Marca</th>
                                     <th>Cantidad</th>
+                                    <th>Recibido</th>
                                     <th>Valor Unit.</th>
                                     <th>Proveedor</th>
                                     <th>Proyecto origen</th>
@@ -274,12 +294,17 @@ import { projectOriginLabel } from "./project-origin-label.util";
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr *ngFor="let line of purchaseLines" data-testid="purchase-line-row">
+                                <tr *ngFor="let line of visiblePurchaseLines" data-testid="purchase-line-row">
+                                    <td class="text-center"><input type="checkbox" class="form-check-input m-0" [checked]="selectedForExcel[line.id]" (change)="toggleLineSelected(line.id, $event)" aria-label="Seleccionar linea para Excel" /></td>
                                     <td><strong>{{ line.reference }}</strong></td>
                                     <td>{{ line.component || '--' }}</td>
                                     <td>{{ line.type || '--' }}</td>
                                     <td>{{ line.brand || '--' }}</td>
                                     <td>{{ line.quantity }}</td>
+                                    <td>
+                                        <span class="badge" [ngClass]="receivedBadgeClass(line)" data-testid="purchase-line-received">{{ line.receivedQuantity || 0 }}/{{ line.quantity }}</span>
+                                        <div *ngIf="remainingFor(line) > 0" class="small text-secondary mt-1">Faltan {{ remainingFor(line) }}</div>
+                                    </td>
                                     <td>{{ line.unitPrice ? (line.unitPrice | currency:'COP':'symbol':'1.0-0') : '--' }}</td>
                                     <td>{{ line.supplier || '--' }}</td>
                                     <td>{{ projectLabel(line.projectId) }}</td>
@@ -292,12 +317,16 @@ import { projectOriginLabel } from "./project-origin-label.util";
                                             <button class="btn btn-sm btn-outline-success me-2" type="button" data-testid="approve-purchase-line" [disabled]="!canManageReplenishment" (click)="approveLine(line.id)">Aprobar</button>
                                             <button class="btn btn-sm btn-outline-danger me-2" type="button" data-testid="reject-purchase-line" [disabled]="!canManageReplenishment" (click)="rejectLine(line.id)">Rechazar</button>
                                         </ng-container>
+                                        <ng-container *ngIf="line.status !== 'cerrada' && remainingFor(line) > 0">
+                                            <input class="form-control form-control-sm me-1 d-inline-block" style="width: 4.5rem;" type="number" min="1" [max]="remainingFor(line)" placeholder="Cant." [(ngModel)]="receiveDrafts[line.id]" aria-label="Cantidad recibida de esta linea" />
+                                            <button class="btn btn-sm btn-outline-success me-2" type="button" data-testid="receive-purchase-line" [disabled]="!canManageReplenishment || receivingLineIds.has(line.id)" (click)="receiveLine(line)">{{ receivingLineIds.has(line.id) ? 'Registrando...' : 'Recibir' }}</button>
+                                        </ng-container>
                                         <button class="btn btn-sm btn-outline-secondary me-2" type="button" [disabled]="line.status !== 'pendiente' || !canManageReplenishment" (click)="markSent(line.id)">Enviar</button>
                                         <button class="btn btn-sm btn-outline-theme" type="button" [disabled]="line.status === 'cerrada' || !canManageReplenishment" (click)="closeLine(line.id)">Cerrar</button>
                                     </td>
                                 </tr>
-                                <tr *ngIf="purchaseLines.length === 0">
-                                    <td colspan="13" class="text-center text-secondary py-4">Sin lineas de compra registradas.</td>
+                                <tr *ngIf="visiblePurchaseLines.length === 0">
+                                    <td colspan="15" class="text-center text-secondary py-4">Sin lineas de compra para el filtro actual.</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -351,6 +380,12 @@ export class InventoryReplenishmentComponent implements OnInit, OnDestroy {
     weeklySnapshots: WeeklyShortageSnapshot[] = [];
     suppliers: SupplierRecord[] = [];
     projects: Project[] = [];
+
+    // Pedido por proveedor (Excel) + control de recibido vs solicitado.
+    lineSupplierFilter = "";
+    selectedForExcel: Record<string, boolean> = {};
+    receiveDrafts: Record<string, number | null> = {};
+    receivingLineIds = new Set<string>();
 
     private readonly subscriptions = new Subscription();
 
@@ -620,6 +655,135 @@ export class InventoryReplenishmentComponent implements OnInit, OnDestroy {
             return "text-bg-danger";
         }
         return "text-bg-warning";
+    }
+
+    // ─── Pedido por proveedor: recibido vs solicitado + Excel ────────────────
+
+    get lineSuppliers(): string[] {
+        const names = new Set<string>();
+        for (const line of this.purchaseLines) {
+            const name = (line.supplier || "").trim();
+            if (name) {
+                names.add(name);
+            }
+        }
+        return [...names].sort((a, b) => a.localeCompare(b));
+    }
+
+    get visiblePurchaseLines(): PurchaseLine[] {
+        if (!this.lineSupplierFilter) {
+            return this.purchaseLines;
+        }
+        const wanted = this.lineSupplierFilter.toLowerCase();
+        return this.purchaseLines.filter((line) => (line.supplier || "").toLowerCase() === wanted);
+    }
+
+    remainingFor(line: PurchaseLine): number {
+        const received = line.receivedQuantity ?? 0;
+        return Math.max(0, line.quantity - received);
+    }
+
+    receivedBadgeClass(line: PurchaseLine): string {
+        if ((line.receivedQuantity ?? 0) >= line.quantity) {
+            return "text-bg-success";
+        }
+        if ((line.receivedQuantity ?? 0) > 0) {
+            return "text-bg-info";
+        }
+        return "text-bg-secondary";
+    }
+
+    get allVisibleSelected(): boolean {
+        const rows = this.visiblePurchaseLines;
+        return rows.length > 0 && rows.every((line) => !!this.selectedForExcel[line.id]);
+    }
+
+    toggleLineSelected(lineId: string, event: Event): void {
+        const checked = (event.target as HTMLInputElement).checked;
+        this.selectedForExcel = { ...this.selectedForExcel, [lineId]: checked };
+    }
+
+    toggleSelectAllVisible(event: Event): void {
+        const checked = (event.target as HTMLInputElement).checked;
+        const next = { ...this.selectedForExcel };
+        for (const line of this.visiblePurchaseLines) {
+            next[line.id] = checked;
+        }
+        this.selectedForExcel = next;
+    }
+
+    private exportRows(): PurchaseLine[] {
+        const visible = this.visiblePurchaseLines;
+        const selected = visible.filter((line) => !!this.selectedForExcel[line.id]);
+        return selected.length > 0 ? selected : visible;
+    }
+
+    receiveLine(line: PurchaseLine): void {
+        const requested = Math.floor(Number(this.receiveDrafts[line.id]));
+        if (!Number.isFinite(requested) || requested < 1) {
+            this.setFeedback(`Indica la cantidad recibida de ${line.reference} (minimo 1).`, "warning");
+            return;
+        }
+        this.receivingLineIds.add(line.id);
+        this.cdr.detectChanges();
+        this.inventoryApi.receivePurchaseLine(line.id, requested).subscribe({
+            next: (result) => {
+                this.receivingLineIds.delete(line.id);
+                delete this.receiveDrafts[line.id];
+                const limitNote = result?.message && /se limito/i.test(result.message) ? ` (${result.message})` : "";
+                this.setFeedback(`Recibo de ${requested} unidad(es) registrado en ${line.reference}. El stock se actualizo solo por lo recibido.${limitNote}`, "success");
+                void this.inventoryWorkflow.loadFromApi().then(() => this.refreshState());
+                this.cdr.detectChanges();
+            },
+            error: (err) => {
+                this.receivingLineIds.delete(line.id);
+                const message = err?.message || "No se pudo registrar el recibo.";
+                this.setFeedback(message, /invalida|no existe|cerrada/i.test(message) ? "warning" : "danger");
+                this.cdr.detectChanges();
+            },
+        });
+    }
+
+    downloadSupplierExcel(): void {
+        const rows = this.exportRows();
+        if (rows.length === 0) {
+            this.setFeedback("No hay lineas de compra para exportar.", "warning");
+            return;
+        }
+        const header = [
+            "Referencia", "Componente", "Descripcion", "Cantidad solicitada", "Recibido", "Faltante",
+            "Estado", "Aprobacion", "Proveedor", "Proyecto origen", "Plazo (dias)", "Generada por",
+        ];
+        const data = [
+            header,
+            ...rows.map((line) => {
+                const projectLabelValue = this.projectLabel(line.projectId);
+                return [
+                    line.reference,
+                    line.component || "",
+                    line.description || "",
+                    line.quantity,
+                    line.receivedQuantity ?? 0,
+                    this.remainingFor(line),
+                    line.status,
+                    line.approvalStatus || "pendiente",
+                    line.supplier || "(sin proveedor)",
+                    projectLabelValue === "--" ? "" : projectLabelValue,
+                    line.neededBy || "",
+                    line.generatedBy,
+                ];
+            }),
+        ];
+        const worksheet = XLSX.utils.aoa_to_sheet(data);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Repuestos");
+        const supplierPart = this.lineSupplierFilter ? `_${this.lineSupplierFilter.replace(/[^A-Za-z0-9]+/g, "-")}` : "_todos";
+        const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+        XLSX.writeFile(workbook, `repuestos${supplierPart}_${stamp}.xlsx`);
+        this.setFeedback(
+            `Excel generado con ${rows.length} linea(s)${this.lineSupplierFilter ? ` del proveedor ${this.lineSupplierFilter}` : ""}. Verifica que solo queden las referencias que necesitas antes de enviarlo.`,
+            "success",
+        );
     }
 
     generateWeeklySnapshot(): void {

@@ -38,10 +38,11 @@ func materialLabel(reference string, quantity int) string {
 //    'vencida' (caduco sin consumo; aun puede consumirse). La 'liberada' NO
 //    bloquea: el bloqueo fue resuelto a proposito y, si faltan repuestos, una
 //    reserva nueva (activa) vuelve a bloquear hasta su consumo.
-//  - inventory_purchase_lines: 'pendiente'/'enviada' sin rechazo de aprobacion.
-//    Se vinculan por project_id directo o via purchase_requests.purchase_line_id
-//    (al aprobar una solicitud la linea creada NO hereda project_id).
-//    'cerrada' = recibida en stock, no bloquea.
+//  - inventory_purchase_lines: 'pendiente'/'enviada' sin rechazo de aprobacion,
+//    y NO totalmente recibidas (received_quantity < quantity). Se vinculan por
+//    project_id directo o via purchase_requests.purchase_line_id (al aprobar una
+//    solicitud la linea creada NO hereda project_id).
+//    'cerrada', o recibida al 100% sin cerrar, no bloquea: el material ya llego.
 //  - purchase_requests: solo 'pendiente' (sin ordenar todavia); al aprobar se
 //    convierte en linea y queda cubierta por el punto anterior.
 func (s *Service) pendingMaterialsForRepair(companyID, projectID, shortCode string) ([]materialsGateItem, error) {
@@ -94,6 +95,7 @@ func (s *Service) pendingMaterialsForRepair(companyID, projectID, shortCode stri
 		WHERE l.company_id = $1
 			AND l.status IN ('pendiente','enviada')
 			AND COALESCE(l.approval_status, 'pendiente') <> 'rechazada'
+			AND l.received_quantity < l.quantity
 			AND (
 				l.project_id = $2
 				OR l.id IN (

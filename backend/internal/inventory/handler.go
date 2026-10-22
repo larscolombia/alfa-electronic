@@ -53,6 +53,7 @@ func (h *Handler) RegisterRoutes(group *echo.Group) {
 	group.POST("/purchase-lines/generate", h.generatePurchaseLines)
 	group.PATCH("/purchase-lines/:id", h.updatePurchaseLine)
 	group.POST("/purchase-lines/:id/send", h.markPurchaseLineSent)
+	group.POST("/purchase-lines/:id/receive", h.receivePurchaseLine)
 	group.POST("/purchase-lines/:id/close", h.closePurchaseLine)
 
 	group.GET("/weekly-snapshots", h.listWeeklySnapshots)
@@ -439,6 +440,32 @@ func (h *Handler) markPurchaseLineSent(c echo.Context) error {
 			return c.JSON(http.StatusBadRequest, map[string]any{"error": result.Message, "ok": false})
 		}
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "no se pudo actualizar la linea"})
+	}
+	return c.JSON(http.StatusOK, result)
+}
+
+// receivePurchaseLine registra unidades recibidas del proveedor contra una
+// linea abierta. El frontend manda la cantidad; el servicio la limita al
+// faltante y acredita stock solo por lo recibido.
+func (h *Handler) receivePurchaseLine(c echo.Context) error {
+	companyID := company.IDFromRequest(c)
+	id := c.Param("id")
+
+	var req struct {
+		Quantity int `json:"quantity"`
+	}
+	if err := c.Bind(&req); err != nil || req.Quantity < 1 {
+		return c.JSON(http.StatusBadRequest, map[string]any{"error": "Cantidad de recibo invalida (minimo 1).", "ok": false})
+	}
+
+	result, err := h.service.ReceivePurchaseLine(companyID, id, req.Quantity, actorFromRequest(c))
+	if err != nil {
+		switch {
+		case errors.Is(err, errPurchaseLineNotFound), errors.Is(err, errInvalidStatus), errors.Is(err, errReceiveQuantity):
+			return c.JSON(http.StatusBadRequest, map[string]any{"error": result.Message, "ok": false})
+		default:
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "no se pudo registrar el recibo"})
+		}
 	}
 	return c.JSON(http.StatusOK, result)
 }

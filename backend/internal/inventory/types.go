@@ -99,6 +99,7 @@ type PurchaseLine struct {
 	Description         string  `json:"description"`
 	Supplier            string  `json:"supplier"`
 	Quantity            int     `json:"quantity"`
+	ReceivedQuantity    int     `json:"receivedQuantity"`
 	UnitPrice           float64 `json:"unitPrice"`
 	NeededBy            string  `json:"neededBy"`
 	Source              string  `json:"source"`

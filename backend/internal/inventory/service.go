@@ -25,6 +25,7 @@ var (
 	errReplenishmentNotFound = errors.New("item de reposicion no encontrado")
 	errInvalidMovementType   = errors.New("tipo de movimiento invalido")
 	errInvalidStatus         = errors.New("estado invalido")
+	errReceiveQuantity       = errors.New("cantidad de recibo invalida")
 	errBagAlreadyActive      = errors.New("ya existe una bolsa activa con ese codigo")
 )
 
@@ -947,7 +948,7 @@ func (s *Service) MarkReplenishmentObsolete(companyID, reference, actor string) 
 
 func (s *Service) ListPurchaseLines(companyID string) ([]PurchaseLine, error) {
 	rows, err := s.db.Query(`
-		SELECT id, reference, component, type, brand, description, supplier, quantity, unit_price, needed_by, source, expected_date,
+		SELECT id, reference, component, type, brand, description, supplier, quantity, received_quantity, unit_price, needed_by, source, expected_date,
 			request_reason, generated_at, generated_by, status, project_id, equipment_tag,
 			modified_by_purchases, modified_by, modified_at,
 			approval_status, approved_by, approved_at
@@ -966,7 +967,7 @@ func (s *Service) ListPurchaseLines(companyID string) ([]PurchaseLine, error) {
 		var approvedAt sql.NullTime
 		var unitPrice float64
 		if err := rows.Scan(&p.ID, &p.Reference, &p.Component, &p.Type, &p.Brand, &p.Description, &p.Supplier, &p.Quantity,
-			&unitPrice, &p.NeededBy, &p.Source, &p.ExpectedDate, &p.RequestReason, &generatedAt, &p.GeneratedBy, &p.Status,
+			&p.ReceivedQuantity, &unitPrice, &p.NeededBy, &p.Source, &p.ExpectedDate, &p.RequestReason, &generatedAt, &p.GeneratedBy, &p.Status,
 			&p.ProjectID, &p.EquipmentTag, &p.ModifiedByPurchases, &p.ModifiedBy, &modifiedAt,
 			&p.ApprovalStatus, &p.ApprovedBy, &approvedAt); err != nil {
 			return nil, err
@@ -1133,15 +1134,79 @@ func (s *Service) MarkPurchaseLineSent(companyID, lineID, actor string) (Operati
 	return OperationResult{OK: true, Message: "Linea de compra marcada como enviada."}, nil
 }
 
+// ReceivePurchaseLine registra un recibo parcial (o total) de material del
+// proveedor contra una linea abierta. Cada recibo acredita a stock SOLO las
+// unidades recibidas y deja la traza en inventory_movements; cerrar la linea
+// mas tarde acredita el faltante restante, asi ninguna unidad entra dos veces.
+func (s *Service) ReceivePurchaseLine(companyID, lineID string, qty int, actor string) (OperationResult, error) {
+	if qty < 1 {
+		return OperationResult{OK: false, Message: "La cantidad recibida debe ser de al menos 1 unidad."}, errReceiveQuantity
+	}
+
+	var reference, supplier, status string
+	var quantity, received int
+	err := s.db.QueryRow(`
+		SELECT reference, supplier, quantity, received_quantity, status
+		FROM inventory_purchase_lines WHERE company_id = $1 AND id = $2`, companyID, lineID).Scan(
+		&reference, &supplier, &quantity, &received, &status)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return OperationResult{OK: false, Message: "La linea de compra no existe."}, errPurchaseLineNotFound
+		}
+		return OperationResult{}, err
+	}
+
+	if status == "cerrada" {
+		return OperationResult{OK: false, Message: "La linea ya esta cerrada; el recibo debe registrarse antes del cierre."}, errInvalidStatus
+	}
+
+	remaining := quantity - received
+	if remaining < 1 {
+		return OperationResult{OK: false, Message: fmt.Sprintf("Ya se recibio la totalidad de %s (x%d).", reference, quantity)}, errReceiveQuantity
+	}
+	capped := ""
+	if qty > remaining {
+		qty = remaining // sin sobre-entrega: no entran mas unidades que las solicitadas
+		capped = fmt.Sprintf(" (se limito a %d porque solo faltaban %d)", remaining, remaining)
+	}
+
+	now := time.Now().UTC()
+	if _, err := s.db.Exec(`UPDATE inventory_purchase_lines SET received_quantity = $1 WHERE company_id = $2 AND id = $3`,
+		received+qty, companyID, lineID); err != nil {
+		return OperationResult{}, err
+	}
+
+	stockNote := ""
+	if existing, refErr := s.GetReference(companyID, reference); refErr == nil {
+		newStock := existing.CurrentStock + qty
+		movID := buildID("mov")
+		_, _ = s.db.Exec(`UPDATE inventory_references SET current_stock = $1, updated_at = $2 WHERE company_id = $3 AND reference = $4`,
+			newStock, now, companyID, reference)
+		_, _ = s.db.Exec(`
+			INSERT INTO inventory_movements (company_id, id, type, reference, quantity, reason, work_order,
+				equipment_tag, customer_site, movement_category, evidence_ref, requested_by, requested_at)
+			VALUES ($1,$2,'entrada',$3,$4,$5,'','','','regularizacion',$6,$7,$8)
+		`, companyID, movID, reference, qty,
+			fmt.Sprintf("Recibo de la linea %s (proveedor: %s)", lineID, supplier),
+			lineID, actor, now)
+		stockNote = fmt.Sprintf(" Stock actualizado a %d unidades.", newStock)
+	}
+
+	newTotal := received + qty
+	s.pushAudit(companyID, actor, "RECEIVE_PURCHASE_LINE", fmt.Sprintf("Linea %s: recibido %d/%d de %s.", lineID, newTotal, quantity, reference))
+	msg := fmt.Sprintf("Recibo registrado: %s x%d. Recibido total %d de %d solicitados.%s%s", reference, qty, newTotal, quantity, stockNote, capped)
+	return OperationResult{OK: true, Message: msg}, nil
+}
+
 func (s *Service) ClosePurchaseLine(companyID, lineID, actor string) (OperationResult, error) {
 	var line PurchaseLine
 	var generatedAt time.Time
 	err := s.db.QueryRow(`
-		SELECT id, reference, description, supplier, quantity, source, expected_date,
+		SELECT id, reference, description, supplier, quantity, received_quantity, source, expected_date,
 			request_reason, generated_at, generated_by, status
 		FROM inventory_purchase_lines WHERE company_id = $1 AND id = $2
 	`, companyID, lineID).Scan(&line.ID, &line.Reference, &line.Description, &line.Supplier, &line.Quantity,
-		&line.Source, &line.ExpectedDate, &line.RequestReason, &generatedAt, &line.GeneratedBy, &line.Status)
+		&line.ReceivedQuantity, &line.Source, &line.ExpectedDate, &line.RequestReason, &generatedAt, &line.GeneratedBy, &line.Status)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return OperationResult{OK: false, Message: "La linea no existe o ya esta cerrada."}, errPurchaseLineNotFound
@@ -1154,31 +1219,50 @@ func (s *Service) ClosePurchaseLine(companyID, lineID, actor string) (OperationR
 	}
 
 	now := time.Now().UTC()
+	remaining := line.Quantity - line.ReceivedQuantity
+	if remaining < 0 {
+		remaining = 0
+	}
 
 	_, err = s.db.Exec(`UPDATE inventory_purchase_lines SET status = 'cerrada' WHERE company_id = $1 AND id = $2`, companyID, lineID)
 	if err != nil {
 		return OperationResult{}, err
 	}
 
-	existing, err := s.GetReference(companyID, line.Reference)
-	if err == nil {
-		newStock := existing.CurrentStock + line.Quantity
+	var message string
+	if existing, refErr := s.GetReference(companyID, line.Reference); refErr == nil && remaining > 0 {
+		newStock := existing.CurrentStock + remaining
 		movID := buildID("mov")
 
 		_, _ = s.db.Exec(`UPDATE inventory_references SET current_stock = $1, updated_at = $2 WHERE company_id = $3 AND reference = $4`,
 			newStock, now, companyID, line.Reference)
 
+		reason := "Entrada automatica por cierre de linea de compra"
+		if line.ReceivedQuantity > 0 {
+			reason = fmt.Sprintf("Faltante recibido al cerrar la linea (recibos previos: %d/%d)", line.ReceivedQuantity, line.Quantity)
+		}
+
 		_, _ = s.db.Exec(`
 			INSERT INTO inventory_movements (company_id, id, type, reference, quantity, reason, work_order,
 				equipment_tag, customer_site, movement_category, evidence_ref, requested_by, requested_at)
 			VALUES ($1,$2,'entrada',$3,$4,$5,'','','','regularizacion',$6,$7,$8)
-		`, companyID, movID, line.Reference, line.Quantity,
-			fmt.Sprintf("Entrada automatica por cierre de linea de compra %s", lineID),
+		`, companyID, movID, line.Reference, remaining,
+			fmt.Sprintf("%s %s", reason, lineID),
 			lineID, actor, now)
+
+		if line.ReceivedQuantity > 0 {
+			message = fmt.Sprintf("Linea cerrada. Recibos previos: %d; faltante de %d unidades ingresado a stock (%s).", line.ReceivedQuantity, remaining, line.Reference)
+		} else {
+			message = fmt.Sprintf("Linea cerrada y %d unidades de %s ingresadas automaticamente a stock.", remaining, line.Reference)
+		}
+	} else if line.ReceivedQuantity > 0 {
+		message = fmt.Sprintf("Linea cerrada: ya se habian recibido las %d unidades solicitadas de %s (stock actualizado con los recibos).", line.Quantity, line.Reference)
+	} else {
+		message = fmt.Sprintf("Linea cerrada. (%d unidades solicitadas de %s no entraron a stock porque la referencia no esta en el catalogo; registrala primero si corresponde.)", line.Quantity, line.Reference)
 	}
 
-	s.pushAudit(companyID, actor, "CLOSE_PURCHASE_LINE", fmt.Sprintf("Linea %s cerrada. Entrada automatica de %d unidades de %s.", lineID, line.Quantity, line.Reference))
-	return OperationResult{OK: true, Message: fmt.Sprintf("Linea cerrada y %d unidades de %s ingresadas automaticamente a stock.", line.Quantity, line.Reference)}, nil
+	s.pushAudit(companyID, actor, "CLOSE_PURCHASE_LINE", fmt.Sprintf("Linea %s cerrada. Recibido total %d/%d de %s.", lineID, line.ReceivedQuantity+remaining, line.Quantity, line.Reference))
+	return OperationResult{OK: true, Message: message}, nil
 }
 
 // ─── WEEKLY SNAPSHOTS ────────────────────────────────────────────────────────
