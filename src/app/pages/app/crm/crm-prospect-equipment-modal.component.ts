@@ -1790,11 +1790,16 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
     }
 
     addBorrowedEquipment(item: ProspectEquipmentItem): void {
+        // Reasignamos el array (no push) para que *ngIf/*ngFor lo vean como cambio de referencia.
         item.borrowedEquipments = [...item.borrowedEquipments, ""];
+        // Forzamos el repaint inmediato: sin esto la fila nueva podía quedarse colgada
+        // hasta que otro input disparara un ciclo de detección (el "Agregar no reacciona").
+        this.changeDetectorRef.detectChanges();
     }
 
     removeBorrowedEquipment(item: ProspectEquipmentItem, index: number): void {
         item.borrowedEquipments = item.borrowedEquipments.filter((_, currentIndex) => currentIndex !== index);
+        this.changeDetectorRef.detectChanges();
     }
 
     warrantyStateFor(item: ProspectEquipmentItem): ItemWarrantyState {
@@ -2574,6 +2579,12 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
     }
 
     requiresIndustrialOverride(item: ProspectEquipmentItem): boolean {
+        // Costo > $2'000.000 justifica el ingreso sin filtro industrial,
+        // pase lo que pase con la bandera del catálogo: oculta el recuadro y libera el guardado.
+        if (this.isBooleanAnswerYes(item, this.industrialCostQuestionKey)) {
+            return false;
+        }
+
         return !this.resolveItemIndustrialFlag(item) || this.isBooleanAnswerNo(item, this.industrialCostQuestionKey);
     }
 
