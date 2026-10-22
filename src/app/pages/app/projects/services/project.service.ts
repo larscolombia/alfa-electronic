@@ -21,6 +21,7 @@ import {
   UpsertProjectApiRequest,
 } from '../../../../services/projects-api.service';
 import { TaskService } from './task.service';
+import { HrPeoplePickerService } from '../../../../services/hr-people-picker.service';
 
 /**
  * Project Service - estado del tablero tecnico respaldado por el servidor.
@@ -39,6 +40,35 @@ import { TaskService } from './task.service';
 export class ProjectService {
   private taskService = inject(TaskService);
   private readonly projectsApi = inject(ProjectsApiService);
+  private readonly hrPeople = inject(HrPeoplePickerService);
+
+  /**
+   * Valida los assignees de una lista de proyectos contra RRHH activos.
+   * Si un proyecto tiene un assignee que NO existe como empleado activo,
+   * se vacía (la UI mostrará "Sin asignar"). No se hace PUT: el dato en BD
+   * queda intacto para auditoría, solo se normaliza la vista en memoria.
+   */
+  private async normalizeAssignees(projects: Project[]): Promise<Project[]> {
+    let names: string[];
+    try {
+      names = await this.hrPeople.names();
+    } catch {
+      return projects; // Sin RRHH cargado, no valido — no rompo la carga.
+    }
+
+    if (names.length === 0) {
+      return projects;
+    }
+
+    const nameSet = new Set(names.map((n) => n.toLowerCase()));
+    return projects.map((p) => {
+      const assignee = String(p.properties['assignee'] ?? '').trim();
+      if (assignee && !nameSet.has(assignee.toLowerCase())) {
+        return { ...p, properties: { ...p.properties, assignee: '' } };
+      }
+      return p;
+    });
+  }
 
   // Claves heredadas de las versiones que persistian en el navegador.
   // Solo se usan para la migracion unica al servidor.
@@ -133,6 +163,7 @@ export class ProjectService {
 
       let projects = projectItems.map((item) => this.projectFromApi(item, board));
       projects = await this.migrateLegacyLocalStorage(projects, board, boardConfig);
+      projects = await this.normalizeAssignees(projects);
 
       this.projectsSubject.next(projects);
       this.errorSubject.next('');
@@ -156,7 +187,9 @@ export class ProjectService {
     try {
       const items = await firstValueFrom(this.projectsApi.listProjects());
       const board = this.boardSubject.value;
-      this.projectsSubject.next(items.map((item) => this.projectFromApi(item, board)));
+      let projects = items.map((item) => this.projectFromApi(item, board));
+      projects = await this.normalizeAssignees(projects);
+      this.projectsSubject.next(projects);
     } catch (error) {
       this.errorSubject.next(this.describeError(error, 'No se pudieron recargar los proyectos del servidor.'));
     }
