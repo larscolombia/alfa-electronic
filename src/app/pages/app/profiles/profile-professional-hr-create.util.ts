@@ -10,6 +10,10 @@ export interface EmployeeProfileSnapshot {
     initials: string;
     email: string;
     emailPassword: string;
+    /** Contraseña de ACCESO a la plataforma (bcrypt en users). Obligatoria al crear. */
+    password: string;
+    /** Rol ACL de la cuenta de login (users.role), distinto del cargo de RRHH. */
+    accessRole: string;
     roleType: string;
     position: string;
     serviceUnit: string;
@@ -62,6 +66,8 @@ export function buildCreateEmployeeRequest(profile: EmployeeProfileSnapshot): Cr
         documentNumber: profile.employeeId.trim(),
         email: profile.email.trim(),
         fileComplete: profile.registrationTermsAccepted && profile.registrationPrivacyAccepted,
+        password: profile.password,
+        accessRole: profile.accessRole.trim(),
         firstName,
         lastName,
         accessUser: profile.accessUser.trim(),

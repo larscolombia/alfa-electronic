@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func fullEmployeeProfileRequest(suffix string) CreateEmployeeRequest {
+func fullEmployeeProfileRequest(suffix, accessRole string) CreateEmployeeRequest {
 	return CreateEmployeeRequest{
 		Name:           fmt.Sprintf("QA Perfil %s", suffix),
 		Role:           fmt.Sprintf("QA Cargo Perfil %s", suffix),
@@ -16,7 +16,9 @@ func fullEmployeeProfileRequest(suffix string) CreateEmployeeRequest {
 		Manager:        "QA Manager Perfil",
 		Status:         "Activo",
 		DocumentNumber: fmt.Sprintf("DOC-%s", suffix[len(suffix)-8:]),
-		Email:          fmt.Sprintf("qa.perfil.%s@example.com", suffix),
+		Email:          qaEmail(suffix + "-perfil"),
+		Password:       qaAccessPassword,
+		AccessRole:     accessRole,
 		FileComplete:   true,
 		EmailPassword:  "ClaveCorreo#123",
 
@@ -86,9 +88,10 @@ func assertEmployeeMatchesProfile(t *testing.T, got Employee, want CreateEmploye
 func TestEmployeeProfileRoundTrip(t *testing.T) {
 	db := openTestDB(t)
 	service := NewService(db)
+	accessRole := seedQAAccessRole(t, db, testCompanyID)
 
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
-	want := fullEmployeeProfileRequest(suffix)
+	want := fullEmployeeProfileRequest(suffix, accessRole)
 
 	var createdID string
 	t.Cleanup(func() { cleanupEmployeeArtifacts(t, db, createdID, want.Role, want.Department) })
@@ -152,6 +155,7 @@ func TestEmployeeProfileRoundTrip(t *testing.T) {
 func TestEmployeeProfileOptionalFieldsEmpty(t *testing.T) {
 	db := openTestDB(t)
 	service := NewService(db)
+	accessRole := seedQAAccessRole(t, db, testCompanyID)
 
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 	role := fmt.Sprintf("QA Cargo Min %s", suffix)
@@ -164,6 +168,9 @@ func TestEmployeeProfileOptionalFieldsEmpty(t *testing.T) {
 		Name:       fmt.Sprintf("QA Minimo %s", suffix),
 		Role:       role,
 		Department: department,
+		Email:      qaEmail(suffix + "-min"),
+		Password:   qaAccessPassword,
+		AccessRole: accessRole,
 	})
 	if err != nil {
 		t.Fatalf("CreateEmployee with optional fields empty returned error: %v", err)
@@ -191,9 +198,10 @@ func TestEmployeeProfileOptionalFieldsEmpty(t *testing.T) {
 func TestEmployeeProfileInvalidDates(t *testing.T) {
 	db := openTestDB(t)
 	service := NewService(db)
+	accessRole := seedQAAccessRole(t, db, testCompanyID)
 
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
-	base := fullEmployeeProfileRequest(suffix)
+	base := fullEmployeeProfileRequest(suffix, accessRole)
 
 	t.Run("crear con fecha invalida devuelve error de validacion", func(t *testing.T) {
 		req := base

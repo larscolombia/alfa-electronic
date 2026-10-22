@@ -10,6 +10,7 @@ import (
 func TestGetEmployeeIntegration(t *testing.T) {
 	db := openTestDB(t)
 	service := NewService(db)
+	accessRole := seedQAAccessRole(t, db, testCompanyID)
 
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 	role := fmt.Sprintf("QA Cargo Get %s", suffix)
@@ -21,7 +22,9 @@ func TestGetEmployeeIntegration(t *testing.T) {
 		Department:     department,
 		Status:         "Licencia",
 		DocumentNumber: fmt.Sprintf("DOC-%s", suffix),
-		Email:          fmt.Sprintf("qa.get.%s@example.com", suffix),
+		Email:          qaEmail(suffix + "-get"),
+		Password:       qaAccessPassword,
+		AccessRole:     accessRole,
 	})
 	if err != nil {
 		t.Fatalf("CreateEmployee returned error: %v", err)
@@ -42,7 +45,7 @@ func TestGetEmployeeIntegration(t *testing.T) {
 		if found.DocumentNumber != fmt.Sprintf("DOC-%s", suffix) {
 			t.Fatalf("expected documentNumber DOC-%s, got %q", suffix, found.DocumentNumber)
 		}
-		if found.Email != fmt.Sprintf("qa.get.%s@example.com", suffix) {
+		if found.Email != qaEmail(suffix+"-get") {
 			t.Fatalf("unexpected email %q", found.Email)
 		}
 	})
@@ -58,6 +61,7 @@ func TestGetEmployeeIntegration(t *testing.T) {
 func TestUpdateEmployeeIntegration(t *testing.T) {
 	db := openTestDB(t)
 	service := NewService(db)
+	accessRole := seedQAAccessRole(t, db, testCompanyID)
 
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 	role := fmt.Sprintf("QA Cargo Upd %s", suffix)
@@ -67,6 +71,9 @@ func TestUpdateEmployeeIntegration(t *testing.T) {
 		Name:       fmt.Sprintf("QA Empleado Upd %s", suffix),
 		Role:       role,
 		Department: department,
+		Email:      qaEmail(suffix + "-upd"),
+		Password:   qaAccessPassword,
+		AccessRole: accessRole,
 	})
 	if err != nil {
 		t.Fatalf("CreateEmployee returned error: %v", err)
@@ -85,7 +92,7 @@ func TestUpdateEmployeeIntegration(t *testing.T) {
 			Manager:        "QA Manager",
 			Status:         "Inactivo",
 			DocumentNumber: fmt.Sprintf("DOC-EDIT-%s", suffix),
-			Email:          fmt.Sprintf("qa.edit.%s@example.com", suffix),
+			Email:          qaEmail(suffix + "-edit"),
 			FileComplete:   true,
 		})
 		if err != nil {
@@ -108,7 +115,7 @@ func TestUpdateEmployeeIntegration(t *testing.T) {
 		if reloaded.DocumentNumber != fmt.Sprintf("DOC-EDIT-%s", suffix) {
 			t.Fatalf("unexpected documentNumber %q", reloaded.DocumentNumber)
 		}
-		if reloaded.Email != fmt.Sprintf("qa.edit.%s@example.com", suffix) {
+		if reloaded.Email != qaEmail(suffix+"-edit") {
 			t.Fatalf("unexpected email %q", reloaded.Email)
 		}
 
@@ -158,7 +165,12 @@ func TestUpdateEmployeeIntegration(t *testing.T) {
 	})
 
 	t.Run("devuelve errEmployeeNotFound para id inexistente", func(t *testing.T) {
-		_, err := service.UpdateEmployee(testCompanyID, "EMP-999999", UpdateEmployeeRequest{Name: "QA Nadie"})
+		// El email válido es necesario para superar la validación de identidad,
+		// que corre antes de buscar el empleado.
+		_, err := service.UpdateEmployee(testCompanyID, "EMP-999999", UpdateEmployeeRequest{
+			Name:  "QA Nadie",
+			Email: qaEmail(suffix + "-nobody"),
+		})
 		if !errors.Is(err, errEmployeeNotFound) {
 			t.Fatalf("expected errEmployeeNotFound, got %v", err)
 		}

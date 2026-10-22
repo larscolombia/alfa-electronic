@@ -81,6 +81,13 @@ func main() {
 
 	hrService := hr.NewService(db)
 	hrHandler := hr.NewHandler(hrService)
+	// La misma siembra perezosa de roles ACL que usa auth: RRHH la necesita
+	// asegurada antes de validar el rol de acceso de la cuenta nueva del
+	// empleado, o el primer alta fallaria con "rol no existe".
+	hrService.SetRoleReadiness(func(ctx context.Context, companyID string) error {
+		_, err := aclService.ListRoles(companyID)
+		return err
+	})
 
 	calendarService := calendar.NewService(db)
 	calendarHandler := calendar.NewHandler(calendarService)

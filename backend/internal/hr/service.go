@@ -1,6 +1,7 @@
 package hr
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 )
@@ -13,6 +14,11 @@ var (
 	errEmployeeStatusInvalid          = errors.New("el estado del empleado no es valido (usa Activo, Inactivo o Licencia)")
 	errEmployeeEmailInvalid           = errors.New("el correo electronico del empleado no tiene un formato valido")
 	errEmployeeEmailMissing           = errors.New("el empleado no tiene un correo electronico registrado; actualiza la ficha primero")
+	errEmployeeEmailRequired          = errors.New("el correo del empleado es obligatorio: es su identidad de login")
+	errEmployeePasswordRequired       = errors.New("la contrasena de acceso es obligatoria: ningun empleado existe sin cuenta de login")
+	errEmployeeAccessRoleRequired     = errors.New("el rol de acceso es obligatorio para crear la cuenta de login del empleado")
+	errEmployeeAccessRoleUnknown      = errors.New("el rol de acceso no existe en el ACL de la empresa")
+	errEmployeeEmailExists            = errors.New("ya existe un empleado o una cuenta de acceso con ese correo")
 	errEmployeeAccessAccountMissing   = errors.New("el correo del empleado no tiene una cuenta de acceso en la plataforma")
 	errEmployeeDateInvalid            = errors.New("las fechas del empleado deben tener formato YYYY-MM-DD")
 	errEmployeePhotoInvalid           = errors.New("la foto del empleado debe ser una imagen en formato data URL (data:image/...)")
@@ -26,6 +32,9 @@ var (
 
 type Service struct {
 	db *sql.DB
+	// roleReadiness asegura los roles ACL de la empresa antes de validar el rol
+	// de acceso de una cuenta nueva (misma siembra perezosa que usa auth).
+	roleReadiness func(ctx context.Context, companyID string) error
 }
 
 func NewService(db *sql.DB) *Service {

@@ -55,6 +55,8 @@ export interface EmployeeRow extends EmployeeProfileFields {
     documentNumber: string;
     email: string;
     fileComplete: boolean;
+    /** id de la cuenta de login (users). Vacío sólo en filas legacy sin cuenta. */
+    userId: string;
 }
 
 export interface CreateEmployeeRequest extends EmployeeProfileFields {
@@ -66,14 +68,18 @@ export interface CreateEmployeeRequest extends EmployeeProfileFields {
     documentNumber: string;
     email: string;
     fileComplete: boolean;
+    /** Contraseña de acceso a la plataforma (bcrypt en users). Obligatoria al crear. */
+    password: string;
+    /** Rol ACL de la cuenta de login (users.role), distinto del cargo de RRHH. */
+    accessRole: string;
 }
 
 export type UpdateEmployeeRequest = CreateEmployeeRequest;
 
 export interface ResetEmployeePasswordResponse {
     message: string;
-    resetToken: string;
-    expiresAt: string;
+    /** Clave temporal devuelta UNA sola vez; RRHH la entrega y el colaborador la cambia. */
+    temporaryPassword: string;
 }
 
 export type EmployeeSoftDeletePayload = {

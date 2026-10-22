@@ -13,11 +13,15 @@ const testDocumentDataURL = "data:application/pdf;base64,JVBERi0xLjQKJcTl8uXrp/O
 
 func employeeDocumentOwner(t *testing.T, db *sql.DB, service *Service, suffix string) Employee {
 	t.Helper()
+	accessRole := seedQAAccessRole(t, db, testCompanyID)
 	req := CreateEmployeeRequest{
 		Name:       fmt.Sprintf("QA Docs %s", suffix),
 		Role:       fmt.Sprintf("QA Cargo Docs %s", suffix),
 		Department: fmt.Sprintf("QA Dept Docs %s", suffix),
 		Status:     "Activo",
+		Email:      qaEmail(suffix + "-docs"),
+		Password:   qaAccessPassword,
+		AccessRole: accessRole,
 	}
 	created, err := service.CreateEmployee(testCompanyID, req)
 	if err != nil {

@@ -10,21 +10,25 @@ import (
 
 const testEmployeePhotoDataURL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
 
-func employeePhotoRequest(suffix string) CreateEmployeeRequest {
+func employeePhotoRequest(suffix, accessRole string) CreateEmployeeRequest {
 	return CreateEmployeeRequest{
 		Name:       fmt.Sprintf("QA Foto %s", suffix),
 		Role:       fmt.Sprintf("QA Cargo Foto %s", suffix),
 		Department: fmt.Sprintf("QA Dept Foto %s", suffix),
 		Status:     "Activo",
+		Email:      qaEmail(suffix + "-foto"),
+		Password:   qaAccessPassword,
+		AccessRole: accessRole,
 	}
 }
 
 func TestEmployeePhotoRoundTrip(t *testing.T) {
 	db := openTestDB(t)
 	service := NewService(db)
+	accessRole := seedQAAccessRole(t, db, testCompanyID)
 
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
-	req := employeePhotoRequest(suffix)
+	req := employeePhotoRequest(suffix, accessRole)
 
 	var createdID string
 	t.Cleanup(func() { cleanupEmployeeArtifacts(t, db, createdID, req.Role, req.Department) })
@@ -89,9 +93,10 @@ func TestEmployeePhotoRoundTrip(t *testing.T) {
 func TestEmployeePhotoValidation(t *testing.T) {
 	db := openTestDB(t)
 	service := NewService(db)
+	accessRole := seedQAAccessRole(t, db, testCompanyID)
 
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
-	base := employeePhotoRequest(suffix)
+	base := employeePhotoRequest(suffix, accessRole)
 
 	t.Run("create rechaza foto sin prefijo data:image/", func(t *testing.T) {
 		req := base
@@ -144,9 +149,10 @@ func TestEmployeePhotoValidation(t *testing.T) {
 func TestEmployeePhotoEmptyCompatibility(t *testing.T) {
 	db := openTestDB(t)
 	service := NewService(db)
+	accessRole := seedQAAccessRole(t, db, testCompanyID)
 
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
-	req := employeePhotoRequest(suffix)
+	req := employeePhotoRequest(suffix, accessRole)
 
 	created, err := service.CreateEmployee(testCompanyID, req)
 	if err != nil {

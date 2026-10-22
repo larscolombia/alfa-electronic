@@ -56,6 +56,7 @@ func cleanupEmployeeArtifacts(t *testing.T, db *sql.DB, employeeID, role, depart
 func TestCreateEmployeeIntegration(t *testing.T) {
 	db := openTestDB(t)
 	service := NewService(db)
+	accessRole := seedQAAccessRole(t, db, testCompanyID)
 
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 	role := fmt.Sprintf("QA Cargo %s", suffix)
@@ -71,6 +72,9 @@ func TestCreateEmployeeIntegration(t *testing.T) {
 			Department:   department,
 			Status:       "Activo",
 			FileComplete: false,
+			Email:        qaEmail(suffix + "-uno"),
+			Password:     qaAccessPassword,
+			AccessRole:   accessRole,
 		})
 		if err != nil {
 			t.Fatalf("CreateEmployee returned error: %v", err)
@@ -122,6 +126,9 @@ func TestCreateEmployeeIntegration(t *testing.T) {
 			Name:       fmt.Sprintf("QA Empleado Dup %s", suffix),
 			Role:       role,
 			Department: department,
+			Email:      qaEmail(suffix + "-dup"),
+			Password:   qaAccessPassword,
+			AccessRole: accessRole,
 		})
 		if err != nil {
 			t.Fatalf("CreateEmployee with existing catalogs returned error: %v", err)
@@ -168,6 +175,7 @@ func TestCreateEmployeeIntegration(t *testing.T) {
 func TestEmployeeDocumentNumberConflict(t *testing.T) {
 	db := openTestDB(t)
 	service := NewService(db)
+	accessRole := seedQAAccessRole(t, db, testCompanyID)
 
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 	role := fmt.Sprintf("QA Cargo %s", suffix)
@@ -180,6 +188,9 @@ func TestEmployeeDocumentNumberConflict(t *testing.T) {
 		Department:     department,
 		Status:         "Activo",
 		DocumentNumber: documentNumber,
+		Email:          qaEmail(suffix + "-uno"),
+		Password:       qaAccessPassword,
+		AccessRole:     accessRole,
 	})
 	if err != nil {
 		t.Fatalf("CreateEmployee (primero): %v", err)
@@ -192,6 +203,9 @@ func TestEmployeeDocumentNumberConflict(t *testing.T) {
 		Department:     department,
 		Status:         "Activo",
 		DocumentNumber: documentNumber,
+		Email:          qaEmail(suffix + "-dos"),
+		Password:       qaAccessPassword,
+		AccessRole:     accessRole,
 	}); !errors.Is(err, errEmployeeDocumentNumberConflict) {
 		t.Fatalf("documento duplicado: esperaba conflicto, obtuve %v", err)
 	}
@@ -203,6 +217,9 @@ func TestEmployeeDocumentNumberConflict(t *testing.T) {
 		Department:     department,
 		Status:         "Activo",
 		DocumentNumber: first.ID,
+		Email:          qaEmail(suffix + "-tres"),
+		Password:       qaAccessPassword,
+		AccessRole:     accessRole,
 	}); !errors.Is(err, errEmployeeDocumentNumberConflict) {
 		t.Fatalf("documento igual a un id: esperaba conflicto, obtuve %v", err)
 	}
@@ -214,6 +231,7 @@ func TestEmployeeDocumentNumberConflict(t *testing.T) {
 		Department:     department,
 		Status:         "Activo",
 		DocumentNumber: documentNumber,
+		Email:          qaEmail(suffix + "-uno"),
 	})
 	if err != nil {
 		t.Fatalf("UpdateEmployee con su propio documento: %v", err)
@@ -228,6 +246,9 @@ func TestEmployeeDocumentNumberConflict(t *testing.T) {
 		Role:       role,
 		Department: department,
 		Status:     "Activo",
+		Email:      qaEmail(suffix + "-cuatro"),
+		Password:   qaAccessPassword,
+		AccessRole: accessRole,
 	})
 	if err != nil {
 		t.Fatalf("CreateEmployee (segundo): %v", err)
@@ -240,6 +261,7 @@ func TestEmployeeDocumentNumberConflict(t *testing.T) {
 		Department:     department,
 		Status:         "Activo",
 		DocumentNumber: documentNumber,
+		Email:          qaEmail(suffix + "-cuatro"),
 	}); !errors.Is(err, errEmployeeDocumentNumberConflict) {
 		t.Fatalf("update con documento ajeno: esperaba conflicto, obtuve %v", err)
 	}

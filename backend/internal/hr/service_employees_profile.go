@@ -53,6 +53,7 @@ func scanEmployee(scanner employeeScanner, row *Employee) error {
 		&row.RegistrationTermsAccepted,
 		&row.RegistrationPrivacyAccepted,
 		&row.PhotoData,
+		&row.UserID,
 	)
 }
 

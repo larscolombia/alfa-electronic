@@ -2,6 +2,7 @@ import { ChangeDetectorRef, Component, OnInit, inject } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { ActivatedRoute, Router, RouterLink } from "@angular/router";
 import { HrApiService } from "../../../services/hr-api.service";
+import { AclApiService } from "../../../services/acl-api.service";
 import { HrPeoplePickerService } from "../../../services/hr-people-picker.service";
 import { HrDocumentsApiService } from "../../../services/hr-documents-api.service";
 import { buildCreateEmployeeRequest } from "./profile-professional-hr-create.util";
@@ -41,6 +42,8 @@ interface ActivityLogEntry {
  */
 function blankEmployeeProfile() {
     return {
+        /** id de la cuenta de login enlazada (users). Vacío = empleado sin cuenta. */
+        userId: "",
         accessUser: "",
         employeeId: "",
         employeeNumber: "",
@@ -52,6 +55,10 @@ function blankEmployeeProfile() {
         initials: "",
         email: "",
         emailPassword: "",
+        // Identidad unificada: sin correo y contraseña de acceso no existe
+        // empleado (el backend crea la cuenta users en la misma transacción).
+        password: "",
+        accessRole: "",
         roleType: "",
         position: "",
         manager: "",
@@ -349,6 +356,29 @@ function blankEmployeeProfile() {
                                     <label class="form-label">Contrasena del correo</label>
                                     <input class="form-control" type="password" name="emailPassword" [(ngModel)]="employee.emailPassword" />
                                 </div>
+                                @if (needsAccessAccount) {
+                                    <div class="col-12 col-md-3">
+                                        <label class="form-label">Contrasena de acceso <span class="text-danger">*</span></label>
+                                        <input
+                                            class="form-control"
+                                            type="password"
+                                            name="accessPassword"
+                                            [(ngModel)]="employee.password"
+                                            autocomplete="new-password"
+                                            data-testid="access-password-input" />
+                                        <div class="form-text">Minimo 8 caracteres con mayuscula, minuscula, numero y simbolo.</div>
+                                    </div>
+                                    <div class="col-12 col-md-3">
+                                        <label class="form-label">Rol de acceso <span class="text-danger">*</span></label>
+                                        <select class="form-select" name="accessRole" [(ngModel)]="employee.accessRole" data-testid="access-role-select">
+                                            <option value="">Selecciona un rol</option>
+                                            @for (role of accessRoles; track role) {
+                                                <option [value]="role">{{ role }}</option>
+                                            }
+                                        </select>
+                                        <div class="form-text">Rol ACL de la cuenta de login; distinto del cargo de RRHH.</div>
+                                    </div>
+                                }
                             </div>
                         </div>
                     </div>
@@ -833,6 +863,7 @@ export class ProfileProfessionalComponent implements OnInit {
     private readonly route = inject(ActivatedRoute);
     private readonly router = inject(Router);
     private readonly hrApi = inject(HrApiService);
+    private readonly aclApi = inject(AclApiService);
     private readonly hrPeople = inject(HrPeoplePickerService);
     private readonly hrDocumentsApi = inject(HrDocumentsApiService);
     private readonly cdr = inject(ChangeDetectorRef);
@@ -840,6 +871,16 @@ export class ProfileProfessionalComponent implements OnInit {
     isNewEmployeeFromHr = false;
     /** True cuando la ruta no trajo ningún empleado para mostrar (perfil sin parámetros). */
     noEmployeeSelected = false;
+    /** Roles ACL disponibles para la cuenta de login del empleado. */
+    accessRoles: string[] = [];
+
+    /**
+     * Identidad unificada: hay que definir la cuenta de login cuando se crea un
+     * empleado o cuando se edita uno legacy que aún no tiene usuario enlazado.
+     */
+    get needsAccessAccount(): boolean {
+        return this.isNewEmployeeFromHr || (this.loadedHrEmployeeId !== "" && !this.employee.userId);
+    }
     savingNewEmployee = false;
     feedbackMessage = "";
     feedbackKind: "success" | "error" = "success";
@@ -954,6 +995,15 @@ export class ProfileProfessionalComponent implements OnInit {
         this.restoreScheduleTemplates();
         this.loadHrManagers();
         this.refreshHrAssociations();
+        // Roles ACL para el select de "rol de acceso" de la cuenta de login.
+        this.aclApi.listRoles().subscribe({
+            next: (roles) => {
+                this.accessRoles = roles.filter((role) => role.isActive).map((role) => role.name);
+            },
+            error: () => {
+                this.accessRoles = [];
+            },
+        });
 
         if (fromHrDirectory && !this.isNewEmployeeFromHr && employeeId) {
             this.loadHrEmployee(employeeId);
@@ -1169,6 +1219,16 @@ export class ProfileProfessionalComponent implements OnInit {
             this.employee.initials = `${firstInitial}${lastInitial}`.toUpperCase();
         }
 
+        if (this.needsAccessAccount) {
+            const accessError = this.validateAccessAccount();
+            if (accessError) {
+                this.feedbackKind = "error";
+                this.feedbackMessage = accessError;
+                this.cdr.detectChanges();
+                return;
+            }
+        }
+
         if (this.isNewEmployeeFromHr) {
             this.persistNewEmployee();
             return;
@@ -1188,12 +1248,36 @@ export class ProfileProfessionalComponent implements OnInit {
         });
     }
 
+    /**
+     * Regla de identidad unificada: ningún empleado existe sin correo, contraseña
+     * de acceso y rol ACL. El backend lo exige igual; esto sólo da el mensaje
+     * antes de gastar el request.
+     */
+    private validateAccessAccount(): string {
+        const email = this.employee.email.trim();
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            return "El correo es obligatorio y debe ser valido: es la identidad de login del empleado.";
+        }
+        const attaching = this.isNewEmployeeFromHr || !this.employee.userId;
+        const password = this.employee.password ?? "";
+        if (attaching && !password) {
+            return "La contrasena de acceso es obligatoria: ningun empleado existe sin cuenta de login.";
+        }
+        if (password && !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/.test(password)) {
+            return "La contrasena debe tener al menos 8 caracteres con mayuscula, minuscula, numero y simbolo.";
+        }
+        if (attaching && !this.employee.accessRole.trim()) {
+            return "Selecciona el rol de acceso de la cuenta del empleado.";
+        }
+        return "";
+    }
+
     resetHrEmployeePassword(): void {
         if (!this.loadedHrEmployeeId) {
             return;
         }
 
-        const confirmed = confirm(`Se generara un enlace de restablecimiento de clave para ${this.fullName}. Deseas continuar?`);
+        const confirmed = confirm(`Se generara una clave temporal de acceso para ${this.fullName}. Deseas continuar?`);
         if (!confirmed) {
             return;
         }
@@ -1204,7 +1288,9 @@ export class ProfileProfessionalComponent implements OnInit {
             next: (response) => {
                 this.resettingHrPassword = false;
                 this.feedbackKind = "success";
-                this.feedbackMessage = `${response.message} Enlace para compartir: /auth/reset-password?token=${response.resetToken} (vence: ${response.expiresAt}).`;
+                // La clave temporal se muestra UNA sola vez: entregala y que el
+                // colaborador la cambie al entrar.
+                this.feedbackMessage = `${response.message} Clave temporal: ${response.temporaryPassword}`;
                 this.cdr.detectChanges();
             },
             error: (error: Error) => {

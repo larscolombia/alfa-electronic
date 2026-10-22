@@ -166,6 +166,12 @@ const HR_EMPLOYEES_DRAFT_KEY = "app.company.hr-employees.catalogs";
                                         <td>{{ employee.manager }}</td>
                                         <td>
                                             <span class="badge rounded-pill" [class.bg-success]="employee.status === 'Activo'" [class.bg-secondary]="employee.status !== 'Activo'">{{ employee.status }}</span>
+                                            <!-- Identidad unificada: sin cuenta enlazada (users) el empleado no puede entrar. -->
+                                            @if (employee.userId) {
+                                                <span class="badge rounded-pill text-bg-info ms-1" title="Cuenta de login enlazada">Cuenta</span>
+                                            } @else {
+                                                <span class="badge rounded-pill text-bg-warning ms-1" title="Empleado sin cuenta de login: edita la ficha y creala">Sin cuenta</span>
+                                            }
                                         </td>
                                         <td>
                                             <span class="badge" [class.text-bg-success]="employee.fileComplete" [class.text-bg-warning]="!employee.fileComplete">{{ employee.fileComplete ? 'Completo' : 'Pendiente' }}</span>

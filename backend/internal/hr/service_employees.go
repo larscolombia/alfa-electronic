@@ -66,6 +66,17 @@ func (s *Service) CreateEmployee(companyID string, req CreateEmployeeRequest) (E
 	if err != nil {
 		return Employee{}, err
 	}
+	// Identidad unificada: el correo es la identidad de login, así que un
+	// empleado sin correo no puede existir (y por tanto tampoco sin cuenta).
+	if email == "" {
+		return Employee{}, errEmployeeEmailRequired
+	}
+	if err := validateAccessPassword(req.Password); err != nil {
+		return Employee{}, err
+	}
+	if err := s.ensureAccessRole(ctx, companyID, req.AccessRole); err != nil {
+		return Employee{}, err
+	}
 
 	if err := validateEmployeeProfileDates(req.HireDate, req.TerminationDate, req.Birthday); err != nil {
 		return Employee{}, err
@@ -112,6 +123,17 @@ func (s *Service) CreateEmployee(companyID string, req CreateEmployeeRequest) (E
 		return Employee{}, err
 	}
 
+	// Cuenta y empleado en la MISMA transacción: no puede quedar un empleado
+	// sin usuario ni un usuario huérfano. Si el correo ya tenía cuenta (p. ej.
+	// entró por el signup público), se enlaza en vez de fallar.
+	accessActive := employee.Status == "Activo"
+	userID, err := resolveOrCreateAccessUser(ctx, tx, companyID, email, name, strings.TrimSpace(req.AccessRole), req.Password, accessActive)
+	if err != nil {
+		tx.Rollback()
+		return Employee{}, err
+	}
+	employee.UserID = userID
+
 	if _, err := tx.ExecContext(ctx, `
 INSERT INTO hr_employees (
 company_id, id, name, role, department, manager, status, document_number, email, file_complete,
@@ -140,6 +162,17 @@ false, NOW(), NOW());
 		employee.HireDate, employee.TerminationDate, employee.Birthday,
 		employee.TerminationReason, employee.ResidentialAddress, employee.Gender,
 		employee.RegistrationTermsAccepted, employee.RegistrationPrivacyAccepted, employee.PhotoData); err != nil {
+		tx.Rollback()
+		if isDuplicateEmployeeEmail(err) {
+			return Employee{}, errEmployeeEmailExists
+		}
+		return Employee{}, err
+	}
+
+	if _, err := tx.ExecContext(ctx, `
+UPDATE hr_employees SET user_id = $1, updated_at = NOW()
+WHERE company_id = $2 AND id = $3;
+`, userID, companyID, employee.ID); err != nil {
 		tx.Rollback()
 		return Employee{}, err
 	}
@@ -211,6 +244,19 @@ WHERE company_id = $1
 
 		affected, _ := result.RowsAffected()
 		processed += int(affected)
+	}
+
+	// Un empleado borrado no debe poder entrar al sistema: se desactiva su
+	// cuenta de login (Authenticate exige is_active). Idempotente.
+	if _, err := tx.ExecContext(ctx, `
+UPDATE users SET is_active = false, updated_at = NOW()
+WHERE id IN (
+	SELECT user_id FROM hr_employees
+	WHERE company_id = $1 AND user_id IS NOT NULL AND soft_delete = true
+);
+`, companyID); err != nil {
+		tx.Rollback()
+		return 0, err
 	}
 
 	if err := tx.Commit(); err != nil {

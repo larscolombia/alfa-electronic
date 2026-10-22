@@ -2,6 +2,8 @@ import { EmployeeRow } from "../../../services/hr-api.service";
 import { splitEmployeeFullName } from "./profile-professional-hr-create.util";
 
 export interface HrEmployeeFormValues {
+    /** id de la cuenta de login enlazada (users). Vacío = empleado legacy sin cuenta. */
+    userId: string;
     firstName: string;
     lastName: string;
     position: string;
@@ -50,6 +52,7 @@ export function mapEmployeeToFormValues(employee: EmployeeRow): HrEmployeeFormVa
     const firstName = employee.firstName || fallbackName.firstName;
     const lastName = employee.lastName || fallbackName.lastName;
     return {
+        userId: employee.userId ?? "",
         firstName,
         lastName,
         position: employee.role ?? "",

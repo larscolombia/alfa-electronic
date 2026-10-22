@@ -196,6 +196,13 @@ func validatePasswordStrength(password string) error {
 	return nil
 }
 
+// ValidatePasswordStrength expone la politica de claves del login para que otros
+// modulos (RRHH al crear la cuenta del empleado) la reutilicen: una sola politica
+// de contrasenas en todo el sistema, no dos que divergen.
+func ValidatePasswordStrength(password string) error {
+	return validatePasswordStrength(password)
+}
+
 func normalizeCompanyID(raw string) (string, error) {
 	companyID := strings.TrimSpace(raw)
 	if companyID == "" {

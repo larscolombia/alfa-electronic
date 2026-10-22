@@ -96,10 +96,12 @@ func (h *Handler) createEmployee(c echo.Context) error {
 
 	created, err := h.service.CreateEmployee(companyID, req)
 	if err != nil {
-		if errors.Is(err, errEmployeeDocumentNumberConflict) {
+		if errors.Is(err, errEmployeeDocumentNumberConflict) || errors.Is(err, errEmployeeEmailExists) {
 			return c.JSON(http.StatusConflict, map[string]string{"error": err.Error()})
 		}
 		if errors.Is(err, errEmployeeNameMissing) || errors.Is(err, errEmployeeEmailInvalid) ||
+			errors.Is(err, errEmployeeEmailRequired) || errors.Is(err, errEmployeePasswordRequired) ||
+			errors.Is(err, errEmployeeAccessRoleRequired) || errors.Is(err, errEmployeeAccessRoleUnknown) ||
 			errors.Is(err, errEmployeeDateInvalid) || errors.Is(err, errEmployeePhotoInvalid) ||
 			errors.Is(err, errEmployeePhotoTooLarge) {
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
@@ -125,11 +127,16 @@ func (h *Handler) updateEmployee(c echo.Context) error {
 		switch {
 		case errors.Is(err, errEmployeeNotFound):
 			return c.JSON(http.StatusNotFound, map[string]string{"error": err.Error()})
-		case errors.Is(err, errEmployeeDocumentNumberConflict):
+		case errors.Is(err, errEmployeeDocumentNumberConflict),
+			errors.Is(err, errEmployeeEmailExists):
 			return c.JSON(http.StatusConflict, map[string]string{"error": err.Error()})
 		case errors.Is(err, errEmployeeNameMissing),
 			errors.Is(err, errEmployeeStatusInvalid),
 			errors.Is(err, errEmployeeEmailInvalid),
+			errors.Is(err, errEmployeeEmailRequired),
+			errors.Is(err, errEmployeePasswordRequired),
+			errors.Is(err, errEmployeeAccessRoleRequired),
+			errors.Is(err, errEmployeeAccessRoleUnknown),
 			errors.Is(err, errEmployeeDateInvalid),
 			errors.Is(err, errEmployeePhotoInvalid),
 			errors.Is(err, errEmployeePhotoTooLarge):

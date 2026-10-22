@@ -42,11 +42,13 @@ func TestEmployeeResponsesNeverLeakEmailPassword(t *testing.T) {
 	t.Cleanup(func() {
 		db.Exec(`DELETE FROM acl_roles WHERE company_id = $1`, companyID)
 	})
+	accessRole := seedQAAccessRole(t, db, companyID)
 
 	const secretPassword = "ClaveSecreta#123"
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 	role := fmt.Sprintf("QA Cargo Mask %s", suffix)
 	department := fmt.Sprintf("QA Dept Mask %s", suffix)
+	employeeEmail := qaEmail(suffix + "-mask")
 
 	created, err := hrService.CreateEmployee(companyID, CreateEmployeeRequest{
 		Name:           fmt.Sprintf("QA Mask %s", suffix),
@@ -54,6 +56,9 @@ func TestEmployeeResponsesNeverLeakEmailPassword(t *testing.T) {
 		Department:     department,
 		DocumentNumber: "DOC-MASK-1",
 		EmailPassword:  secretPassword,
+		Email:          employeeEmail,
+		Password:       qaAccessPassword,
+		AccessRole:     accessRole,
 	})
 	if err != nil {
 		t.Fatalf("CreateEmployee: %v", err)
@@ -181,7 +186,9 @@ WHERE rfp.role_id = r.id
 
 	t.Run("PUT sin emailPassword preserva el secreto guardado", func(t *testing.T) {
 		e := newACLTestApp(hrService, aclService, "admin", companyID)
-		body := fmt.Sprintf(`{"name":"QA Mask Editado %s","role":%q,"department":%q,"status":"Activo","documentNumber":"DOC-MASK-2"}`, suffix, role, department)
+		// UpdateEmployee exige email no vacío (identidad unificada); password y
+		// accessRole son opcionales cuando el empleado ya tiene cuenta enlazada.
+		body := fmt.Sprintf(`{"name":"QA Mask Editado %s","role":%q,"department":%q,"status":"Activo","documentNumber":"DOC-MASK-2","email":%q}`, suffix, role, department, employeeEmail)
 		req := httptest.NewRequest(http.MethodPut, "/hr/employees/"+created.ID, strings.NewReader(body))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()

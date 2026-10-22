@@ -15,7 +15,7 @@ const employeeColumns = `id, name, role, department, manager, status, document_n
 	`emergency_relationship, allergies, blood_type, eps, compensation_fund, ` +
 	`COALESCE(hire_date::text, ''), COALESCE(termination_date::text, ''), COALESCE(birthday::text, ''), ` +
 	`termination_reason, residential_address, gender, registration_terms_accepted, registration_privacy_accepted, ` +
-	`photo_data`
+	`photo_data, COALESCE(user_id, '')`
 
 func (s *Service) GetEmployee(companyID, id string) (Employee, error) {
 	ctx := context.Background()
@@ -64,6 +64,15 @@ func (s *Service) UpdateEmployee(companyID, id string, req UpdateEmployeeRequest
 	if err != nil {
 		return Employee{}, err
 	}
+	// Identidad unificada: un empleado sin correo no tiene identidad de login.
+	if email == "" {
+		return Employee{}, errEmployeeEmailRequired
+	}
+
+	current, findErr := s.findEmployee(ctx, companyID, targetID)
+	if findErr != nil {
+		return Employee{}, findErr
+	}
 
 	if err := validateEmployeeProfileDates(req.HireDate, req.TerminationDate, req.Birthday); err != nil {
 		return Employee{}, err
@@ -103,6 +112,31 @@ func (s *Service) UpdateEmployee(companyID, id string, req UpdateEmployeeRequest
 	}
 	if !documentNumberOK {
 		return Employee{}, errEmployeeDocumentNumberConflict
+	}
+
+	accessActive := employee.Status == "Activo"
+	attachAccount := strings.TrimSpace(current.UserID) == ""
+	if attachAccount {
+		// Empleado legacy sin cuenta: editar es la vía para anexársela, así que
+		// contraseña y rol de acceso son obligatorios (regla del dueño: ningún
+		// empleado sin usuario).
+		if err := validateAccessPassword(req.Password); err != nil {
+			return Employee{}, err
+		}
+		if err := s.ensureAccessRole(ctx, companyID, req.AccessRole); err != nil {
+			return Employee{}, err
+		}
+	} else {
+		if strings.TrimSpace(req.Password) != "" {
+			if err := validateAccessPassword(req.Password); err != nil {
+				return Employee{}, err
+			}
+		}
+		if strings.TrimSpace(req.AccessRole) != "" {
+			if err := s.ensureAccessRole(ctx, companyID, req.AccessRole); err != nil {
+				return Employee{}, err
+			}
+		}
 	}
 
 	// El cliente ya no recibe email_password; si el request no trae valor nuevo,
@@ -180,12 +214,37 @@ WHERE company_id = $1
 		employee.PhotoData)
 	if err != nil {
 		tx.Rollback()
+		if isDuplicateEmployeeEmail(err) {
+			return Employee{}, errEmployeeEmailExists
+		}
 		return Employee{}, err
 	}
 	if affected, _ := result.RowsAffected(); affected == 0 {
 		tx.Rollback()
 		return Employee{}, errEmployeeNotFound
 	}
+
+	// La cuenta de login se sincroniza en la MISMA transacción: attach para los
+	// legacy sin cuenta, o correo/clave/rol/is_active para los ya enlazados.
+	userID := current.UserID
+	if attachAccount {
+		userID, err = resolveOrCreateAccessUser(ctx, tx, companyID, email, name, strings.TrimSpace(req.AccessRole), req.Password, accessActive)
+		if err != nil {
+			tx.Rollback()
+			return Employee{}, err
+		}
+		if _, err := tx.ExecContext(ctx, `
+UPDATE hr_employees SET user_id = $1, updated_at = NOW()
+WHERE company_id = $2 AND id = $3;
+`, userID, companyID, targetID); err != nil {
+			tx.Rollback()
+			return Employee{}, err
+		}
+	} else if err := syncAccessAccount(ctx, tx, userID, companyID, email, req.Password, req.AccessRole, accessActive); err != nil {
+		tx.Rollback()
+		return Employee{}, err
+	}
+	employee.UserID = userID
 
 	if err := upsertEmployeeCatalogs(ctx, tx, companyID, employee.Role, employee.Department); err != nil {
 		tx.Rollback()
