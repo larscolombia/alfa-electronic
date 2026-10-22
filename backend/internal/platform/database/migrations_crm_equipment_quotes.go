@@ -129,8 +129,6 @@ func migrationStatementsCRMEquipmentAndQuotes() []string {
 					"identifierLabelIssue": false,
 					"evidencePhotos": [],
 					"answers": {},
-					// Estado heredado 'pruebas' remapeado a su estado vivo: la etapa QA
-					// se elimino del flujo (cierre directo reparacion -> listo-entrega).
 					"repairStatus": "reparacion",
 					"repairStatusUpdatedAt": "2026-04-22T11:40:00.000Z",
 					"repairStatusUpdatedBy": "seed-migration"
