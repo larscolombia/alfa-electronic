@@ -18,6 +18,7 @@ import { EmailsApiService } from '../../../services/emails-api.service';
 import { WorktimeApiService } from '../../../services/worktime-api.service';
 import { buildCommercialDocumentCode } from '../company/company-commercial-settings.store';
 import { buildEquipmentQrShortCode, generateEquipmentQrDataUrl } from '../crm/equipment-qr.util';
+import { QuotePrefillFromProject, setQuotePrefill } from '../crm/quote-prefill.store';
 import { ProspectEquipmentAttachment, ProspectEquipmentEvidencePhoto, ProspectEquipmentItem, ProspectEquipmentRepairStatus } from '../crm/crm-prospect-equipment.store';
 import { Attachment, BoardColumn, Project, ProjectBoard } from './models';
 import { PROJECT_TEST_TYPE_OPTIONS, getProjectTechnicalTestTypeLabel, resolveProjectSlaSeverity } from './project-workflow.config';
@@ -3971,15 +3972,17 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
       return;
     }
 
+    // El prefill viaja por el store de memoria, no por router state:
+    // getCurrentNavigation() ya devuelve null en ngOnInit para rutas lazy,
+    // y set/consume es determinista sin importar la carga del chunk.
     const prefill = this.buildQuotePrefill(this.detailProject);
 
     this.persistProjectDetail(this.detailProject, {
       closeOnSuccess: false,
       successMessage: 'Caso guardado. Abriendo cotización precargada...',
       onSuccess: () => {
-        void this.router.navigate(['/app/crm-cotizaciones'], {
-          state: { prefillQuoteFromProject: prefill },
-        });
+        setQuotePrefill(prefill);
+        void this.router.navigate(['/app/crm-cotizaciones']);
       },
     });
   }
@@ -3994,7 +3997,7 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
    *   NUNCA se serializan en el payload ni en el PDF (política de
    *   confidencialidad de partes).
    */
-  private buildQuotePrefill(project: Project): Record<string, unknown> {
+  private buildQuotePrefill(project: Project): QuotePrefillFromProject {
     const properties = project.properties ?? {};
     const num = (key: string): number | null => {
       const value = Number(properties[key]);

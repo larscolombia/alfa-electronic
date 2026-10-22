@@ -1,7 +1,9 @@
 import { DecimalPipe, NgFor, NgIf } from "@angular/common";
 import { ChangeDetectorRef, Component, OnInit } from "@angular/core";
 import { FormsModule } from "@angular/forms";
-import { Router, RouterLink } from "@angular/router";
+import { RouterLink } from "@angular/router";
+
+import { consumeQuotePrefill, QuotePrefillFromProject } from "./quote-prefill.store";
 import { take } from "rxjs/operators";
 
 import { ProspectEquipmentSummary } from "./crm-prospect-equipment.store";
@@ -606,7 +608,6 @@ export class CrmQuotesComponent implements OnInit {
         private readonly crmQuotesApi: CrmQuotesApiService,
         private readonly crmEquipmentApi: CrmEquipmentApiService,
         private readonly financeBillingApi: FinanceBillingApiService,
-        private readonly router: Router,
         private readonly projectService: ProjectService,
         private readonly cdr: ChangeDetectorRef,
         private readonly formDraftService: FormDraftService,
@@ -651,9 +652,14 @@ export class CrmQuotesComponent implements OnInit {
             this.termsAndConditions = String(draft.termsAndConditions ?? this.termsAndConditions);
         }
 
-        // Prefill "Guardar y cotizar": se consume una sola vez, después del
-        // bloque de draft (el prefill tiene prioridad: es un flujo nuevo).
-        this.applyProjectQuotePrefillIfPresent();
+        // Prefill "Guardar y cotizar" (kanban-view): el store de memoria lo
+        // entrega una sola vez, después del bloque de draft (el prefill tiene
+        // prioridad: es un flujo nuevo). Sin dependencia de router state:
+        // getCurrentNavigation() ya devuelve null en ngOnInit para rutas lazy.
+        const projectPrefill = consumeQuotePrefill();
+        if (projectPrefill) {
+            this.applyProjectQuotePrefill(projectPrefill);
+        }
 
         this.stopDraftWatch = this.formDraftService.watch(CRM_QUOTES_FORM_DRAFT_KEY, () => ({
             showQuoteForm: this.showQuoteForm,
@@ -1034,39 +1040,28 @@ export class CrmQuotesComponent implements OnInit {
     }
 
     /**
-     * Prefill del botón "Guardar y cotizar" (kanban-view). Lee el router state
-     * una sola vez. Los campos que SÍ van al documento (prospecto, moneda,
-     * vigencia, descripción general, línea 1) se aplican a los modelos normales
-     * del formulario; `reference` queda solo en la ficha visual y NUNCA entra
-     * en buildApiQuotePayload ni en el PDF.
+     * Prefill del botón "Guardar y cotizar" (kanban-view). Payload tipado que
+     * llega una sola vez por quote-prefill.store. Los campos que SÍ van al
+     * documento (prospecto, moneda, vigencia, descripción general, línea 1) se
+     * aplican a los modelos normales del formulario; `reference` queda solo en
+     * la ficha visual y NUNCA entra en buildApiQuotePayload ni en el PDF.
      */
-    private applyProjectQuotePrefillIfPresent(): void {
-        const state = (this.router.getCurrentNavigation()?.extras?.state ?? null) as Record<string, unknown> | null;
-        const raw = state ? (state['prefillQuoteFromProject'] as unknown) : null;
-        if (!raw || typeof raw !== 'object') {
-            return;
-        }
-
-        const record = raw as Record<string, unknown>;
-        const text = (key: string): string => String(record[key] ?? '').trim();
-        const positiveNumber = (value: unknown): number | null => {
+    private applyProjectQuotePrefill(prefill: QuotePrefillFromProject): void {
+        const positiveNumber = (value: number | null | undefined): number | null => {
             const num = Number(value);
             return Number.isFinite(num) && num > 0 ? num : null;
         };
-        const referenceRaw = (record['reference'] ?? {}) as Record<string, unknown>;
 
         // Moneda y vigencia: se aplican de inmediato (no dependen de loads).
-        const currencyValue = text('currency');
-        if (currencyValue === 'COP' || currencyValue === 'USD') {
-            this.currency = currencyValue;
+        if (prefill.currency === 'COP' || prefill.currency === 'USD') {
+            this.currency = prefill.currency;
         }
-        const validUntil = text('validUntil');
-        if (/^\d{4}-\d{2}-\d{2}$/.test(validUntil)) {
-            this.validUntil = validUntil;
+        if (/^\d{4}-\d{2}-\d{2}$/.test(prefill.validUntil)) {
+            this.validUntil = prefill.validUntil;
         }
 
         // Descripción general (síntoma de la falla) como borrador editable.
-        const description = text('description');
+        const description = String(prefill.description ?? '').trim();
         if (description) {
             this.quoteDescription = description;
             const firstLine = this.quoteLines[0];
@@ -1076,7 +1071,7 @@ export class CrmQuotesComponent implements OnInit {
         }
 
         // Budget del proyecto → precio unitario de la línea 1 (Maribel lo ajusta).
-        const linePrice = positiveNumber(record['linePrice']);
+        const linePrice = positiveNumber(prefill.linePrice);
         if (linePrice != null) {
             const firstLine = this.quoteLines[0];
             if (firstLine) {
@@ -1086,16 +1081,17 @@ export class CrmQuotesComponent implements OnInit {
         }
 
         // Ficha de referencia: solo estado visual local.
+        const reference = prefill.reference ?? {};
         this.prefillReference = {
-            sourceTitle: text('sourceTitle'),
-            budget: positiveNumber(referenceRaw['budget']),
-            partsBudgetUsd: positiveNumber(referenceRaw['partsBudgetUsd']),
-            estimatedMaterialCost: positiveNumber(referenceRaw['estimatedMaterialCost']),
-            estimatedHours: positiveNumber(referenceRaw['estimatedHours']),
+            sourceTitle: String(prefill.sourceTitle ?? '').trim(),
+            budget: positiveNumber(reference.budget),
+            partsBudgetUsd: positiveNumber(reference.partsBudgetUsd),
+            estimatedMaterialCost: positiveNumber(reference.estimatedMaterialCost),
+            estimatedHours: positiveNumber(reference.estimatedHours),
         };
 
-        this.prefillProspectName = text('prospectoName');
-        const equipmentItemId = text('equipmentItemId');
+        this.prefillProspectName = String(prefill.prospectoName ?? '').trim();
+        const equipmentItemId = String(prefill.equipmentItemId ?? '').trim();
         if (equipmentItemId) {
             // Se consume en loadEquipmentForSelectedProspect cuando la lista llega.
             this.pendingEquipmentItemId = equipmentItemId;
