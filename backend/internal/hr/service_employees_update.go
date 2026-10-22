@@ -95,6 +95,16 @@ func (s *Service) UpdateEmployee(companyID, id string, req UpdateEmployeeRequest
 		employee.Manager = "Direccion General"
 	}
 
+	// Misma guarda que en la creación: editar no debe poder introducir un
+	// documento que ya pertenece a otro empleado o que coincide con un id.
+	documentNumberOK, err := s.documentNumberAvailable(ctx, companyID, employee.DocumentNumber, employee.ID)
+	if err != nil {
+		return Employee{}, err
+	}
+	if !documentNumberOK {
+		return Employee{}, errEmployeeDocumentNumberConflict
+	}
+
 	// El cliente ya no recibe email_password; si el request no trae valor nuevo,
 	// se preserva el guardado para no destruir el secreto al editar la ficha.
 	emailPassword := req.EmailPassword

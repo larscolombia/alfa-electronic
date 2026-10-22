@@ -96,6 +96,17 @@ func (s *Service) CreateEmployee(companyID string, req CreateEmployeeRequest) (E
 		employee.Manager = "Direccion General"
 	}
 
+	// Un documento que choque con el id o el documento de OTRO empleado
+	// corrompe el directorio (pasó con el default "EMP-001" del formulario
+	// pre-cargado), así que se rechaza antes de abrir la transacción.
+	documentNumberOK, err := s.documentNumberAvailable(ctx, companyID, employee.DocumentNumber, employee.ID)
+	if err != nil {
+		return Employee{}, err
+	}
+	if !documentNumberOK {
+		return Employee{}, errEmployeeDocumentNumberConflict
+	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return Employee{}, err

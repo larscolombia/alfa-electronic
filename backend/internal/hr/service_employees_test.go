@@ -159,3 +159,88 @@ func TestCreateEmployeeIntegration(t *testing.T) {
 		}
 	})
 }
+
+// TestEmployeeDocumentNumberConflict cubre la guarda que impide que un número
+// de documento choque con el de otro empleado o con un id existente: es lo que
+// pasó en producción cuando el formulario de "Agregar empleado" abrió
+// pre-cargado con la ficha demo y guardó su "EMP-001" como document_number de
+// un empleado nuevo.
+func TestEmployeeDocumentNumberConflict(t *testing.T) {
+	db := openTestDB(t)
+	service := NewService(db)
+
+	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
+	role := fmt.Sprintf("QA Cargo %s", suffix)
+	department := fmt.Sprintf("QA Dept %s", suffix)
+	documentNumber := fmt.Sprintf("DOC-QA-%s", suffix)
+
+	first, err := service.CreateEmployee(testCompanyID, CreateEmployeeRequest{
+		Name:           fmt.Sprintf("QA Uno %s", suffix),
+		Role:           role,
+		Department:     department,
+		Status:         "Activo",
+		DocumentNumber: documentNumber,
+	})
+	if err != nil {
+		t.Fatalf("CreateEmployee (primero): %v", err)
+	}
+	t.Cleanup(func() { cleanupEmployeeArtifacts(t, db, first.ID, role, department) })
+
+	if _, err := service.CreateEmployee(testCompanyID, CreateEmployeeRequest{
+		Name:           fmt.Sprintf("QA Dos %s", suffix),
+		Role:           role,
+		Department:     department,
+		Status:         "Activo",
+		DocumentNumber: documentNumber,
+	}); !errors.Is(err, errEmployeeDocumentNumberConflict) {
+		t.Fatalf("documento duplicado: esperaba conflicto, obtuve %v", err)
+	}
+
+	// El caso de producción: documento igual al ID de un empleado existente.
+	if _, err := service.CreateEmployee(testCompanyID, CreateEmployeeRequest{
+		Name:           fmt.Sprintf("QA Tres %s", suffix),
+		Role:           role,
+		Department:     department,
+		Status:         "Activo",
+		DocumentNumber: first.ID,
+	}); !errors.Is(err, errEmployeeDocumentNumberConflict) {
+		t.Fatalf("documento igual a un id: esperaba conflicto, obtuve %v", err)
+	}
+
+	// Actualizar al propio empleado conservando SU documento debe pasar.
+	updated, err := service.UpdateEmployee(testCompanyID, first.ID, UpdateEmployeeRequest{
+		Name:           first.Name,
+		Role:           role,
+		Department:     department,
+		Status:         "Activo",
+		DocumentNumber: documentNumber,
+	})
+	if err != nil {
+		t.Fatalf("UpdateEmployee con su propio documento: %v", err)
+	}
+	if updated.DocumentNumber != documentNumber {
+		t.Fatalf("documento alterado: %q", updated.DocumentNumber)
+	}
+
+	// Pero apropiarse del documento de otro empleado, no.
+	second, err := service.CreateEmployee(testCompanyID, CreateEmployeeRequest{
+		Name:       fmt.Sprintf("QA Cuatro %s", suffix),
+		Role:       role,
+		Department: department,
+		Status:     "Activo",
+	})
+	if err != nil {
+		t.Fatalf("CreateEmployee (segundo): %v", err)
+	}
+	t.Cleanup(func() { cleanupEmployeeArtifacts(t, db, second.ID, role, department) })
+
+	if _, err := service.UpdateEmployee(testCompanyID, second.ID, UpdateEmployeeRequest{
+		Name:           second.Name,
+		Role:           role,
+		Department:     department,
+		Status:         "Activo",
+		DocumentNumber: documentNumber,
+	}); !errors.Is(err, errEmployeeDocumentNumberConflict) {
+		t.Fatalf("update con documento ajeno: esperaba conflicto, obtuve %v", err)
+	}
+}

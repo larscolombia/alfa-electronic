@@ -96,6 +96,9 @@ func (h *Handler) createEmployee(c echo.Context) error {
 
 	created, err := h.service.CreateEmployee(companyID, req)
 	if err != nil {
+		if errors.Is(err, errEmployeeDocumentNumberConflict) {
+			return c.JSON(http.StatusConflict, map[string]string{"error": err.Error()})
+		}
 		if errors.Is(err, errEmployeeNameMissing) || errors.Is(err, errEmployeeEmailInvalid) ||
 			errors.Is(err, errEmployeeDateInvalid) || errors.Is(err, errEmployeePhotoInvalid) ||
 			errors.Is(err, errEmployeePhotoTooLarge) {
@@ -122,6 +125,8 @@ func (h *Handler) updateEmployee(c echo.Context) error {
 		switch {
 		case errors.Is(err, errEmployeeNotFound):
 			return c.JSON(http.StatusNotFound, map[string]string{"error": err.Error()})
+		case errors.Is(err, errEmployeeDocumentNumberConflict):
+			return c.JSON(http.StatusConflict, map[string]string{"error": err.Error()})
 		case errors.Is(err, errEmployeeNameMissing),
 			errors.Is(err, errEmployeeStatusInvalid),
 			errors.Is(err, errEmployeeEmailInvalid),

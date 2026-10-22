@@ -30,6 +30,54 @@ interface ActivityLogEntry {
     detail: string;
 }
 
+/**
+ * Ficha en blanco para el modo creación.
+ *
+ * El estado inicial del componente era una persona hardcodeada ("LONDONO
+ * CONSULTORES", EMP-001, lconsultoressst@gmail.com…), así que RRHH → Agregar
+ * empleado abría el formulario pre-cargado con esa persona y al guardar se
+ * creaba un empleado real arrastrando cada campo no sobrescrito (en producción
+ * quedó uno con document_number 'EMP-001' venido de este default).
+ */
+function blankEmployeeProfile() {
+    return {
+        accessUser: "",
+        employeeId: "",
+        employeeNumber: "",
+        treatment: "",
+        greeting: "",
+        firstName: "",
+        lastName: "",
+        userName: "",
+        initials: "",
+        email: "",
+        emailPassword: "",
+        roleType: "",
+        position: "",
+        manager: "",
+        serviceUnit: "",
+        assignedScheduleId: "",
+        hourlyRate: 0,
+        emergencyContact: "",
+        emergencyRelationship: "",
+        allergies: "",
+        bloodType: "",
+        eps: "",
+        compensationFund: "",
+        employeePhotoName: "",
+        photoData: "",
+        hireDate: "",
+        terminationDate: "",
+        terminationReason: "",
+        birthday: "",
+        residentialAddress: "",
+        gender: "",
+        employmentStatus: "Activo",
+        registrationTermsAccepted: false,
+        registrationPrivacyAccepted: false,
+    };
+}
+
 @Component({
     selector: "app-profile-professional",
     standalone: true,
@@ -61,6 +109,12 @@ interface ActivityLogEntry {
         </div>
 
         <div class="container mt-3" id="main-content">
+            @if (noEmployeeSelected) {
+                <div class="alert alert-info border mb-3" data-testid="profile-no-employee-hint">
+                    No hay ningun empleado cargado. Entra desde RRHH &rarr; Empleados para ver o
+                    editar una ficha, o usa "Agregar empleado" para crear una nueva.
+                </div>
+            }
             @if (loadingHrEmployee) {
                 <div class="alert alert-light border mb-3 d-flex align-items-center" role="status">
                     <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
@@ -784,6 +838,8 @@ export class ProfileProfessionalComponent implements OnInit {
     private readonly cdr = inject(ChangeDetectorRef);
 
     isNewEmployeeFromHr = false;
+    /** True cuando la ruta no trajo ningún empleado para mostrar (perfil sin parámetros). */
+    noEmployeeSelected = false;
     savingNewEmployee = false;
     feedbackMessage = "";
     feedbackKind: "success" | "error" = "success";
@@ -817,42 +873,7 @@ export class ProfileProfessionalComponent implements OnInit {
         status: "Sin registro",
     };
 
-    employee = {
-        accessUser: "londono.consultores",
-        employeeId: "EMP-001",
-        employeeNumber: "0001",
-        treatment: "Sr.",
-        greeting: "Estimado",
-        firstName: "LONDONO",
-        lastName: "CONSULTORES",
-        userName: "londono.consultores",
-        initials: "LC",
-        email: "lconsultoressst@gmail.com",
-        emailPassword: "",
-        roleType: "CS",
-        position: "Coordinador SST",
-        manager: "Direccion General",
-        serviceUnit: "Gestion Humana",
-        assignedScheduleId: "schedule-001",
-        hourlyRate: 65000,
-        emergencyContact: "Maria Londono",
-        emergencyRelationship: "Esposa",
-        allergies: "Ninguna registrada",
-        bloodType: "O+",
-        eps: "Sura",
-        compensationFund: "Compensar",
-        employeePhotoName: "",
-        photoData: "",
-        hireDate: "2026-03-30",
-        terminationDate: "",
-        terminationReason: "",
-        birthday: "1992-08-01",
-        residentialAddress: "Calle 123 # 45-67, Bogota",
-        gender: "Masculino",
-        employmentStatus: "Activo",
-        registrationTermsAccepted: false,
-        registrationPrivacyAccepted: false,
-    };
+    employee = blankEmployeeProfile();
 
     summary = {
         openTasks: 0,
@@ -936,7 +957,14 @@ export class ProfileProfessionalComponent implements OnInit {
 
         if (fromHrDirectory && !this.isNewEmployeeFromHr && employeeId) {
             this.loadHrEmployee(employeeId);
+            return;
         }
+
+        // Modo creación (new=1) y ruta sin empleado: ficha en blanco. Antes el
+        // estado inicial era una persona hardcodeada y aparecía acá como si
+        // fuera el empleado a crear o "mi perfil".
+        this.employee = blankEmployeeProfile();
+        this.noEmployeeSelected = !this.isNewEmployeeFromHr;
     }
 
     get fullName(): string {
@@ -1196,6 +1224,9 @@ export class ProfileProfessionalComponent implements OnInit {
                 this.loadingHrEmployee = false;
                 this.loadedHrEmployeeId = employee.id;
                 Object.assign(this.employee, mapEmployeeToFormValues(employee));
+                // Los chips de "Jefe directo" se reconstruyen desde la ficha recién
+                // cargada; sin esto quedaban con lo que hubiera en ese momento.
+                this.initializeManagers();
                 this.refreshHrAssociations();
                 this.cdr.detectChanges();
             },
@@ -1346,9 +1377,8 @@ export class ProfileProfessionalComponent implements OnInit {
             .filter((manager) => !!manager);
 
         this.selectedManagers = Array.from(new Set(initialManagers));
-        if (!this.selectedManagers.length) {
-            this.selectedManagers = [this.managerCatalog[0] || "Direccion General"];
-        }
+        // Sin jefe auto-inyectado: en una ficha en blanco el manager lo elige el
+        // usuario, no el primer ítem del catálogo.
 
         this.selectedManagers.forEach((manager) => {
             if (!this.managerCatalog.includes(manager)) {
