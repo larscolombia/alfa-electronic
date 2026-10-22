@@ -455,14 +455,7 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
                 <div class="helper-box">Aun no hay un equipo recibido vinculado a este proyecto.</div>
               </ng-template>
 
-              <div class="project-form-grid project-form-grid--2 mt-3">
-                <label class="project-detail-field">
-                  <span class="project-detail-field__label">Estado tecnico</span>
-                  <select class="project-detail-field__input" [(ngModel)]="equipmentRepairStatusDraft">
-                    <option *ngFor="let status of repairStatusOptions" [value]="status.id">{{ status.label }}</option>
-                  </select>
-                </label>
-
+              <div class="project-form-grid mt-3">
                 <label class="project-detail-field">
                   <span class="project-detail-field__label">Ubicacion actual</span>
                   <select class="project-detail-field__input" [(ngModel)]="equipmentLocationIdDraft">
