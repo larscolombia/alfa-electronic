@@ -3,11 +3,13 @@ import { ChangeDetectorRef, Component, OnInit } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { Router } from "@angular/router";
 import { resolveApiBaseUrl } from "../../../services/api-base-url.util";
+import type { RemissionPrefill } from "./remissions.logic";
 import {
     buildAnchoredAlert,
     buildRemissionPrintModel,
     canTransitionDeliveryStatus,
     computeRemissionTotal,
+    buildRemissionPrefillFromProject,
     dispatchTypeLabel,
     findQuoteLineForItem,
     groupDispatchReadyByClient,
@@ -100,6 +102,35 @@ const REMISSIONS_TEMPLATE = `
         <button class="btn btn-theme" (click)="openCreate()" data-testid="create-remission-btn">
             <i class="bi bi-plus-lg me-1"></i>Nueva remision
         </button>
+    </div>
+
+    <!-- Proyectos en etapa "listo para entrega": el boton Completar abre el
+         formulario existente (misma card, mismos botones Guardar/Previsualizar)
+         con los datos del proyecto ya precargados. -->
+    <div class="card mb-3" data-testid="ready-for-delivery-panel">
+        <div class="card-body">
+            <h5 class="card-title"><i class="bi bi-check2-square me-2"></i>Proyectos listos para entrega</h5>
+            <div *ngIf="loadingReadyProjects" class="text-secondary py-2">Cargando proyectos...</div>
+            <div *ngIf="readyProjectsError" class="alert alert-warning py-2 mb-2" data-testid="ready-projects-error">
+                <i class="bi bi-exclamation-triangle me-1"></i>{{ readyProjectsError }}
+            </div>
+            <div *ngFor="let p of readyProjects" class="d-flex justify-content-between align-items-center border-top py-2">
+                <div>
+                    <div class="mb-1">
+                        <span class="badge bg-dark fs-6" data-testid="ready-project-code">{{ readyProjectCode(p) }}</span>
+                        <span class="badge bg-info ms-2" data-testid="ready-project-status">{{ p.status }}</span>
+                    </div>
+                    <div class="fw-semibold" *ngIf="readyProjectEquipmentName(p)" data-testid="ready-project-equipment">{{ readyProjectEquipmentName(p) }}</div>
+                    <div class="text-secondary small" *ngIf="readyProjectClient(p)">Cliente: {{ readyProjectClient(p) }}</div>
+                </div>
+                <button class="btn btn-sm btn-theme" (click)="openComplete(p)" data-testid="complete-project-btn">
+                    <i class="bi bi-check-lg me-1"></i>Completar
+                </button>
+            </div>
+            <div *ngIf="!loadingReadyProjects && readyProjects.length === 0 && !readyProjectsError" class="text-secondary py-2" data-testid="ready-projects-empty">
+                No hay proyectos en etapa listo para entrega.
+            </div>
+        </div>
     </div>
 
     <div class="card mb-3" data-testid="dispatch-ready-panel" *ngIf="dispatchGroups.length > 0">
@@ -560,6 +591,13 @@ export class RemissionsComponent implements OnInit {
     private apiBaseUrl = resolveApiBaseUrl();
     remissions: Remission[] = [];
     dispatchGroups: DispatchReadyGroup[] = [];
+    /** Items de equipo CRM ya cargados (para resolver NIT/accesorios del prefill). */
+    allEquipmentItems: any[] = [];
+
+    // ── Proyectos en etapa "listo para entrega" (boton Completar) ──────────
+    readyProjects: any[] = [];
+    loadingReadyProjects = false;
+    readyProjectsError = "";
     showForm = false;
     editingId = "";
     form = this.emptyForm();
@@ -756,6 +794,7 @@ export class RemissionsComponent implements OnInit {
     ngOnInit() {
         this.loadRemissions();
         this.loadDispatchReady();
+        this.loadReadyForDeliveryProjects();
     }
 
     private authHeaders() {
@@ -783,10 +822,106 @@ export class RemissionsComponent implements OnInit {
             });
             if (res.ok) {
                 const data = await res.json();
-                this.dispatchGroups = groupDispatchReadyByClient(data.items || []).map((g) => ({ ...g, expanded: true }));
+                this.allEquipmentItems = Array.isArray(data.items) ? data.items : [];
+                this.dispatchGroups = groupDispatchReadyByClient(this.allEquipmentItems).map((g) => ({ ...g, expanded: true }));
                 this.cdr.detectChanges();
             }
         } catch { /* ignore */ }
+    }
+
+    /**
+     * Carga los proyectos en etapa `listo-entrega` (GET /api/v1/projects?status=...).
+     * El estado existe y es válido según allowedProjectStatuses del backend; si
+     * el servidor rechaza algo, se muestra el mensaje textual en la tarjeta.
+     */
+    async loadReadyForDeliveryProjects() {
+        this.loadingReadyProjects = true;
+        this.readyProjectsError = "";
+        try {
+            const res = await fetch(
+                this.apiBaseUrl + "/api/v1/projects?status=" + encodeURIComponent("listo-entrega"),
+                { headers: this.authHeaders() },
+            );
+            if (!res.ok) {
+                this.readyProjectsError = await this.readErrorMessage(res, "No se pudieron cargar los proyectos listos para entrega.");
+                return;
+            }
+            const data = await res.json();
+            this.readyProjects = Array.isArray(data.items) ? data.items : [];
+        } catch {
+            this.readyProjectsError = "Sin conexion con el servidor: no se pudieron cargar los proyectos listos para entrega.";
+        } finally {
+            this.loadingReadyProjects = false;
+            this.cdr.detectChanges();
+        }
+    }
+
+    /** Codigo de equipo del proyecto (properties.equipmentIdentifier, con fallback al id). */
+    readyProjectCode(p: any): string {
+        const props = (p && p.properties) || {};
+        return String(props.equipmentIdentifier || "") || (p?.id ? "#" + String(p.id).slice(-6) : "Sin codigo");
+    }
+
+    readyProjectEquipmentName(p: any): string {
+        const props = (p && p.properties) || {};
+        return String(props.equipmentDisplayName || [props.marca, props.tipo].filter(Boolean).join(" ") || "").trim();
+    }
+
+    readyProjectClient(p: any): string {
+        return String(((p && p.properties) || {}).client || "").trim();
+    }
+
+    /**
+     * Boton "Completar": abre el formulario existente (mismos botones Guardar /
+     * Previsualizar / Imprimir OC) con los datos del proyecto precargados.
+     * El NIT y los accesorios se resuelven del item de equipo CRM si el
+     * proyecto referencia uno (properties.equipmentItemId); si no, quedan
+     * vacios para que el usuario los escriba. No duplica el equipo si ya esta
+     * en la remision en curso.
+     */
+    openComplete(project: any) {
+        const prefill = this.buildPrefillForProject(project);
+        if (!this.showForm || this.editingId) {
+            this.openCreate();
+        }
+        this.form.clientName = prefill.clientName;
+        this.form.clientNit = prefill.clientNit;
+        this.form.dispatchType = prefill.dispatchType;
+        if (prefill.purchaseOrder) {
+            this.form.purchaseOrder = prefill.purchaseOrder;
+        }
+
+        let addedItem: RemissionItem | null = null;
+        for (const prefItem of prefill.items) {
+            const exists = this.form.items.some((it) =>
+                (prefItem.identifier !== "" && it.identifier === prefItem.identifier)
+                || (prefItem.equipmentId !== "" && it.equipmentId === prefItem.equipmentId));
+            if (!exists) {
+                addedItem = { ...prefItem };
+                this.form.items.push(addedItem);
+            }
+        }
+
+        const withAnchor = prefill.items.find((i) => i.anchoredNote !== "");
+        if (withAnchor) {
+            this.anchoredAlertMessage = withAnchor.anchoredNote;
+        }
+
+        // Misma regla que "Agregar a remision": trae OC y precio de la ultima
+        // cotizacion del cliente si las hay; no bloquea si no existen.
+        if (addedItem) {
+            void this.autofillFromLatestQuote(addedItem);
+        }
+        this.cdr.detectChanges();
+    }
+
+    private buildPrefillForProject(project: any): RemissionPrefill {
+        const props = ((project && project.properties) || {});
+        const equipmentId = String(props.equipmentItemId || "");
+        const eqItem = equipmentId !== ""
+            ? this.allEquipmentItems.find((it: any) => String(it.itemId || "") === equipmentId || String(it.id || "") === equipmentId)
+            : null;
+        return buildRemissionPrefillFromProject(project, eqItem);
     }
 
     openCreate() {

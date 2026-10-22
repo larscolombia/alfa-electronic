@@ -80,6 +80,87 @@ export function requiresAccessoriesConfirmation(items: any[]): boolean {
     return itemsRequiringAccessoriesConfirmation(items).length > 0;
 }
 
+/** Estado del tablero técnico que habilita el despacho (ver transitions.go). */
+export const READY_FOR_DELIVERY_STATUS = "listo-entrega";
+
+/**
+ * Prefill de la remision a partir de un proyecto en estado `listo-entrega`.
+ *
+ * Fuente: properties_json del proyecto (client, equipmentIdentifier,
+ * equipmentDisplayName, paymentCondition, ...) mas el item de equipo CRM si se
+ * logra resolver (aporta clientNit y accessories que el proyecto no guarda).
+ * El resultado NO incluye lo que el usuario debe decidir en el formulario
+ * (transportadora, guia, fotos...): eso queda vacío a propósito.
+ */
+export interface RemissionPrefill {
+    clientName: string;
+    clientNit: string;
+    dispatchType: string;
+    purchaseOrder: string;
+    items: Array<{
+        equipmentId: string;
+        identifier: string;
+        description: string;
+        accessories: string;
+        anchoredNote: string;
+        warrantyMonths: number;
+        unitPrice: number;
+        quantity: number;
+    }>;
+}
+
+export function buildRemissionPrefillFromProject(project: any, equipmentItem?: any): RemissionPrefill {
+    const props = (project && typeof project.properties === "object" && project.properties !== null)
+        ? project.properties
+        : {};
+
+    const clientName = String(props.client || "").trim();
+    const clientNit = String((equipmentItem && equipmentItem.clientNit) || props.clientNit || "").trim();
+
+    let dispatchType = String(props.paymentCondition || props.dispatchType || "").trim().toLowerCase();
+    if (!DISPATCH_TYPE_LABELS[dispatchType]) {
+        dispatchType = "";
+    }
+
+    const identifier = String(
+        props.equipmentIdentifier
+        || (equipmentItem && (equipmentItem.receivedIdentifier || equipmentItem.identifier))
+        || (equipmentItem && equipmentItem.serie)
+        || "",
+    ).trim();
+
+    let description = String(props.equipmentDisplayName || "").trim();
+    if (!description && equipmentItem) {
+        description = String(equipmentItem.displayName || [equipmentItem.marca, equipmentItem.tipo].filter(Boolean).join(" ") || "").trim();
+    }
+
+    const borrowed: string[] = Array.isArray(props.equipmentBorrowedForTesting)
+        ? props.equipmentBorrowedForTesting.map((v: any) => String(v || "").trim()).filter((v: string) => v !== "")
+        : (Array.isArray(equipmentItem && equipmentItem.borrowedEquipments)
+            ? equipmentItem.borrowedEquipments.map((v: any) => String(v || "").trim()).filter((v: string) => v !== "")
+            : []);
+
+    const warrantyRaw = Number(props.warrantyMonths ?? 0);
+    const itemWarranty = [3, 6, 12].indexOf(warrantyRaw) >= 0 ? warrantyRaw : 0;
+
+    return {
+        clientName,
+        clientNit,
+        dispatchType,
+        purchaseOrder: String(props.purchaseOrder || props.ordenCompra || "").trim(),
+        items: [{
+            equipmentId: String(props.equipmentItemId || (equipmentItem && (equipmentItem.itemId || equipmentItem.id)) || ""),
+            identifier,
+            description,
+            accessories: String(props.accessories || (equipmentItem && equipmentItem.accessories) || "").trim(),
+            anchoredNote: buildAnchoredAlert({ borrowedEquipments: borrowed }),
+            warrantyMonths: itemWarranty,
+            unitPrice: 0,
+            quantity: 1,
+        }],
+    };
+}
+
 export function findQuoteLineForItem(quote: any, item: any): any | null {
     const lines = Array.isArray(quote?.lineas) ? quote.lineas : [];
     const selectedIds = Array.isArray(quote?.selectedEquipmentIds) ? quote.selectedEquipmentIds : [];

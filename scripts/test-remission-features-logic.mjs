@@ -6,6 +6,7 @@
  *  - groupDispatchReadyByClient: status filter, client field shapes, alphabetical order
  *  - computeRemissionTotal (valued totals, > 4 items allowed)
  *  - buildAnchoredAlert with/without borrowed equipments
+ *  - buildRemissionPrefillFromProject (boton Completar: proyecto listo-entrega -> formulario)
  *  - canTransitionDeliveryStatus transitions
  *  - buildRemissionPrintModel (labels, accessories, youtube, photos, prices only if valued)
  *
@@ -49,6 +50,60 @@ function groupDispatchReadyByClient(equipments) {
     }
 
     return Array.from(groups.values()).sort((a, b) => a.clientName.localeCompare(b.clientName));
+}
+
+const READY_FOR_DELIVERY_STATUS = "listo-entrega";
+
+function buildRemissionPrefillFromProject(project, equipmentItem) {
+    const props = (project && typeof project.properties === "object" && project.properties !== null)
+        ? project.properties
+        : {};
+
+    const clientName = String(props.client || "").trim();
+    const clientNit = String((equipmentItem && equipmentItem.clientNit) || props.clientNit || "").trim();
+
+    let dispatchType = String(props.paymentCondition || props.dispatchType || "").trim().toLowerCase();
+    if (!DISPATCH_TYPE_LABELS[dispatchType]) {
+        dispatchType = "";
+    }
+
+    const identifier = String(
+        props.equipmentIdentifier
+        || (equipmentItem && (equipmentItem.receivedIdentifier || equipmentItem.identifier))
+        || (equipmentItem && equipmentItem.serie)
+        || "",
+    ).trim();
+
+    let description = String(props.equipmentDisplayName || "").trim();
+    if (!description && equipmentItem) {
+        description = String(equipmentItem.displayName || [equipmentItem.marca, equipmentItem.tipo].filter(Boolean).join(" ") || "").trim();
+    }
+
+    const borrowed = Array.isArray(props.equipmentBorrowedForTesting)
+        ? props.equipmentBorrowedForTesting.map((v) => String(v || "").trim()).filter((v) => v !== "")
+        : (Array.isArray(equipmentItem && equipmentItem.borrowedEquipments)
+            ? equipmentItem.borrowedEquipments.map((v) => String(v || "").trim()).filter((v) => v !== "")
+            : []);
+
+    const warrantyRaw = Number(props.warrantyMonths ?? 0);
+    const itemWarranty = [3, 6, 12].indexOf(warrantyRaw) >= 0 ? warrantyRaw : 0;
+
+    return {
+        clientName,
+        clientNit,
+        dispatchType,
+        purchaseOrder: String(props.purchaseOrder || props.ordenCompra || "").trim(),
+        items: [{
+            equipmentId: String(props.equipmentItemId || (equipmentItem && (equipmentItem.itemId || equipmentItem.id)) || ""),
+            identifier,
+            description,
+            accessories: String(props.accessories || (equipmentItem && equipmentItem.accessories) || "").trim(),
+            anchoredNote: buildAnchoredAlert({ borrowedEquipments: borrowed }),
+            warrantyMonths: itemWarranty,
+            unitPrice: 0,
+            quantity: 1,
+        }],
+    };
 }
 
 function computeRemissionTotal(items) {
@@ -238,6 +293,65 @@ assertEqual(plainModel.items[0].unitPrice, null, "Not valued: unit prices hidden
 assertEqual(plainModel.deliveryStatus, "pendiente", "Default delivery status is pendiente");
 assertEqual(plainModel.dispatchTypeLabel, "No especificado", "Empty dispatch type -> No especificado");
 assertEqual(buildRemissionPrintModel(null).items.length, 0, "Null remission -> empty items");
+
+console.log("\n── buildRemissionPrefillFromProject (boton Completar) ──");
+// Proyecto tal como existe en prod (project-...sbzxvu, status listo-entrega).
+const prodLikeProject = {
+    id: "project-1792694819812-1-sbzxvu",
+    status: READY_FOR_DELIVERY_STATUS,
+    properties: {
+        client: "Ejempplo Cia 01",
+        equipmentItemId: "item-kp5f7m",
+        equipmentIdentifier: "322323",
+        equipmentDisplayName: "PLC · Allen-Bradley · 1756-L83E",
+        paymentCondition: "contra-entrega",
+        warrantyMonths: 6,
+    },
+};
+const prodLikeEquipment = { itemId: "item-kp5f7m", clientNit: "901234567-8", accessories: "Fuente y gabinete" };
+
+let prefill = buildRemissionPrefillFromProject(prodLikeProject, prodLikeEquipment);
+assertEqual(prefill.clientName, "Ejempplo Cia 01", "client from project properties");
+assertEqual(prefill.clientNit, "901234567-8", "NIT resolved from equipment item (project doesn't store it)");
+assertEqual(prefill.dispatchType, "contra-entrega", "dispatch type mapped from paymentCondition when valid");
+assertEqual(prefill.items.length, 1, "One line per project equipment");
+assertEqual(prefill.items[0].identifier, "322323", "identifier from equipmentIdentifier");
+assert(prefill.items[0].description.includes("Allen-Bradley"), "description from equipmentDisplayName");
+assertEqual(prefill.items[0].accessories, "Fuente y gabinete", "accessories from equipment item");
+assertEqual(prefill.items[0].warrantyMonths, 6, "valid warranty months kept");
+assertEqual(prefill.items[0].quantity, 1, "quantity defaults to 1");
+assertEqual(prefill.items[0].unitPrice, 0, "price left empty for the user (quote autofill fills it)");
+
+prefill = buildRemissionPrefillFromProject({
+    status: READY_FOR_DELIVERY_STATUS,
+    properties: { client: "Solo Prop", clientNit: "890123456-7", equipmentIdentifier: "S-1" },
+});
+assertEqual(prefill.clientNit, "890123456-7", "NIT from project properties when no equipment item");
+assertEqual(prefill.items[0].identifier, "S-1", "identifier fallback chain works without equipment item");
+
+prefill = buildRemissionPrefillFromProject({ properties: { client: "C", paymentCondition: "credito-30-dias" } });
+assertEqual(prefill.dispatchType, "", "unknown paymentCondition -> empty dispatch type (user decides)");
+
+prefill = buildRemissionPrefillFromProject({ properties: { warrantyMonths: 5 } });
+assertEqual(prefill.items[0].warrantyMonths, 0, "non-selectable warranty (5) normalized to 0");
+prefill = buildRemissionPrefillFromProject({ properties: { warrantyMonths: "6" } });
+assertEqual(prefill.items[0].warrantyMonths, 6, "string warranty '6' parsed to 6");
+
+prefill = buildRemissionPrefillFromProject(
+    { properties: { client: "C", equipmentBorrowedForTesting: ["ANCLADO-1"] } },
+    { borrowedEquipments: ["ITEM-9"] },
+);
+assert(prefill.items[0].anchoredNote.includes("ANCLADO-1"), "project anchored list wins when present");
+prefill = buildRemissionPrefillFromProject({ properties: {} }, { borrowedEquipments: ["ITEM-9", "ITEM-8"] });
+assert(
+    prefill.items[0].anchoredNote.includes("ITEM-9") && prefill.items[0].anchoredNote.includes("ITEM-8"),
+    "equipment item borrowed list used as fallback",
+);
+
+prefill = buildRemissionPrefillFromProject(null, null);
+assertEqual(prefill.clientName, "", "null project -> empty client");
+assertEqual(prefill.items.length, 1, "null project still yields one editable line");
+assertEqual(prefill.items[0].identifier, "", "null project -> empty identifier");
 
 // ─── Summary ─────────────────────────────────────────────────────────────────
 
