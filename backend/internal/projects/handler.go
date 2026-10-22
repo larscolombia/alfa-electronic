@@ -92,7 +92,8 @@ func (h *Handler) createProject(c echo.Context) error {
 		case errors.Is(err, errProjectIDRequired),
 			errors.Is(err, errProjectStatusInvalid),
 			errors.Is(err, errProjectTransitionInvalid),
-			errors.Is(err, errProjectPropertiesInvalid):
+			errors.Is(err, errProjectPropertiesInvalid),
+			errors.Is(err, errMaterialsPending):
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 		default:
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "no se pudo crear el proyecto"})
@@ -118,7 +119,8 @@ func (h *Handler) updateProject(c echo.Context) error {
 		case errors.Is(err, errProjectIDRequired),
 			errors.Is(err, errProjectStatusInvalid),
 			errors.Is(err, errProjectTransitionInvalid),
-			errors.Is(err, errProjectPropertiesInvalid):
+			errors.Is(err, errProjectPropertiesInvalid),
+			errors.Is(err, errMaterialsPending):
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 		default:
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "no se pudo actualizar el proyecto"})
