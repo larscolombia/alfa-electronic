@@ -7,6 +7,7 @@ import type { RemissionPrefill } from "./remissions.logic";
 import {
     buildAnchoredAlert,
     buildRemissionPrintModel,
+    canCreateRemissionForProject,
     canTransitionDeliveryStatus,
     computeRemissionTotal,
     buildRemissionPrefillFromProject,
@@ -123,9 +124,14 @@ const REMISSIONS_TEMPLATE = `
                     <div class="fw-semibold" *ngIf="readyProjectEquipmentName(p)" data-testid="ready-project-equipment">{{ readyProjectEquipmentName(p) }}</div>
                     <div class="text-secondary small" *ngIf="readyProjectClient(p)">Cliente: {{ readyProjectClient(p) }}</div>
                 </div>
-                <button class="btn btn-sm btn-theme" (click)="openComplete(p)" data-testid="complete-project-btn">
-                    <i class="bi bi-check-lg me-1"></i>Completar
-                </button>
+                <div>
+                    <div class="text-warning small mb-1 text-end" *ngIf="!remissionGate(p).allowed" data-testid="complete-gate-blocked">
+                        <i class="bi bi-lock me-1"></i>Pago confirmado: pendiente de doble validacion en Financiero → Pagos.
+                    </div>
+                    <button class="btn btn-sm btn-theme" [disabled]="!remissionGate(p).allowed" (click)="openComplete(p)" data-testid="complete-project-btn">
+                        <i class="bi bi-check-lg me-1"></i>Completar
+                    </button>
+                </div>
             </div>
             <div *ngIf="!loadingReadyProjects && readyProjects.length === 0 && !readyProjectsError" class="text-secondary py-2" data-testid="ready-projects-empty">
                 No hay proyectos en etapa listo para entrega.
@@ -265,6 +271,10 @@ const REMISSIONS_TEMPLATE = `
                 <div class="col-12" *ngIf="item.anchoredNote"><div class="text-warning small"><i class="bi bi-link-45deg me-1"></i>{{ item.anchoredNote }}</div></div>
             </div>
             <button class="btn btn-sm btn-outline-secondary mt-1" (click)="addItem()" data-testid="add-remission-item"><i class="bi bi-plus me-1"></i>Agregar equipo</button>
+
+            <div *ngIf="formSaveBlock" class="alert alert-danger py-2 mt-3" data-testid="remission-save-block">
+                <i class="bi bi-lock me-1"></i>{{ formSaveBlock }}
+            </div>
 
             <div class="mt-3 d-flex justify-content-between">
                 <div class="fw-bold" *ngIf="form.valued">Total: {{ getCurrencySymbol() }}{{ getTotalValue() | number:'1.0-0' }}</div>
@@ -594,6 +604,13 @@ export class RemissionsComponent implements OnInit {
     /** Items de equipo CRM ya cargados (para resolver NIT/accesorios del prefill). */
     allEquipmentItems: any[] = [];
 
+    // ── Doble validacion de despacho (pago confirmado) ─────────────────────
+    /** Puerta unica: pago confirmado sin verificacion guardada -> bloqueado. */
+    readonly remissionGate = canCreateRemissionForProject;
+    /** Proyecto que origino el formulario en curso (boton Completar), o null. */
+    sourceProject: any | null = null;
+    formSaveBlock = "";
+
     // ── Proyectos en etapa "listo para entrega" (boton Completar) ──────────
     readyProjects: any[] = [];
     loadingReadyProjects = false;
@@ -880,10 +897,19 @@ export class RemissionsComponent implements OnInit {
      * en la remision en curso.
      */
     openComplete(project: any) {
+        // Puerta dura de doble validacion: aunque el boton se vea deshabilitado,
+        // ninguna ruta puede abrir la remision de un proyecto con pago confirmado
+        // hasta que alguien guarde su verificacion en Financiero > Pagos.
+        const gate = canCreateRemissionForProject(project);
+        if (!gate.allowed) {
+            this.formSaveBlock = gate.reason;
+            return;
+        }
         const prefill = this.buildPrefillForProject(project);
         if (!this.showForm || this.editingId) {
             this.openCreate();
         }
+        this.sourceProject = project;
         this.form.clientName = prefill.clientName;
         this.form.clientNit = prefill.clientNit;
         this.form.dispatchType = prefill.dispatchType;
@@ -925,6 +951,8 @@ export class RemissionsComponent implements OnInit {
     }
 
     openCreate() {
+        this.sourceProject = null;
+        this.formSaveBlock = "";
         this.form = this.emptyForm();
         this.editingId = "";
         this.anchoredAlertMessage = "";
@@ -1175,6 +1203,14 @@ export class RemissionsComponent implements OnInit {
     }
 
     async save() {
+        if (this.sourceProject) {
+            const gate = canCreateRemissionForProject(this.sourceProject);
+            if (!gate.allowed) {
+                this.formSaveBlock = gate.reason;
+                return;
+            }
+        }
+        this.formSaveBlock = "";
         try {
             const method = this.editingId ? "PUT" : "POST";
             const url = this.editingId
@@ -1186,6 +1222,7 @@ export class RemissionsComponent implements OnInit {
                 body: JSON.stringify(this.form),
             });
             if (res.ok) {
+                this.sourceProject = null;
                 this.showForm = false;
                 this.loadRemissions();
                 this.cdr.detectChanges();

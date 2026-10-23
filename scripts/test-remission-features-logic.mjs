@@ -7,6 +7,8 @@
  *  - computeRemissionTotal (valued totals, > 4 items allowed)
  *  - buildAnchoredAlert with/without borrowed equipments
  *  - buildRemissionPrefillFromProject (boton Completar: proyecto listo-entrega -> formulario)
+ *  - doble validacion de despacho: normalizeProjectPaymentStatus, projectPaymentVerificationState,
+ *    canCreateRemissionForProject (gate), filterPaymentConfirmedProjects, accesores de properties
  *  - canTransitionDeliveryStatus transitions
  *  - buildRemissionPrintModel (labels, accessories, youtube, photos, prices only if valued)
  *
@@ -155,6 +157,67 @@ function buildRemissionPrintModel(remission) {
         warrantyMonths: Number(remission?.warrantyMonths || 0),
         notes: remission?.notes || "",
     };
+}
+
+// ─── Doble validacion de despacho (mirror) ──────────────────────────────────
+
+function normalizeProjectPaymentStatus(project) {
+    const props = (project && typeof project.properties === "object" && project.properties !== null)
+        ? project.properties
+        : {};
+    return String(props.paymentStatus || "").trim().toLowerCase();
+}
+
+function projectClientName(project) {
+    const props = (project && typeof project.properties === "object" && project.properties !== null)
+        ? project.properties
+        : {};
+    return String(props.client || props.equipmentProspectName || "").trim();
+}
+
+function projectEquipmentCode(project) {
+    const props = (project && typeof project.properties === "object" && project.properties !== null)
+        ? project.properties
+        : {};
+    return String(props.equipmentIdentifier || "").trim()
+        || (project?.id ? "#" + String(project.id).slice(-6) : "Sin codigo");
+}
+
+function projectEquipmentName(project) {
+    const props = (project && typeof project.properties === "object" && project.properties !== null)
+        ? project.properties
+        : {};
+    return String(props.equipmentDisplayName || [props.marca, props.tipo].filter(Boolean).join(" ") || "").trim();
+}
+
+function projectPaymentVerificationState(project) {
+    const required = normalizeProjectPaymentStatus(project) === "confirmado";
+    const props = (project && typeof project.properties === "object" && project.properties !== null)
+        ? project.properties
+        : {};
+    const verification = (props.paymentVerification && typeof props.paymentVerification === "object")
+        ? props.paymentVerification
+        : null;
+    return {
+        required,
+        savedAt: String(verification?.at || "").trim(),
+        savedBy: String(verification?.by || "").trim(),
+    };
+}
+
+function canCreateRemissionForProject(project) {
+    const state = projectPaymentVerificationState(project);
+    if (state.required && !state.savedAt) {
+        return {
+            allowed: false,
+            reason: "Pago confirmado sin validar. Requiere la doble validacion en Financiero > Pagos antes de crear su remision.",
+        };
+    }
+    return { allowed: true, reason: "" };
+}
+
+function filterPaymentConfirmedProjects(projects) {
+    return (projects || []).filter((p) => projectPaymentVerificationState(p).required);
 }
 
 // ─── Test runner ─────────────────────────────────────────────────────────────
@@ -352,6 +415,60 @@ prefill = buildRemissionPrefillFromProject(null, null);
 assertEqual(prefill.clientName, "", "null project -> empty client");
 assertEqual(prefill.items.length, 1, "null project still yields one editable line");
 assertEqual(prefill.items[0].identifier, "", "null project -> empty identifier");
+
+// ─── Doble validacion de despacho (pago confirmado) ─────────────────────────
+
+console.log("\n── doble validacion: normalize/state/gate/filter ──");
+
+assertEqual(
+    normalizeProjectPaymentStatus({ properties: { paymentStatus: "confirmado" } }),
+    "confirmado",
+    "estado confirmado detectado",
+);
+assertEqual(
+    normalizeProjectPaymentStatus({ properties: { paymentStatus: "  CONFIRMADO " } }),
+    "confirmado",
+    "mayusculas/espacios normalizados",
+);
+assertEqual(normalizeProjectPaymentStatus({ properties: {} }), "", "sin pago -> vacio");
+assertEqual(normalizeProjectPaymentStatus(null), "", "null-safe");
+
+let vstate = projectPaymentVerificationState({ id: "p1", status: "listo-entrega", properties: { paymentStatus: "confirmado" } });
+assert(vstate.required === true && vstate.savedAt === "", "confirmado sin verificacion -> requerida y pendiente");
+vstate = projectPaymentVerificationState({ id: "p2", status: "listo-entrega", properties: { paymentStatus: "parcial" } });
+assert(vstate.required === false, "parcial NUNCA requiere doble validacion");
+vstate = projectPaymentVerificationState({ id: "p3", status: "garantia", properties: { paymentStatus: "confirmado", paymentVerification: { at: "2026-10-22T15:00:00Z", by: "Maribel" } } });
+assert(vstate.required === true && vstate.savedAt === "2026-10-22T15:00:00Z" && vstate.savedBy === "Maribel", "verificacion guardada queda registrada (at/by)");
+vstate = projectPaymentVerificationState({ id: "p4", status: "listo-entrega", properties: { paymentStatus: "confirmado", paymentVerification: {} } });
+assert(vstate.required === true && vstate.savedAt === "", "paymentVerification vacio NO cuenta como validacion guardada");
+vstate = projectPaymentVerificationState(null);
+assert(vstate.required === false, "null-safe en estado de verificacion");
+
+let gate = canCreateRemissionForProject({ id: "p1", properties: { paymentStatus: "confirmado" } });
+assert(gate.allowed === false && /doble validacion/i.test(gate.reason), "gate bloquea remision sin validar y explica el motivo");
+gate = canCreateRemissionForProject({ id: "p3", properties: { paymentStatus: "confirmado", paymentVerification: { at: "2026-10-22T15:00:00Z", by: "Maribel" } } });
+assert(gate.allowed === true && gate.reason === "", "gate libera cuando la verificacion esta guardada");
+gate = canCreateRemissionForProject({ id: "p5", properties: { paymentStatus: "pendiente" } });
+assert(gate.allowed === true, "proyectos sin pago confirmado nunca se bloquean por este gate");
+gate = canCreateRemissionForProject(null);
+assert(gate.allowed === true, "null-safe en el gate");
+
+const mixedProjects = [
+    { id: "a", properties: { paymentStatus: "confirmado" } },
+    { id: "b", properties: { paymentStatus: "parcial" } },
+    { id: "c", properties: {} },
+    null,
+];
+let filtered = filterPaymentConfirmedProjects(mixedProjects);
+assert(filtered.length === 1 && filtered[0].id === "a", "filtro deja solo los pago confirmado");
+filtered = filterPaymentConfirmedProjects(null);
+assert(Array.isArray(filtered) && filtered.length === 0, "filtro null-safe devolve []");
+
+assertEqual(projectClientName({ properties: { client: "Cliente X" } }), "Cliente X", "cliente desde properties");
+assertEqual(projectClientName({ properties: { equipmentProspectName: "Prospeto Y" } }), "Prospeto Y", "fallback a prospecto CRM");
+assertEqual(projectEquipmentCode({ id: "abc123def", properties: {} }), "#123def", "codigo con fallback al final del id");
+assertEqual(projectEquipmentCode(null), "Sin codigo", "sin proyecto -> etiqueta explicita");
+assertEqual(projectEquipmentName({ properties: { marca: "HP", tipo: "Laptop" } }), "HP Laptop", "nombre arma marca + tipo");
 
 // ─── Summary ─────────────────────────────────────────────────────────────────
 

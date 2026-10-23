@@ -8,6 +8,16 @@ import { FinanceAccount, FinanceAccountsStore } from "./finance-accounts.store";
 import { FinanceBillingStore } from "./finance-billing.store";
 import { FinancePaymentsApiService, UpsertFinancePaymentRequest } from "../../../services/finance-payments-api.service";
 import { FinanceBillingApiService } from "../../../services/finance-billing-api.service";
+import { ProjectsApiService } from "../../../services/projects-api.service";
+import type { RemissionPrefill } from "../remissions/remissions.logic";
+import {
+    buildRemissionPrefillFromProject,
+    filterPaymentConfirmedProjects,
+    projectClientName as logicProjectClientName,
+    projectEquipmentCode as logicProjectEquipmentCode,
+    projectEquipmentName as logicProjectEquipmentName,
+    projectPaymentVerificationState,
+} from "../remissions/remissions.logic";
 
 type PaymentStatus = "Completado" | "Parcial" | "Pendiente";
 type CurrencyCode = "COP" | "USD" | "EUR";
@@ -136,6 +146,70 @@ interface InvoiceOption {
                     </div>
                 </div>
 
+                <!-- Doble validacion de despacho: proyectos cuyo pago ya se marco
+                     confirmado en la ficha del tablero. Hasta que alguien guarde
+                     su verificacion aqui, Remisiones no deja crear su remision. -->
+                <div class="card adminuiux-card mb-3 mb-lg-4" data-testid="payment-confirmed-panel">
+                    <div class="card-header d-flex justify-content-between align-items-center py-2">
+                        <h6 class="mb-0"><i class="bi bi-credit-card-check me-2"></i>Proyectos con pago confirmado</h6>
+                        @if (paymentConfirmedProjects.length > 0) {
+                            <button class="btn btn-sm btn-outline-secondary" type="button" (click)="loadPaymentConfirmedProjects()">
+                                <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
+                            </button>
+                        }
+                    </div>
+                    <div class="card-body p-0">
+                        @if (loadingPaymentConfirmed) {
+                            <p class="text-secondary py-3 mb-0">Cargando proyectos...</p>
+                        } @else if (paymentConfirmedError) {
+                            <div class="alert alert-warning m-3" role="alert" data-testid="payment-confirmed-error">
+                                {{ paymentConfirmedError }}
+                            </div>
+                        } @else if (paymentConfirmedProjects.length === 0) {
+                            <p class="text-secondary py-3 mb-0">No hay proyectos con pago confirmado por ahora. Cuando un proyecto marque su pago como confirmado en la ficha del tablero, aparecera aqui para la doble validacion.</p>
+                        } @else {
+                            <div class="table-responsive">
+                                <table class="table align-middle mb-0" data-testid="payment-confirmed-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Codigo</th>
+                                            <th>Cliente</th>
+                                            <th>Equipo</th>
+                                            <th>Etapas del tablero</th>
+                                            <th>Pago confirmado el</th>
+                                            <th>Doble validacion</th>
+                                            <th class="text-end">Accion</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @for (project of paymentConfirmedProjects; track project.id) {
+                                            <tr style="cursor: pointer;" (click)="openVerify(project)" data-testid="payment-confirmed-row">
+                                                <td><span class="badge bg-dark">{{ projectEquipmentCode(project) }}</span></td>
+                                                <td>{{ projectClientName(project) || "--" }}</td>
+                                                <td>{{ projectEquipmentName(project) || "--" }}</td>
+                                                <td><span class="badge text-bg-light border">{{ project.status }}</span></td>
+                                                <td>{{ paymentConfirmedAtOf(project) | date: "dd/MM/yyyy HH:mm" }}</td>
+                                                <td>
+                                                    @if (verificationStateOf(project).savedAt) {
+                                                        <span class="badge text-bg-success"><i class="bi bi-check-lg me-1"></i>Validada por {{ verificationStateOf(project).savedBy || "usuario" }} · {{ verificationStateOf(project).savedAt | date: "dd/MM/yyyy HH:mm" }}</span>
+                                                    } @else {
+                                                        <span class="badge text-bg-warning">Pendiente de validacion</span>
+                                                    }
+                                                </td>
+                                                <td class="text-end">
+                                                    <button class="btn btn-sm {{ verificationStateOf(project).savedAt ? 'btn-outline-secondary' : 'btn-theme' }}" type="button" (click)="openVerify(project)" data-testid="verify-project-btn">
+                                                        <i class="bi bi-patch-check me-1"></i>{{ verificationStateOf(project).savedAt ? "Re-validar" : "Validar despacho" }}
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                </div>
+
                 <div class="card adminuiux-card mb-3 mb-lg-4">
                     <div class="card-body p-0">
                         <div class="table-responsive">
@@ -199,6 +273,79 @@ interface InvoiceOption {
                     </div>
                     <div class="card-footer bg-transparent border-0 pt-3">
                         <p class="small text-secondary mb-0">Mostrando {{ filteredPayments.length }} de {{ payments.length }} pagos.</p>
+                    </div>
+                </div>
+            } @else if (viewMode === "verify") {
+                <!-- Doble validacion del despacho: revisa los datos prellenados del
+                     proyecto (mismo prefill que usaria la remision) y guarda la
+                     verificacion en el propio proyecto. Solo despues se habilita
+                     el boton Completar de Remisiones para este proyecto. -->
+                <div class="card adminuiux-card mb-3 mb-lg-4" data-testid="payment-verification-form">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0"><i class="bi bi-patch-check me-2"></i>Doble validacion de despacho — {{ projectEquipmentCode(verifyProject) }}</h6>
+                        <button class="btn btn-sm btn-outline-secondary" type="button" (click)="goToListView()">Volver al listado</button>
+                    </div>
+                    <div class="card-body">
+                        @if (!verifyPrefill) {
+                            <p class="text-danger mb-0">No se pudo cargar el detalle del proyecto.</p>
+                        } @else {
+                            <div class="alert alert-info py-2">
+                                Revisa los datos tal como viajarian a la remision. Al guardar quedara registrada
+                                tu doble validacion (quien y cuando) en el proyecto, y desde entonces Remisiones
+                                permitira crear su remision.
+                            </div>
+
+                            <div class="row gx-3 gy-2 align-items-end">
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label small">Cliente</label>
+                                    <input class="form-control" type="text" [value]="verifyPrefill.clientName || '--'" readonly />
+                                </div>
+                                <div class="col-6 col-md-2">
+                                    <label class="form-label small">NIT</label>
+                                    <input class="form-control" type="text" [value]="verifyPrefill.clientNit || '--'" readonly data-testid="verify-client-nit" />
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <label class="form-label small">Modalidad de despacho</label>
+                                    <input class="form-control" type="text" [value]="dispatchLabelOf(verifyPrefill)" readonly />
+                                </div>
+                                <div class="col-12 col-md-3">
+                                    <label class="form-label small">Orden de compra / pedido</label>
+                                    <input class="form-control" type="text" [value]="verifyPrefill.purchaseOrder || '--'" readonly />
+                                </div>
+                            </div>
+
+                            <table class="table table-sm align-middle mt-3">
+                                <thead>
+                                    <tr><th>Identificador</th><th>Descripcion</th><th>Accesorios</th><th class="text-end">Garantia (meses)</th></tr>
+                                </thead>
+                                <tbody>
+                                    @for (item of verifyPrefill.items; track item.equipmentId) {
+                                        <tr data-testid="verify-item-row">
+                                            <td>{{ item.identifier || '--' }}</td>
+                                            <td>{{ item.description || '--' }}</td>
+                                            <td>{{ item.accessories || item.anchoredNote || '--' }}</td>
+                                            <td class="text-end">{{ item.warrantyMonths > 0 ? item.warrantyMonths : 'Segun politica' }}</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+
+                            <div class="form-check mb-3" data-testid="verify-confirm-check">
+                                <input class="form-check-input" type="checkbox" id="verificationConfirmedInput" [(ngModel)]="verificationConfirmed" name="verificationConfirmed" />
+                                <label class="form-check-label" for="verificationConfirmedInput">He revisado los datos del despacho de este proyecto.</label>
+                            </div>
+
+                            @if (savingVerification) {
+                                <p class="text-secondary mb-2"><i class="bi bi-arrow-repeat spin me-1"></i>Guardando verificacion...</p>
+                            }
+
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-theme" type="button" [disabled]="!verificationConfirmed || savingVerification" (click)="saveVerification()" data-testid="save-verification-btn">
+                                    <i class="bi bi-check-lg me-1"></i>Guardar verificacion
+                                </button>
+                                <button class="btn btn-outline-secondary" type="button" (click)="goToListView()">Cancelar</button>
+                            </div>
+                        }
                     </div>
                 </div>
             } @else {
@@ -332,6 +479,7 @@ interface InvoiceOption {
 export class FinancePagosComponent implements OnDestroy {
     private readonly financePaymentsApi = inject(FinancePaymentsApiService);
     private readonly financeBillingApi = inject(FinanceBillingApiService);
+    private readonly projectsApi = inject(ProjectsApiService);
 
     readonly currencyOptions = [
         { value: "COP", label: "COP ($)" },
@@ -346,7 +494,7 @@ export class FinancePagosComponent implements OnDestroy {
     // vez de inventar.
     invoiceOptions: InvoiceOption[] = [];
 
-    viewMode: "list" | "form" = "list";
+    viewMode: "list" | "form" | "verify" = "list";
     payments: PaymentRecord[] = [];
     financeAccounts: FinanceAccount[] = [];
     editingPaymentId: number | null = null;
@@ -370,10 +518,150 @@ export class FinancePagosComponent implements OnDestroy {
         void FinanceAccountsStore.ensureLoaded();
         this.loadPaymentsFromApi();
         void this.loadInvoiceOptions();
+        this.loadPaymentConfirmedProjects();
     }
 
     ngOnDestroy(): void {
         this.accountsUnsubscribe();
+    }
+
+    // ── Doble validacion de despacho (pago confirmado) ───────────────────────
+    paymentConfirmedProjects: any[] = [];
+    loadingPaymentConfirmed = false;
+    paymentConfirmedError = "";
+    verifyProject: any | null = null;
+    verifyPrefill: RemissionPrefill | null = null;
+    verificationConfirmed = false;
+    savingVerification = false;
+
+    /** Estado de validacion pura (mismo origen que el gate de Remisiones). */
+    readonly verificationStateOf = projectPaymentVerificationState;
+    // El template solo puede ver miembros del componente: expongo aqui las funciones puras de la logica.
+    readonly projectEquipmentCode = (p: any) => logicProjectEquipmentCode(p);
+    readonly projectClientName = (p: any) => logicProjectClientName(p);
+    readonly projectEquipmentName = (p: any) => logicProjectEquipmentName(p);
+
+    dispatchLabelOf(prefill: RemissionPrefill): string {
+        const key = String(prefill?.dispatchType || "").trim().toLowerCase();
+        const labels: Record<string, string> = {
+            "servientrega": "Servientrega",
+            "recoge-cliente": "Recoge Cliente",
+            "contra-entrega": "Contra entrega",
+            "dhl": "DHL",
+        };
+        return key ? labels[key] || key : "No especificada";
+    }
+
+    paymentConfirmedAtOf(project: any): string {
+        const props = (project && typeof project.properties === "object" && project.properties !== null)
+            ? project.properties
+            : {};
+        return String(props.paymentConfirmedAt || "").trim();
+    }
+
+    loadPaymentConfirmedProjects(): void {
+        this.loadingPaymentConfirmed = true;
+        this.paymentConfirmedError = "";
+        this.projectsApi.listProjects({ limit: 500 }).subscribe({
+            next: (projects) => {
+                this.loadingPaymentConfirmed = false;
+                const confirmed = filterPaymentConfirmedProjects(projects);
+                // Los mas recientes primero: pago confirmado el, luego id como desempate.
+                confirmed.sort((a, b) =>
+                    String(b.properties?.paymentConfirmedAt || "")
+                        .localeCompare(String(a.properties?.paymentConfirmedAt || ""))
+                    || String(b.id || "").localeCompare(String(a.id || "")),
+                );
+                this.paymentConfirmedProjects = confirmed;
+            },
+            error: () => {
+                this.loadingPaymentConfirmed = false;
+                this.paymentConfirmedError = "No se pudieron cargar los proyectos con pago confirmado. Verifica la conexion y pulsa Actualizar.";
+            },
+        });
+    }
+
+    openVerify(project: any): void {
+        this.formError = "";
+        this.successMessage = "";
+        this.verifyProject = project;
+        try {
+            const equipmentId = String((project.properties || {}).equipmentItemId || "").trim();
+            const eqItem = equipmentId
+                ? (this.allEquipmentItemsForVerify().find((it: any) => String(it.itemId || it.id || "") === equipmentId)
+                    ?? null)
+                : null;
+            this.verifyPrefill = buildRemissionPrefillFromProject(project, eqItem);
+        } catch {
+            this.verifyPrefill = null;
+        }
+        this.verificationConfirmed = false;
+        this.savingVerification = false;
+        this.viewMode = "verify";
+    }
+
+    /** Sin dependencias externas: el NIT/accesorios ya viven en properties del proyecto. */
+    private allEquipmentItemsForVerify(): any[] {
+        return [];
+    }
+
+    saveVerification(): void {
+        const project = this.verifyProject;
+        if (!project || !String(project.id ?? "")) {
+            this.formError = "No hay un proyecto seleccionado para validar.";
+            return;
+        }
+        if (!this.verificationConfirmed) {
+            this.formError = "Confirma con la casilla que revisaste los datos del despacho antes de guardar.";
+            return;
+        }
+
+        const by = this.resolveCurrentUserName();
+        const properties = { ...(project.properties || {}) };
+        properties.paymentVerification = {
+            at: new Date().toISOString(),
+            by,
+        };
+
+        this.savingVerification = true;
+        this.formError = "";
+        // PUT /projects/:id con el MISMO status (no-op legal de transicion):
+        // solo se anota properties.paymentVerification = { at, by }.
+        this.projectsApi.updateProject(String(project.id), {
+            id: String(project.id),
+            status: String(project.status || ""),
+            properties,
+        }).subscribe({
+            next: (updated) => {
+                this.savingVerification = false;
+                const storedProperties = { ...(properties as Record<string, any>) };
+                project.properties = storedProperties;
+                if (updated && updated.status) {
+                    project.status = updated.status;
+                }
+                this.successMessage = `Doble validacion guardada por ${by}. Ahora puedes crear la remision de este proyecto en Remisiones.`;
+                this.goToListView();
+            },
+            error: (error) => {
+                this.savingVerification = false;
+                const message = (error && typeof error === "object" && "error" in (error as any))
+                    ? String((error as any).error || "")
+                    : "";
+                this.formError = message
+                    ? `No se pudo guardar la verificacion: ${message}`
+                    : "No se pudo guardar la verificacion. Verifica tu conexion e intentalo de nuevo.";
+            },
+        });
+    }
+
+    /** Quien valida, desde la sesion persistida (mismo origen que el resto del app). */
+    private resolveCurrentUserName(): string {
+        try {
+            const session = JSON.parse(localStorage.getItem("pika.auth.session") || "{}");
+            return String(session?.user?.name ?? session?.user?.email ?? "").trim() || "usuario";
+        } catch {
+            return "usuario";
+        }
     }
 
     get projectOptions(): string[] {

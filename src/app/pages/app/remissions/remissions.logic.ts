@@ -161,6 +161,89 @@ export function buildRemissionPrefillFromProject(project: any, equipmentItem?: a
     };
 }
 
+/**
+ * Estado de pago del proyecto (lo marca la ficha en kanban):
+ * 'pendiente' | 'parcial' | 'confirmado'. Normaliza mayúsculas/espacios.
+ */
+export function normalizeProjectPaymentStatus(project: any): string {
+    const props = (project && typeof project.properties === "object" && project.properties !== null)
+        ? project.properties
+        : {};
+    return String(props.paymentStatus || "").trim().toLowerCase();
+}
+
+/** Accesores puros sobre properties_json: una sola fuente de las claves. */
+export function projectClientName(project: any): string {
+    const props = (project && typeof project.properties === "object" && project.properties !== null)
+        ? project.properties
+        : {};
+    return String(props.client || props.equipmentProspectName || "").trim();
+}
+
+export function projectEquipmentCode(project: any): string {
+    const props = (project && typeof project.properties === "object" && project.properties !== null)
+        ? project.properties
+        : {};
+    return String(props.equipmentIdentifier || "").trim()
+        || (project?.id ? "#" + String(project.id).slice(-6) : "Sin codigo");
+}
+
+export function projectEquipmentName(project: any): string {
+    const props = (project && typeof project.properties === "object" && project.properties !== null)
+        ? project.properties
+        : {};
+    return String(props.equipmentDisplayName || [props.marca, props.tipo].filter(Boolean).join(" ") || "").trim();
+}
+
+export interface ProjectVerificationState {
+    /** true si el proyecto esta en estado pago confirmado (requiere doble validacion). */
+    required: boolean;
+    savedAt: string;
+    savedBy: string;
+}
+
+/**
+ * Doble validacion de despacho: un proyecto con pago confirmado solo puede
+ * tener remision despues de que alguien valide los datos en /finance-pagos y
+ * guarde esa verificacion (properties.paymentVerification = { at, by }).
+ */
+export function projectPaymentVerificationState(project: any): ProjectVerificationState {
+    const required = normalizeProjectPaymentStatus(project) === "confirmado";
+    const props = (project && typeof project.properties === "object" && project.properties !== null)
+        ? project.properties
+        : {};
+    const verification = (props.paymentVerification && typeof props.paymentVerification === "object")
+        ? props.paymentVerification
+        : null;
+    return {
+        required,
+        savedAt: String(verification?.at || "").trim(),
+        savedBy: String(verification?.by || "").trim(),
+    };
+}
+
+export interface RemissionGateDecision { allowed: boolean; reason: string; }
+
+/**
+ * Puerta unica de creacion de remision por proyecto (la usa /app/remissions):
+ * pago confirmado sin doble validacion guardada -> bloqueado con el motivo.
+ */
+export function canCreateRemissionForProject(project: any): RemissionGateDecision {
+    const state = projectPaymentVerificationState(project);
+    if (state.required && !state.savedAt) {
+        return {
+            allowed: false,
+            reason: "Pago confirmado sin validar. Requiere la doble validacion en Financiero > Pagos antes de crear su remision.",
+        };
+    }
+    return { allowed: true, reason: "" };
+}
+
+/** Proyectos que deben aparecer en el panel /finance-pagos (pago confirmado). */
+export function filterPaymentConfirmedProjects(projects: any[]): any[] {
+    return (projects || []).filter((p) => projectPaymentVerificationState(p).required);
+}
+
 export function findQuoteLineForItem(quote: any, item: any): any | null {
     const lines = Array.isArray(quote?.lineas) ? quote.lineas : [];
     const selectedIds = Array.isArray(quote?.selectedEquipmentIds) ? quote.selectedEquipmentIds : [];
