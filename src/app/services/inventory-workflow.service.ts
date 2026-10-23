@@ -439,7 +439,10 @@ export class InventoryWorkflowService {
         return { ok: true, message: `Politica de reserva actualizada a ${safeDays} dia(s).` };
     }
 
-    createReservation(payload: {
+    // Server-first: la reserva solo existe cuando el backend la persistio.
+    // Devuelve el ID real de servidor (reservationId) para que los llamadores
+    // nunca guarden identidades locales huérfanas en sus propiedades.
+    async createReservation(payload: {
         reference: string;
         quantity: number;
         assignedTo: string;
@@ -449,7 +452,7 @@ export class InventoryWorkflowService {
         customerSite: string;
         priority: "critica" | "alta" | "media" | "baja";
         commitmentDate: string;
-    }): InventoryOperationResult {
+    }): Promise<InventoryOperationResult & { reservationId?: string }> {
         if (!this.hasPermission("inventory.reservations.manage")) {
             return this.permissionDenied("inventory.reservations.manage");
         }
@@ -467,112 +470,76 @@ export class InventoryWorkflowService {
             return { ok: false, message: "La referencia de la reserva no existe." };
         }
 
-        const reservedAt = new Date();
-        const expiresAt = new Date(reservedAt);
-        expiresAt.setDate(expiresAt.getDate() + this.state.maxReserveDays);
-
-        const res: ReservationRecord = {
-            id: this.buildId("res"),
-            reference,
-            quantity,
-            assignedTo,
-            purpose,
-            workOrder: payload.workOrder.trim(),
-            equipmentTag: payload.equipmentTag.trim(),
-            customerSite: payload.customerSite.trim(),
-            priority: payload.priority,
-            commitmentDate: payload.commitmentDate.trim(),
-            reservedAt: reservedAt.toISOString(),
-            expiresAt: expiresAt.toISOString(),
-            status: "activa",
-        };
-        this.state.reservations = [res, ...this.state.reservations];
-        this.emitState();
-
-        this.fireAndRefresh(this.api.createReservation(payload as unknown as Record<string, unknown>));
-
-        return { ok: true, message: "Reserva creada correctamente." };
+        const clientReservationId = this.buildId("res");
+        try {
+            // Espera real al servidor; el backend valida stock y respeta esta identidad (idempotencia ante reintentos).
+            const response = await firstValueFrom(
+                this.api.createReservation({ ...payload, reference, assignedTo, purpose, quantity, id: clientReservationId }),
+            );
+            await this.refreshFromApi();
+            return { ok: true, message: response.message || "Reserva creada correctamente.", reservationId: response.reservation?.id };
+        } catch (error) {
+            // Rechazo real del servidor (p.ej. stock insuficiente): sin mutacion local y error accionable para el usuario.
+            return { ok: false, message: this.backendErrorMessage(error) };
+        }
     }
 
-    releaseReservation(reservationId: string): InventoryOperationResult {
+    async releaseReservation(reservationId: string): Promise<InventoryOperationResult> {
         if (!this.hasPermission("inventory.reservations.manage")) {
             return this.permissionDenied("inventory.reservations.manage");
         }
 
         const target = this.state.reservations.find((item) => item.id === reservationId);
-        if (!target || target.status !== "activa") {
+        if (target && target.status !== "activa") {
             return { ok: false, message: "La reserva no esta activa o no existe." };
         }
 
-        target.status = "liberada";
-        this.emitState();
-
-        this.fireAndRefresh(this.api.releaseReservation(reservationId));
-
-        return { ok: true, message: "Reserva liberada." };
+        try {
+            const response = await firstValueFrom(this.api.releaseReservation(reservationId));
+            await this.refreshFromApi();
+            return { ok: true, message: response.message || "Reserva liberada." };
+        } catch (error) {
+            return { ok: false, message: this.backendErrorMessage(error) };
+        }
     }
 
-    extendReservation(reservationId: string): InventoryOperationResult {
+    async extendReservation(reservationId: string): Promise<InventoryOperationResult> {
         if (!this.hasPermission("inventory.reservations.manage")) {
             return this.permissionDenied("inventory.reservations.manage");
         }
 
         const target = this.state.reservations.find((item) => item.id === reservationId);
-        if (!target || target.status !== "activa") {
+        if (target && target.status !== "activa") {
             return { ok: false, message: "La reserva no esta activa o no existe." };
         }
 
-        const nextExpiry = new Date(target.expiresAt);
-        nextExpiry.setDate(nextExpiry.getDate() + this.state.maxReserveDays);
-        target.expiresAt = nextExpiry.toISOString();
-        this.emitState();
-
-        this.fireAndRefresh(this.api.extendReservation(reservationId));
-
-        return { ok: true, message: "Reserva renovada." };
+        try {
+            const response = await firstValueFrom(this.api.extendReservation(reservationId));
+            await this.refreshFromApi();
+            return { ok: true, message: response.message || "Reserva renovada." };
+        } catch (error) {
+            return { ok: false, message: this.backendErrorMessage(error) };
+        }
     }
 
-    consumeReservation(reservationId: string): InventoryOperationResult {
+    async consumeReservation(reservationId: string): Promise<InventoryOperationResult> {
         if (!this.hasPermission("inventory.reservations.manage")) {
             return this.permissionDenied("inventory.reservations.manage");
         }
 
         const reservation = this.state.reservations.find((r) => r.id === reservationId);
-        if (!reservation) {
-            return { ok: false, message: "La reserva no existe." };
-        }
-        if (reservation.status !== "activa") {
+        if (reservation && reservation.status !== "activa") {
             return { ok: false, message: "Solo se pueden consumir reservas activas." };
         }
 
-        const ref = this.state.references.find((r) => r.reference === reservation.reference);
-        if (!ref || ref.currentStock < reservation.quantity) {
-            return { ok: false, message: `Stock insuficiente para ${reservation.reference}. Disponible: ${ref?.currentStock ?? 0}, requerido: ${reservation.quantity}.` };
+        try {
+            // El servidor baja stock y registra el movimiento de salida; solo se declara éxito cuando eso ya ocurrió en BD.
+            const response = await firstValueFrom(this.api.consumeReservation(reservationId));
+            await this.refreshFromApi();
+            return { ok: true, message: response.message || "Consumo confirmado y salida registrada automaticamente." };
+        } catch (error) {
+            return { ok: false, message: this.backendErrorMessage(error) };
         }
-
-        ref.currentStock -= reservation.quantity;
-        reservation.status = "liberada";
-
-        const mov: MovementRecord = {
-            id: this.buildId("mov"),
-            type: "salida",
-            reference: reservation.reference,
-            quantity: reservation.quantity,
-            reason: `Consumo confirmado desde reserva ${reservationId}`,
-            workOrder: reservation.workOrder || "",
-            equipmentTag: reservation.equipmentTag || "",
-            customerSite: reservation.customerSite || "",
-            movementCategory: "consumo-tecnico",
-            evidenceRef: reservationId,
-            requestedBy: this.actorLabel(),
-            requestedAt: new Date().toISOString(),
-        };
-        this.state.movements = [mov, ...this.state.movements];
-        this.emitState();
-
-        this.fireAndRefresh(this.api.consumeReservation(reservationId));
-
-        return { ok: true, message: `${reservation.quantity}x ${reservation.reference} consumidos y salida registrada automaticamente.` };
     }
 
     // ─── REPLENISHMENT ───────────────────────────────────────────────────────

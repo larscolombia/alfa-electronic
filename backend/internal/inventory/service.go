@@ -609,19 +609,23 @@ func (s *Service) ListReservations(companyID string) ([]ReservationRecord, error
 	return items, rows.Err()
 }
 
-func (s *Service) CreateReservation(companyID string, req CreateReservationRequest, actor string) (OperationResult, error) {
+func (s *Service) CreateReservation(companyID string, req CreateReservationRequest, actor string) (ReservationRecord, OperationResult, error) {
 	ref := strings.TrimSpace(req.Reference)
 	assignedTo := strings.TrimSpace(req.AssignedTo)
 	purpose := strings.TrimSpace(req.Purpose)
 	qty := req.Quantity
 
 	if ref == "" || assignedTo == "" || purpose == "" || qty <= 0 {
-		return OperationResult{OK: false, Message: "Completa referencia, tecnico, motivo y cantidad valida."}, errInvalidQuantity
+		return ReservationRecord{}, OperationResult{OK: false, Message: "Completa referencia, tecnico, motivo y cantidad valida."}, errInvalidQuantity
 	}
 
-	_, err := s.GetReference(companyID, ref)
+	existingRef, err := s.GetReference(companyID, ref)
 	if err != nil {
-		return OperationResult{OK: false, Message: "La referencia de la reserva no existe."}, err
+		return ReservationRecord{}, OperationResult{OK: false, Message: "La referencia de la reserva no existe."}, err
+	}
+	// No se puede apartar lo que no esta en bodega; el flujo para material faltante es la solicitud de compra.
+	if existingRef.CurrentStock < qty {
+		return ReservationRecord{}, OperationResult{OK: false, Message: fmt.Sprintf("Stock insuficiente para %s. Disponible: %d, requerido: %d. Si falta material usa el flujo de compra.", ref, existingRef.CurrentStock, qty)}, errInsufficientStock
 	}
 
 	cfg, _ := s.GetConfig(companyID)
@@ -633,21 +637,64 @@ func (s *Service) CreateReservation(companyID string, req CreateReservationReque
 		priority = "media"
 	}
 
-	resID := buildID("res")
+	workOrder := strings.TrimSpace(req.WorkOrder)
+	equipmentTag := strings.TrimSpace(req.EquipmentTag)
+	customerSite := strings.TrimSpace(req.CustomerSite)
+	commitmentDate := strings.TrimSpace(req.CommitmentDate)
+
+	resID := normalizeClientReservationID(req.ID)
+	if resID != "" {
+		// Idempotencia: si la identidad del cliente ya existe, devolver la reserva existente en vez de duplicarla.
+		var current ReservationRecord
+		var reservedAt, rowExpires time.Time
+		err = s.db.QueryRow(`
+			SELECT id, reference, quantity, assigned_to, purpose, work_order, equipment_tag, customer_site,
+				priority, commitment_date, reserved_at, expires_at, status
+			FROM inventory_reservations WHERE company_id = $1 AND id = $2`, companyID, resID).Scan(
+			&current.ID, &current.Reference, &current.Quantity, &current.AssignedTo, &current.Purpose,
+			&current.WorkOrder, &current.EquipmentTag, &current.CustomerSite, &current.Priority, &current.CommitmentDate,
+			&reservedAt, &rowExpires, &current.Status)
+		if err == nil {
+			current.ReservedAt = reservedAt.UTC().Format(time.RFC3339)
+			current.ExpiresAt = rowExpires.UTC().Format(time.RFC3339)
+			return current, OperationResult{OK: true, Message: "Reserva ya existente; se devolvio la misma."}, nil
+		}
+		if !errors.Is(err, sql.ErrNoRows) {
+			return ReservationRecord{}, OperationResult{}, err
+		}
+	} else {
+		resID = buildID("res")
+	}
+
+	record := ReservationRecord{
+		ID:             resID,
+		Reference:      ref,
+		Quantity:       qty,
+		AssignedTo:     assignedTo,
+		Purpose:        purpose,
+		WorkOrder:      workOrder,
+		EquipmentTag:   equipmentTag,
+		CustomerSite:   customerSite,
+		Priority:       priority,
+		CommitmentDate: commitmentDate,
+		ReservedAt:     now.UTC().Format(time.RFC3339),
+		ExpiresAt:      expiresAt.UTC().Format(time.RFC3339),
+		Status:         "activa",
+	}
+
 	_, err = s.db.Exec(`
 		INSERT INTO inventory_reservations (company_id, id, reference, quantity, assigned_to, purpose,
 			work_order, equipment_tag, customer_site, priority, commitment_date, reserved_at, expires_at, status)
 		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,'activa')
 	`, companyID, resID, ref, qty, assignedTo, purpose,
-		strings.TrimSpace(req.WorkOrder), strings.TrimSpace(req.EquipmentTag),
-		strings.TrimSpace(req.CustomerSite), priority,
-		strings.TrimSpace(req.CommitmentDate), now, expiresAt)
+		workOrder, equipmentTag, customerSite, priority,
+		commitmentDate, now, expiresAt)
 	if err != nil {
-		return OperationResult{}, err
+		return ReservationRecord{}, OperationResult{}, err
 	}
 
 	s.pushAudit(companyID, actor, "CREATE_RESERVATION", fmt.Sprintf("Reserva creada para %s (%d).", ref, qty))
-	return OperationResult{OK: true, Message: "Reserva creada correctamente."}, nil
+	return record, OperationResult{OK: true, Message: "Reserva creada correctamente."}, nil
 }
 
 func (s *Service) ReleaseReservation(companyID, reservationID, actor string) (OperationResult, error) {
@@ -1799,6 +1846,23 @@ type DuplicateCandidate struct {
 
 func buildID(prefix string) string {
 	return fmt.Sprintf("%s-%d-%s", prefix, time.Now().UnixMilli(), randomSuffix())
+}
+
+// normalizeClientReservationID valida un ID de reserva generado por el cliente (mismo alfabeto que buildID).
+// Devuelve cadena vacia si es inutilizable para que el servidor genere uno propio.
+func normalizeClientReservationID(id string) string {
+	id = strings.TrimSpace(id)
+	if id == "" || len(id) > 80 {
+		return ""
+	}
+	for i := 0; i < len(id); i++ {
+		c := id[i]
+		ok := (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '-' || c == '_'
+		if !ok {
+			return ""
+		}
+	}
+	return id
 }
 
 func randomSuffix() string {

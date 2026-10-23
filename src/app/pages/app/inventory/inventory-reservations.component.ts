@@ -301,8 +301,8 @@ export class InventoryReservationsComponent implements OnInit {
         }
     }
 
-    createReservation(): void {
-        const result = this.inventoryWorkflow.createReservation({
+    async createReservation(): Promise<void> {
+        const result = await this.inventoryWorkflow.createReservation({
             reference: this.draft.reference,
             quantity: Number(this.draft.quantity),
             assignedTo: this.draft.assignedTo,
@@ -321,16 +321,16 @@ export class InventoryReservationsComponent implements OnInit {
         }
     }
 
-    releaseReservation(id: string): void {
-        const result = this.inventoryWorkflow.releaseReservation(id);
+    async releaseReservation(id: string): Promise<void> {
+        const result = await this.inventoryWorkflow.releaseReservation(id);
         this.setFeedback(result.message, result.ok ? "success" : "danger");
         if (result.ok) {
             this.refreshState();
         }
     }
 
-    extendReservation(id: string): void {
-        const result = this.inventoryWorkflow.extendReservation(id);
+    async extendReservation(id: string): Promise<void> {
+        const result = await this.inventoryWorkflow.extendReservation(id);
         this.setFeedback(result.message, result.ok ? "success" : "danger");
         if (result.ok) {
             this.refreshState();

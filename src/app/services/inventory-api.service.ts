@@ -153,9 +153,9 @@ export class InventoryApiService {
             .pipe(map((r) => r.items ?? []));
     }
 
-    createReservation(payload: Record<string, unknown>): Observable<OperationResultResponse> {
+    createReservation(payload: Record<string, unknown>): Observable<{ reservation?: ReservationRecord; ok: boolean; message: string }> {
         return from(
-            this.request<OperationResultResponse>("/api/v1/inventory/reservations", {
+            this.request<{ reservation?: ReservationRecord; ok: boolean; message: string }>("/api/v1/inventory/reservations", {
                 method: "POST",
                 body: JSON.stringify(payload),
             })

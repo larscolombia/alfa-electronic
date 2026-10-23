@@ -4824,7 +4824,7 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
     this.loadProjectPurchaseLines();
   }
 
-  createMaterialReservation(): void {
+  async createMaterialReservation(): Promise<void> {
     if (!this.detailProject) {
       return;
     }
@@ -4833,7 +4833,6 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
     this.materialRequestError = '';
     this.syncMaterialDraftContext();
 
-    const beforeReservationIds = new Set(this.inventoryWorkflowService.getSnapshot().reservations.map((item) => item.id));
     const payload = {
       reference: this.materialRequestDraft.reference,
       quantity: Math.max(1, Math.floor(this.materialRequestDraft.quantity || 0)),
@@ -4846,38 +4845,32 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
       commitmentDate: this.materialRequestDraft.commitmentDate,
     };
 
-    const result = this.inventoryWorkflowService.createReservation(payload);
+    // Server-first: solo se vincula al proyecto la reserva que el backend persistio,
+    // con su identidad real (reservationId). Si falla, el error del servidor se muestra aquí.
+    const result = await this.inventoryWorkflowService.createReservation(payload);
     if (!result.ok) {
       this.materialRequestError = result.message;
       return;
     }
 
-    const snapshot = this.inventoryWorkflowService.getSnapshot();
-    const createdReservation = snapshot.reservations.find((item) => {
-      return !beforeReservationIds.has(item.id)
-        && item.reference === payload.reference
-        && item.workOrder === payload.workOrder
-        && item.assignedTo === payload.assignedTo;
-    });
-
-    if (createdReservation) {
+    if (result.reservationId) {
       const reservationIds = new Set(this.getStringArrayValue(this.detailProject.properties['materialReservationIds']));
-      reservationIds.add(createdReservation.id);
+      reservationIds.add(result.reservationId);
       this.detailProject.properties['materialReservationIds'] = Array.from(reservationIds);
-      this.detailProject.properties['lastMaterialReservationAt'] = createdReservation.reservedAt;
+      this.detailProject.properties['lastMaterialReservationAt'] = new Date().toISOString();
     }
 
-    this.syncMaterialReservations(snapshot.reservations);
+    this.syncMaterialReservations(this.inventoryWorkflowService.getSnapshot().reservations);
     this.materialRequestMessage = result.message;
     this.resetMaterialRequestDraft();
     this.autoAdvanceAfterPartsRequest('Reserva de material creada');
   }
 
-  releaseMaterialReservation(reservationId: string): void {
+  async releaseMaterialReservation(reservationId: string): Promise<void> {
     this.materialRequestMessage = '';
     this.materialRequestError = '';
 
-    const result = this.inventoryWorkflowService.releaseReservation(reservationId);
+    const result = await this.inventoryWorkflowService.releaseReservation(reservationId);
     if (!result.ok) {
       this.materialRequestError = result.message;
       return;
@@ -4887,11 +4880,12 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
     this.materialRequestMessage = result.message;
   }
 
-  consumeMaterialReservation(reservationId: string): void {
+  async consumeMaterialReservation(reservationId: string): Promise<void> {
     this.materialRequestMessage = '';
     this.materialRequestError = '';
 
-    const result = this.inventoryWorkflowService.consumeReservation(reservationId);
+    // Éxito solo cuando el servidor bajo stock y registro la salida; si no, error real visible aquí.
+    const result = await this.inventoryWorkflowService.consumeReservation(reservationId);
     if (!result.ok) {
       this.materialRequestError = result.message;
       return;

@@ -285,14 +285,14 @@ func (h *Handler) createReservation(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "cuerpo de solicitud invalido"})
 	}
-	result, err := h.service.CreateReservation(companyID, req, actorFromRequest(c))
+	reservation, result, err := h.service.CreateReservation(companyID, req, actorFromRequest(c))
 	if err != nil {
-		if errors.Is(err, errInvalidQuantity) || errors.Is(err, errReferenceNotFound) {
+		if errors.Is(err, errInvalidQuantity) || errors.Is(err, errReferenceNotFound) || errors.Is(err, errInsufficientStock) {
 			return c.JSON(http.StatusBadRequest, map[string]any{"error": result.Message, "ok": false})
 		}
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "no se pudo crear la reserva"})
 	}
-	return c.JSON(http.StatusCreated, result)
+	return c.JSON(http.StatusCreated, map[string]any{"reservation": reservation, "result": result})
 }
 
 func (h *Handler) releaseReservation(c echo.Context) error {

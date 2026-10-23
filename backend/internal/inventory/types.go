@@ -256,6 +256,9 @@ type SubmitMovementRequest struct {
 }
 
 type CreateReservationRequest struct {
+	// ID opcional generado por el cliente. Si viene, el servidor lo respeta (idempotencia ante reintentos);
+	// si no viene o es invalido, genera uno propio.
+	ID             string `json:"id,omitempty"`
 	Reference      string `json:"reference"`
 	Quantity       int    `json:"quantity"`
 	AssignedTo     string `json:"assignedTo"`
