@@ -1652,6 +1652,12 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
               Ultima actualizacion {{ detailProject.updatedAt | date:'dd/MM/yyyy HH:mm' }}
             </small>
 
+            <!-- El banner de boardActionMessage se oculta en modo ficha; este slot es el que muestra
+                 el fallo del Guardar/Guardar-y-cotizar (p. ej. el gate de materiales) donde clicó el usuario. -->
+            <div class="alert alert-danger py-2" *ngIf="detailSaveError" role="alert" data-testid="detail-save-error">
+              {{ detailSaveError }}
+            </div>
+
             <small class="project-detail-dialog__feedback text-danger" *ngIf="diagnosisCloseError">
               {{ diagnosisCloseError }}
             </small>
@@ -3321,6 +3327,7 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
   equipmentQrDataUrl = '';
   equipmentQrError = '';
   boardActionMessage = '';
+  detailSaveError = '';
   receptionProjectsMessage = '';
   boardAudience: BoardAudience = 'todos';
   onlyMyProjects = false;
@@ -3821,6 +3828,7 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
     this.detailProject = null;
     this.newMemberName = '';
     this.saving = false;
+    this.detailSaveError = '';
     this.equipmentWorkflowMessage = '';
     this.equipmentWorkflowError = '';
     this.equipmentQrDataUrl = '';
@@ -5614,36 +5622,54 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
       return;
     }
 
+    // El error del guardado debe verse donde se hizo el clic: boardActionMessage
+    // solo pinta en tablero (el banner oculta su ngIf en modo ficha), asi que la
+    // ficha usa detailSaveError. Se limpia aqui para no mostrar un fallo viejo.
+    this.detailSaveError = '';
     this.saving = true;
 
-    this.projectService.updateProject(preparedProject.id, preparedProject).subscribe({
-      next: (savedProject) => {
-        this.saving = false;
-        if (options.successMessage) {
-          this.boardActionMessage = options.successMessage;
-        }
+    try {
+      this.projectService.updateProject(preparedProject.id, preparedProject).subscribe({
+        next: (savedProject) => {
+          this.saving = false;
+          this.detailSaveError = '';
+          if (options.successMessage) {
+            this.boardActionMessage = options.successMessage;
+          }
 
-        this.syncEquipmentMemos(savedProject);
-        options.onSuccess?.(savedProject);
+          this.syncEquipmentMemos(savedProject);
+          options.onSuccess?.(savedProject);
 
-        if (options.closeOnSuccess !== false) {
-          this.closeProjectDetail();
+          if (options.closeOnSuccess !== false) {
+            this.closeProjectDetail();
+            options.onFinally?.();
+            return;
+          }
+
+          this.detailProject = this.normalizeProject(savedProject);
+          this.initializeDispatchContext();
           options.onFinally?.();
-          return;
-        }
-
-        this.detailProject = this.normalizeProject(savedProject);
-        this.initializeDispatchContext();
-        options.onFinally?.();
-      },
-      error: (error) => {
-        this.saving = false;
-        // Sin fallback silencioso: el fallo de persistencia en el servidor
-        // debe ser visible para el usuario.
-        this.boardActionMessage = `No se pudo guardar el caso en el servidor: ${this.errorMessage(error)}`;
-        options.onFinally?.();
-      },
-    });
+        },
+        error: (error) => {
+          this.saving = false;
+          // Sin fallback silencioso: el fallo de persistencia en el servidor
+          // debe ser visible para el usuario, con el mensaje accionable del backend.
+          const message = `No se pudo guardar el caso en el servidor: ${this.errorMessage(error)}`;
+          this.boardActionMessage = message;
+          this.detailSaveError = message;
+          options.onFinally?.();
+        },
+      });
+    } catch (error) {
+      // Fallo sincrono entre saving=true y la emision del observable: sin este
+      // bloque saving quedaria en true para siempre y el boton se congelaba en
+      // "Guardando..." con el error solo en consola.
+      this.saving = false;
+      const message = `No se pudo preparar la guardacion del caso: ${this.errorMessage(error)}`;
+      this.boardActionMessage = message;
+      this.detailSaveError = message;
+      options.onFinally?.();
+    }
   }
 
   private getMembersFromValue(value: unknown): string[] {
