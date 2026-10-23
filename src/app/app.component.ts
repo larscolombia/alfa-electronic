@@ -5,6 +5,7 @@ import { Subscription } from "rxjs";
 import { filter } from "rxjs/operators";
 import { WorkTimeTrackerService } from "./services/work-time-tracker.service";
 import { ConfirmationModalService } from "./services/confirmation-modal.service";
+import { CompanyProfile, CompanySettingsApiService } from "./services/company-settings-api.service";
 
 @Component({
     selector: "app-root",
@@ -46,9 +47,11 @@ export class AppComponent implements OnDestroy {
         private router: Router,
         private tracker: WorkTimeTrackerService,
         public readonly confirmationModal: ConfirmationModalService,
+        private companySettingsApi: CompanySettingsApiService,
         @Inject(DOCUMENT) private document: Document
     ) {
         this.tracker.startTracking();
+        this.loadCompanyIdentity();
         this.routerSub = this.router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe(() => {
             this.document.documentElement.scrollTop = 0;
             this.document.body.scrollTop = 0; // For Safari
@@ -58,6 +61,38 @@ export class AppComponent implements OnDestroy {
     ngOnDestroy(): void {
         this.tracker.stopTracking();
         this.routerSub?.unsubscribe();
+    }
+
+    /**
+     * Identidad de la empresa en el navegador: <title> y favicon (logo).
+     * Se aplica una vez al arrancar, con los valores configurados en
+     * /app/company-profile. Mejor esfuerzo: si el GET falla, se conserva el
+     * titulo/fallback de index.html y la app sigue funcionando igual.
+     */
+    private loadCompanyIdentity(): void {
+        this.companySettingsApi.getProfile().subscribe({
+            next: (profile) => this.applyCompanyIdentity(profile),
+            error: () => undefined,
+        });
+    }
+
+    private applyCompanyIdentity(profile: CompanyProfile): void {
+        const title = (profile?.pageTitle ?? "").trim();
+        if (title) {
+            this.document.title = title;
+        }
+
+        const favicon = (profile?.logoDataUrl ?? "").trim();
+        if (!favicon.startsWith("data:image/")) {
+            return;
+        }
+        let link = this.document.querySelector<HTMLLinkElement>("link[rel='icon']");
+        if (!link) {
+            link = this.document.createElement("link");
+            link.rel = "icon";
+            this.document.head.appendChild(link);
+        }
+        link.href = favicon;
     }
 
     ngAfterViewChecked(): void {

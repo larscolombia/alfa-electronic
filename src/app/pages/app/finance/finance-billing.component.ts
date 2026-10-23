@@ -6,6 +6,7 @@ import { firstValueFrom } from "rxjs";
 
 import { BillingInvoice, FinanceBillingStore } from "./finance-billing.store";
 import { FinanceBillingApiService } from "../../../services/finance-billing-api.service";
+import { CompanyProfile, CompanySettingsApiService } from "../../../services/company-settings-api.service";
 import { resolveApiBaseUrl } from "../../../services/api-base-url.util";
 
 @Component({
@@ -321,6 +322,22 @@ import { resolveApiBaseUrl } from "../../../services/api-base-url.util";
                             </div>
                         </div>
                         <div class="card-body print-area">
+                            <!-- Emisor: identidad de la empresa configurable en /app/company-profile.
+                                 Antes el papel solo mostraba al cliente, sin ningun emisor. -->
+                            @if (companyProfile) {
+                                <div class="d-flex align-items-start gap-3 border-bottom pb-3 mb-4">
+                                    @if (companyProfile.logoDataUrl) {
+                                        <img [src]="companyProfile.logoDataUrl" alt="" style="max-height: 60px; max-width: 140px; object-fit: contain;" />
+                                    }
+                                    <div>
+                                        <h5 class="mb-1">{{ companyProfile.name }}</h5>
+                                        @for (line of issuerContactLines; track $index) {
+                                            <div class="small text-secondary">{{ line }}</div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+
                             <!-- Cabecera del documento -->
                             <div class="d-flex justify-content-between align-items-start border-bottom pb-3 mb-4">
                                 <div>
@@ -492,6 +509,9 @@ export class FinanceBillingComponent implements OnInit {
     // Vista de impresión: la factura a renderizar en el modal imprimible.
     printTarget: BillingInvoice | null = null;
 
+    /** Identidad de la empresa para el papel impreso; null si el GET fallo. */
+    companyProfile: CompanyProfile | null = null;
+
     // Fase 5b: nota crédito (única reversa de una factura emitida/bloqueada).
     creditNoteTarget: BillingInvoice | null = null;
     creditNoteAmount = 0;
@@ -502,12 +522,43 @@ export class FinanceBillingComponent implements OnInit {
 
     constructor(
         private readonly financeBillingApi: FinanceBillingApiService,
+        private readonly companySettingsApi: CompanySettingsApiService,
         private readonly router: Router,
         private readonly changeDetector: ChangeDetectorRef,
     ) { }
 
     ngOnInit(): void {
         setTimeout(() => void this.loadInvoices());
+
+        // Solo se usa al imprimir; si el GET falla la factura sigue imprimible (sin emisor).
+        this.companySettingsApi.getProfile().subscribe({
+            next: (profile) => {
+                this.companyProfile = profile;
+                this.changeDetector.detectChanges();
+            },
+            error: () => undefined,
+        });
+    }
+
+    /** Lineas de contacto del emisor en el papel impreso. */
+    get issuerContactLines(): string[] {
+        if (!this.companyProfile) {
+            return [];
+        }
+        const lines: string[] = [];
+        if (this.companyProfile.nit.trim()) {
+            lines.push(`NIT: ${this.companyProfile.nit}`);
+        }
+        if (this.companyProfile.address.trim()) {
+            lines.push(this.companyProfile.address);
+        }
+        if (this.companyProfile.phone.trim()) {
+            lines.push(this.companyProfile.phone);
+        }
+        if (this.companyProfile.email.trim()) {
+            lines.push(this.companyProfile.email);
+        }
+        return lines;
     }
 
     refreshFilteredInvoices(): void {

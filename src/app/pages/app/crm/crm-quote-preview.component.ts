@@ -6,6 +6,7 @@ import { Subscription } from "rxjs";
 
 import { PublicQuotePreview, PublicQuotePreviewLine } from "./crm-quote-preview.store";
 import { CrmQuoteRecord, CrmQuotesApiService } from "../../../services/crm-quotes-api.service";
+import { CompanyProfile, CompanySettingsApiService } from "../../../services/company-settings-api.service";
 import { FormDraftService } from "../../../services/form-draft.service";
 
 const CRM_QUOTE_PREVIEW_DRAFT_PREFIX = "app.crm.quote-preview";
@@ -33,9 +34,15 @@ const CRM_QUOTE_PREVIEW_DRAFT_PREFIX = "app.crm.quote-preview";
                     <div class="estimate-card">
                         <div class="estimate-header">
                             <div class="brand-block">
-                                <div class="brand-logo">LARS Software Company</div>
-                                <p class="mb-1">Lars Software Company</p>
-                                <p class="mb-0">LARS Software Company</p>
+                                @if (companyProfile) {
+                                    @if (companyProfile.logoDataUrl) {
+                                        <img class="quote-brand-logo" [src]="companyProfile.logoDataUrl" alt="" />
+                                    }
+                                    <div class="brand-logo">{{ companyProfile.name }}</div>
+                                    @for (line of companyContactLines; track $index) {
+                                        <p class="mb-0 small text-secondary">{{ line }}</p>
+                                    }
+                                }
                             </div>
 
                             <div class="estimate-meta">
@@ -274,6 +281,13 @@ const CRM_QUOTE_PREVIEW_DRAFT_PREFIX = "app.crm.quote-preview";
                 font-size: 14px;
                 font-weight: 600;
                 margin-bottom: 12px;
+            }
+
+            .quote-brand-logo {
+                width: 120px;
+                max-height: 72px;
+                object-fit: contain;
+                margin-bottom: 10px;
             }
 
             .estimate-meta {
@@ -518,6 +532,8 @@ export class CrmQuotePreviewComponent implements AfterViewChecked {
     @ViewChild("signatureCanvas") signatureCanvasRef?: ElementRef<HTMLCanvasElement>;
 
     quotePreview: PublicQuotePreview | null = null;
+    /** Identidad de la empresa (logo + nombre + contacto) para el encabezado; null si el GET publico fallo. */
+    companyProfile: CompanyProfile | null = null;
     showSignatureModal = false;
     actionMessage = "";
     actionMessageType: "success" | "danger" = "success";
@@ -548,9 +564,19 @@ export class CrmQuotePreviewComponent implements AfterViewChecked {
         private readonly route: ActivatedRoute,
         private readonly router: Router,
         private readonly crmQuotesApi: CrmQuotesApiService,
+        private readonly companySettingsApi: CompanySettingsApiService,
         private readonly formDraftService: FormDraftService,
         private readonly cdr: ChangeDetectorRef,
     ) {
+        // GET publico (sin sesion): la pagina de cotizacion la abre el cliente.
+        // Si falla, la cotizacion sigue visible; solo se pierde el encabezado.
+        this.companySettingsApi.getProfile().subscribe({
+            next: (profile) => {
+                this.companyProfile = profile;
+            },
+            error: () => undefined,
+        });
+
         this.routeSub = this.route.paramMap.subscribe((params) => {
             const token = params.get("token")?.trim() ?? "";
 
@@ -588,6 +614,27 @@ export class CrmQuotePreviewComponent implements AfterViewChecked {
     ngOnDestroy(): void {
         this.routeSub?.unsubscribe();
         this.stopDraftWatch();
+    }
+
+    /** Lineas de contacto para el encabezado: NIT, direccion, telefono, correo. */
+    get companyContactLines(): string[] {
+        if (!this.companyProfile) {
+            return [];
+        }
+        const lines: string[] = [];
+        if (this.companyProfile.nit.trim()) {
+            lines.push(`NIT: ${this.companyProfile.nit}`);
+        }
+        if (this.companyProfile.address.trim()) {
+            lines.push(this.companyProfile.address);
+        }
+        if (this.companyProfile.phone.trim()) {
+            lines.push(this.companyProfile.phone);
+        }
+        if (this.companyProfile.email.trim()) {
+            lines.push(this.companyProfile.email);
+        }
+        return lines;
     }
 
     private mapApiQuoteToPreview(item: CrmQuoteRecord): PublicQuotePreview {

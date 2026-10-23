@@ -22,6 +22,7 @@ import (
 	"pika.software.net.co/backend/internal/inventory"
 	"pika.software.net.co/backend/internal/platform/database"
 	"pika.software.net.co/backend/internal/platform/mailer"
+	settings "pika.software.net.co/backend/internal/platform/settings"
 	"pika.software.net.co/backend/internal/projects"
 	"pika.software.net.co/backend/internal/remissions"
 	"pika.software.net.co/backend/internal/search"
@@ -135,6 +136,12 @@ func main() {
 	searchService := search.NewService(db)
 	searchHandler := search.NewHandler(searchService)
 
+	// Identidad de la empresa (logo, nombre, contacto, titulo del tab): una fila
+	// por company_id. GET publico para la pagina de cotizacion del cliente; PUT
+	// admin para /app/company-profile.
+	settingsService := settings.NewService(db)
+	settingsHandler := settings.NewHandler(settingsService)
+
 	remissionsService := remissions.NewService(db)
 	remissionsHandler := remissions.NewHandler(remissionsService)
 
@@ -182,6 +189,7 @@ func main() {
 	api := e.Group("/api/v1")
 	authHandler.RegisterRoutes(api.Group("/auth"))
 	crmQuotesHandler.RegisterPublicRoutes(api.Group("/crm-quotes"))
+	settingsHandler.RegisterPublicRoutes(api) // GET /api/v1/company-settings: pagina de cotizacion sin sesion
 
 	protectedAPI := api.Group("")
 	protectedAPI.Use(authService.JWTMiddleware())
@@ -217,6 +225,7 @@ func main() {
 	securityHandler.RegisterRoutes(protectedAPI.Group("/security"))
 	remissionsHandler.RegisterRoutes(protectedAPI.Group("/remissions"))
 	documentationHandler.RegisterRoutes(protectedAPI.Group("/documentation"))
+	settingsHandler.RegisterAdminRoutes(protectedAPI.Group("", requireAdminModule)) // PUT /api/v1/company-settings
 	worktimeHandler.RegisterRoutes(protectedAPI.Group("/worktime", aclService.RequireModule("registro-horas")))
 
 	// Fase 5c: correos transaccionales.
