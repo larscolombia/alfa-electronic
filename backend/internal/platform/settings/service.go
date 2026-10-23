@@ -9,13 +9,20 @@
 //     de contacto para ser válido.
 //  3. El <title> y favicon de todo el SPA.
 //
+// Almacenamiento: tabla company_settings EAV (company_id + setting_key ->
+// value_json), la MISMA que ya usan finanzas/cotizaciones para sus claves
+// ("commercial.document-prefixes"). Esta package usa su propia clave
+// "general.company-identity": no hay dos tablas paralelas ni colision de claves.
+//
 // El GET es público a propósito: la página de cotización la abre el CLIENTE sin
 // sesión. No expone nada sensible (datos públicos de la empresa). El PUT exige
 // rol admin, igual que los demás módulos administrativos.
 package settings
 
 import (
+	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/mail"
@@ -25,6 +32,10 @@ import (
 )
 
 const logoDataURLPrefix = "data:image/"
+
+// identitySettingKey es la clave EAV de esta package dentro de company_settings.
+// Espaciada igual que las demas ("commercial.document-prefixes"): dominio.recurso.
+const identitySettingKey = "general.company-identity"
 
 // maxLogoBytes equivale a ~1MB binario codificado en base64 (igual fórmula que
 // la foto del empleado). Un logo no necesita más: si pesa 5MB es una foto,
@@ -53,7 +64,8 @@ func (e *ValidationError) Error() string { return e.Err.Error() }
 func (e *ValidationError) Unwrap() error { return e.Err }
 
 // Profile es el contrato JSON del endpoint. Nombres en camelCase, como el
-// resto de la API (seriesPrefix, sequenceNumber...).
+// resto de la API (seriesPrefix, sequenceNumber...). Sin omitempty: un campo
+// que el usuario vació se guarda explícito como "" y no se "inventa" al leer.
 type Profile struct {
 	Name        string `json:"name"`
 	NIT         string `json:"nit"`
@@ -92,46 +104,51 @@ func NewService(db *sql.DB) *Service {
 	return &Service{db: db}
 }
 
-// Get devuelve la fila de la empresa, sembrando los valores por defecto si no
-// existe todavía. INSERT ... ON CONFLICT DO NOTHING + SELECT es atómico y
-// idempotente: dos arranques simultáneos no compiten.
+// Get devuelve la identidad de la empresa, sembrando los valores por defecto
+// si no existe todavía. INSERT ... ON CONFLICT DO NOTHING + SELECT es atómico e
+// idempotente: dos arranques simultáneos no compiten. La validacion de entrada
+// ocurre ANTES de tocar la BD (los tests corren con *sql.DB nil).
 func (s *Service) Get(companyID string) (Profile, error) {
 	companyID = strings.TrimSpace(companyID)
 	if companyID == "" {
 		return Profile{}, errors.New("empresa no especificada")
 	}
 
-	defaults := DefaultsALFA()
-	if _, err := s.db.Exec(`
-		INSERT INTO company_settings (
-			company_id, name, nit, tagline, logo_data_url,
-			address, phone, email, website,
-			youtube, instagram, facebook, twitter, page_title
-		) VALUES ($1,$2,'',$3,'','','','','','',$4,'','','')
-		ON CONFLICT (company_id) DO NOTHING`, companyID, defaults.Name, defaults.Tagline, defaults.YouTube); err != nil {
+	defaultJSON, err := json.Marshal(DefaultsALFA())
+	if err != nil {
+		return Profile{}, fmt.Errorf("serializar por defectos: %w", err)
+	}
+
+	ctx := context.Background()
+	if _, err := s.db.ExecContext(ctx, `
+	INSERT INTO company_settings (company_id, setting_key, value_json, updated_at)
+	VALUES ($1, $2, $3::jsonb, NOW())
+	ON CONFLICT (company_id, setting_key) DO NOTHING`, companyID, identitySettingKey, defaultJSON); err != nil {
 		return Profile{}, fmt.Errorf("sembrar company_settings: %w", err)
 	}
 
-	var p Profile
-	err := s.db.QueryRow(`
-		SELECT name, COALESCE(nit,''), COALESCE(tagline,''), COALESCE(logo_data_url,''),
-		       COALESCE(address,''), COALESCE(phone,''), COALESCE(email,''), COALESCE(website,''),
-		       COALESCE(youtube,''), COALESCE(instagram,''), COALESCE(facebook,''), COALESCE(twitter,''),
-		       COALESCE(page_title,'')
-		FROM company_settings WHERE company_id = $1`, companyID).Scan(
-		&p.Name, &p.NIT, &p.Tagline, &p.LogoDataURL,
-		&p.Address, &p.Phone, &p.Email, &p.Website,
-		&p.YouTube, &p.Instagram, &p.Facebook, &p.Twitter, &p.PageTitle,
-	)
+	var raw []byte
+	err = s.db.QueryRowContext(ctx, `
+		SELECT value_json
+		FROM company_settings
+		WHERE company_id = $1 AND setting_key = $2`, companyID, identitySettingKey).Scan(&raw)
 	if err != nil {
 		return Profile{}, fmt.Errorf("leer company_settings: %w", err)
+	}
+
+	var p Profile
+	if err := json.Unmarshal(raw, &p); err != nil {
+		// Fila corrupta (no deberia existir): se reporta sin disfrazar. Se
+		// sana con un guardado desde /app/company-profile, que hace upsert.
+		return Profile{}, fmt.Errorf("deserializar company_settings: %w", err)
 	}
 
 	return p, nil
 }
 
-// Update valida TODO el perfil antes de tocar la BD (nada a medias: o entra
-// completo o no entra nada) y lo escribe en un solo upsert atómico.
+// Update valida TODO el perfil antes de tocar la BD (nada a medios: o entra
+// completo o no entra nada) y lo escribe en un solo upsert atómico bajo la
+// clave general.company-identity.
 func (s *Service) Update(companyID string, p Profile) error {
 	companyID = strings.TrimSpace(companyID)
 	if companyID == "" {
@@ -164,7 +181,10 @@ func (s *Service) Update(companyID string, p Profile) error {
 	if utf8Len(p.NIT) > 20 {
 		return &ValidationError{Err: errNITTooLong}
 	}
-	for _, value := range []struct{ field, v string }{
+	for _, value := range []struct {
+		field string
+		v     string
+	}{
 		{"address", p.Address}, {"phone", p.Phone}, {"website", p.Website},
 	} {
 		if utf8Len(value.v) > 200 {
@@ -202,31 +222,18 @@ func (s *Service) Update(companyID string, p Profile) error {
 		return &ValidationError{Err: errPageTitleLong}
 	}
 
-	if _, err := s.db.Exec(`
-		INSERT INTO company_settings (
-			company_id, name, nit, tagline, logo_data_url,
-			address, phone, email, website,
-			youtube, instagram, facebook, twitter, page_title
-		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
-		ON CONFLICT (company_id) DO UPDATE SET
-			name = EXCLUDED.name,
-			nit = EXCLUDED.nit,
-			tagline = EXCLUDED.tagline,
-			logo_data_url = EXCLUDED.logo_data_url,
-			address = EXCLUDED.address,
-			phone = EXCLUDED.phone,
-			email = EXCLUDED.email,
-			website = EXCLUDED.website,
-			youtube = EXCLUDED.youtube,
-			instagram = EXCLUDED.instagram,
-			facebook = EXCLUDED.facebook,
-			twitter = EXCLUDED.twitter,
-			page_title = EXCLUDED.page_title,
-			updated_at = NOW()`,
-		companyID, p.Name, p.NIT, p.Tagline, p.LogoDataURL,
-		p.Address, p.Phone, p.Email, p.Website,
-		p.YouTube, p.Instagram, p.Facebook, p.Twitter, p.PageTitle,
-	); err != nil {
+	payload, err := json.Marshal(p)
+	if err != nil {
+		return fmt.Errorf("serializar company_settings: %w", err)
+	}
+
+	ctx := context.Background()
+	if _, err := s.db.ExecContext(ctx, `
+	INSERT INTO company_settings (company_id, setting_key, value_json, updated_at)
+	VALUES ($1, $2, $3::jsonb, NOW())
+	ON CONFLICT (company_id, setting_key)
+	DO UPDATE SET value_json = EXCLUDED.value_json, updated_at = NOW()`,
+		companyID, identitySettingKey, payload); err != nil {
 		return fmt.Errorf("escribir company_settings: %w", err)
 	}
 
