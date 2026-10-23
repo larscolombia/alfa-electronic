@@ -2669,7 +2669,7 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
     refreshTechniciansForItem(item: ProspectEquipmentItem): void {
         const speciality = this.resolveItemAssignmentSpeciality(item);
         const specialityKey = speciality.toLowerCase();
-        this.crmEquipmentApi.listTechnicians({ speciality }).subscribe({
+        this.crmEquipmentApi.listTechnicians({ speciality, context: "tecnica" }).subscribe({
             next: (items) => {
                 this.techniciansBySpeciality.set(specialityKey, items);
                 this.changeDetectorRef.detectChanges();
@@ -3396,7 +3396,10 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
         this.technicianCatalogLoading = true;
         this.techniciansBySpeciality.clear();
 
-        this.crmEquipmentApi.listTechnicians().subscribe({
+        // Contexto 'tecnica': este select asigna el TÉCNICO RESPONSABLE del equipo.
+        // Sin contexto entraban comerciales/coordinadores (p. ej. "Coordinador SST")
+        // que no ejecutan reparación; el backend filtra por role/departamento en SQL.
+        this.crmEquipmentApi.listTechnicians({ context: "tecnica" }).subscribe({
             next: (items) => {
                 this.techniciansAll = items;
 
@@ -3416,7 +3419,7 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
 
                 const pendingSpecialities = Array.from(specialitySet.values());
                 const requests = pendingSpecialities.map((speciality) =>
-                    this.crmEquipmentApi.listTechnicians({ speciality }).pipe(catchError(() => of([] as EquipmentTechnicianOption[]))),
+                    this.crmEquipmentApi.listTechnicians({ speciality, context: "tecnica" }).pipe(catchError(() => of([] as EquipmentTechnicianOption[]))),
                 );
 
                 forkJoin(requests).subscribe({
