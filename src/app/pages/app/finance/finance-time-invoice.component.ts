@@ -9,6 +9,7 @@ import { FinanceBillingApiService, FinanceInvoiceSequencePreview } from "../../.
 import { FINANCE_HOURLY_RATE_KEY, FinanceSettingsApiService } from "../../../services/finance-settings-api.service";
 import { FinanceAccount, FinanceAccountsStore } from "./finance-accounts.store";
 import {
+    BillingClient,
     BillingCurrencyCode,
     BillingDiscountMode,
     BillingInvoice,
@@ -260,7 +261,11 @@ interface TimeInvoiceDraft {
     `,
 })
 export class FinanceTimeInvoiceComponent implements OnDestroy {
-    readonly clients = FinanceBillingStore.getClients();
+    // Getter (no campo): se re-lee cuando ensureLoaded() termina; capturado
+    // una sola vez el select quedaría vacío si la carga aún no había llegado.
+    get clients(): BillingClient[] {
+        return FinanceBillingStore.getClients();
+    }
     readonly currencyOptions = FinanceBillingStore.getCurrencyOptions();
     readonly taxCalculationOptions = FinanceBillingStore.getTaxCalculationOptions();
     readonly generatedByOptions = FinanceBillingStore.getGeneratedByOptions();

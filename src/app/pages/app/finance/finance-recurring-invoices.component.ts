@@ -4,7 +4,7 @@ import { FormsModule } from "@angular/forms";
 import { RouterLink } from "@angular/router";
 import { firstValueFrom } from "rxjs";
 
-import { BillingRecurringInvoice, FinanceBillingStore } from "./finance-billing.store";
+import { BillingClient, BillingRecurringInvoice, FinanceBillingStore, resolveStoredClientId } from "./finance-billing.store";
 import { FinanceBillingApiService } from "../../../services/finance-billing-api.service";
 
 @Component({
@@ -136,7 +136,11 @@ import { FinanceBillingApiService } from "../../../services/finance-billing-api.
     `,
 })
 export class FinanceRecurringInvoicesComponent {
-    readonly clients = FinanceBillingStore.getClients();
+    // Getter (no campo): se re-lee cuando ensureLoaded() termina; capturado
+    // una sola vez el filtro no vería los clientes reales del CRM.
+    get clients(): BillingClient[] {
+        return FinanceBillingStore.getClients();
+    }
     readonly statuses = ["Activa", "Pausada", "Finalizada"] as const;
 
     recurringInvoices: BillingRecurringInvoice[] = [];
@@ -154,7 +158,10 @@ export class FinanceRecurringInvoicesComponent {
         const normalizedSearchTerm = this.searchTerm.trim().toLowerCase();
 
         return this.recurringInvoices.filter((invoice) => {
-            const matchesClient = !this.clientFilter || invoice.clientId === this.clientFilter;
+            // Comparación con ids canónicos: ver resolveStoredClientId en el
+            // store — las facturas históricas guardan 'crm-client-<uuid>'.
+            const matchesClient =
+                !this.clientFilter || resolveStoredClientId(invoice.clientId) === resolveStoredClientId(this.clientFilter);
             const matchesStatus = !this.statusFilter || invoice.status === this.statusFilter;
             const matchesSearch =
                 !normalizedSearchTerm ||

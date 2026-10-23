@@ -4,7 +4,7 @@ import { FormsModule } from "@angular/forms";
 import { Router, RouterLink } from "@angular/router";
 import { firstValueFrom } from "rxjs";
 
-import { BillingInvoice, FinanceBillingStore } from "./finance-billing.store";
+import { BillingClient, BillingInvoice, FinanceBillingStore, resolveStoredClientId } from "./finance-billing.store";
 import { FinanceBillingApiService } from "../../../services/finance-billing-api.service";
 import { CompanyProfile, CompanySettingsApiService } from "../../../services/company-settings-api.service";
 import { resolveApiBaseUrl } from "../../../services/api-base-url.util";
@@ -494,7 +494,11 @@ import { resolveApiBaseUrl } from "../../../services/api-base-url.util";
     `,
 })
 export class FinanceBillingComponent implements OnInit {
-    readonly clients = FinanceBillingStore.getClients();
+    // Getter (no campo): se re-lee cuando ensureLoaded() termina; capturado
+    // una sola vez el filtro no vería los clientes reales del CRM.
+    get clients(): BillingClient[] {
+        return FinanceBillingStore.getClients();
+    }
     readonly statuses = ["Borrador", "Pendiente", "Pago parcial", "Pagado", "Cancelado", "Enviado"] as const;
 
     invoices: BillingInvoice[] = [];
@@ -564,7 +568,11 @@ export class FinanceBillingComponent implements OnInit {
     refreshFilteredInvoices(): void {
         const normalizedSearchTerm = this.searchTerm.trim().toLowerCase();
         this.filteredInvoices = this.invoices.filter((invoice) => {
-            const matchesClient = !this.clientFilter || invoice.clientId === this.clientFilter;
+            // Comparación con ids canónicos: las facturas históricas guardan
+            // 'crm-client-<uuid>' y el catálogo usa '<uuid>'; normalizar ambos
+            // lados evita que el filtro por cliente no encuentre nada.
+            const matchesClient =
+                !this.clientFilter || resolveStoredClientId(invoice.clientId) === resolveStoredClientId(this.clientFilter);
             const matchesStatus = !this.statusFilter || invoice.status === this.statusFilter;
             const matchesSearch =
                 !normalizedSearchTerm ||

@@ -6,6 +6,7 @@ import { firstValueFrom } from "rxjs";
 
 import { FinanceAccount, FinanceAccountsStore } from "./finance-accounts.store";
 import {
+    BillingClient,
     BillingCurrencyCode,
     BillingDiscountMode,
     BillingFrequency,
@@ -334,7 +335,11 @@ const MAX_GENERATED_BY_LENGTH = 140;
     `,
 })
 export class FinanceRecurringInvoiceCreateComponent implements OnDestroy {
-    readonly clients = FinanceBillingStore.getClients();
+    // Getter (no campo): se re-lee cuando ensureLoaded() termina; capturado
+    // una sola vez el select quedaría vacío si la carga aún no había llegado.
+    get clients(): BillingClient[] {
+        return FinanceBillingStore.getClients();
+    }
     // Fase 6: el catálogo se construye desde los maestros de equipos, que ahora
     // vienen del servidor. Como getter (no como campo) se re-lee cuando la carga
     // termina; capturado una sola vez quedaría vacío.

@@ -7,12 +7,15 @@ import { firstValueFrom, take } from "rxjs";
 import { FinanceAccount, FinanceAccountsStore } from "./finance-accounts.store";
 import {
     BillingCatalogItem,
+    BillingClient,
     BillingCurrencyCode,
     BillingDiscountMode,
     BillingInvoice,
     BillingInvoiceItem,
     BillingTaxCalculation,
     FinanceBillingStore,
+    canonicalBillingClientId,
+    canonicalBillingProjectId,
     computeInvoiceSummary,
     deriveInvoiceStatus,
 } from "./finance-billing.store";
@@ -397,7 +400,12 @@ interface InvoiceDraft {
     `,
 })
 export class FinanceInvoiceCreateComponent implements OnDestroy {
-    readonly clients = FinanceBillingStore.getClients();
+    // Como getter (no como campo) se re-lee cuando ensureLoaded() termina y
+    // cuando la edición inyecta entradas históricas; capturado una sola vez
+    // quedaría vacío o sin el cliente guardado de la factura.
+    get clients(): BillingClient[] {
+        return FinanceBillingStore.getClients();
+    }
     // Fase 6: el catálogo se construye desde los maestros de equipos, que ahora
     // vienen del servidor. Como getter (no como campo) se re-lee cuando
     // ensureLoaded() termina; capturado una sola vez quedaría vacío.
@@ -517,8 +525,18 @@ export class FinanceInvoiceCreateComponent implements OnDestroy {
             this.draft.dueDate = record.dueDate || "";
             this.draft.currencyCode = (record.currencyCode as BillingCurrencyCode) || "COP";
             this.draft.exchangeRate = record.exchangeRate > 0 ? record.exchangeRate : 1;
-            this.draft.clientId = record.clientId || "";
-            this.draft.projectId = record.projectId || "";
+            // Ids canónicos: el valor guardado debe coincidir con una opción del
+            // catálogo (alias heredado 'crm-client-<uuid>' → '<uuid>'). Si ese
+            // cliente/proyecto ya no existe en ningún maestro, se inyecta como
+            // entrada histórica — un select sin su propio valor es bug, no estado.
+            this.draft.clientId = canonicalBillingClientId(record.clientId || "");
+            this.draft.projectId = canonicalBillingProjectId(record.projectId || "");
+            FinanceBillingStore.ensureHistoricalEntries({
+                clientId: this.draft.clientId,
+                clientName: record.clientName,
+                projectId: this.draft.projectId,
+                projectName: record.projectName,
+            });
             this.draft.taxCalculation = (record.taxCalculation as BillingTaxCalculation) || "Despues del descuento";
             this.draft.bankAccountId = record.bankAccountId ?? null;
             this.draft.generatedBy =

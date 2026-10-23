@@ -232,14 +232,110 @@ function buildBillingClientFromProspect(prospect: ProspectRecord): BillingClient
     };
 }
 
+/**
+ * Cliente tal como lo devuelve GET /api/v1/crm/clients (tabla crm_clients,
+ * id = UUID). Subconjunto estructural de CrmClientRecord del service, sin
+ * importar el servicio Angular en este store estático.
+ */
+export interface RealCrmClientRecord {
+    id: string;
+    nombre: string;
+    empresa?: string;
+    nit?: string;
+    zona?: string;
+    estado?: string;
+    correo: string;
+    officePhone?: string;
+    country?: string;
+    city?: string;
+    address?: string;
+}
+
+function buildBillingClientFromRealClient(client: RealCrmClientRecord): BillingClient {
+    const companyName = sanitizeText(client.empresa, client.nombre);
+    const street = sanitizeText(client.address);
+    const locality = sanitizeText(`${client.city ?? ""} ${client.country ?? ""}`.trim());
+    const address = [street, locality].filter((part) => part.length > 0).join(" · ") || `${companyName} · Zona comercial`;
+
+    return {
+        // id REAL (UUID de crm_clients): estable entre sesiones y coincidente
+        // con la BD. El esquema legado 'crm-client-<número>' era dependiente del
+        // orden de carga y nunca coincidía con lo que las facturas guardaban.
+        id: client.id,
+        name: companyName,
+        contactName: sanitizeText(client.nombre, companyName),
+        billingAddress: address,
+        shippingAddress: address,
+        email: sanitizeText(client.correo, "--"),
+        phone: sanitizeText(client.officePhone, "--"),
+    };
+}
+
+const CRM_CLIENT_ID_PREFIX = "crm-client-";
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Normaliza un clientId histórico de factura al id estable del catálogo.
+ * 'crm-client-<uuid>' (formato heredado de facturas viejas) → '<uuid>'.
+ * 'crm-client-N' (semilla legacy) e ids reales se devuelven intactos.
+ */
+export function resolveStoredClientId(storedId: string): string {
+    const value = sanitizeText(storedId);
+    if (value.startsWith(CRM_CLIENT_ID_PREFIX)) {
+        const candidate = value.slice(CRM_CLIENT_ID_PREFIX.length);
+        if (UUID_PATTERN.test(candidate)) {
+            return candidate;
+        }
+    }
+    return value;
+}
+
+/**
+ * Id de cliente CANÓNICO para el formulario: si la factura guardó el alias
+ * heredado 'crm-client-<uuid>', devuelve el UUID puro que usa hoy el catálogo.
+ * Los ids legacy ('crm-client-N') y los ya canónicos se devuelven intactos;
+ * si no existen en el catálogo, ensureHistoricalEntries() los inyecta bajo ese
+ * mismo valor para que el select siempre tenga su opción.
+ */
+export function canonicalBillingClientId(storedId: string): string {
+    return resolveStoredClientId(storedId);
+}
+
+const BILLING_PROJECT_PREFIX = "project-";
+
+/**
+ * Id de proyecto canónico: 'project-crm-client-<uuid>' → 'project-<uuid>',
+ * exactamente lo que buildBillingProjects() genera hoy (`project-${client.id}`)
+ * cuando client.id es un UUID. El resto se devuelve intacto.
+ */
+export function canonicalBillingProjectId(storedProjectId: string): string {
+    const value = sanitizeText(storedProjectId);
+    if (!value.startsWith(BILLING_PROJECT_PREFIX)) {
+        return value;
+    }
+
+    const inner = value.slice(BILLING_PROJECT_PREFIX.length);
+    return `${BILLING_PROJECT_PREFIX}${resolveStoredClientId(inner)}`;
+}
+
 function buildBillingClients(): BillingClient[] {
     const mergedClients = [
+        // 1) Clientes reales de la API: id estable (UUID), ganan el dedupe.
+        ...(realClientsCache ?? []).map((client) => buildBillingClientFromRealClient(client)),
+        // 2) Entradas históricas inyectadas desde facturas existentes.
+        ...Array.from(historicalClientEntries.values()),
+        // 3-4) Catálogo legacy (mocks + caché CRM), solo compatibilidad.
         ...CRM_PROSPECTS_MOCK.map((prospect) => buildBillingClientFromProspect(prospect)),
         ...getCrmClients().map((client) => buildBillingClientFromCrmClient(client)),
     ];
 
     const uniqueClients = new Map<string, BillingClient>();
     for (const client of mergedClients) {
+        // Doble llave: por id y por nombre|email, para que la misma empresa no
+        // aparezca dos veces bajo ids distintos (real vs. legacy).
+        if (!uniqueClients.has(client.id)) {
+            uniqueClients.set(client.id, client);
+        }
         const key = `${toLookupKey(client.name)}|${toLookupKey(client.email)}`;
         if (!uniqueClients.has(key)) {
             uniqueClients.set(key, client);
@@ -553,6 +649,11 @@ function sortByCreatedAtDesc<T extends { createdAt: string }>(items: T[]): T[] {
 
 let invoicesCache: BillingInvoice[] = [];
 let recurringCache: BillingRecurringInvoice[] = [];
+/** Clientes reales de la API (GET /api/v1/crm/clients, id = UUID). null = aún sin cargar o falló. */
+let realClientsCache: RealCrmClientRecord[] | null = null;
+/** Entradas históricas inyectadas desde facturas existentes (patrón optionsFor del picker RRHH). */
+const historicalClientEntries = new Map<string, BillingClient>();
+const historicalProjectEntries = new Map<string, BillingProject>();
 let lastError: string | null = null;
 let loaded = false;
 let loadPromise: Promise<void> | null = null;
@@ -581,12 +682,23 @@ export class FinanceBillingStore {
     }
 
     static getProjects(clientId?: string): BillingProject[] {
-        const projects = buildBillingProjects(this.getClients());
-        if (!clientId) {
-            return projects;
+        const mergedProjects = [
+            ...Array.from(historicalProjectEntries.values()),
+            ...buildBillingProjects(this.getClients()),
+        ];
+
+        const uniqueProjects = new Map<string, BillingProject>();
+        for (const project of mergedProjects) {
+            if (!uniqueProjects.has(project.id)) {
+                uniqueProjects.set(project.id, project);
+            }
         }
 
-        return projects.filter((project) => project.clientId === clientId);
+        let projects = Array.from(uniqueProjects.values());
+        if (clientId) {
+            projects = projects.filter((project) => project.clientId === clientId);
+        }
+        return projects;
     }
 
     static getCatalog(): BillingCatalogItem[] {
@@ -666,6 +778,16 @@ export class FinanceBillingStore {
                 financeStoreFetch<{ items: BillingInvoice[] }>("/api/v1/finance/invoices"),
                 financeStoreFetch<{ items: BillingRecurringInvoice[] }>("/api/v1/finance/recurring-invoices"),
                 ensureEquipmentCatalogLoaded(),
+                // Clientes reales (UUID estables) para el catálogo de facturación.
+                // No fatal: si falla, el catálogo cae a mocks + entradas
+                // históricas y la edición sigue hidratando lo guardado.
+                financeStoreFetch<{ items: RealCrmClientRecord[] }>("/api/v1/crm/clients")
+                    .then((response) => {
+                        realClientsCache = response.items ?? [];
+                    })
+                    .catch(() => {
+                        realClientsCache = null;
+                    }),
             ]);
             invoicesCache = sortByCreatedAtDesc(invoicesResponse.items ?? []);
             recurringCache = sortByCreatedAtDesc(recurringResponse.items ?? []);
@@ -750,7 +872,56 @@ export class FinanceBillingStore {
     }
 
     static findClient(clientId: string): BillingClient | undefined {
-        return this.getClients().find((client) => client.id === clientId);
+        const clients = this.getClients();
+        const direct = clients.find((client) => client.id === clientId);
+        if (direct || !clientId) {
+            return direct;
+        }
+
+        // Facturas históricas guardaron 'crm-client-<uuid>'; el catálogo hoy usa
+        // el UUID puro. Resolver el alias evita que la edición pinte Cliente en
+        // blanco aunque todo lo demás coincida.
+        const resolved = resolveStoredClientId(clientId);
+        return resolved !== clientId ? clients.find((client) => client.id === resolved) : undefined;
+    }
+
+    /**
+     * Garantiza que el valor histórico de una factura (cliente/proyecto ya
+     * guardados en la BD) exista en el catálogo, aunque ese cliente no esté hoy
+     * en la API ni entre los mocks. Misma semántica del optionsFor() del picker
+     * RRHH: un registro histórico pintado en blanco es un bug, no un estado.
+     */
+    static ensureHistoricalEntries(entry: { clientId?: string; clientName?: string; projectId?: string; projectName?: string }): void {
+        let changed = false;
+
+        const clientId = sanitizeText(entry.clientId);
+        if (clientId && !this.getClients().some((client) => client.id === clientId)) {
+            historicalClientEntries.set(clientId, {
+                id: clientId,
+                name: sanitizeText(entry.clientName, "Cliente histórico"),
+                contactName: "",
+                billingAddress: "",
+                shippingAddress: "",
+                email: "--",
+                phone: "--",
+            });
+            changed = true;
+        }
+
+        const projectId = sanitizeText(entry.projectId);
+        if (projectId && clientId && !this.getProjects().some((project) => project.id === projectId)) {
+            historicalProjectEntries.set(projectId, {
+                id: projectId,
+                clientId,
+                name: sanitizeText(entry.projectName, "Proyecto histórico"),
+                hourlyRate: 0,
+            });
+            changed = true;
+        }
+
+        if (changed) {
+            notifyListeners();
+        }
     }
 
     static findProject(projectId: string): BillingProject | undefined {
