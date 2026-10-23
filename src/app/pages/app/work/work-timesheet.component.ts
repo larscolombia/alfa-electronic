@@ -449,7 +449,9 @@ export class WorkTimesheetComponent implements OnInit, OnDestroy {
         // Fase 6: una sola fuente de personas (RRHH activo). Sin fallback
         // inventado: si no hay empleados activos la lista queda vacía y el
         // select se ve vacío, que es la verdad.
-        void this.hrPeople.refresh().then((names) => {
+        // Contexto tecnica: aquí se registran horas de intervención sobre
+        // equipos; un comercial no registra tiempo de taller.
+        void this.hrPeople.refresh('tecnica').then((names) => {
             this.employees = names;
             if (!this.employees.includes(this.employee)) {
                 this.employee = this.employees[0] ?? "";

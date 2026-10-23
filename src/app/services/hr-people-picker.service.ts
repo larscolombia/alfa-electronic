@@ -27,52 +27,66 @@ import { CrmEquipmentApiService } from "./crm-equipment-api.service";
 export class HrPeoplePickerService {
     private readonly crmEquipmentApi = inject(CrmEquipmentApiService);
 
-    private cache: string[] | null = null;
-    private loading: Promise<string[]> | null = null;
+    // Caché por contexto: 'tecnica' y 'comercial' devuelven listados distintos
+    // del backend (filtro de rol/departamento). El contexto vacío es el bucket
+    // de "todos los activos", compatible con llamadores que no pasen contexto.
+    private readonly caches = new Map<string, string[]>();
+    private readonly loadingByContext = new Map<string, Promise<string[]>>();
 
-    /** Nombres de empleados activos, ordenados y sin duplicados. */
-    names(): Promise<string[]> {
-        if (this.cache) {
-            return Promise.resolve(this.cache);
+    /** Nombres de empleados activos del contexto (por defecto: todos), ordenados y sin duplicados. */
+    names(context = ""): Promise<string[]> {
+        const key = this.contextKey(context);
+        if (this.caches.has(key)) {
+            return Promise.resolve(this.caches.get(key) ?? []);
         }
-        return this.refresh();
+        return this.refresh(context);
     }
 
-    /** Fuerza una recarga (botones "Actualizar lista", o tras crear un empleado). */
-    refresh(): Promise<string[]> {
-        if (this.loading) {
-            return this.loading;
+    /** Fuerza una recarga del contexto (botones "Actualizar lista", o tras crear un empleado). */
+    refresh(context = ""): Promise<string[]> {
+        const key = this.contextKey(context);
+        if (this.loadingByContext.has(key)) {
+            return this.loadingByContext.get(key) as Promise<string[]>;
         }
 
-        this.loading = firstValueFrom(this.crmEquipmentApi.listTechnicians())
+        const pending = firstValueFrom(this.crmEquipmentApi.listTechnicians({ context: key || undefined }))
             .then((people) => {
                 const names = Array.from(
                     new Set(people.map((person) => person.name.trim()).filter((name) => name.length > 0)),
                 ).sort((left, right) => left.localeCompare(right, "es"));
-                this.cache = names;
+                this.caches.set(key, names);
                 return names;
             })
             .catch(() => {
-                // Sin RRHH activo el picker queda vacío a propósito: un fallback de
-                // nombres demo es justamente el bug que este servicio viene a matar.
-                this.cache = [];
+                // Sin RRHH activo (o sin empleados del rol relevante en el contexto)
+                // el picker queda vacío a propósito: un fallback de nombres demo es
+                // justamente el bug que este servicio viene a matar. Si el select sale
+                // vacío, la respuesta correcta es crear al empleado con ese rol en RRHH,
+                // no inventarlo aquí.
+                this.caches.set(key, []);
                 return [] as string[];
             })
             .finally(() => {
-                this.loading = null;
+                this.loadingByContext.delete(key);
             });
 
-        return this.loading;
+        this.loadingByContext.set(key, pending);
+        return pending;
     }
 
     /**
-     * Opciones para un select: empleados activos MÁS el valor ya guardado y los
-     * extras que pase el llamador. El valor guardado se incluye siempre porque
-     * hay registros históricos asignados a personas que hoy están inactivas o
-     * borradas, y un select que no lo contenga lo pintaría en blanco.
+     * Opciones para un select: empleados activos del contexto MÁS el valor ya
+     * guardado y los extras que pase el llamador. El valor guardado se incluye
+     * siempre porque hay registros históricos asignados a personas que hoy están
+     * inactivas, borradas o de otro rol, y un select que no lo contenga lo
+     * pintaría en blanco.
      */
-    optionsFor(current?: string | null, extra: Array<string | null | undefined> = []): Promise<string[]> {
-        return this.names().then((names) => this.merge(names, current, extra));
+    optionsFor(current?: string | null, extra: Array<string | null | undefined> = [], context = ""): Promise<string[]> {
+        return this.names(context).then((names) => this.merge(names, current, extra));
+    }
+
+    private contextKey(context: string): string {
+        return String(context ?? "").trim().toLowerCase();
     }
 
     /** Versión síncrona sobre la caché, para getters de plantilla tras la carga. */

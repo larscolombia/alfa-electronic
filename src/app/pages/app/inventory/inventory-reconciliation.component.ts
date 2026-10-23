@@ -296,7 +296,8 @@ export class InventoryReconciliationComponent implements OnInit {
 
     ngOnInit(): void {
         // Fase 6: el responsable de la sesión de conteo sale de RRHH.
-        void this.hrPeople.refresh().then((names) => {
+        // Contexto tecnica: un conteo físico lo hace operación/taller, no ventas.
+        void this.hrPeople.refresh('tecnica').then((names) => {
             this.peopleNames = names;
         });
         this.refreshState();

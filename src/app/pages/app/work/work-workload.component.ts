@@ -468,7 +468,9 @@ export class WorkWorkloadComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnInit(): void {
     this.projectService.loadProjects('board-1').subscribe();
     // Fase 6: el select de técnico se alimenta de RRHH, no de nombres quemados.
-    void this.hrPeople.refresh().then((names) => {
+    // Contexto tecnica: aquí se asigna trabajo técnico a técnicos; un comercial
+    // en esta lista no tiene sentido operativo.
+    void this.hrPeople.refresh('tecnica').then((names) => {
       this.peopleNames = names;
     });
     this.dataSubscription = combineLatest([this.projectService.projectsWithTasks$, this.projectService.board$]).subscribe({

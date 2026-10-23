@@ -12,8 +12,9 @@ import { CrmEquipmentApiService } from "../../../services/crm-equipment-api.serv
 import { CrmFollowupsApiService, CrmProspectFollowup } from "../../../services/crm-followups-api.service";
 import { CrmProspectContact, CrmProspectRecord, CrmProspectsApiService, CrmUpsertBranchPayload } from "../../../services/crm-prospects-api.service";
 import { FormDraftService } from "../../../services/form-draft.service";
+import { HrPeoplePickerService } from "../../../services/hr-people-picker.service";
 
-type QuickAddTarget = "empleados" | "fuentes" | "categorias" | "servicios";
+type QuickAddTarget = "fuentes" | "categorias" | "servicios";
 
 type ProspectFollowupBadge = {
     label: string;
@@ -239,14 +240,12 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
                         </div>
 
                         <div class="col-12 col-lg-4 mb-3">
-                            <label class="form-label">Seleccionar Empleados</label>
-                            <div class="input-group">
-                                <select class="form-select" [(ngModel)]="formEmpleado" name="formEmpleado">
-                                    <option value="">--</option>
-                                    <option *ngFor="let option of employeeOptions" [value]="option">{{ option }}</option>
-                                </select>
-                                <button class="btn btn-outline-secondary" type="button" (click)="openQuickAddModal('empleados')">Agregar</button>
-                            </div>
+                            <label class="form-label">Empleado responsable</label>
+                            <select class="form-select" [(ngModel)]="formEmpleado" name="formEmpleado">
+                                <option value="">--</option>
+                                <option *ngFor="let option of employeeOptions" [value]="option">{{ option }}</option>
+                            </select>
+                            <div class="form-text text-secondary">Solo empleados activos de RRHH con rol comercial. Si no aparece quien necesitas, créalo en el directorio de RRHH.</div>
                         </div>
                         <div class="col-12 col-lg-4 mb-3">
                             <label class="form-label">Fuente del Prospecto</label>
@@ -552,7 +551,7 @@ export class CrmProspectsComponent {
     serviceOptions: string[] = [];
 
     isQuickAddModalOpen = false;
-    quickAddTarget: QuickAddTarget = "empleados";
+    quickAddTarget: QuickAddTarget = "fuentes";
     quickAddInput = "";
     quickAddErrorMessage = "";
     showProspectForm = false;
@@ -616,6 +615,7 @@ export class CrmProspectsComponent {
         private readonly crmClientsApi: CrmClientsApiService,
         private readonly crmEquipmentApi: CrmEquipmentApiService,
         private readonly crmFollowupsApi: CrmFollowupsApiService,
+        private readonly hrPeople: HrPeoplePickerService,
         private readonly cdr: ChangeDetectorRef,
         private readonly formDraftService: FormDraftService,
     ) {
@@ -694,6 +694,7 @@ export class CrmProspectsComponent {
         replaceProspects([]);
         this.loadProspectsFromApi();
         this.loadCatalogsFromApi();
+        this.loadEmployeeOptions();
     }
 
     ngOnDestroy(): void {
@@ -702,8 +703,6 @@ export class CrmProspectsComponent {
 
     get quickAddTargetLabel(): string {
         switch (this.quickAddTarget) {
-            case "empleados":
-                return "empleado";
             case "fuentes":
                 return "fuente";
             case "categorias":
@@ -1197,7 +1196,6 @@ export class CrmProspectsComponent {
     private loadCatalogsFromApi(): void {
         this.crmProspectsApi.catalogs().subscribe({
             next: (catalogs) => {
-                this.employeeOptions = [...catalogs.employees];
                 this.sourceOptions = [...catalogs.sources];
                 this.categoryOptions = [...catalogs.categories];
                 this.serviceOptions = [...catalogs.services];
@@ -1211,7 +1209,6 @@ export class CrmProspectsComponent {
                 this.cdr.detectChanges();
             },
             error: (error) => {
-                this.employeeOptions = [];
                 this.sourceOptions = [];
                 this.categoryOptions = [];
                 this.serviceOptions = [];
@@ -1223,10 +1220,25 @@ export class CrmProspectsComponent {
         });
     }
 
-    private catalogTypeFromQuickTarget(target: QuickAddTarget): "employees" | "sources" | "categories" | "services" | null {
+    /**
+     * El empleado del prospecto sale de RRHH, la única fuente de personas de la
+     * plataforma. Contexto comercial: los prospectos se atienden en ventas; un
+     * técnico no pertenece a esta lista (igual que un comercial no aparece en el
+     * select de técnicos del tablero).
+     * El quick-add antiguo creaba nombres fantasma en un catálogo local y esos
+     * nombres luego se copiaban al assignee del proyecto al convertir. Esa puerta
+     * está cerrada: si no hay comerciales activos, el select queda vacío y la
+     * respuesta correcta es crear al empleado en RRHH — no inventarlo aquí. El
+     * valor histórico (formEmpleado) siempre se mantiene visible vía optionsFor.
+     */
+    private loadEmployeeOptions(): void {
+        void this.hrPeople.optionsFor(this.formEmpleado, [], "comercial").then((names) => {
+            this.employeeOptions = names;
+        });
+    }
+
+    private catalogTypeFromQuickTarget(target: QuickAddTarget): "sources" | "categories" | "services" | null {
         switch (target) {
-            case "empleados":
-                return "employees";
             case "fuentes":
                 return "sources";
             case "categorias":

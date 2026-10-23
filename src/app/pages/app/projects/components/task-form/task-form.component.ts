@@ -260,7 +260,9 @@ export class TaskFormComponent implements OnInit {
 
   ngOnInit() {
     // Fase 6: el responsable se elige entre empleados reales de RRHH.
-    void this.hrPeople.refresh().then((names) => {
+    // Contexto tecnica: tareas de trabajo dentro del proyecto son de técnicos,
+    // no de comerciales.
+    void this.hrPeople.refresh('tecnica').then((names) => {
       this.peopleNames = names;
     });
     if (this.task) {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 )
@@ -13,7 +14,24 @@ var (
 	errTechnicianNotFound   = errors.New("tecnico no encontrado")
 )
 
-func (s *Service) ListTechnicians(companyID, speciality string) ([]TechnicianSummary, error) {
+// Contextos de relevancia por donde se muestra el listado. Los roles y
+// departamentos en hr_employees son texto libre, así que el filtrado va por
+// palabras clave contra rol O departamento (insensible a mayúsculas). Un
+// contexto vacío o desconocido devuelve TODOS los activos: compatibilidad con
+// llamadores anteriores al filtro.
+var technicianContextKeywords = map[string][]string{
+	"tecnica":   {"tecnic", "soporte", "operacion", "mantenimient", "taller"},
+	"comercial": {"comercial", "venta"},
+}
+
+// ListTechniciansForContext aplica el filtro por contexto y devuelve las
+// palabras clave activas (vacío si no hay filtro). Separado para testear la
+// semántica sin base de datos.
+func ListTechniciansForContext(roleContext string) []string {
+	return technicianContextKeywords[strings.ToLower(strings.TrimSpace(roleContext))]
+}
+
+func (s *Service) ListTechnicians(companyID, speciality, roleContext string) ([]TechnicianSummary, error) {
 	ctx := context.Background()
 	normalizedSpeciality := strings.TrimSpace(speciality)
 
@@ -45,6 +63,20 @@ WHERE e.company_id = $1
 		OR lower(coalesce(e.department, '')) LIKE lower($2)
   )`
 		args = append(args, "%"+normalizedSpeciality+"%")
+	}
+
+	if keywords := ListTechniciansForContext(roleContext); len(keywords) > 0 {
+		clauses := make([]string, 0, len(keywords)*2)
+		for _, keyword := range keywords {
+			param := fmt.Sprintf("%%%s%%", keyword)
+			args = append(args, param)
+			placeholder := fmt.Sprintf("$%d", len(args))
+			clauses = append(clauses,
+				fmt.Sprintf("lower(coalesce(e.role, '')) LIKE %s", placeholder),
+				fmt.Sprintf("lower(coalesce(e.department, '')) LIKE %s", placeholder),
+			)
+		}
+		query += "\n  AND (" + strings.Join(clauses, " OR ") + ")"
 	}
 
 	query += `

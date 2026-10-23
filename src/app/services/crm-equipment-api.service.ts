@@ -140,11 +140,20 @@ export class CrmEquipmentApiService {
         );
     }
 
-    listTechnicians(query: { speciality?: string } = {}): Observable<EquipmentTechnicianOption[]> {
+    /**
+     * context: relevancia del rol/departamento según la vista que consume:
+     * 'tecnica' para selects de técnicos, 'comercial' para selects comerciales.
+     * Vacío = todos los activos (contrato del backend).
+     */
+    listTechnicians(query: { speciality?: string; context?: string } = {}): Observable<EquipmentTechnicianOption[]> {
         const searchParams = new URLSearchParams();
         const speciality = String(query.speciality ?? "").trim();
         if (speciality) {
             searchParams.set("speciality", speciality);
+        }
+        const context = String(query.context ?? "").trim().toLowerCase();
+        if (context) {
+            searchParams.set("context", context);
         }
 
         const suffix = searchParams.toString();

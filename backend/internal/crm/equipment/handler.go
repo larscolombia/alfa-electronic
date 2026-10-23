@@ -229,11 +229,13 @@ func (h *Handler) listItems(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]any{"items": items})
 }
 
+// context: 'tecnica' | 'comercial'. Vacío o desconocido = todos los activos.
 func (h *Handler) listTechnicians(c echo.Context) error {
 	companyID := company.IDFromRequest(c)
 	speciality := strings.TrimSpace(c.QueryParam("speciality"))
+	roleContext := strings.TrimSpace(c.QueryParam("context"))
 
-	items, err := h.service.ListTechnicians(companyID, speciality)
+	items, err := h.service.ListTechnicians(companyID, speciality, roleContext)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "no se pudo cargar el listado de tecnicos"})
 	}

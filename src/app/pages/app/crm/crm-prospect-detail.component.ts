@@ -17,6 +17,7 @@ import { FormDraftService } from "../../../services/form-draft.service";
 import { WorkEquipmentHistoryContextService } from "../../../services/work-equipment-history-context.service";
 import { CrmAttachmentsApiService, ProspectAttachment } from "../../../services/crm-attachments-api.service";
 import { AuthService } from "../../../services/auth.service";
+import { HrPeoplePickerService } from "../../../services/hr-people-picker.service";
 
 type DetailTab = "perfil" | "contactos-relacionados" | "acciones-comerciales" | "equipos" | "cotizacion" | "archivos" | "notas" | "trazabilidad" | "sucursales";
 type ActivityTab = "actividad" | "notas" | "correos" | "llamadas" | "tareas" | "reuniones";
@@ -606,9 +607,12 @@ type EditableProfileFieldConfig = {
                                             <label class="form-label">Empleado</label>
                                             <select class="form-select" [(ngModel)]="noteEmployee" name="noteEmployee">
                                                 <option value="">Nada seleccionado</option>
-                                                <option value="Jorge Carrera">Jorge Carrera</option>
-                                                <option value="Ana Torres">Ana Torres</option>
-                                                <option value="Carlos Mendez">Carlos Mendez</option>
+                                                @for (name of noteEmployeeOptions; track name) {
+                                                    <option [value]="name">{{ name }}</option>
+                                                }
+                                                @if (noteEmployee && !noteEmployeeOptions.includes(noteEmployee)) {
+                                                    <option [value]="noteEmployee">{{ noteEmployee }}</option>
+                                                }
                                             </select>
                                         </div>
                                         <div class="col-12">
@@ -973,6 +977,10 @@ export class CrmProspectDetailComponent {
 
     noteTitle = "";
     noteVisibility: "publica" | "privada" = "privada";
+    // Empleados activos de RRHH con rol comercial (el CRM es territorio comercial).
+    // El valor histórico guardado se pinta siempre desde la plantilla, incluso si
+    // esa persona hoy está inactiva o cambió de rol.
+    noteEmployeeOptions: string[] = [];
     noteEmployee = "";
     noteDetail = "";
     notePersistSuccessMessage = "";
@@ -1012,6 +1020,7 @@ export class CrmProspectDetailComponent {
     private readonly crmAttachmentsApi = inject(CrmAttachmentsApiService);
     private readonly confirmationModal = inject(ConfirmationModalService);
     private readonly formDraftService = inject(FormDraftService);
+    private readonly hrPeople = inject(HrPeoplePickerService);
     private routeSub?: Subscription;
     private stopDraftWatch: () => void = () => undefined;
     private activeDraftKey = "";
@@ -1118,6 +1127,13 @@ export class CrmProspectDetailComponent {
             if (!this.noteTitle.trim() && !this.noteEmployee.trim() && !this.noteDetail.trim()) {
                 this.restoreNoteDraftFromProspect();
             }
+            // El empleado de la nota sale de RRHH activo con contexto comercial: un
+            // técnico no escribe notas comerciales y un comercial no hace taller.
+            // Sin empleados comerciales activos el select queda vacío a propósito —
+            // la respuesta es crearlo en RRHH, no inventarlo aquí.
+            void this.hrPeople.names("comercial").then((names) => {
+                this.noteEmployeeOptions = names;
+            });
             return;
         }
 

@@ -257,7 +257,9 @@ export class InventoryReservationsComponent implements OnInit {
 
     ngOnInit(): void {
         // Fase 6: el técnico de la reserva sale de RRHH.
-        void this.hrPeople.refresh().then((names) => {
+        // Contexto tecnica: una reserva de material se asigna al técnico que va a
+        // usarla, no a un comercial.
+        void this.hrPeople.refresh('tecnica').then((names) => {
             this.peopleNames = names;
         });
         this.refreshState();

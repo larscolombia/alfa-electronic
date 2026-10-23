@@ -3399,7 +3399,9 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
     this.loadMaterialTechnicianOptions();
     // Fase 6: responsables y técnicos salen de RRHH. Si no hay empleados activos
     // el picker queda vacío a propósito, nunca con nombres inventados.
-    void this.hrPeople.refresh().then((names) => {
+    // Contexto tecnica: ficha de proyecto y solicitud de repuestos son trabajo
+    // técnico — un comercial no tiene nada que hacer en estos selects.
+    void this.hrPeople.refresh('tecnica').then((names) => {
       this.peopleNames = names;
       this.cdr.detectChanges();
     });

@@ -423,6 +423,8 @@ export class InventoryReplenishmentComponent implements OnInit, OnDestroy {
 
     ngOnInit(): void {
         // Fase 6: el comprador responsable sale de RRHH.
+        // Sin contexto a propósito: "comprador/compras" no pertenece ni al set
+        // técnico ni al comercial; filtrar por rol ocultaría al comprador real.
         void this.hrPeople.refresh().then((names) => {
             this.peopleNames = names;
         });
