@@ -32,5 +32,6 @@ func migrationStatements() []string {
 	statements = append(statements, migrationStatementsConsecutives()...)
 	statements = append(statements, migrationStatementsEquipmentCatalog()...)
 	statements = append(statements, migrationStatementsEmployeeAccounts()...)
+	statements = append(statements, migrationStatementsRemissionRules()...)
 	return statements
 }

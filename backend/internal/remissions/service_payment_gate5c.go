@@ -40,7 +40,7 @@ const (
 // Errores de la puerta. Son texto visible para el usuario, así que llevan el
 // motivo concreto y no un genérico "operación no permitida".
 var (
-	ErrInvoiceNotLinked = errors.New("falta vincular la factura que debe pagarse antes de despachar")
+	ErrInvoiceNotLinked   = errors.New("falta vincular la factura que debe pagarse antes de despachar")
 	ErrOverrideNotAllowed = errors.New("solo un administrador puede autorizar el despacho sin el pago confirmado")
 	ErrInvoiceNotFound    = errors.New("la factura vinculada no existe o fue eliminada")
 )

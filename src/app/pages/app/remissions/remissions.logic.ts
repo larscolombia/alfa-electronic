@@ -58,6 +58,33 @@ export function buildAnchoredAlert(equipment: any): string {
     return "Este equipo tiene equipos en prestamo anclados: " + borrowed.join(", ") + ". Incluyalos en la misma remision.";
 }
 
+// ── Reglas duras de despacho (espejo de backend/internal/remissions/validation.go) ──
+// El servidor sigue siendo la fuente de verdad final; estas funciones existen
+// para no gastar un request que el backend rechazaría y para mostrar el
+// mensaje accionable exacto ANTES de enviar. Mismas reglas, mismo orden.
+export const MAX_ITEMS_PER_REMISSION = 4;
+
+export function hasAnchoredEquipment(items: any[]): boolean {
+    return (items || []).some((item) => String(item?.anchoredNote || "").trim() !== "");
+}
+
+export function validateRemissionDraft(form: any): string {
+    const items = Array.isArray(form?.items) ? form.items : [];
+    if (items.length === 0) {
+        return "una remision sin equipos no se puede generar: agregue al menos un equipo antes de guardar";
+    }
+    if (items.length > MAX_ITEMS_PER_REMISSION) {
+        return `maximo ${MAX_ITEMS_PER_REMISSION} equipos por remision: divida el despacho en varias remisiones independientes`;
+    }
+    if (String(form?.contactName || "").trim() === "") {
+        return "el contacto del cliente es obligatorio para despachar: complete la casilla Contacto y vuelva a guardar";
+    }
+    if (hasAnchoredEquipment(items) && !form?.anchoredAccepted) {
+        return "la remision incluye equipos con prestamos anclados: confirme su inclusion antes de guardar";
+    }
+    return "";
+}
+
 export function canTransitionDeliveryStatus(from: string, to: string): boolean {
     if (DELIVERY_STATUSES.indexOf(from) < 0 || DELIVERY_STATUSES.indexOf(to) < 0) {
         return false;

@@ -58,6 +58,7 @@
     "test:kanban-extras": "node scripts/test-kanban-extras-logic.mjs",
     "test:sla-config-logic": "node scripts/test-sla-config-logic.mjs",
     "test:work-time-logic": "node scripts/test-work-time-logic.mjs",
+    "test:remission-rules": "node scripts/test-remission-rules-logic.mjs",
     "test:parts-logic": "node scripts/test-parts-logic.mjs",
     "test:warranty-reception": "node scripts/test-warranty-reception-logic.mjs",
     "test:prospect-equipment-logic": "node scripts/test-prospect-equipment-logic.mjs",

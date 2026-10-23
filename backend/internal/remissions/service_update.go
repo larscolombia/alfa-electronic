@@ -10,6 +10,10 @@ import (
 )
 
 func (s *Service) Update(companyID, id string, req UpsertRemissionRequest) (*Remission, error) {
+	if err := validateUpsert(req); err != nil {
+		return nil, err
+	}
+
 	itemsJSON, err := json.Marshal(req.Items)
 	if err != nil {
 		return nil, fmt.Errorf("serializar items: %w", err)
@@ -21,14 +25,14 @@ func (s *Service) Update(companyID, id string, req UpsertRemissionRequest) (*Rem
 
 	res, err := s.db.Exec(`
 		UPDATE remissions SET
-			client_name = $3, client_nit = $4, dispatch_type = $5,
-			carrier_name = $6, guide_number = $7, purchase_order = $8,
-			youtube_link = $9, dispatch_photos = $10, items = $11,
-			valued = $12, total_value = $13, warranty_months = $14,
-			notes = $15, updated_at = NOW(), invoice_id = $16
+			client_name = $3, client_nit = $4, contact_name = $5, dispatch_type = $6,
+			carrier_name = $7, guide_number = $8, purchase_order = $9,
+			youtube_link = $10, dispatch_photos = $11, items = $12,
+			valued = $13, total_value = $14, warranty_months = $15,
+			notes = $16, updated_at = NOW(), invoice_id = $17
 		WHERE company_id = $1 AND id = $2`,
 		companyID, id,
-		req.ClientName, req.ClientNIT, req.DispatchType,
+		req.ClientName, req.ClientNIT, strings.TrimSpace(req.ContactName), req.DispatchType,
 		req.CarrierName, req.GuideNumber, req.PurchaseOrder,
 		req.YoutubeLink, photosJSON, itemsJSON,
 		req.Valued, computeTotalValue(req.Items), req.WarrantyMonths,

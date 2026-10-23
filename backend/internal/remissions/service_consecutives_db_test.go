@@ -14,6 +14,7 @@ func sampleRemissionRequest() UpsertRemissionRequest {
 	return UpsertRemissionRequest{
 		ClientName:   "Cliente QA",
 		ClientNIT:    "901000000-1",
+		ContactName:  "QA Contacto",
 		DispatchType: "Servientrega",
 		CarrierName:  "QA Courier",
 		GuideNumber:  "QA-1",

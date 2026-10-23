@@ -10,6 +10,7 @@ func sampleRequest() UpsertRemissionRequest {
 	return UpsertRemissionRequest{
 		ClientName:   "Cliente Demo",
 		ClientNIT:    "900123456",
+		ContactName:  "Juan Contacto",
 		DispatchType: "servientrega",
 		CarrierName:  "Servientrega",
 		GuideNumber:  "GUIA-001",

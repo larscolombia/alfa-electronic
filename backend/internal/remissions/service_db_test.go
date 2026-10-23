@@ -135,7 +135,11 @@ func TestCreateAndGetIntegration(t *testing.T) {
 	req.YoutubeLink = "https://youtube.com/watch?v=abc"
 	req.DispatchPhotos = []Attachment{{Name: "sellado.jpg", DataURL: "data:image/jpeg;base64,xx"}}
 	req.Items[0].Accessories = "Cable de poder, caja"
+	// La nota de préstamo anclado persiste SIEMPRE que se acepte explícitamente
+	// (regla dura server-side, ver validation.go). Sin `AnchoredAccepted` este
+	// Create sería rechazado con 400 — eso lo cubre TestUpdateEnforcesDispatchRulesIntegration.
 	req.Items[0].AnchoredNote = "Incluir motor de pruebas prestado"
+	req.AnchoredAccepted = true
 
 	r, err := s.Create(companyID, req, "tester")
 	if err != nil {

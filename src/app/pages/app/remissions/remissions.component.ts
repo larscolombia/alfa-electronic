@@ -15,7 +15,9 @@ import {
     findQuoteLineForItem,
     groupDispatchReadyByClient,
     itemsRequiringAccessoriesConfirmation,
+    MAX_ITEMS_PER_REMISSION,
     requiresAccessoriesConfirmation,
+    validateRemissionDraft,
 } from "./remissions.logic";
 
 interface RemissionItem {
@@ -183,15 +185,32 @@ const REMISSIONS_TEMPLATE = `
             <h5 class="card-title">{{ editingId ? 'Editar' : 'Nueva' }} Remision</h5>
             <div class="alert alert-warning" *ngIf="anchoredAlertMessage" data-testid="anchored-alert">
                 <i class="bi bi-exclamation-triangle me-2"></i>{{ anchoredAlertMessage }}
+                <!-- El requerimiento de despacho exige aceptacion EXPLICITA de los
+                     prestamos anclados: la alerta sola ya no basta, sin este check el
+                     backend responde 400 (regla dura server-side). -->
+                <div class="form-check mt-2">
+                    <input class="form-check-input" type="checkbox" id="anchoredAcceptedCheck"
+                           [(ngModel)]="form.anchoredAccepted" data-testid="anchored-accepted-check" />
+                    <label class="form-check-label fw-semibold" for="anchoredAcceptedCheck">
+                        Confirmo la inclusion de los equipos anclados en esta remision
+                    </label>
+                </div>
             </div>
             <div class="row g-3">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label class="form-label">Cliente</label>
                     <input class="form-control" [(ngModel)]="form.clientName" data-testid="remission-client" />
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">NIT</label>
                     <input class="form-control" [(ngModel)]="form.clientNit" />
+                </div>
+                <div class="col-md-3">
+                    <!-- Contacto obligatorio por requerimiento de despacho: sin el
+                         contacto/ingeniero responsable la remision no se genera.
+                         El backend lo valida igual (400) si llega vacio. -->
+                    <label class="form-label">Contacto del cliente <span class="text-danger">*</span></label>
+                    <input class="form-control" [(ngModel)]="form.contactName" placeholder="Nombre del contacto o ingeniero responsable" data-testid="remission-contact-name" />
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Tipo de Despacho</label>
@@ -247,7 +266,9 @@ const REMISSIONS_TEMPLATE = `
             </div>
 
             <div class="d-flex justify-content-between align-items-center mt-3">
-                <h6 class="mb-0">Equipos en la remision</h6>
+                <!-- Contador visible contra el limite duro de 4 (regla del requerimiento,
+                     validada tambien en el servidor). -->
+                <h6 class="mb-0">Equipos en la remision <span class="text-secondary" data-testid="items-count">({{ form.items.length }}/{{ MAX_ITEMS_PER_REMISSION }})</span></h6>
                 <button class="btn btn-sm btn-outline-secondary" (click)="loadQuotePrices()" data-testid="load-quote-prices-btn">
                     <i class="bi bi-cash-coin me-1"></i>Traer precios de cotizacion
                 </button>
@@ -270,7 +291,11 @@ const REMISSIONS_TEMPLATE = `
                 <div class="col-md-2"><button class="btn btn-sm btn-outline-danger" (click)="removeItem(i)"><i class="bi bi-trash"></i></button></div>
                 <div class="col-12" *ngIf="item.anchoredNote"><div class="text-warning small"><i class="bi bi-link-45deg me-1"></i>{{ item.anchoredNote }}</div></div>
             </div>
-            <button class="btn btn-sm btn-outline-secondary mt-1" (click)="addItem()" data-testid="add-remission-item"><i class="bi bi-plus me-1"></i>Agregar equipo</button>
+            <div class="alert alert-danger py-2 mt-2" *ngIf="itemAddBlocked" role="alert" data-testid="items-limit-message">
+                <i class="bi bi-exclamation-octagon me-2"></i>{{ itemAddBlocked }}
+            </div>
+            <button class="btn btn-sm btn-outline-secondary mt-1" (click)="addItem()" [disabled]="form.items.length >= MAX_ITEMS_PER_REMISSION"
+                    data-testid="add-remission-item"><i class="bi bi-plus me-1"></i>Agregar equipo</button>
 
             <div *ngIf="formSaveBlock" class="alert alert-danger py-2 mt-3" data-testid="remission-save-block">
                 <i class="bi bi-lock me-1"></i>{{ formSaveBlock }}
@@ -610,6 +635,10 @@ export class RemissionsComponent implements OnInit {
     /** Proyecto que origino el formulario en curso (boton Completar), o null. */
     sourceProject: any | null = null;
     formSaveBlock = "";
+    /** Alias para el template: la constante vive en remissions.logic.ts (una sola fuente de verdad). */
+    readonly MAX_ITEMS_PER_REMISSION = MAX_ITEMS_PER_REMISSION;
+    /** Mensaje visible al intentar agregar un equipo estando en el limite. */
+    itemAddBlocked = "";
 
     // ── Proyectos en etapa "listo para entrega" (boton Completar) ──────────
     readyProjects: any[] = [];
@@ -800,10 +829,13 @@ export class RemissionsComponent implements OnInit {
 
     emptyForm() {
         return {
-            clientName: "", clientNit: "", dispatchType: "", carrierName: "",
+            clientName: "", clientNit: "", contactName: "", dispatchType: "", carrierName: "",
             guideNumber: "", purchaseOrder: "", youtubeLink: "",
             dispatchPhotos: [] as DispatchPhoto[],
             valued: false, warrantyMonths: 0, notes: "",
+            // Consentimiento de prestamos anclados: SIEMPRE nace en false.
+            // Es un acto explicito por remision, no algo que se herede.
+            anchoredAccepted: false,
             items: [] as RemissionItem[],
         };
     }
@@ -928,9 +960,14 @@ export class RemissionsComponent implements OnInit {
             }
         }
 
-        const withAnchor = prefill.items.find((i) => i.anchoredNote !== "");
+        // Consentimiento fresco por borrador: aunque otra remision anterior
+        // hubiera aceptado anclados, aqui se confirma de nuevo.
+        this.form.anchoredAccepted = false;
+        const withAnchor = prefill.items.find((i) => String(i.anchoredNote || "").trim() !== "");
         if (withAnchor) {
             this.anchoredAlertMessage = withAnchor.anchoredNote;
+        } else {
+            this.anchoredAlertMessage = "";
         }
 
         // Misma regla que "Agregar a remision": trae OC y precio de la ultima
@@ -953,6 +990,7 @@ export class RemissionsComponent implements OnInit {
     openCreate() {
         this.sourceProject = null;
         this.formSaveBlock = "";
+        this.itemAddBlocked = "";
         this.form = this.emptyForm();
         this.editingId = "";
         this.anchoredAlertMessage = "";
@@ -961,6 +999,12 @@ export class RemissionsComponent implements OnInit {
     }
 
     addEquipmentToRemission(group: DispatchReadyGroup, eq: any) {
+        // Limite duro de 4 equipos (requerimiento + regla server-side). Se bloquea
+        // con mensaje visible, no en silencio: el usuario debe saber POR que.
+        if (this.form.items.length >= MAX_ITEMS_PER_REMISSION) {
+            this.itemAddBlocked = `maximo ${MAX_ITEMS_PER_REMISSION} equipos por remision: divida el despacho en varias remisiones independientes`;
+            return;
+        }
         if (!this.showForm || this.editingId) {
             this.openCreate();
         }
@@ -980,8 +1024,12 @@ export class RemissionsComponent implements OnInit {
             quantity: 1,
         };
         this.form.items.push(item);
+        this.itemAddBlocked = "";
         if (anchoredNote) {
             this.anchoredAlertMessage = anchoredNote;
+            // Consentimiento fresco: un equipo anclado nuevo exige confirmar de
+            // nuevo, aunque el usuario ya hubiera aceptado otro antes.
+            this.form.anchoredAccepted = false;
         }
         void this.autofillFromLatestQuote(item);
     }
@@ -1000,8 +1048,22 @@ export class RemissionsComponent implements OnInit {
         }
     }
 
-    addItem() { this.form.items.push({ equipmentId: "", identifier: "", description: "", accessories: "", anchoredNote: "", warrantyMonths: 0, unitPrice: 0, quantity: 1 }); }
-    removeItem(i: number) { this.form.items.splice(i, 1); }
+    addItem() {
+        if (this.form.items.length >= MAX_ITEMS_PER_REMISSION) {
+            // El boton ya esta deshabilitado; esto es defensa en profundidad
+            // (el mismo limite lo valida el servidor con 400).
+            this.itemAddBlocked = `maximo ${MAX_ITEMS_PER_REMISSION} equipos por remision: divida el despacho en varias remisiones independientes`;
+            return;
+        }
+        this.form.items.push({ equipmentId: "", identifier: "", description: "", accessories: "", anchoredNote: "", warrantyMonths: 0, unitPrice: 0, quantity: 1 });
+    }
+    removeItem(i: number) {
+        this.form.items.splice(i, 1);
+        // La alerta de anclados debe seguir reflejando el contenido real de la
+        // remision: si quito el ultimo equipo anclado, la alerta desaparece.
+        const withAnchor = this.form.items.find((it) => String(it.anchoredNote || "").trim() !== "");
+        this.anchoredAlertMessage = withAnchor ? withAnchor.anchoredNote : "";
+    }
     getTotalValue() { return computeRemissionTotal(this.form.items); }
 
     onPhotosSelected(event: Event) {
@@ -1210,6 +1272,16 @@ export class RemissionsComponent implements OnInit {
                 return;
             }
         }
+        // Reglas duras ANTES de gastar el request: mismas reglas y mismo orden
+        // que el servidor (backend/internal/remissions/validation.go). El 400
+        // del backend sigue siendo la palabra final; esto evita un round-trip
+        // que sabemos que va a rechazar.
+        const ruleError = validateRemissionDraft(this.form);
+        if (ruleError !== "") {
+            this.itemAddBlocked = "";
+            this.formSaveBlock = ruleError;
+            return;
+        }
         this.formSaveBlock = "";
         try {
             const method = this.editingId ? "PUT" : "POST";
@@ -1226,7 +1298,17 @@ export class RemissionsComponent implements OnInit {
                 this.showForm = false;
                 this.loadRemissions();
                 this.cdr.detectChanges();
+                return;
             }
-        } catch { /* ignore */ }
+            // No-OK: leer el mensaje accionable y mostrarlo. Antes de este
+            // cambio la respuesta se descartaba y un rechazo se veia igual que
+            // una creacion exitosa.
+            let detail = "";
+            try {
+                const body = await res.json();
+                detail = String((body && body.error) || "");
+            } catch { /* cuerpo no JSON */ }
+            this.formSaveBlock = detail !== "" ? detail : `No se pudo guardar la remision (HTTP ${res.status})`;
+        } catch { /* red: el fetch ya lanzo; el formulario queda abierto y sin perder datos */ }
     }
 }

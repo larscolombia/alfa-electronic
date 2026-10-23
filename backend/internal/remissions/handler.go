@@ -47,6 +47,12 @@ func (h *Handler) createRemission(c echo.Context) error {
 	}
 	r, err := h.service.Create(companyID, req, "user")
 	if err != nil {
+		// Violación de regla (contacto vacío, más de 4 equipos, anclados sin
+		// aceptar) es error del formulario: 400 con el mensaje textual que la
+		// UI muestra. Lo demás sí es fallo real y va a 500.
+		if isUpsertRuleError(err) {
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+		}
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "no se pudo crear la remision"})
 	}
 	return c.JSON(http.StatusCreated, r)
@@ -71,7 +77,15 @@ func (h *Handler) updateRemission(c echo.Context) error {
 	}
 	r, err := h.service.Update(companyID, id, req)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, map[string]string{"error": err.Error()})
+		switch {
+		case errors.Is(err, errRemissionNotFound):
+			return c.JSON(http.StatusNotFound, map[string]string{"error": err.Error()})
+		// Misma semántica que en Create: regla violada = 400 accionable.
+		case isUpsertRuleError(err):
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+		default:
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "no se pudo actualizar la remision"})
+		}
 	}
 	return c.JSON(http.StatusOK, r)
 }

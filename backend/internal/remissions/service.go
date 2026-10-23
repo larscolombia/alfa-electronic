@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -40,7 +41,7 @@ func formatConsecutive(seq int, now time.Time) string {
 // El JOIN a crm_clients es LATERAL con LIMIT 1 porque `remissions` sólo tiene
 // client_nit/client_name (no client_id) y un cliente puede repetir nombre: sin
 // el LIMIT una remisión saldría duplicada en el listado.
-const remissionColumns = `r.id, r.consecutive, r.company_id, r.client_name, r.client_nit,
+const remissionColumns = `r.id, r.consecutive, r.company_id, r.client_name, r.client_nit, r.contact_name,
 	r.dispatch_type, r.carrier_name, r.guide_number, r.purchase_order, r.youtube_link,
 	r.dispatch_photos, r.items, r.valued, r.total_value, r.warranty_months, r.notes,
 	r.status, r.delivery_status, r.created_by, r.created_at, r.updated_at,
@@ -72,7 +73,7 @@ func scanRemission(row interface{ Scan(...any) error }) (*Remission, error) {
 	var createdAt, updatedAt time.Time
 	var overrideAt sql.NullTime
 	err := row.Scan(
-		&r.ID, &r.Consecutive, &r.CompanyID, &r.ClientName, &r.ClientNIT,
+		&r.ID, &r.Consecutive, &r.CompanyID, &r.ClientName, &r.ClientNIT, &r.ContactName,
 		&r.DispatchType, &r.CarrierName, &r.GuideNumber, &r.PurchaseOrder, &r.YoutubeLink,
 		&photosJSON, &itemsJSON, &r.Valued, &r.TotalValue, &r.WarrantyMonths, &r.Notes,
 		&r.Status, &r.DeliveryStatus, &r.CreatedBy, &createdAt, &updatedAt,
@@ -133,6 +134,10 @@ func (s *Service) Get(companyID, id string) (*Remission, error) {
 }
 
 func (s *Service) Create(companyID string, req UpsertRemissionRequest, createdBy string) (Remission, error) {
+	if err := validateUpsert(req); err != nil {
+		return Remission{}, err
+	}
+
 	itemsJSON, err := json.Marshal(req.Items)
 	if err != nil {
 		return Remission{}, fmt.Errorf("serializar items: %w", err)
@@ -168,6 +173,7 @@ func (s *Service) Create(companyID string, req UpsertRemissionRequest, createdBy
 		CompanyID:      companyID,
 		ClientName:     req.ClientName,
 		ClientNIT:      req.ClientNIT,
+		ContactName:    strings.TrimSpace(req.ContactName),
 		DispatchType:   req.DispatchType,
 		CarrierName:    req.CarrierName,
 		GuideNumber:    req.GuideNumber,
@@ -185,17 +191,21 @@ func (s *Service) Create(companyID string, req UpsertRemissionRequest, createdBy
 		Status:         "borrador",
 		// Fase 5c: la factura a cobrar antes de despachar. Una remisión nueva
 		// nunca nace con override: el override es un acto explícito de admin.
-		InvoiceID:     normalizeInvoiceID(req.InvoiceID),
+		InvoiceID: normalizeInvoiceID(req.InvoiceID),
 	}
 
+	// updated_at se deja fuera a propósito: la columna trae DEFAULT NOW()
+	// (migrations_remissions.go). Incluirlo en la lista de columnas obliga a
+	// pasar un 23er valor y rompe el INSERT con SQLSTATE 42601 — bug latente
+	// heredado que dejaba 22 columnas contra 21 placeholders.
 	_, err = tx.Exec(`
 		INSERT INTO remissions (
-			id, company_id, consecutive, client_name, client_nit,
+			id, company_id, consecutive, client_name, client_nit, contact_name,
 			dispatch_type, carrier_name, guide_number, purchase_order, youtube_link,
 			dispatch_photos, items, valued, total_value, warranty_months, notes,
-			status, delivery_status, created_by, created_at, updated_at, invoice_id
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $20, $21)`,
-		r.ID, r.CompanyID, r.Consecutive, r.ClientName, r.ClientNIT,
+			status, delivery_status, created_by, created_at, invoice_id
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)`,
+		r.ID, r.CompanyID, r.Consecutive, r.ClientName, r.ClientNIT, r.ContactName,
 		r.DispatchType, r.CarrierName, r.GuideNumber, r.PurchaseOrder, r.YoutubeLink,
 		photosJSON, itemsJSON, r.Valued, r.TotalValue, r.WarrantyMonths, r.Notes,
 		r.Status, r.DeliveryStatus, r.CreatedBy, now, r.InvoiceID,
