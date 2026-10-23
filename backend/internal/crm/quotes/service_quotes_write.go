@@ -227,12 +227,12 @@ SET estado_cliente = $1,
 	firmante_correo = $4,
 	lugar_firma = $5,
 	firma_base64 = $6,
-	estado = CASE WHEN $1 = 'Aceptada' THEN 'Aprobado' ELSE estado END,
+	estado = CASE WHEN $9 = 'Aceptada' THEN 'Aprobado' ELSE estado END,
 	updated_at = NOW()
 WHERE company_id = $7
   AND token = $8
   AND soft_delete = false;
-`, decision, decisionDate, strings.TrimSpace(req.FirmadoPor), strings.TrimSpace(req.FirmanteCorreo), strings.TrimSpace(req.LugarFirma), strings.TrimSpace(req.FirmaBase64), companyID, normalizedToken)
+`, decision, decisionDate, strings.TrimSpace(req.FirmadoPor), strings.TrimSpace(req.FirmanteCorreo), strings.TrimSpace(req.LugarFirma), strings.TrimSpace(req.FirmaBase64), companyID, normalizedToken, decision)
 	if err != nil {
 		return Quote{}, err
 	}

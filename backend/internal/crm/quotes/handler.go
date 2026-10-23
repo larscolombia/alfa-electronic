@@ -2,6 +2,7 @@ package quotes
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -47,6 +48,7 @@ func (h *Handler) peekQuoteCode(c echo.Context) error {
 
 	code, err := h.service.PeekQuoteCode(companyID, c.QueryParam("date"))
 	if err != nil {
+		log.Printf("quotes: peek quote code failed for company %q: %v", companyID, err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "no se pudo calcular el codigo de cotizacion"})
 	}
 
@@ -69,6 +71,7 @@ func (h *Handler) listQuotes(c echo.Context) error {
 		case errors.Is(err, errQuoteStatusInvalid), errors.Is(err, errListLimitInvalid):
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 		default:
+			log.Printf("quotes: list failed for company %q (status=%q limit=%d): %v", companyID, c.QueryParam("status"), limit, err)
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "no se pudieron cargar las cotizaciones de CRM"})
 		}
 	}
@@ -88,6 +91,7 @@ func (h *Handler) getQuote(c echo.Context) error {
 		case errors.Is(err, errQuoteNotFound):
 			return c.JSON(http.StatusNotFound, map[string]string{"error": err.Error()})
 		default:
+			log.Printf("quotes: get failed for company %q quoteID %q: %v", companyID, quoteID, err)
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "no se pudo cargar la cotizacion"})
 		}
 	}
@@ -107,6 +111,7 @@ func (h *Handler) getQuoteByToken(c echo.Context) error {
 		case errors.Is(err, errQuoteNotFound):
 			return c.JSON(http.StatusNotFound, map[string]string{"error": err.Error()})
 		default:
+			log.Printf("quotes: get by token failed for company %q: %v", companyID, err)
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "no se pudo cargar la cotizacion"})
 		}
 	}
@@ -139,6 +144,7 @@ func (h *Handler) createQuote(c echo.Context) error {
 			errors.Is(err, errPurchaseOrderUploadedAtInvalid):
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 		default:
+			log.Printf("quotes: create failed for company %q (codigo=%q): %v", companyID, strings.TrimSpace(req.Codigo), err)
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "no se pudo crear la cotizacion"})
 		}
 	}
@@ -174,6 +180,7 @@ func (h *Handler) updateQuote(c echo.Context) error {
 			errors.Is(err, errPurchaseOrderUploadedAtInvalid):
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 		default:
+			log.Printf("quotes: update failed for company %q quoteID %q (codigo=%q): %v", companyID, quoteID, strings.TrimSpace(req.Codigo), err)
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "no se pudo actualizar la cotizacion"})
 		}
 	}
@@ -190,6 +197,7 @@ func (h *Handler) deleteQuote(c echo.Context) error {
 		if errors.Is(err, errQuoteIDRequired) {
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 		}
+		log.Printf("quotes: delete failed for company %q quoteID %q: %v", companyID, quoteID, err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "no se pudo eliminar la cotizacion"})
 	}
 
@@ -253,6 +261,7 @@ func (h *Handler) updateDecisionByToken(c echo.Context) error {
 		case errors.Is(err, errQuoteNotFound):
 			return c.JSON(http.StatusNotFound, map[string]string{"error": err.Error()})
 		default:
+			log.Printf("quotes: update decision failed for company %q token=%q estado_cliente=%q: %v", companyID, token, strings.TrimSpace(req.EstadoCliente), err)
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "no se pudo actualizar la decision de la cotizacion"})
 		}
 	}
