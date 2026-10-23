@@ -220,6 +220,12 @@ export const INTERNAL_ROUTES: Routes = [
                 loadComponent: () => import("../../pages/app/finance/finance-invoice-create.component").then((m) => m.FinanceInvoiceCreateComponent),
             },
             {
+                // Modo edición de una factura no emitida (reutiliza el formulario
+                // de creación; guarda por PUT y bloquea facturas emitidas).
+                path: "finance-facturacion/editar/:id",
+                loadComponent: () => import("../../pages/app/finance/finance-invoice-create.component").then((m) => m.FinanceInvoiceCreateComponent),
+            },
+            {
                 path: "finance-facturacion-recurrentes",
                 loadComponent: () => import("../../pages/app/finance/finance-recurring-invoices.component").then((m) => m.FinanceRecurringInvoicesComponent),
             },

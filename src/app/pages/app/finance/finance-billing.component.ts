@@ -1,7 +1,7 @@
 import { CommonModule } from "@angular/common";
 import { ChangeDetectorRef, Component, OnInit } from "@angular/core";
 import { FormsModule } from "@angular/forms";
-import { RouterLink } from "@angular/router";
+import { Router, RouterLink } from "@angular/router";
 import { firstValueFrom } from "rxjs";
 
 import { BillingInvoice, FinanceBillingStore } from "./finance-billing.store";
@@ -76,6 +76,57 @@ import { resolveApiBaseUrl } from "../../../services/api-base-url.util";
 
             .invoice-actions .dropdown-toggle::after {
                 display: none;
+            }
+
+            /* Impresión de factura: mismo patrón que remisiones (.print-area). */
+            .invoice-print-backdrop {
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.45);
+                z-index: 1050;
+                display: flex;
+                align-items: flex-start;
+                justify-content: center;
+                overflow-y: auto;
+                padding: 2rem 1rem;
+            }
+
+            .invoice-print-modal {
+                width: 900px;
+                max-width: 100%;
+                background: #fff;
+            }
+
+            .print-invoice-table th,
+            .print-invoice-table td {
+                vertical-align: top;
+            }
+
+            @media print {
+                body * {
+                    visibility: hidden;
+                }
+
+                .print-area, .print-area * {
+                    visibility: visible;
+                }
+
+                .print-area {
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                }
+
+                .no-print {
+                    display: none !important;
+                }
+
+                .invoice-print-backdrop {
+                    position: static;
+                    background: none;
+                    padding: 0;
+                }
             }
         `,
     ],
@@ -223,6 +274,15 @@ import { resolveApiBaseUrl } from "../../../services/api-base-url.util";
                                                     <i class="bi bi-three-dots-vertical"></i>
                                                 </button>
                                                 <ul class="dropdown-menu dropdown-menu-end" [attr.aria-labelledby]="'invoice-actions-' + invoice.id">
+                                                    <li>
+                                                        <button class="dropdown-item" type="button" (click)="openPrintView(invoice)" data-testid="print-invoice-action"><i class="bi bi-printer me-2"></i>Imprimir</button>
+                                                    </li>
+                                                    <li><hr class="dropdown-divider" /></li>
+                                                    <li>
+                                                        <button class="dropdown-item" type="button" [disabled]="invoice.locked" (click)="editInvoice(invoice.id)" data-testid="edit-invoice-action"
+                                                            [title]="invoice.locked ? 'Factura emitida: no hay reversa; use nota crédito' : ''"><i class="bi bi-pencil me-2"></i>Editar</button>
+                                                    </li>
+                                                    <li><hr class="dropdown-divider" /></li>
                                                     <li><button class="dropdown-item" type="button" (click)="duplicateInvoice(invoice.id)">Duplicar factura</button></li>
                                                     <li>
                                                         <button class="dropdown-item" type="button" [disabled]="invoice.locked" (click)="markStatus(invoice.id, 'Pagado')"
@@ -249,6 +309,135 @@ import { resolveApiBaseUrl } from "../../../services/api-base-url.util";
                     </div>
                 </div>
             </div>
+
+            @if (printTarget) {
+                <div class="invoice-print-backdrop" data-testid="invoice-print-modal">
+                    <div class="invoice-print-modal card shadow">
+                        <div class="card-header d-flex justify-content-between align-items-center no-print">
+                            <h5 class="mb-0">Vista de impresión — {{ invoiceCode(printTarget) }}</h5>
+                            <div>
+                                <button class="btn btn-sm btn-theme me-2" type="button" (click)="printInvoiceDocument()" data-testid="print-invoice-btn"><i class="bi bi-printer me-1"></i>Imprimir / Guardar PDF</button>
+                                <button class="btn btn-sm btn-outline-secondary" type="button" (click)="closePrintView()"><i class="bi bi-x-lg"></i> Cerrar</button>
+                            </div>
+                        </div>
+                        <div class="card-body print-area">
+                            <!-- Cabecera del documento -->
+                            <div class="d-flex justify-content-between align-items-start border-bottom pb-3 mb-4">
+                                <div>
+                                    <h2 class="mb-1">{{ (printTarget.documentType || 'factura') === 'nota_credito' ? 'NOTA CRÉDITO' : 'FACTURA' }}</h2>
+                                    @if (printTarget.externalNumber) {
+                                        <div class="text-secondary">Número externo (Oasis): <strong>{{ printTarget.externalNumber }}</strong></div>
+                                    }
+                                </div>
+                                <div class="text-end">
+                                    <div><strong>{{ invoiceCode(printTarget) }}</strong></div>
+                                    <div>Estado: {{ printTarget.status }}</div>
+                                    @if (printTarget.creditNoteRef) {
+                                        <div>Origen: factura #{{ printTarget.creditNoteRef }}</div>
+                                    }
+                                </div>
+                            </div>
+
+                            <!-- Fechas / moneda -->
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <div><strong>Fecha de emisión:</strong> {{ printTarget.issueDate || '—' }}</div>
+                                    <div><strong>Vencimiento:</strong> {{ printTarget.dueDate || '—' }}</div>
+                                </div>
+                                <div class="col-md-6 text-md-end">
+                                    <div><strong>Moneda:</strong> {{ printTarget.currencyCode }}</div>
+                                    @if (printTarget.exchangeRate && printTarget.exchangeRate !== 1) {
+                                        <div>Tipo de cambio: {{ printTarget.exchangeRate }}</div>
+                                    }
+                                </div>
+                            </div>
+
+                            <!-- Cliente -->
+                            <div class="row gx-4 mb-4">
+                                <div class="col-md-6">
+                                    <div class="text-secondary small text-uppercase">Facturar a</div>
+                                    <strong>{{ printTarget.clientName }}</strong>
+                                    @if (printTarget.billingAddress) {
+                                        <div class="small" style="white-space: pre-line;">{{ printTarget.billingAddress }}</div>
+                                    }
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="text-secondary small text-uppercase">Entregar a</div>
+                                    <strong>{{ printTarget.shippingAddress || '—' }}</strong>
+                                </div>
+                            </div>
+
+                            @if (printTarget.projectName && printTarget.projectName !== '--') {
+                                <div class="mb-4"><strong>Proyecto:</strong> {{ printTarget.projectName }}</div>
+                            }
+                            @if (printTarget.bankAccountName && printTarget.bankAccountName !== '--') {
+                                <div class="mb-4"><strong>Cuenta bancaria:</strong> {{ printTarget.bankAccountName }}</div>
+                            }
+
+                            <!-- Ítems -->
+                            <table class="table table-bordered print-invoice-table align-middle mb-2">
+                                <thead>
+                                    <tr class="bg-light-subtle">
+                                        <th style="width: 40%;">Descripción</th>
+                                        <th class="text-end" style="min-width: 90px;">Cantidad</th>
+                                        <th class="text-end" style="min-width: 120px;">Precio unitario</th>
+                                        <th class="text-end" style="min-width: 80px;">Impuesto</th>
+                                        <th class="text-end" style="min-width: 130px;">Monto</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @for (item of printTarget.items; track item.id) {
+                                        <tr>
+                                            <td>
+                                                {{ item.name }}
+                                                @if (item.description) {
+                                                    <div class="small text-secondary">{{ item.description }}</div>
+                                                }
+                                            </td>
+                                            <td class="text-end">{{ item.quantity }} {{ item.unitLabel || '' }}</td>
+                                            <td class="text-end">{{ item.unitPrice | currency : printTarget.currencyCode : "symbol" : "1.0-0" }}</td>
+                                            <td class="text-end">{{ item.taxRate ? item.taxRate + '%' : '—' }}</td>
+                                            <td class="text-end"><strong>{{ (item.quantity * item.unitPrice) | currency : printTarget.currencyCode : "symbol" : "1.0-0" }}</strong></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+
+                            <!-- Totales -->
+                            <div class="row justify-content-end">
+                                <div class="col-md-5">
+                                    <div class="d-flex justify-content-between py-1"><span>Subtotal</span><span>{{ printTarget.subtotal | currency : printTarget.currencyCode : "symbol" : "1.0-0" }}</span></div>
+                                    @if (printTarget.discountValue > 0) {
+                                        <div class="d-flex justify-content-between py-1"><span>Descuento ({{ printTarget.discountMode === 'percent' ? '%' : 'valor' }})</span><span>{{ discountLabel(printTarget) }}</span></div>
+                                    }
+                                    <div class="d-flex justify-content-between py-1"><span>Impuesto</span><span>{{ printTarget.taxTotal | currency : printTarget.currencyCode : "symbol" : "1.0-0" }}</span></div>
+                                    <div class="d-flex justify-content-between border-top pt-2 mt-1 fw-bold" style="font-size: 1.1rem;"><span>Total</span><span>{{ printTarget.total | currency : printTarget.currencyCode : "symbol" : "1.0-0" }}</span></div>
+                                    <div class="d-flex justify-content-between py-1"><span>Abonado</span><span>{{ printTarget.paidAmount | currency : printTarget.currencyCode : "symbol" : "1.0-0" }}</span></div>
+                                    <div class="d-flex justify-content-between py-1 text-secondary"><span>Saldo pendiente</span><span>{{ printTarget.balanceAmount | currency : printTarget.currencyCode : "symbol" : "1.0-0" }}</span></div>
+                                </div>
+                            </div>
+
+                            <!-- Notas y términos -->
+                            @if (printTarget.note) {
+                                <div class="mt-4">
+                                    <strong>Nota para el destinatario</strong>
+                                    <p class="small mb-1" style="white-space: pre-line;">{{ printTarget.note }}</p>
+                                </div>
+                            }
+                            @if (printTarget.terms) {
+                                <div class="mt-3">
+                                    <strong>Términos y condiciones</strong>
+                                    <p class="small mb-0" style="white-space: pre-line;">{{ printTarget.terms }}</p>
+                                </div>
+                            }
+
+                            @if (printTarget.attachmentName) {
+                                <div class="mt-3 small text-secondary">Adjunto registrado: {{ printTarget.attachmentName }}</div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
 
             @if (creditNoteTarget) {
                 <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true">
@@ -300,6 +489,9 @@ export class FinanceBillingComponent implements OnInit {
     errorMessage = "";
     exportFrom = "";
     exportTo = "";
+    // Vista de impresión: la factura a renderizar en el modal imprimible.
+    printTarget: BillingInvoice | null = null;
+
     // Fase 5b: nota crédito (única reversa de una factura emitida/bloqueada).
     creditNoteTarget: BillingInvoice | null = null;
     creditNoteAmount = 0;
@@ -310,6 +502,7 @@ export class FinanceBillingComponent implements OnInit {
 
     constructor(
         private readonly financeBillingApi: FinanceBillingApiService,
+        private readonly router: Router,
         private readonly changeDetector: ChangeDetectorRef,
     ) { }
 
@@ -368,6 +561,35 @@ export class FinanceBillingComponent implements OnInit {
             default:
                 return "status-dot status-dot--pending";
         }
+    }
+
+    /** Abre la vista imprimible de una factura (sin modificar nada en el servidor). */
+    openPrintView(invoice: BillingInvoice): void {
+        this.printTarget = { ...invoice };
+    }
+
+    closePrintView(): void {
+        this.printTarget = null;
+    }
+
+    printInvoiceDocument(): void {
+        window.print();
+    }
+
+    /** Desplaza a la ficha de edición; el servidor sigue siendo la puerta real (409 si está bloqueada). */
+    editInvoice(invoiceId: number): void {
+        void this.router.navigateByUrl(`/app/finance-facturacion/editar/${invoiceId}`);
+    }
+
+    /** Descuento legible para la hoja imprimible (sin pipes: es TS, no template). */
+    discountLabel(invoice: BillingInvoice): string {
+        if (!(invoice.discountValue > 0)) {
+            return "--";
+        }
+        const currency = invoice.currencyCode || "COP";
+        return invoice.discountMode === "amount"
+            ? `${new Intl.NumberFormat("es-CO", { style: "currency", currency, maximumFractionDigits: 0 }).format(invoice.discountValue)} (${currency})`
+            : `${invoice.discountValue}%`;
     }
 
     async duplicateInvoice(invoiceId: number): Promise<void> {

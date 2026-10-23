@@ -1,7 +1,7 @@
 import { CommonModule } from "@angular/common";
 import { Component, OnDestroy } from "@angular/core";
 import { FormsModule } from "@angular/forms";
-import { Router, RouterLink } from "@angular/router";
+import { ActivatedRoute, Router, RouterLink } from "@angular/router";
 import { firstValueFrom, take } from "rxjs";
 
 import { FinanceAccount, FinanceAccountsStore } from "./finance-accounts.store";
@@ -99,8 +99,13 @@ interface InvoiceDraft {
         <div class="container-fluid py-3">
             <div class="row gx-3 gx-lg-4 align-items-center page-title">
                 <div class="col col-sm mb-3 mb-sm-0">
-                    <h5 class="mb-0">Crear factura</h5>
-                    <p class="text-secondary small mb-0">Construye facturas con detalle comercial, impuestos y adjuntos.</p>
+                    @if (isEditing) {
+                        <h5 class="mb-0">Editar factura {{ editCode }}</h5>
+                        <p class="text-secondary small mb-0">Completar o corregir la información de una factura no emitida.</p>
+                    } @else {
+                        <h5 class="mb-0">Crear factura</h5>
+                        <p class="text-secondary small mb-0">Construye facturas con detalle comercial, impuestos y adjuntos.</p>
+                    }
                 </div>
             </div>
 
@@ -109,15 +114,32 @@ interface InvoiceDraft {
                     <li class="breadcrumb-item bi"><a routerLink="/app/dashboard"><i class="bi bi-house-door me-2"></i>AdminUX</a></li>
                     <li class="breadcrumb-item bi"><a routerLink="/app/finance-dashboard">Financiero</a></li>
                     <li class="breadcrumb-item bi"><a routerLink="/app/finance-facturacion">Facturación</a></li>
-                    <li class="breadcrumb-item bi active" aria-current="page">Crear factura</li>
+                    <li class="breadcrumb-item bi active" aria-current="page">{{ isEditing ? 'Editar factura' : 'Crear factura' }}</li>
                 </ol>
             </nav>
         </div>
 
         <div class="container mt-3" id="main-content">
+            @if (loadError) {
+                <div class="alert alert-danger border">
+                    {{ loadError }}
+                    <a routerLink="/app/finance-facturacion" class="alert-link d-block mt-2">Volver al listado de facturas</a>
+                </div>
+            }
+
+            @if (blockedInvoice) {
+                <div class="alert alert-warning border">
+                    <strong>La factura {{ blockedInvoiceCode }} ya fue emitida (estado: {{ blockedInvoice.status }}).</strong>
+                    Una factura emitida no se edita ni se borra: la única reversa es una nota crédito desde el listado.
+                    <a routerLink="/app/finance-facturacion" class="alert-link d-block mt-2">Volver al listado de facturas</a>
+                </div>
+            }
+
             @if (formError) {
                 <div class="alert alert-danger border mb-3">{{ formError }}</div>
             }
+
+            @if (!loadError && !blockedInvoice) {
 
             <div class="card adminuiux-card mb-3 mb-lg-4">
                 <div class="card-header">
@@ -352,19 +374,26 @@ interface InvoiceDraft {
 
             <div class="d-flex flex-wrap gap-2 mb-5">
                 <div class="btn-group" role="group">
-                    <button class="btn btn-theme" type="button" (click)="save('save')">Guardar</button>
-                    <button class="btn btn-theme dropdown-toggle dropdown-toggle-split" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <span class="visually-hidden">Alternar opciones</span>
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><button class="dropdown-item" type="button" (click)="save('send')">Guardar y enviar</button></li>
-                        <li><button class="dropdown-item" type="button" (click)="save('sent')">Guardar y marcar como enviado</button></li>
-                    </ul>
+                    <button class="btn btn-theme" type="button" [disabled]="isSaving" (click)="save('save')">{{ isEditing ? 'Guardar cambios' : 'Guardar' }}</button>
+                    @if (!isEditing) {
+                        <button class="btn btn-theme dropdown-toggle dropdown-toggle-split" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span class="visually-hidden">Alternar opciones</span>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><button class="dropdown-item" type="button" (click)="save('send')">Guardar y enviar</button></li>
+                            <li><button class="dropdown-item" type="button" (click)="save('sent')">Guardar y marcar como enviado</button></li>
+                        </ul>
+                    }
                 </div>
-                <button class="btn btn-outline-secondary" type="button" (click)="save('draft')">Guardar Como Borrador</button>
+                @if (!isEditing) {
+                    <button class="btn btn-outline-secondary" type="button" (click)="save('draft')">Guardar Como Borrador</button>
+                } @else {
+                    <a class="btn btn-outline-secondary" routerLink="/app/finance-facturacion"><i class="bi bi-printer me-1"></i>Imprimir desde el listado</a>
+                }
                 <a class="btn btn-link" routerLink="/app/finance-facturacion">Cancelar</a>
             </div>
-        </div>
+
+            }
     `,
 })
 export class FinanceInvoiceCreateComponent implements OnDestroy {
@@ -390,6 +419,34 @@ export class FinanceInvoiceCreateComponent implements OnDestroy {
 
     isSaving = false;
 
+    // ── Modo edición (/app/finance-facturacion/editar/:id) ────────────────
+    /** 0 = creación. >0 = factura existente cargada desde el servidor. */
+    editingInvoiceId = 0;
+    /** Registro original tal como vino del servidor (para conservar source, tipo de doc, etc.). */
+    private originalRecord: BillingInvoice | null = null;
+    loadError = "";
+    /** Factura emitida/bloqueada: la única reversa es nota crédito. */
+    blockedInvoice: BillingInvoice | null = null;
+
+    get isEditing(): boolean {
+        return this.editingInvoiceId > 0;
+    }
+
+    get editCode(): string {
+        if (!this.isEditing) {
+            return "";
+        }
+        return FinanceBillingStore.buildInvoiceCode(this.draft.seriesPrefix, this.draft.sequenceNumber);
+    }
+
+    /** Código legible de la factura bloqueada (solo se muestra en el estado de bloqueo). */
+    get blockedInvoiceCode(): string {
+        if (!this.blockedInvoice) {
+            return "";
+        }
+        return FinanceBillingStore.buildInvoiceCode(this.blockedInvoice.seriesPrefix, this.blockedInvoice.sequenceNumber);
+    }
+
     /**
      * Fase 6: true sólo si el usuario editó a mano el número de factura. Mientras
      * sea false se envía sequenceNumber 0 y el servidor asigna el consecutivo de
@@ -401,19 +458,87 @@ export class FinanceInvoiceCreateComponent implements OnDestroy {
 
     constructor(
         private readonly router: Router,
+        private readonly route: ActivatedRoute,
         private readonly financeBillingApi: FinanceBillingApiService,
     ) {
         this.accountsUnsubscribe = FinanceAccountsStore.subscribe(() => {
             this.bankAccounts = FinanceAccountsStore.getAccounts();
         });
         void FinanceAccountsStore.ensureLoaded();
+
+        // Modo edición: /app/finance-facturacion/editar/:id. El registro se
+        // precarga del servidor; el PUT (no POST) es la única puerta de escritura.
+        const rawId = this.route.snapshot.paramMap.get("id") || "";
+        const parsedId = Number.parseInt(rawId, 10);
+        if (Number.isFinite(parsedId) && parsedId > 0) {
+            this.editingInvoiceId = parsedId;
+            void this.loadEditRecord();
+        }
+
         // Recalcula prefijo/consecutivo cuando la caché de facturas del
         // servidor esté disponible (el consecutivo en servidor es Fase 6).
-        void FinanceBillingStore.ensureLoaded().then(() => this.onIssueDateChange());
+        // En modo edición NO: el número ya fue asignado por el servidor y no
+        // se re-deriva al abrir la ficha.
+        void FinanceBillingStore.ensureLoaded().then(() => {
+            if (this.editingInvoiceId <= 0) {
+                this.onIssueDateChange();
+            }
+        });
     }
 
     ngOnDestroy(): void {
         this.accountsUnsubscribe();
+    }
+
+    /**
+     * Modo edición: precarga la factura desde el servidor (GET) y llena draft +
+     * ítems. Si ya fue emitida (Enviado/Pagado/Pago parcial → locked), NO se
+     * muestra formulario editable: la única reversa es nota crédito. La misma
+     * regla vive en el backend; esto solo evita ofrecer un botón que daría 409.
+     */
+    private async loadEditRecord(): Promise<void> {
+        try {
+            const record = (await firstValueFrom(this.financeBillingApi.getInvoice(this.editingInvoiceId))) as BillingInvoice;
+
+            if (record.locked || record.status === "Enviado" || record.status === "Pagado" || record.status === "Pago parcial") {
+                this.blockedInvoice = record;
+                return;
+            }
+
+            const today = new Date().toISOString().slice(0, 10);
+            this.originalRecord = record;
+            this.draft.seriesPrefix = record.seriesPrefix || "";
+            this.draft.sequenceNumber = Math.max(record.sequenceNumber || 0, 0);
+            // El número ya existe: se trata como override explícito para que
+            // save() lo mande tal cual y no pida uno nuevo al servidor.
+            this.sequenceOverriddenByUser = true;
+            this.draft.externalNumber = record.externalNumber || "";
+            this.draft.issueDate = record.issueDate || today;
+            this.draft.dueDate = record.dueDate || "";
+            this.draft.currencyCode = (record.currencyCode as BillingCurrencyCode) || "COP";
+            this.draft.exchangeRate = record.exchangeRate > 0 ? record.exchangeRate : 1;
+            this.draft.clientId = record.clientId || "";
+            this.draft.projectId = record.projectId || "";
+            this.draft.taxCalculation = (record.taxCalculation as BillingTaxCalculation) || "Despues del descuento";
+            this.draft.bankAccountId = record.bankAccountId ?? null;
+            this.draft.generatedBy =
+                record.generatedBy && this.generatedByOptions.includes(record.generatedBy) ? record.generatedBy : this.generatedByOptions[0];
+            this.draft.discountValue = Math.max(record.discountValue || 0, 0);
+            this.draft.discountMode = (record.discountMode as BillingDiscountMode) || "percent";
+            this.draft.shippingAddress = record.shippingAddress || "";
+            this.draft.note = record.note || "";
+            this.draft.terms = record.terms ?? FinanceBillingStore.getDefaultTerms();
+            this.draft.attachmentName = record.attachmentName || "";
+            const total = Math.max(record.total || 0, 0);
+            this.draft.receivedPayment = total > 0 && (record.paidAmount || 0) >= total;
+
+            const loadedItems: BillingInvoiceItem[] = Array.isArray(record.items)
+                ? record.items.map((item) => ({ ...item, id: item.id || this.buildItemId() }))
+                : [];
+            this.items = loadedItems.length > 0 ? loadedItems : [this.createEmptyItem()];
+        } catch (error) {
+            this.loadError = error instanceof Error && error.message ? error.message : "No se pudo cargar la factura para editarla.";
+        }
     }
 
     get availableProjects() {
@@ -443,6 +568,12 @@ export class FinanceInvoiceCreateComponent implements OnDestroy {
     }
 
     onIssueDateChange(): void {
+        // Modo edición: prefijo y consecutivo ya fueron asignados por el servidor
+        // para esta factura; cambiar la fecha no debe re-derivarlos (pisaría un
+        // override manual tipo Oasis).
+        if (this.editingInvoiceId > 0) {
+            return;
+        }
         const issueDate = this.draft.issueDate || new Date().toISOString().slice(0, 10);
         this.draft.seriesPrefix = FinanceBillingStore.getInvoiceSeriesPrefix(issueDate);
         // Fase 6: el consecutivo lo previsualiza el servidor. Antes salía de
@@ -601,11 +732,33 @@ export class FinanceInvoiceCreateComponent implements OnDestroy {
 
         try {
             this.isSaving = true;
-            // Fase 6: se cachea la factura QUE DEVOLVIO EL SERVIDOR, no el objeto
-            // local. El local viaja con sequenceNumber 0 (asignación automática),
-            // así que cachearlo pintaría "FAC-2026-000" en el listado.
-            const created = await firstValueFrom(this.financeBillingApi.createInvoice(invoice));
-            FinanceBillingStore.addInvoice({ ...invoice, ...created } as BillingInvoice);
+            if (this.editingInvoiceId > 0) {
+                // Modo edición: PUT a la misma factura. Se conservan los campos
+                // que el servidor fija o que no toca el formulario (identidad,
+                // origen, tipo de documento); generated_by lo conserva el backend.
+                const original = this.originalRecord;
+                const payload: BillingInvoice = {
+                    ...invoice,
+                    id: this.editingInvoiceId,
+                    referenceCode: original?.referenceCode || invoice.referenceCode,
+                    createdAt: original?.createdAt || invoice.createdAt,
+                    source: original?.source || "manual",
+                    documentType: original?.documentType || "factura",
+                    creditNoteRef: original?.creditNoteRef ?? null,
+                    sourceQuoteId: original?.sourceQuoteId || "",
+                };
+                const updated = await firstValueFrom(this.financeBillingApi.updateInvoice(this.editingInvoiceId, payload));
+                // Se cachea lo que devolvió el servidor y se reemplaza en la lista.
+                FinanceBillingStore.saveInvoices(
+                    FinanceBillingStore.getInvoices().map((existing) => (existing.id === this.editingInvoiceId ? ({ ...existing, ...updated } as BillingInvoice) : existing)),
+                );
+            } else {
+                // Fase 6: se cachea la factura QUE DEVOLVIO EL SERVIDOR, no el objeto
+                // local. El local viaja con sequenceNumber 0 (asignación automática),
+                // así que cachearlo pintaría "FAC-2026-000" en el listado.
+                const created = await firstValueFrom(this.financeBillingApi.createInvoice(invoice));
+                FinanceBillingStore.addInvoice({ ...invoice, ...created } as BillingInvoice);
+            }
             void this.router.navigateByUrl("/app/finance-facturacion");
         } catch (error) {
             this.formError = error instanceof Error ? error.message : "No se pudo guardar la factura.";
