@@ -18,6 +18,7 @@ import {
     projectEquipmentName as logicProjectEquipmentName,
     projectPaymentVerificationState,
 } from "../remissions/remissions.logic";
+import { buildPaymentProjectOptions } from "./finance-pagos.logic";
 
 type PaymentStatus = "Completado" | "Parcial" | "Pendiente";
 type CurrencyCode = "COP" | "USD" | "EUR";
@@ -364,6 +365,11 @@ interface InvoiceOption {
                                             <option [value]="project">{{ project }}</option>
                                         }
                                     </select>
+                                    @if (loadingProjectOptions && projectOptions.length === 0) {
+                                        <p class="small text-secondary mt-1 mb-0">Cargando proyectos del sistema...</p>
+                                    } @else if (projectOptionsError) {
+                                        <p class="small text-danger mt-1 mb-0" data-testid="project-options-error">{{ projectOptionsError }}</p>
+                                    }
                                 </div>
                                 <div class="col-12 col-lg-3">
                                     <label class="form-label">Factura</label>
@@ -518,6 +524,7 @@ export class FinancePagosComponent implements OnDestroy {
         void FinanceAccountsStore.ensureLoaded();
         this.loadPaymentsFromApi();
         void this.loadInvoiceOptions();
+        this.loadProjectOptions();
         this.loadPaymentConfirmedProjects();
     }
 
@@ -664,10 +671,36 @@ export class FinancePagosComponent implements OnDestroy {
         }
     }
 
+    /**
+     * Opciones del campo Proyecto: TODOS los proyectos del sistema que no estén
+     * pagados en su totalidad (paymentStatus != 'confirmado'), mas los nombres
+     * ya presentes en facturas vigentes para no romper el flujo de vinculo.
+     */
     get projectOptions(): string[] {
-        return Array.from(new Set(this.invoiceOptions.map((invoice) => invoice.project).filter((project) => project !== ""))).sort((first, second) =>
-            first.localeCompare(second),
+        return buildPaymentProjectOptions(
+            this.allProjects,
+            (this.invoiceOptions || []).map((invoice) => invoice.project),
         );
+    }
+
+    // ── Campo Proyecto: proyectos del sistema no pagados ────────────────────
+    allProjects: any[] = [];
+    loadingProjectOptions = false;
+    projectOptionsError = "";
+
+    loadProjectOptions(): void {
+        this.loadingProjectOptions = true;
+        this.projectOptionsError = "";
+        this.projectsApi.listProjects({ limit: 500 }).subscribe({
+            next: (projects) => {
+                this.allProjects = Array.isArray(projects) ? projects : [];
+                this.loadingProjectOptions = false;
+            },
+            error: () => {
+                this.loadingProjectOptions = false;
+                this.projectOptionsError = "No se pudieron cargar los proyectos del sistema; por ahora solo aparecen los vinculados a facturas.";
+            },
+        });
     }
 
     private async loadInvoiceOptions(): Promise<void> {
@@ -725,6 +758,8 @@ export class FinancePagosComponent implements OnDestroy {
         this.formError = "";
         this.successMessage = "";
         this.draft = this.getDefaultDraft();
+        // Refresco de proyectos no pagados: el estado de pago cambia desde la ficha kanban.
+        this.loadProjectOptions();
         this.viewMode = "form";
     }
 
