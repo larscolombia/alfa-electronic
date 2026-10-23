@@ -1027,7 +1027,7 @@ export class CrmQuotesComponent implements OnInit {
                     }).subscribe({
                         error: (error) => {
                             // Sin handler este 400 quedaba silencioso: la OC se guardaba
-                            // pero el caso no avanzaba a pedir-reupertino.
+                            // pero el caso no avanzaba a pedir-repuestos.
                             console.error(`[CRM] No se pudo sincronizar la OC con el proyecto ${project.id}:`, error);
                         },
                     });

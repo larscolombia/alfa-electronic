@@ -28,8 +28,8 @@ func TestCanTransitionRules(t *testing.T) {
 		{"recibido a diagnostico", "recibido", "diagnostico", true},
 		{"diagnostico a recibido", "diagnostico", "recibido", true},
 		{"diagnostico a por-cotizar (cierre de diagnostico)", "diagnostico", "por-cotizar", true},
-		{"por-cotizar a pedir-reupertino (OC vinculada)", "por-cotizar", "pedir-reupertino", true},
-		{"pedir-reupertino a esperando-proveedor", "pedir-reupertino", "esperando-proveedor", true},
+		{"por-cotizar a pedir-repuestos (OC vinculada)", "por-cotizar", "pedir-repuestos", true},
+		{"pedir-repuestos a esperando-proveedor", "pedir-repuestos", "esperando-proveedor", true},
 		{"esperando-proveedor a reparacion (llego el material)", "esperando-proveedor", "reparacion", true},
 		{"reparacion a listo-entrega (cierre con informe de intervencion)", "reparacion", "listo-entrega", true},
 		{"listo-entrega a entregado (despacho)", "listo-entrega", "entregado", true},
@@ -42,9 +42,9 @@ func TestCanTransitionRules(t *testing.T) {
 		// Garantia y su pausa visible mientras faltan repuestos.
 		{"entregado a garantia (reclamo)", "entregado", "garantia", true},
 		{"garantia a esperando-proveedor (repuesto de garantia)", "garantia", "esperando-proveedor", true},
-		{"garantia a pausa espera-reupertino", "garantia", "garantia-espera-reupertino", true},
-		{"pausa espera-reupertino a garantia", "garantia-espera-reupertino", "garantia", true},
-		{"pausa espera-reupertino a reparacion (llego el material)", "garantia-espera-reupertino", "reparacion", true},
+		{"garantia a pausa espera-repuestos", "garantia", "garantia-espera-repuestos", true},
+		{"pausa espera-repuestos a garantia", "garantia-espera-repuestos", "garantia", true},
+		{"pausa espera-repuestos a reparacion (llego el material)", "garantia-espera-repuestos", "reparacion", true},
 
 		// Prestamo: estacionamiento lateral, entra y sale de cualquier columna.
 		{"reparacion a prestamo", "reparacion", "prestamo", true},

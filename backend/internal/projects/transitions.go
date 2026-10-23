@@ -34,7 +34,7 @@ import (
 //  - Garantia (TranscriptTecnica0303 @25:52): desde garantia se solicita un
 //    componente y el caso pasa a espera de proveedor; al llegar el material
 //    vuelve por reparacion -> listo-entrega -> entregado.
-//    garantia-espera-reupertino es la pausa visible del mismo estado mientras
+//    garantia-espera-repuestos es la pausa visible del mismo estado mientras
 //    faltan repuestos, no una etapa independiente.
 //  - prestamo NO es una etapa del flujo sino un estado de estacionamiento para
 //    accesorios anclados al equipo principal (TranscriptTecnica0303 @20:32),
@@ -44,15 +44,15 @@ import (
 var legalProjectTransitions = map[string][]string{
 	"recibido":                  {"diagnostico", "prestamo"},
 	"diagnostico":               {"recibido", "por-cotizar", "pedir-repuestos", "reparacion", "prestamo"},
-	"por-cotizar":               {"diagnostico", "pedir-reupertino", "reparacion", "prestamo"},
-	"pedir-reupertino":          {"por-cotizar", "esperando-proveedor", "prestamo"},
-	"esperando-proveedor":       {"pedir-reupertino", "reparacion", "garantia", "garantia-espera-reupertino", "prestamo"},
-	"reparacion":                {"diagnostico", "por-cotizar", "esperando-proveedor", "listo-entrega", "garantia-espera-reupertino", "prestamo"},
+	"por-cotizar":               {"diagnostico", "pedir-repuestos", "reparacion", "prestamo"},
+	"pedir-repuestos":           {"por-cotizar", "esperando-proveedor", "prestamo"},
+	"esperando-proveedor":       {"pedir-repuestos", "reparacion", "garantia", "garantia-espera-repuestos", "prestamo"},
+	"reparacion":                {"diagnostico", "por-cotizar", "esperando-proveedor", "listo-entrega", "garantia-espera-repuestos", "prestamo"},
 	"listo-entrega":             {"entregado", "prestamo"},
 	"entregado":                 {"listo-entrega", "garantia", "prestamo"},
-	"garantia":                  {"entregado", "esperando-proveedor", "garantia-espera-reupertino", "prestamo"},
-	"garantia-espera-reupertino":  {"garantia", "esperando-proveedor", "reparacion", "prestamo"},
-	"prestamo":                  {"recibido", "diagnostico", "por-cotizar", "pedir-reupertino", "esperando-proveedor", "reparacion", "listo-entrega", "entregado", "garantia", "garantia-espera-reupertino"},
+	"garantia":                  {"entregado", "esperando-proveedor", "garantia-espera-repuestos", "prestamo"},
+	"garantia-espera-repuestos":   {"garantia", "esperando-proveedor", "reparacion", "prestamo"},
+	"prestamo":                  {"recibido", "diagnostico", "por-cotizar", "pedir-repuestos", "esperando-proveedor", "reparacion", "listo-entrega", "entregado", "garantia", "garantia-espera-repuestos"},
 }
 
 // canTransition reporta si mover un proyecto desde fromStatus hacia toStatus
