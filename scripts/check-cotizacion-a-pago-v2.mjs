@@ -42,7 +42,8 @@
 
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
-import { fileURLToPath, createRequire } from "node:url";
+import { fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
 
 import { chromium } from "playwright";
 
