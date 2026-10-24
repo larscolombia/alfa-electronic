@@ -67,6 +67,17 @@ type SummaryResponse struct {
 	ByEquipment []EquipmentTotal      `json:"byEquipment"`
 }
 
+// DeviationResponse cruza la estimacion de horas del diagnostico (projects.
+// properties_json -> estimatedHours) con las horas reales registradas en
+// work_time_entries para el mismo proyecto. G6: reporte "estimado vs real".
+type DeviationResponse struct {
+	ProjectID      string   `json:"projectId"`
+	EstimatedHours *float64 `json:"estimatedHours"` // null si no hay estimacion
+	ActualHours    float64  `json:"actualHours"`
+	Deviation      float64  `json:"deviation"` // real - estimado (real si no hay estimacion)
+	EntryCount     int      `json:"entryCount"`
+}
+
 // PageUsage es el uso agregado de una pagina dentro de un dia.
 type PageUsage struct {
 	Path          string `json:"path"`

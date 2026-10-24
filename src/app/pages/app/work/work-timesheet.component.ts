@@ -5,7 +5,8 @@ import { RouterLink } from "@angular/router";
 import { Subscription } from "rxjs";
 import { CrmEquipmentApiService } from "../../../services/crm-equipment-api.service";
 import { HrPeoplePickerService } from "../../../services/hr-people-picker.service";
-import { WeeklyEmployeeTotal, WorktimeApiService } from "../../../services/worktime-api.service";
+import { ProjectApiItem, ProjectsApiService } from "../../../services/projects-api.service";
+import { WeeklyEmployeeTotal, WorkTimeDeviationDto, WorktimeApiService } from "../../../services/worktime-api.service";
 import { CreateWorkTimesheetEntry, DailyUsage, WorkTimesheetEntry, WorkTimeTrackerService } from "../../../services/work-time-tracker.service";
 import { accumulateQuarterHours, calculateDailyBalance, calculateTimeKpi, summarizeByEntryType, TimeKpiResult, WorkEntryType } from "./work-time.logic";
 
@@ -301,6 +302,85 @@ interface ChartBar {
                 </div>
             </div>
 
+            <div class="card adminuiux-card mb-3 mb-lg-4" data-testid="deviation-card">
+                <div class="card-header">
+                    <h6 class="mb-0">Desviacion: estimado vs real</h6>
+                    <p class="text-secondary small mb-0">Cruza la estimacion de horas del diagnostico con las horas registradas en hoja de tiempo (fuente unica del backend).</p>
+                </div>
+                <div class="card-body">
+                    @if (deviationListError) {
+                        <p class="small text-warning mb-2">{{ deviationListError }}</p>
+                    }
+                    <div class="row gx-3 gy-3 align-items-end">
+                        <div class="col-12 col-md-6 col-lg-4">
+                            <label class="form-label mb-1" for="deviation-project-select">Proyecto</label>
+                            <select id="deviation-project-select" class="form-select" data-testid="deviation-project-select" [(ngModel)]="deviationProjectId">
+                                <option value="">Selecciona un proyecto…</option>
+                                @for (item of deviationProjects; track item.id) {
+                                    <option [value]="item.id">{{ projectLabel(item) }}</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-auto">
+                            <button class="btn btn-theme" type="button" data-testid="deviation-check-btn" (click)="loadDeviation()" [disabled]="!deviationProjectId || deviationLoading">
+                                @if (deviationLoading) {
+                                    <span class="spinner-border spinner-border-sm me-1"></span>
+                                }
+                                Calcular desviacion
+                            </button>
+                        </div>
+                    </div>
+
+                    @if (deviationError) {
+                        <p class="small text-danger mt-3 mb-0" data-testid="deviation-error">{{ deviationError }}</p>
+                    }
+
+                    @if (deviation; as d) {
+                        <div class="row gx-3 gy-3 mt-2" data-testid="deviation-result">
+                            <div class="col-12 col-md-4">
+                                <div class="card adminuiux-card h-100">
+                                    <div class="card-body">
+                                        <p class="small text-secondary mb-1">Horas estimadas (diagnostico)</p>
+                                        @if (d.estimatedHours != null) {
+                                            <p class="kpi-value mb-0">{{ d.estimatedHours | number: '1.2-2' }} h</p>
+                                        } @else {
+                                            <p class="mb-0 fw-semibold text-secondary">Sin estimacion registrada</p>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <div class="card adminuiux-card h-100">
+                                    <div class="card-body">
+                                        <p class="small text-secondary mb-1">Horas reales registradas</p>
+                                        <p class="kpi-value mb-0">{{ d.actualHours | number: '1.2-2' }} h</p>
+                                        <p class="small text-secondary mb-0">{{ d.entryCount }} entradas de hoja de tiempo.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <div class="card adminuiux-card h-100">
+                                    <div class="card-body d-flex align-items-center justify-content-between gap-2">
+                                        <div>
+                                            <p class="small text-secondary mb-1">Desviacion</p>
+                                            <p
+                                                class="kpi-value mb-0"
+                                                [ngClass]="deviationTone === 'success' ? 'text-success' : deviationTone === 'warning' ? 'text-warning' : deviationTone === 'danger' ? 'text-danger' : ''"
+                                            >
+                                                {{ formatSigned(d.deviation) }} h
+                                            </p>
+                                        </div>
+                                        <span class="badge align-self-center" data-testid="deviation-badge" [ngClass]="'bg-' + deviationTone">
+                                            {{ deviationBadgeLabel }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
             <div class="card adminuiux-card mb-3 mb-lg-4">
                 <div class="card-header">
                     <h6 class="mb-0">Bitacora de registros</h6>
@@ -412,6 +492,15 @@ export class WorkTimesheetComponent implements OnInit, OnDestroy {
     /** Agregado del servidor: horas por empleado y semana ISO. */
     weeklySummary: WeeklyEmployeeTotal[] = [];
 
+    // ── G6: desviacion estimado vs real (solo API real, sin datos demo) ─────
+
+    deviationProjects: ProjectApiItem[] = [];
+    deviationProjectId = "";
+    deviation: WorkTimeDeviationDto | null = null;
+    deviationLoading = false;
+    deviationError: string | null = null;
+    deviationListError: string | null = null;
+
     entriesForDate: WorkTimesheetEntry[] = [];
     projectBars: ChartBar[] = [];
     pageBars: ChartBar[] = [];
@@ -431,6 +520,7 @@ export class WorkTimesheetComponent implements OnInit, OnDestroy {
         private readonly hrPeople: HrPeoplePickerService,
         private readonly crmEquipmentApi: CrmEquipmentApiService,
         private readonly worktimeApi: WorktimeApiService,
+        private readonly projectsApi: ProjectsApiService,
     ) { }
 
     ngOnInit(): void {
@@ -443,6 +533,7 @@ export class WorkTimesheetComponent implements OnInit, OnDestroy {
         this.loadEmployees();
         this.loadEquipmentOptions();
         this.loadWeeklySummary();
+        this.loadDeviationProjects();
     }
 
     private loadEmployees(): void {
@@ -486,6 +577,100 @@ export class WorkTimesheetComponent implements OnInit, OnDestroy {
                 this.showError(`No se pudo cargar el agregado semanal: ${this.errorMessage(error)}`);
             },
         });
+    }
+
+    /** G6: proyectos REALES del backend para el selector de desviacion. */
+    private loadDeviationProjects(): void {
+        this.projectsApi.listProjects().subscribe({
+            next: (items) => {
+                this.deviationProjects = items ?? [];
+                // Prefijo el primero para que "Calcular" sea accionable sin mas clics.
+                if (!this.deviationProjectId && this.deviationProjects.length > 0) {
+                    this.deviationProjectId = this.deviationProjects[0].id;
+                }
+            },
+            error: (error) => {
+                // La tarjeta se queda operativa con el select vacio; la causa se hace visible.
+                this.deviationListError = `No se pudo cargar la lista de proyectos para la desviacion: ${this.errorMessage(error)}`;
+            },
+        });
+    }
+
+    /** G6: consulta la unica fuente de verdad del backend (no datos demo). */
+    loadDeviation(): void {
+        const projectId = this.deviationProjectId.trim();
+        if (!projectId) {
+            return;
+        }
+
+        this.deviationLoading = true;
+        this.deviationError = null;
+        this.worktimeApi.getProjectDeviation(projectId).subscribe({
+            next: (deviation) => {
+                this.deviationLoading = false;
+                this.deviation = deviation;
+            },
+            error: (error) => {
+                this.deviationLoading = false;
+                this.deviation = null;
+                const message = this.errorMessage(error);
+                // 404 del backend: el proyecto ya no existe en la base.
+                this.deviationError = message.includes("No encontrado") || message.includes("not found")
+                    ? `El proyecto ${projectId} no existe en la base de datos.`
+                    : `No fue posible calcular la desviacion: ${message}`;
+            },
+        });
+    }
+
+    /** Etiqueta legible para el selector (el id solo es fallback). */
+    projectLabel(item: ProjectApiItem): string {
+        const props = item.properties ?? {};
+        for (const key of ["title", "name", "equipmentName", "serie"]) {
+            const value = String(props[key] ?? "").trim();
+            if (value) {
+                return value;
+            }
+        }
+        return item.id;
+    }
+
+    /** Tono del badge: verde <=10% de desvio, ambar <=30%, rojo >30%. */
+    get deviationTone(): "success" | "warning" | "danger" | "secondary" {
+        const d = this.deviation;
+        if (!d || d.entryCount === 0) {
+            return "secondary";
+        }
+        if (d.estimatedHours == null || d.estimatedHours <= 0) {
+            return "secondary";
+        }
+        const pct = Math.abs(d.deviation) / d.estimatedHours;
+        if (pct <= 0.1) {
+            return "success";
+        }
+        if (pct <= 0.3) {
+            return "warning";
+        }
+        return "danger";
+    }
+
+    get deviationBadgeLabel(): string {
+        const d = this.deviation;
+        if (!d) {
+            return "";
+        }
+        if (d.entryCount === 0) {
+            return "Sin horas reales";
+        }
+        if (d.estimatedHours == null || d.estimatedHours <= 0) {
+            return "Solo real";
+        }
+        const pct = Math.round((Math.abs(d.deviation) / d.estimatedHours) * 100);
+        return `${pct}% vs estimado`;
+    }
+
+    formatSigned(value: number): string {
+        const text = this.formatHours(value);
+        return value > 0 ? `+${text}` : text;
     }
 
     equipmentLabel(equipmentId: string): string {

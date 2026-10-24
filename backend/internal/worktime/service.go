@@ -383,6 +383,111 @@ func (s *Service) Summary(companyID string, from, to string) (SummaryResponse, e
 	return SummaryResponse{Weekly: weekly, ByEquipment: byEquipment}, nil
 }
 
+// ProjectDeviation cruza la estimacion de horas del diagnostico con las horas
+// reales registradas para el proyecto. Es la fuente unica de verdad del reporte
+// G6 (Paso 6 de la operacion real: "tiempo real utilizado frente a la
+// estimacion inicial del diagnostico").
+//
+// Reglas:
+//   - estimatedHours sale de projects.properties_json->>'estimatedHours'; si no
+//     existe o es <=0 se devuelve null (no inventamos estimaciones).
+//   - actualHours suma work_time_entries.total_hours > 0 del proyecto, dentro de
+//     la empresa del JWT; from/to opcionales filtran sobre start_at.
+//   - deviation = real - estimado; sin estimacion, deviation = real. Sin horas
+//     reales registradas no hay nada que comparar: deviation queda en 0 (no se
+//     reporta "-4h" por trabajo sin iniciar ni sin imputar).
+func (s *Service) ProjectDeviation(companyID, projectID string, from, to string) (DeviationResponse, error) {
+	projectID = strings.TrimSpace(projectID)
+	if projectID == "" {
+		return DeviationResponse{}, fmt.Errorf("%w: projectId es obligatorio", ErrInvalid)
+	}
+
+	var propertiesRaw []byte
+	err := s.db.QueryRow(
+		`SELECT properties_json FROM projects WHERE company_id = $1 AND id = $2`,
+		companyID, projectID,
+	).Scan(&propertiesRaw)
+	if errors.Is(err, sql.ErrNoRows) {
+		return DeviationResponse{}, fmt.Errorf("%w: proyecto %s", ErrNotFound, projectID)
+	}
+	if err != nil {
+		return DeviationResponse{}, fmt.Errorf("leer propiedades del proyecto: %w", err)
+	}
+
+	var properties map[string]any
+	if len(propertiesRaw) > 0 {
+		if err := json.Unmarshal(propertiesRaw, &properties); err != nil {
+			return DeviationResponse{}, fmt.Errorf("parsear properties_json del proyecto: %w", err)
+		}
+	}
+	estimated := estimatedHoursFromProperties(properties)
+
+	where := "WHERE company_id = $1 AND project_id = $2 AND total_hours > 0"
+	args := []any{companyID, projectID}
+	if v, ok := parseFilterDate(from, false); ok {
+		args = append(args, v)
+		where += fmt.Sprintf(" AND start_at >= $%d", len(args))
+	}
+	if v, ok := parseFilterDate(to, true); ok {
+		args = append(args, v)
+		where += fmt.Sprintf(" AND start_at <= $%d", len(args))
+	}
+
+	var actual float64
+	var entryCount int
+	err = s.db.QueryRow(`
+		SELECT COALESCE(SUM(total_hours), 0)::float8, COUNT(*)::int
+		FROM work_time_entries `+where, args...,
+	).Scan(&actual, &entryCount)
+	if err != nil {
+		return DeviationResponse{}, fmt.Errorf("agregar horas reales del proyecto: %w", err)
+	}
+
+	actual = math.Round(actual*100) / 100
+	var deviation float64
+	if entryCount > 0 {
+		deviation = actual
+		if estimated != nil {
+			deviation = math.Round((actual-*estimated)*100) / 100
+		}
+	}
+	if estimated != nil {
+		rounded := math.Round(*estimated*100) / 100
+		estimated = &rounded
+	}
+
+	return DeviationResponse{
+		ProjectID:      projectID,
+		EstimatedHours: estimated,
+		ActualHours:    actual,
+		Deviation:      deviation,
+		EntryCount:     entryCount,
+	}, nil
+}
+
+// estimatedHoursFromProperties extrae properties.estimatedHours como float.
+// Descarta valores no numericos, negativos y cero (un 0 guardado por el
+// formulario no es una estimacion real).
+func estimatedHoursFromProperties(properties map[string]any) *float64 {
+	if len(properties) == 0 {
+		return nil
+	}
+	raw, ok := properties["estimatedHours"]
+	if !ok || raw == nil {
+		return nil
+	}
+	switch v := raw.(type) {
+	case float64:
+		if v <= 0 {
+			return nil
+		}
+		rounded := math.Round(v*100) / 100
+		return &rounded
+	default:
+		return nil
+	}
+}
+
 // ── Telemetria de uso diario ─────────────────────────────────────────────────
 
 // UpsertUsage reemplaza el agregado del dia (company, user, date). Es un UPSERT

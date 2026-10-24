@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/labstack/echo/v4"
 	"pika.software.net.co/backend/internal/platform/company"
@@ -29,6 +30,7 @@ func (h *Handler) RegisterRoutes(group *echo.Group) {
 	group.DELETE("/entries/:entryID", h.deleteEntry)
 
 	group.GET("/summary", h.summary)
+	group.GET("/deviation", h.projectDeviation)
 
 	group.GET("/usage", h.getUsage)
 	group.PUT("/usage", h.upsertUsage)
@@ -156,6 +158,19 @@ func (h *Handler) summary(c echo.Context) error {
 		return respondError(c, err)
 	}
 	return c.JSON(http.StatusOK, summary)
+}
+
+// projectDeviation expone el cruce G6 (estimado vs real) de un proyecto.
+func (h *Handler) projectDeviation(c echo.Context) error {
+	companyID := company.IDFromRequest(c)
+	if strings.TrimSpace(c.QueryParam("projectId")) == "" {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "projectId es obligatorio"})
+	}
+	deviation, err := h.service.ProjectDeviation(companyID, c.QueryParam("projectId"), c.QueryParam("from"), c.QueryParam("to"))
+	if err != nil {
+		return respondError(c, err)
+	}
+	return c.JSON(http.StatusOK, deviation)
 }
 
 // ── Uso diario ───────────────────────────────────────────────────────────────

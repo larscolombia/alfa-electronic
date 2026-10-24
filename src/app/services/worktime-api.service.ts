@@ -66,6 +66,19 @@ export interface WorkTimeSummary {
     byEquipment: EquipmentTotal[];
 }
 
+/**
+ * G6 (Paso 6 de la operacion real): cruce entre las horas estimadas en el
+ * diagnostico (projects.properties_json -> estimatedHours) y las horas reales
+ * registradas en hoja de tiempo. estimatedHours es null si no hay estimacion.
+ */
+export interface WorkTimeDeviationDto {
+    projectId: string;
+    estimatedHours: number | null;
+    actualHours: number;
+    deviation: number;
+    entryCount: number;
+}
+
 export interface PageUsageDto {
     path: string;
     durationMs: number;
@@ -159,6 +172,15 @@ export class WorktimeApiService {
         const query = params.toString();
         return from(
             this.request<WorkTimeSummary>(`/api/v1/worktime/summary${query ? `?${query}` : ""}`, { method: "GET" }),
+        );
+    }
+
+    /** G6: desviacion estimado vs real de un proyecto (fuente unica del backend). */
+    getProjectDeviation(projectId: string): Observable<WorkTimeDeviationDto> {
+        return from(
+            this.request<WorkTimeDeviationDto>(`/api/v1/worktime/deviation?projectId=${encodeURIComponent(projectId)}`, {
+                method: "GET",
+            }),
         );
     }
 

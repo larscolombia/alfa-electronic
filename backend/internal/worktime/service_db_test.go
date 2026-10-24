@@ -2,6 +2,7 @@ package worktime
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"os"
 	"testing"
@@ -42,6 +43,7 @@ func testCompany(t *testing.T, db *sql.DB, name string) string {
 	t.Helper()
 	companyID := fmt.Sprintf("qa-wt-%s-%d", name, time.Now().UnixNano())
 	t.Cleanup(func() {
+		db.Exec(`DELETE FROM projects WHERE company_id = $1`, companyID)
 		db.Exec(`DELETE FROM work_time_entries WHERE company_id = $1`, companyID)
 		db.Exec(`DELETE FROM work_time_usage WHERE company_id = $1`, companyID)
 		db.Exec(`DELETE FROM test_flow_rules WHERE company_id = $1`, companyID)
@@ -442,5 +444,128 @@ func TestResolveUserIDPrefersUsersTable(t *testing.T) {
 	// Sin fila en users: cae al email del JWT.
 	if got := s.ResolveUserID(companyID, "pepe@alfa.test"); got != "pepe@alfa.test" {
 		t.Errorf("ResolveUserID sin usuario = %q", got)
+	}
+}
+
+// ── G6: desviacion horas estimadas (diagnostico) vs reales ───────────────
+
+func seedProject(t *testing.T, db *sql.DB, companyID, projectID, propertiesJSON string) {
+	t.Helper()
+	_, err := db.Exec(
+		`INSERT INTO projects (company_id, id, status, properties_json) VALUES ($1, $2, 'diagnostico', $3::jsonb)`,
+		companyID, projectID, propertiesJSON,
+	)
+	if err != nil {
+		t.Fatalf("seedProject: %v", err)
+	}
+}
+
+func TestEstimatedHoursFromProperties(t *testing.T) {
+	cases := []struct {
+		name  string
+		props map[string]any
+		want  float64 // -1 => nil (sin estimacion valida)
+	}{
+		{"empty", nil, -1},
+		{"no key", map[string]any{"foo": "bar"}, -1},
+		{"zero descartado", map[string]any{"estimatedHours": float64(0)}, -1},
+		{"negativo descartado", map[string]any{"estimatedHours": float64(-3)}, -1},
+		{"string descartado", map[string]any{"estimatedHours": "8"}, -1},
+		{"valida", map[string]any{"estimatedHours": float64(8.25)}, 8.25},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := estimatedHoursFromProperties(tc.props)
+			if tc.want == -1 {
+				if got != nil {
+					t.Fatalf("esperaba nil, got %v", *got)
+				}
+				return
+			}
+			if got == nil || *got != tc.want {
+				t.Fatalf("got %v, esperaba %v", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestProjectDeviation(t *testing.T) {
+	db := openTestDB(t)
+	s := NewService(db)
+	companyID := testCompany(t, db, "dev")
+
+	const proj = "proj-dev-1"
+	seedProject(t, db, companyID, proj, `{"estimatedHours": 4}`)
+
+	// Proyecto sin estimacion (properties vacio).
+	const projSinEstimacion = "proj-dev-sin-est"
+	seedProject(t, db, companyID, projSinEstimacion, `{}`)
+
+	mon := time.Date(2026, 10, 12, 8, 0, 0, 0, time.UTC)     // W42
+	wed := time.Date(2026, 10, 14, 8, 0, 0, 0, time.UTC)     // W42
+	nextWeek := time.Date(2026, 10, 19, 8, 0, 0, 0, time.UTC) // W43
+
+	entryForProject := func(employee string, start, end time.Time, projectID string) EntryRequest {
+		req := sampleEntry("", employee, "", start, end)
+		req.ProjectID = projectID
+		return req
+	}
+
+	// 1. Proyecto inexistente -> ErrNotFound.
+	if _, err := s.ProjectDeviation(companyID, "proj-inexistente", "", ""); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("proyecto inexistente: %v (esperado ErrNotFound)", err)
+	}
+
+	// 2. Scoping entre empresas: mismo id en otra empresa no existe.
+	if _, err := s.ProjectDeviation("empresa-otra", proj, "", ""); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("scoping entre empresas fallido: %v (esperado ErrNotFound)", err)
+	}
+
+	// 3. Sin entradas registradas: estimado 4h, real 0.
+	d1, err := s.ProjectDeviation(companyID, proj, "", "")
+	if err != nil {
+		t.Fatalf("sin entradas: %v", err)
+	}
+	if d1.EstimatedHours == nil || *d1.EstimatedHours != 4 || d1.ActualHours != 0 || d1.Deviation != 0 || d1.EntryCount != 0 {
+		t.Errorf("sin entradas = %+v, esperaba est=4 real=0 dev=0", d1)
+	}
+
+	// 4. Con horas reales: 2h + 1.5h = 3.5h contra estimacion 4h -> -0.5.
+	if _, err := s.Create(companyID, "u1", entryForProject("Ana", mon, mon.Add(2*time.Hour), proj)); err != nil {
+		t.Fatalf("Create 1: %v", err)
+	}
+	if _, err := s.Create(companyID, "u1", entryForProject("Luis", wed, wed.Add(90*time.Minute), proj)); err != nil {
+		t.Fatalf("Create 2: %v", err)
+	}
+	d2, err := s.ProjectDeviation(companyID, proj, "", "")
+	if err != nil {
+		t.Fatalf("con entradas: %v", err)
+	}
+	if d2.EstimatedHours == nil || *d2.EstimatedHours != 4 || d2.ActualHours != 3.5 || d2.Deviation != -0.5 || d2.EntryCount != 2 {
+		t.Errorf("con entradas = %+v, esperaba est=4 real=3.5 dev=-0.5 n=2", d2)
+	}
+
+	// 5. Rango from/to: solo la semana siguiente (1h).
+	if _, err := s.Create(companyID, "u1", entryForProject("Ana", nextWeek, nextWeek.Add(time.Hour), proj)); err != nil {
+		t.Fatalf("Create 3: %v", err)
+	}
+	d3, err := s.ProjectDeviation(companyID, proj, "2026-10-19", "2026-10-25")
+	if err != nil {
+		t.Fatalf("con rango: %v", err)
+	}
+	if d3.ActualHours != 1 || d3.Deviation != -3 || d3.EntryCount != 1 {
+		t.Errorf("rango = %+v, esperaba real=1 dev=-3 n=1", d3)
+	}
+
+	// 6. Sin estimacion: deviation = real (2h).
+	if _, err := s.Create(companyID, "u1", entryForProject("Ana", mon, mon.Add(2*time.Hour), projSinEstimacion)); err != nil {
+		t.Fatalf("Create sin estimacion: %v", err)
+	}
+	d4, err := s.ProjectDeviation(companyID, projSinEstimacion, "", "")
+	if err != nil {
+		t.Fatalf("sin estimacion: %v", err)
+	}
+	if d4.EstimatedHours != nil || d4.ActualHours != 2 || d4.Deviation != 2 || d4.EntryCount != 1 {
+		t.Errorf("sin estimacion = %+v, esperaba est=nil real=2 dev=2 n=1", d4)
 	}
 }
