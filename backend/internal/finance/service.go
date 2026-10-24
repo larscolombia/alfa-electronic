@@ -81,6 +81,7 @@ var (
 	errRecurringItemsRequired       = errors.New("la factura recurrente debe tener al menos un item")
 	errRecurringItemAmountInvalid   = errors.New("los items de la factura recurrente deben tener cantidad y precio mayores que cero")
 	errPaymentRetentionInvalid      = errors.New("las retenciones del pago son invalidas")
+	errPaymentExceedsBalance        = errors.New("el monto del pago supera el saldo pendiente de la factura asociada; verifica el total y los pagos ya registrados")
 	errOasisDateInvalid             = errors.New("el rango de fechas del export es invalido (use YYYY-MM-DD)")
 	errExpenseIDRequired            = errors.New("el id del gasto es obligatorio")
 	errExpenseNotFound              = errors.New("gasto no encontrado")

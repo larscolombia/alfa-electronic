@@ -118,8 +118,19 @@ func (s *Service) CreatePayment(companyID string, req UpsertPaymentRequest) (Pay
 		code = buildPaymentCode(orderNumber)
 	}
 
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return Payment{}, fmt.Errorf("iniciar transaccion de pago: %w", err)
+	}
+	defer tx.Rollback()
+
+	// F1: guardrail contra sobre-pago (se valida contra el estado previo al insert).
+	if err := s.enforceOverbalanceGuard(ctx, tx, companyID, payload.InvoiceNumber, payload.Amount, false, 0); err != nil {
+		return Payment{}, err
+	}
+
 	var paymentID int64
-	err = s.db.QueryRowContext(ctx, `
+	err = tx.QueryRowContext(ctx, `
 INSERT INTO finance_payments (
 	company_id, order_number, code, project_name, invoice_number, client_name, purchase_order, amount,
 	paid_at, payment_gateway, status, currency_code, exchange_rate, transaction_id,
@@ -164,6 +175,14 @@ RETURNING id;
 		return Payment{}, err
 	}
 
+	// F2: el nuevo pago se refleja en la factura (paid/balance/status/received_payment).
+	if err := s.syncInvoicesFromPayments(ctx, tx, companyID, payload.InvoiceNumber); err != nil {
+		return Payment{}, err
+	}
+	if err := tx.Commit(); err != nil {
+		return Payment{}, fmt.Errorf("confirmar transaccion de pago: %w", err)
+	}
+
 	return s.GetPayment(companyID, paymentID)
 }
 
@@ -196,7 +215,21 @@ func (s *Service) UpdatePayment(companyID string, paymentID int64, req UpsertPay
 		code = buildPaymentCode(orderNumber)
 	}
 
-	result, err := s.db.ExecContext(ctx, `
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return Payment{}, fmt.Errorf("iniciar transaccion de pago: %w", err)
+	}
+	defer tx.Rollback()
+
+	// F1: al subir el monto se permite agotar el saldo (incluye lo que este pago ya
+	// contaba si seguia apuntando a la misma factura); nada mas alla.
+	sameInvoice := strings.EqualFold(current.InvoiceNumber, payload.InvoiceNumber)
+	countsNow := sameInvoice && (current.Status == PaymentStatusCompleted || current.Status == PaymentStatusPartial)
+	if err := s.enforceOverbalanceGuard(ctx, tx, companyID, payload.InvoiceNumber, payload.Amount, countsNow, current.Amount); err != nil {
+		return Payment{}, err
+	}
+
+	result, err := tx.ExecContext(ctx, `
 UPDATE finance_payments
 SET order_number = $1,
 	code = $2,
@@ -259,6 +292,14 @@ WHERE company_id = $23
 		return Payment{}, errPaymentNotFound
 	}
 
+	// F2: recalcular la factura del codigo anterior (pudo perder este pago) y la del nuevo.
+	if err := s.syncInvoicesFromPayments(ctx, tx, companyID, current.InvoiceNumber, payload.InvoiceNumber); err != nil {
+		return Payment{}, err
+	}
+	if err := tx.Commit(); err != nil {
+		return Payment{}, fmt.Errorf("confirmar transaccion de pago: %w", err)
+	}
+
 	return s.GetPayment(companyID, paymentID)
 }
 
@@ -268,7 +309,26 @@ func (s *Service) DeletePayment(companyID string, paymentID int64) (bool, error)
 		return false, errPaymentIDRequired
 	}
 
-	result, err := s.db.ExecContext(ctx, `
+	var invoiceNumber string
+	err := s.db.QueryRowContext(ctx, `
+SELECT COALESCE(invoice_number, '')
+FROM finance_payments
+WHERE company_id = $1 AND id = $2 AND soft_delete = false;
+`, companyID, paymentID).Scan(&invoiceNumber)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, nil // ya estaba borrado: no hay nada que re-calcular
+		}
+		return false, err
+	}
+
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return false, fmt.Errorf("iniciar transaccion de pago: %w", err)
+	}
+	defer tx.Rollback()
+
+	result, err := tx.ExecContext(ctx, `
 UPDATE finance_payments
 SET soft_delete = true,
 	updated_at = NOW()
@@ -281,7 +341,19 @@ WHERE company_id = $1
 	}
 
 	rows, _ := result.RowsAffected()
-	return rows > 0, nil
+	if rows == 0 {
+		return false, nil
+	}
+
+	// F2: el pago borrado deja de contar → recalcular la factura a la que apuntaba.
+	if err := s.syncInvoicesFromPayments(ctx, tx, companyID, invoiceNumber); err != nil {
+		return false, err
+	}
+	if err := tx.Commit(); err != nil {
+		return false, fmt.Errorf("confirmar transaccion de pago: %w", err)
+	}
+
+	return true, nil
 }
 
 func (s *Service) getNextPaymentOrderNumber(ctx context.Context, companyID string) (int, error) {
