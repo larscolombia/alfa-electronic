@@ -267,6 +267,9 @@ import { projectOriginLabel } from "./project-origin-label.util";
                             <button class="btn btn-outline-theme" type="button" [disabled]="visiblePurchaseLines.length === 0 || !canManageReplenishment" (click)="downloadSupplierExcel()" data-testid="download-purchase-lines-excel">
                                 <i class="bi bi-file-earmark-spreadsheet me-1"></i>Descargar Excel de repuestos
                             </button>
+                            <button class="btn btn-outline-theme" type="button" [disabled]="visiblePurchaseLines.length === 0 || !canManageReplenishment" (click)="downloadBomExcel()" data-testid="download-purchase-lines-bom">
+                                <i class="bi bi-file-earmark-spreadsheet me-1"></i>BOM proveedor (2 columnas)
+                            </button>
                         </div>
                     </div>
                     <p class="small text-secondary mt-2 mb-0">Marca con el checkbox las lineas que necesitas; sin selecciones se exporta todo lo visible. El archivo incluye solicitado vs. recibido por linea, listo para enviar al proveedor.</p>
@@ -784,6 +787,64 @@ export class InventoryReplenishmentComponent implements OnInit, OnDestroy {
         XLSX.writeFile(workbook, `repuestos${supplierPart}_${stamp}.xlsx`);
         this.setFeedback(
             `Excel generado con ${rows.length} linea(s)${this.lineSupplierFilter ? ` del proveedor ${this.lineSupplierFilter}` : ""}. Verifica que solo queden las referencias que necesitas antes de enviarlo.`,
+            "success",
+        );
+    }
+
+    /**
+     * G5 (Paso 5 de la operacion real): BOM en el formato EXACTO que aceptan
+     * los portales de carga masiva (Mouser "Lista de Materiales / Cargar Hoja
+     * de Calculo"): solo dos columnas, "Numero de parte" y "Cantidad". Las
+     * referencias repetidas se unifican en una sola fila sumando cantidades,
+     * que es lo mismo que hace el portal al subirlo.
+     *
+     * Regla de cantidad: se ordena el FALTANTE (solicitado - recibido). Si ya
+     * llego todo, la linea queda fuera; re-comprar unidades recibidas seria
+     * doble compra. Sin filtro de proveedor exporta lo visible/seleccionado.
+     */
+    downloadBomExcel(): void {
+        const rows = this.exportRows();
+        if (rows.length === 0) {
+            this.setFeedback("No hay lineas de compra para exportar.", "warning");
+            return;
+        }
+
+        const byReference = new Map<string, number>();
+        let skippedFull = 0;
+        for (const line of rows) {
+            const ref = String(line.reference ?? "").trim();
+            if (!ref) {
+                continue; // Sin numero de parte no hay nada que cargar al portal.
+            }
+            const toOrder = this.remainingFor(line);
+            if (toOrder <= 0) {
+                skippedFull += 1; // Recibida por completo: fuera del BOM.
+                continue;
+            }
+            byReference.set(ref, (byReference.get(ref) ?? 0) + Math.floor(toOrder));
+        }
+
+        if (byReference.size === 0) {
+            this.setFeedback("Ninguna linea visible tiene faltante con numero de parte: no hay nada que ordenar al proveedor.", "warning");
+            return;
+        }
+
+        const data = [
+            ["Número de parte", "Cantidad"],
+            ...Array.from(byReference.entries()).map(([ref, qty]) => [ref, qty]),
+        ];
+        const worksheet = XLSX.utils.aoa_to_sheet(data);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "BOM");
+        const supplierPart = this.lineSupplierFilter ? `_${this.lineSupplierFilter.replace(/[^A-Za-z0-9]+/g, "-")}` : "_todos";
+        const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+        XLSX.writeFile(workbook, `BOM${supplierPart}_${stamp}.xlsx`);
+
+        this.setFeedback(
+            `BOM generado con ${byReference.size} referencia(s) unica(s) a partir de ${rows.length} linea(s)` +
+                (this.lineSupplierFilter ? ` del proveedor ${this.lineSupplierFilter}` : "") +
+                (skippedFull > 0 ? `, ${skippedFull} ya recibida(s) por completo y excluida(s).` : ".") +
+                " Formato de 2 columnas listo para subir al portal del proveedor.",
             "success",
         );
     }

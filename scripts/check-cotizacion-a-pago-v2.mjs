@@ -18,6 +18,11 @@
  *   6. Pago parcial (< total) aceptado con estado "parcial".
  *   7. UI real (browser): /app/finance-facturacion/editar/:id hidrata el
  *      cliente guardado en la BD (regresión del fix de hidratación).
+ *   9. G6: GET /worktime/deviation — 400 sin projectId; con proyecto real,
+ *      200 con los 5 campos del contrato (estimatedHours null|number, etc.).
+ *  10. G5: BOM de proveedor (browser real + xlsx parseado en node): header
+ *      exacto ["Número de parte","Cantidad"], referencias duplicadas unificadas
+ *      sumando cantidades y líneas recibidas por completo excluidas.
  *
  * Gaps de integridad reportados como hallazgos (FINDING, no ocultan el dato):
  *   F1. Pago > total permitido sin validación contra saldo (sobre-pago).
@@ -36,9 +41,14 @@
  */
 
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, dirname } from "node:path";
+import { fileURLToPath, createRequire } from "node:url";
 
 import { chromium } from "playwright";
+
+// SheetJS es dependencia del app (CJS): se carga con require para evitar
+// sorpresas de interop ESM al parsear el BOM descargado en la sección G5.
+const nodeRequire = createRequire(join(dirname(fileURLToPath(import.meta.url)), "noop.js"));
 
 const baseUrl = process.env.PW_BASE_URL || "https://alfa.software.net.co";
 const timeoutMs = Number(process.env.PW_TIMEOUT_MS || "120000");
@@ -87,6 +97,7 @@ const result = {
 
 let accessToken = "";
 const createdPaymentIds = [];
+const createdPurchaseLineIds = []; // G5: lineas de compra creadas para el test BOM
 
 async function apiRequest(method, urlPath, body) {
     const response = await fetch(`${apiBaseUrl}${urlPath}`, {
@@ -138,6 +149,17 @@ async function cleanup() {
     result.cleaned = true;
     const a = result.artifacts;
     const log = [];
+
+    try {
+        for (const lineId of createdPurchaseLineIds.slice().reverse()) {
+            // Sin endpoint DELETE en este contrato: 'cerrar' saca la linea de las
+            // listas activas (status=cerrada). Best-effort, no rompe la limpieza.
+            const res = await apiRequest("POST", `/api/v1/inventory/purchase-lines/${encodeURIComponent(lineId)}/close`, null);
+            log.push(`linea-compra ${lineId} → HTTP ${res.status}`);
+        }
+    } catch (error) {
+        log.push(`lineas-compra: error ${String(error).slice(0, 120)}`);
+    }
 
     try {
         for (const paymentId of createdPaymentIds.slice().reverse()) {
@@ -476,6 +498,135 @@ async function main() {
         console.log("⚠️ CHECK 7 FALLÓ (se documenta y se continúa para reportar el resto de la cadena)");
     }
 
+    // ── 9. G6: endpoint desviación estimado vs real (contrato API desplegado) ─
+    const noProjRes = await apiRequest("GET", "/api/v1/worktime/deviation", null);
+    assert(noProjRes.status === 400, "9.g6-sin-projectid-400", `HTTP ${noProjRes.status}: ${String(noProjRes.rawText).slice(0, 150)}`);
+
+    let anyProjectId = "";
+    const projectsRes = await apiRequest("GET", "/api/v1/projects?limit=5", null);
+    if (projectsRes.ok) {
+        const list = Array.isArray(projectsRes.data) ? projectsRes.data : (projectsRes.data?.items || []);
+        anyProjectId = String(list[0]?.id ?? "");
+    }
+    assert(Boolean(anyProjectId), "9.g6-hay-proyecto-en-producto", `sin proyectos en ${result.apiBaseUrl}`);
+
+    const devRes = await apiRequest("GET", `/api/v1/worktime/deviation?projectId=${encodeURIComponent(anyProjectId)}`, null);
+    assert(devRes.status === 200, "9.g6-deviation-200", `HTTP ${devRes.status}: ${String(devRes.rawText).slice(0, 200)}`);
+    const dev = devRes.data || {};
+    assert(typeof dev.projectId === "string" && dev.projectId.length > 0, "9.g6-campo-projectId");
+    assert(dev.estimatedHours === null || typeof dev.estimatedHours === "number", "9.g6-estimatedHours-null-o-numero", `v=${JSON.stringify(dev.estimatedHours)}`);
+    assert(typeof dev.actualHours === "number" && Number.isFinite(dev.actualHours), "9.g6-campo-actualHours");
+    assert(typeof dev.deviation === "number" && Number.isFinite(dev.deviation), "9.g6-campo-deviation", `v=${JSON.stringify(dev.deviation)}`);
+    assert(Number.isInteger(dev.entryCount) && dev.entryCount >= 0, "9.g6-campo-entryCount");
+
+    // ── 10. G5: BOM de proveedor en el formato exacto de carga masiva ──────
+    const bomSupplier = `PW-BOM-SUP-${RUN_ID}`;
+    const refDup = `PWBOM-DUP-${RUN_ID}`;   // dos lineas, misma referencia → 1 fila sumada
+    const refFull = `PWBOM-FULL-${RUN_ID}`; // recibida por completo → fuera del BOM
+
+    const mkPurchaseLine = async (reference, quantity) => {
+        const res = await expectOk(
+            `crear linea ${reference} x${quantity}`,
+            await apiRequest("POST", "/api/v1/inventory/purchase-lines", {
+                reference,
+                component: "BOM-E2E",
+                type: "Prueba",
+                brand: "",
+                description: `Linea E2E G5 ${RUN_ID}`,
+                supplier: bomSupplier,
+                quantity,
+                unitPrice: 10,
+                neededBy: new Date().toISOString().slice(0, 10),
+                requestReason: "E2E BOM",
+                projectId: anyProjectId || "",
+                equipmentTag: "",
+            }),
+            201,
+        );
+        const id = String(res?.item?.id ?? res?.id ?? "");
+        if (id) {
+            createdPurchaseLineIds.push(id);
+        }
+        return id;
+    };
+
+    await mkPurchaseLine(refDup, 3);
+    await mkPurchaseLine(refDup, 2);
+    const lineFull = await mkPurchaseLine(refFull, 1);
+
+    if (lineFull) {
+        // Recibirla por completo: faltante=0 → el BOM debe excluirla.
+        const recv = await apiRequest("POST", `/api/v1/inventory/purchase-lines/${encodeURIComponent(lineFull)}/receive`, { quantity: 1 });
+        assert(recv.ok, "10.g5-linea-completa-recibida", `HTTP ${recv.status}: ${String(recv.rawText).slice(0, 200)}`);
+    } else {
+        result.findings.push("G5 linea 'recibida por completo' no pudo crearse: la regla de exclusion queda sin cubrir.");
+    }
+
+    const bomFile = join(tmpdir(), `pw-bom-${RUN_ID}.xlsx`);
+    let bomCaptured = false;
+    {
+        const browser2 = await chromium.launch({ headless });
+        try {
+            const context2 = await browser2.newContext({ viewport: { width: 1600, height: 960 }, acceptDownloads: true });
+            await context2.addInitScript(
+                ({ storedSession, apiBaseUrl }) => {
+                    window.localStorage.setItem("pika.auth.session", JSON.stringify(storedSession));
+                    window.localStorage.setItem("pika.apiBaseUrl", apiBaseUrl);
+                },
+                { storedSession: { ...loginRes.data, expiresAt: Date.now() + Math.max(Number(loginRes.data.expiresIn || 3600), 1) * 1000 }, apiBaseUrl },
+            );
+            const page2 = await context2.newPage();
+
+            await page2.goto(`${baseUrl.replace(/\/$/, "")}/app/inventory-orders`, { waitUntil: "domcontentloaded", timeout: timeoutMs });
+
+            // El filtro de proveedor es el aislamiento determinista contra los
+            // datos ajenos en la BD compartida: solo mis lineas deben ser visibles.
+            const sel = page2.locator('select#line-supplier-filter');
+            await sel.waitFor({ state: "visible", timeout: 45000 });
+            const hasOption = await page2
+                .evaluate(([id, sup]) => {
+                    const s = document.getElementById(id);
+                    return Boolean(s && Array.from(s.options).some((o) => o.value === sup));
+                },
+                ["line-supplier-filter", bomSupplier]);
+            assert(hasOption, "10.g5-proveedor-visible-en-filtro", `el proveedor ${bomSupplier} no aparece en el select de proveedores`);
+
+            await sel.selectOption(bomSupplier); // dispara input+change: ngModel se actualiza
+
+            const bomButton = page2.locator('[data-testid="download-purchase-lines-bom"]');
+            await bomButton.waitFor({ state: "visible", timeout: 15000 });
+            assert(!(await bomButton.isDisabled()), "10.g5-boton-bom-habilitado", "boton BOM deshabilitado con lineas visibles: visiblePurchaseLines o canManageReplenishment mal resueltos");
+
+            const [download] = await Promise.all([
+                page2.waitForEvent("download", { timeout: 30000 }),
+                bomButton.click(),
+            ]);
+            await download.saveAs(bomFile);
+            bomCaptured = true;
+        } finally {
+            await browser2.close().catch(() => {});
+        }
+    }
+
+    assert(bomCaptured, "10.g5-bom-descargado", "no se capturó la descarga del BOM");
+
+    // Parseo determinista del xlsx generado por el navegador.
+    const XLSX = nodeRequire("xlsx");
+    const wb = XLSX.readFile(bomFile, { type: "file" });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: "" });
+
+    assert(Array.isArray(rows) && rows.length >= 2, "10.g5-bom-no-vacio", `rows=${JSON.stringify(rows).slice(0, 200)}`);
+    const header = (rows[0] || []).map((c) => String(c).trim());
+    assert(header.length === 2 && header[0] === "Número de parte" && header[1] === "Cantidad", "10.g5-bom-header-2-columnas-exacto", `header=${JSON.stringify(rows[0])}`);
+
+    const dataRows = rows.slice(1).filter((r) => r.length > 0 && String(r[0]).trim() !== "");
+    assert(dataRows.length === 1, "10.g5-bom-una-fila-unica", `filas=${JSON.stringify(rows.slice(1))}`);
+    const [bomRef, bomQty] = dataRows[0];
+    assert(String(bomRef).trim() === refDup, "10.g5-bom-referencia-unificada", `ref=${String(bomRef)} esperado=${refDup} (la recibida por completo debe estar excluida)`);
+    assert(Number(bomQty) === 5, "10.g5-bom-cantidad-sumada-3+2", `qty=${bomQty} esperado=5`);
+
+    console.log(`[INFO] G5 BOM verificado: ${JSON.stringify(rows)}`);
 }
 
 let exitCode = result.integrityBroken ? 1 : 0;
