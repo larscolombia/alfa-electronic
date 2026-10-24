@@ -32,6 +32,7 @@
     "check:evidence-registration": "node scripts/check-evidence-registration-playwright.mjs",
     "check:billing-export": "node scripts/check-billing-export-playwright.mjs",
     "check:payments-retentions": "node scripts/check-payments-retentions-playwright.mjs",
+    "check:cotizacion-a-pago": "node scripts/check-cotizacion-a-pago-integridad-playwright.mjs",
     "check:hr-ficha-roundtrip": "node scripts/check-hr-ficha-save-roundtrip-playwright.mjs",
     "check:hr-ficha-foto": "node scripts/check-hr-ficha-foto-playwright.mjs",
     "check:hr-documents-real": "node scripts/check-hr-documents-real-playwright.mjs",
