@@ -20,7 +20,7 @@ acción de interfaz nunca es una autorización de negocio por sí sola.
 | COM-03 | Prospecto contacta por web, WhatsApp o recomendación | Debe conservarse el origen y enviarse el formato de recepción + condiciones por canal trazable | Canal, fecha, responsable y copia/enlace enviado |
 | COM-04 | Prospecto aún no aprueba reparación | Conserva estado Prospecto aunque haya enviado equipos, recibido diagnóstico o cotización | Historial comercial y estado de cotización |
 | COM-05 | Primera OC/aprobación escrita válida | Convertir a Cliente definitivo una sola vez, sin duplicar empresa, contactos ni historial | OC/aprobación, fecha de conversión y usuario |
-| COM-06 | Cotización sin respuesta | Crear seguimiento con responsable y vencimiento; no depender de Excel o memoria personal | Próxima acción, fecha, estado y respuesta |
+| ~~COM-06~~ ✅ | Cotización sin respuesta | Crear seguimiento con responsable y vencimiento; no depender de Excel o memoria personal | Validado por `test:e2e-ui-com-06` |
 | COM-07 | Pregunta del cliente llega a técnico por canal informal | Comercial centraliza la respuesta; el técnico recibe tarea y la respuesta queda en el caso | Pregunta, asignado, SLA, respuesta y cierre |
 | COM-08 | Cliente pide lista de partes o explicación interna | No exponer costos/lista de partes salvo que se cambie explícitamente el modelo comercial | Aprobación comercial y versión pública del documento |
 
@@ -83,9 +83,9 @@ acción de interfaz nunca es una autorización de negocio por sí sola.
 | COMPR-05 | Compra cerrada | Cambiar líneas a Comprado/En tránsito y asociar pedido, proveedor y fecha | Código de compra y proveedor |
 | COMPR-06 | Proveedor sin stock | Registrar agotado, resaltar el ítem y solicitar sustitución técnica; no sustituir referencia sin aprobación | Resultado proveedor y aprobación técnica |
 | COMPR-07 | Referencias repetidas en BOM | Consolidar cantidades antes de ordenar y conservar la trazabilidad por equipo | BOM consolidada y distribución por códigos |
-| COMPR-08 | Archivo para carga masiva | Exportar únicamente número de parte del proveedor y cantidad; validar mapeo antes de subir | Archivo versionado, proveedor y fecha |
+| ~~COMPR-08~~ ✅ | Archivo para carga masiva | Exportar únicamente número de parte del proveedor y cantidad; validar mapeo antes de subir | Validado por `test:e2e-ui-compr-08` |
 | COMPR-09 | Repuesto > USD 8 o ≤ USD 8 | Clasificar RP/L según la regla presupuestal, con excepción justificada si existe | Clasificación, valor USD y autor |
-| COMPR-10 | Llegada de proveedor parcial | Actualizar inventario solo con lo físico recibido y conservar pendiente faltante | Recibo, cantidad y evidencia |
+| ~~COMPR-10~~ ✅ | Llegada de proveedor parcial | Actualizar inventario solo con lo físico recibido y conservar pendiente faltante | Validado por `test:e2e-ui-compr-10` |
 | COMPR-11 | Último repuesto recibido | Mover a Listo para reparar/Posición 1 una sola vez, con registro de transición | Fecha, líneas completas y responsable |
 | COMPR-12 | Compra se atrasa frente al compromiso | Alertar anticipadamente a comercial para informar al cliente | Fecha esperada, días de atraso y aviso |
 
