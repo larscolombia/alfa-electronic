@@ -69,7 +69,14 @@
     "test:e2e-ui-com-06": "node scripts/e2e-ui-com-06-followup-playwright.mjs",
     "test:e2e-ui-compr-08": "node scripts/e2e-ui-compr-08-bom-playwright.mjs",
     "test:e2e-ui-compr-10": "node scripts/e2e-ui-compr-10-partial-receipt-playwright.mjs",
-    "test:e2e-ui-compr-05": "node scripts/e2e-ui-compr-05-send-playwright.mjs"
+    "test:e2e-ui-compr-05": "node scripts/e2e-ui-compr-05-send-playwright.mjs",
+    "test:e2e-fase1-tec07-compr03": "node scripts/e2e-fase1-tec07-compr03-playwright.mjs",
+    "test:e2e-fase1-cot08": "node scripts/e2e-fase1-cot08-validacion-playwright.mjs",
+    "test:e2e-fase1-compr07-bom": "node scripts/e2e-fase1-compr07-bom-consolidado-playwright.mjs",
+    "test:e2e-fase1-compr05-envio": "node scripts/e2e-fase1-compr05-envio-lote-playwright.mjs",
+    "test:e2e-fase2-compr04-10-parcial": "node scripts/e2e-fase2-compr04-10-recibo-parcial-playwright.mjs",
+    "test:e2e-fase2-compr11-completo": "node scripts/e2e-fase2-compr11-recibo-completo-playwright.mjs",
+    "test:e2e-fase12-suite": "bash scripts/run-fase12-suite.sh"
   },
   "dependencies": {
     "@angular/animations": "^21.2.6",

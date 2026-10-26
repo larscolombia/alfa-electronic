@@ -53,7 +53,7 @@ acción de interfaz nunca es una autorización de negocio por sí sola.
 | TEC-04 | Horas estimadas = 0 o ausentes | No cerrar diagnóstico ni calcular cotización | Horas estimadas y autor |
 | TEC-05 | Presupuesto de repuestos no existe | No cerrar diagnóstico si el caso requiere repuestos; usar 0 solo cuando se justifique “sin repuestos” | Presupuesto USD o motivo |
 | TEC-06 | Repuesto disponible en stock | Reservar para el código/orden; evitar doble uso y aplicar vencimiento de reserva | Reserva, cantidad, vencimiento y responsable |
-| TEC-07 | Repuesto no existe en stock | Crear línea con proveedor, referencia exacta, cantidad, costo USD y plazo; no usar una descripción genérica | Línea de importación y fuente de cotización |
+| ~~TEC-07~~ ✅ | Repuesto no existe en stock | Crear línea con proveedor, referencia exacta, cantidad, costo USD y plazo; no usar una descripción genérica | Validado por `test:e2e-fase1-tec07-compr03` (bionic) |
 | TEC-08 | Técnico crea línea antes de OC | Puede preparar estimación, pero compras no puede adquirir ni comprometer inventario definitivo sin autorización comercial | Estado “pendiente de OC” |
 | TEC-09 | Diagnóstico finalizado | Caso sale de la bandeja técnica y entra en Por cotizar sin perder memo, adjuntos, horas ni líneas | Sello de cierre, usuario y fecha |
 | TEC-10 | Cliente consulta durante diagnóstico | Respuesta debe llegar por comercial y quedar vinculada al código, no en chat aislado | Pregunta, SLA y respuesta |
@@ -69,7 +69,7 @@ acción de interfaz nunca es una autorización de negocio por sí sola.
 | COT-05 | OC sin número, fecha o archivo | Mantener caso en Por cotizar/pendiente; no pasar a compra | Campos faltantes claros |
 | COT-06 | OC corresponde a varios equipos | Relacionar cada equipo/línea con la misma OC sin duplicar ni mezclar clientes | IDs de equipos y número de OC |
 | COT-07 | OC aprobada | Pasar a Posición 05/Pedir componentes y habilitar validación de líneas | Sello de OC y líneas autorizadas |
-| COT-08 | Línea de repuesto no marcada/validada | No incluirla en orden a proveedor aunque exista en el diagnóstico | Estado por línea y aprobador |
+| ~~COT-08~~ ✅ | Línea de repuesto no marcada/validada | No incluirla en orden a proveedor aunque exista en el diagnóstico | Validado por `test:e2e-fase1-cot08-validacion` (bionic) |
 | COT-09 | Cliente rechaza o vence cotización | Liberar reservas según política y conservar motivo/historial; no dejar stock congelado | Estado, motivo y reserva liberada |
 
 ## 5. Compras a proveedor
@@ -78,15 +78,15 @@ acción de interfaz nunca es una autorización de negocio por sí sola.
 |---|---|---|---|
 | COMPR-01 | Línea sin OC validada | No debe aparecer en compras ni exportarse al proveedor | Referencia a OC/línea aprobada |
 | COMPR-02 | Equipo solo requiere stock | Pasar a Reparación cuando la reserva esté disponible; no enviarlo a espera de importación | Reserva activa/consumible |
-| COMPR-03 | Equipo requiere al menos una compra externa | Pasar a Esperando proveedor, no a Reparación al crear/enviar la solicitud | Líneas externas y estado en tránsito |
-| COMPR-04 | Compra parcial o una línea pendiente | Mantener Posición 11; no liberar reparación hasta recibir todas las líneas requeridas | Cantidad solicitada/recibida por línea |
-| COMPR-05 | Compra cerrada | Cambiar líneas a Comprado/En tránsito y asociar pedido, proveedor y fecha | Pedido, proveedor, fecha y estado Comprado/En tránsito |
+| ~~COMPR-03~~ ✅ | Equipo requiere al menos una compra externa | Pasar a Esperando proveedor, no a Reparación al crear/enviar la solicitud | Validado por `test:e2e-fase1-tec07-compr03` (bionic) |
+| ~~COMPR-04~~ ✅ | Compra parcial o una línea pendiente | Mantener Posición 11; no liberar reparación hasta recibir todas las líneas requeridas | Validado por `test:e2e-fase2-compr04-10-recibo-parcial` (bionic) |
+| ~~COMPR-05~~ ✅ | Compra cerrada | Cambiar líneas a Comprado/En tránsito y asociar pedido, proveedor y fecha | Validado por `test:e2e-fase1-compr05-envio-lote` (bionic) |
 | COMPR-06 | Proveedor sin stock | Registrar agotado, resaltar el ítem y solicitar sustitución técnica; no sustituir referencia sin aprobación | Resultado proveedor y aprobación técnica |
-| COMPR-07 | Referencias repetidas en BOM | Consolidar cantidades antes de ordenar y conservar la trazabilidad por equipo | BOM consolidada y distribución por códigos |
+| ~~COMPR-07~~ ✅ | Referencias repetidas en BOM | Consolidar cantidades antes de ordenar y conservar la trazabilidad por equipo | Validado por `test:e2e-fase1-compr07-bom-consolidado` (bionic) |
 | ~~COMPR-08~~ ✅ | Archivo para carga masiva | Exportar únicamente número de parte del proveedor y cantidad; validar mapeo antes de subir | Validado por `test:e2e-ui-compr-08` |
 | COMPR-09 | Repuesto > USD 8 o ≤ USD 8 | Clasificar RP/L según la regla presupuestal, con excepción justificada si existe | Clasificación, valor USD y autor |
-| ~~COMPR-10~~ ✅ | Llegada de proveedor parcial | Actualizar inventario solo con lo físico recibido y conservar pendiente faltante | Validado por `test:e2e-ui-compr-10` |
-| COMPR-11 | Último repuesto recibido | Mover a Listo para reparar/Posición 1 una sola vez, con registro de transición | Fecha, líneas completas y responsable |
+| ~~COMPR-10~~ ✅ | Llegada de proveedor parcial | Actualizar inventario solo con lo físico recibido y conservar pendiente faltante | Validado por `test:e2e-ui-compr-10`; re-validado por `test:e2e-fase2-compr04-10-recibo-parcial` (bionic) |
+| ~~COMPR-11~~ ✅ | Último repuesto recibido | Mover a Listo para reparar/Posición 1 una sola vez, con registro de transición | Validado por `test:e2e-fase2-compr11-recibo-completo` (bionic) |
 | COMPR-12 | Compra se atrasa frente al compromiso | Alertar anticipadamente a comercial para informar al cliente | Fecha esperada, días de atraso y aviso |
 
 ## 6. Inventario
