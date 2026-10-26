@@ -1,0 +1,349 @@
+Reunion con Alfa (Administrativo) - April 08
+ VIEW RECORDING - 40 mins (No highlights) 
+@0:01 - Martin Hendrik (ALFA ELECTRONIC)
+Hola, señor Jorge, ¿cómo está? No hay que hablar muy duro. Ay, no, es que he tenido unos días.
+
+@0:12 - Jorge Carrera (blasterinformation.com)
+No se preocupe que yo ya he pasado dos veces por esa.
+
+@0:17 - Martin Hendrik (ALFA ELECTRONIC)
+No, es que ayer tuve que ya enojarme con la administración y con los de la obra y con todo el mundo.
+Y ya hoy no ha habido igual de ruido. pero de todas maneras es como si, como si, como ya llevan como cinco semanas demoliendo, es como si están tumbando un apartamento entero.
+En... Entonces yo le voy a compartir la pantalla.
+
+@0:57 - Jorge Carrera (blasterinformation.com)
+Y no verme, bebé, y no verme nadie, porque uno tampoco verme.
+
+@1:03 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, eso es complicado. Bueno, yo tenía por acá este archivo donde yo le hacía como una breve descripción de que es como lo que llevaría el módulo administrativo, ¿sí?
+Yo decía aquí que el módulo administrativo es como un módulo donde van los datos de los empleados de la empresa, roles y cargos, fechas de ingreso a la empresa.
+Es como si fuera una especie de una ficha, una ficha de la información de cada persona de la empresa, donde yo le doy ingresos.
+
+@1:43 - Jorge Carrera (blasterinformation.com)
+¿Los datos a la persona?
+
+@1:44 - Martin Hendrik (ALFA ELECTRONIC)
+¿En qué fecha ingresó la empresa? ¿Los fechas de vacaciones? ¿A qué módulos tiene acceso en el sistema? Entonces, por ejemplo, el sistema actual lo tiene más o menos de la siguiente manera.
+Ellos tienen algo acá que se llama empleados, mira. Ok, sí. Sí, listo. Entonces, mire, por ejemplo, acá hay una lista de los empleados que ha habido en la empresa desde el año 2014.
+Los que ya no trabajan, pues mire que ya no tienen acceso a nada. Sí, ve que ya no tienen chulito en ninguna cosita.
+Perfecto. Pero igual que al registro de qué persona trabajó ya en la empresa y qué usuario tenía en el sistema, ¿sí?
+Porque eso ¿para qué sirve? Por ejemplo, cuando uno mira en el sistema un equipo que fue diagnosticado por un técnico en el año 2015.
+15.
+
+@3:10 - Jorge Carrera (blasterinformation.com)
+Resulta que ese técnico ya no está.
+
+@3:13 - Martin Hendrik (ALFA ELECTRONIC)
+Pero como la persona no se ha eliminado del módulo administrativo, el sistema me sigue mostrando quién fue la persona que hizo ese diagnóstico.
+Así ya no trabaja en la empresa. Eso es bueno saberlo. Claro, porque si yo lo elimino, todos los campos, vamos a decirlo así, donde salía ese usuario que hizo tal cosa, un diagnóstico.
+Entonces, salía Entonces acá está el registro de todas las personas que han trabajado en la empresa, qué usuario tenían y a qué tenían acceso.
+Si yo me paro en una personita, acá a la derecha hay una cosa, ellos le llaman ficha ampliada, entonces le ponen nombre, apellido, qué correo utilizan y se puede poner, yo puedo guardar acá cuál es la clave de ese correo que tiene la persona, el cargo.
+Esto, a qué área pertenece, si es administrativa, comercial, técnica, etc. Acá ellos por ejemplo ponen, este sistema como es francés, pues ponen 35 horas, pero acá se pone cuántas horas labora la persona a la semana.
+Congé significa como los días que la persona ha tomado de vacaciones, ¿sí? Bueno. Bueno. Entonces, por ejemplo.
+
+@4:47 - Jorge Carrera (blasterinformation.com)
+Y también, ¿qué campo, qué pantallas puede ver y qué acción puede tener en cada pantalla?
+
+@4:53 - Martin Hendrik (ALFA ELECTRONIC)
+Acá, sí, señor. Con esta de modificar, yo le digo, por ejemplo, en el sistema nuevo, en el software nuevo que ustedes van a hacer.
+Entonces, acá va a salir una lista de todos los módulos o de todas las funciones que tiene el software, no sé cómo decirlo.
+Y yo acá le voy, normalmente acá yo le puedo dar, chulito, a qué cosas tiene acceso esa persona y a qué cosas no.
+Entonces, por ejemplo, el área técnica. El área técnica no tiene acceso a las cotizaciones. Ellos no pueden ver cómo cotizo yo o los precios, a menos de que yo les dé autorización acá, ¿sí?
+En el momento creo que lo único que puede ver es su Giovanni. ¿Sí? ¿Sí? Entonces, la idea es que ese modulito también tenga eso, un control, un panel de control de a qué cosas del sistema tiene acceso la persona o no, a qué módulos, al módulo técnico, al de las compras, al módulo de la base de datos de los clientes, o al de la base de datos de los equipos, o al módulo del inventario de repuestos, etcétera, ¿sí?
+¿Qué? Digamos que ese módulo, que yo no lo veo como tan, como tan grandísimo, que tenga que ser tan grandísimo, yo que quisiera agregarle, me gustaría poderle agregar, digamos que yo me paro acá en esta persona, Sofía, y que de alguna manera se desplegara más un poquito la ficha, o se abriera como una pestaña con una ficha más grande, donde yo pudiera agregar unos datos que yo los tengo por fuera del sistema en un Excel.
+¡Gracias! Los son, los debo tener por seguridad y salud en el trabajo y por ARL, son, yo a cada empleado le tengo contacto de emergencia en caso de algún accidente de trabajo o algo así.
+Le tengo registrado el tipo de sangre, qué EPS, qué entidad de salud, a qué entidad de salud está afiliado, a qué entidad de pensiones, a cuál caja de compensación, como unos datos básicos, algo así, por decirlo de alguna manera.
+¿Fotografía del trabajador? ¿Cómo? ¿Fotografía? Sí, por ejemplo, una foto, no sé si se pudiera tener como una carpetica por cada empleado, donde yo pudiera cargar la hoja de vida y los soportes de la hoja de vida, porque actualmente yo lo tengo por fuera también del software, en una carpeta, en una carpeta que se llama empleados, ahí tengo lo de cada persona, pero pues sí sería muy chévere que todo se pudiera integrar.
+El software. Ok.
+
+@7:46 - Jorge Carrera (blasterinformation.com)
+Eso.
+
+@7:48 - Martin Hendrik (ALFA ELECTRONIC)
+Digamos que no es como más lo que yo quisiera. Tiene fecha, claro, tiene fecha de ingreso, pero no sé si tiene fecha de egreso.
+
+@7:57 - Jorge Carrera (blasterinformation.com)
+También, sí, sería bueno ponerla.
+
+@8:00 - Martin Hendrik (ALFA ELECTRONIC)
+Actualmente este sistema no tiene eso. Y motivo de salida. También, sí. Sí, puede ser, digamos, renuncia o fin de contrato o lo que sea.
+Pero sí, es muy chévere que yo pudiera tener en el sistema, pues, el control de todo lo que tenga que ver con los empleados.
+Ahí tú no manejas entradas y salidas.
+
+@8:24 - Jorge Carrera (blasterinformation.com)
+No. Ok. Eso tú lo llevas aparte. Aparte. Ok, está bien.
+
+@8:30 - Martin Hendrik (ALFA ELECTRONIC)
+Por ejemplo, todos los años tenemos que hacerles exámenes de médicos a los empleados para verificar que su condición de salud sigue bien o si hay alguna novedad.
+En su salud, que se esté afectando por motivos laborales. Entonces, todos los años se les manda a hacer un examen médico.
+Y ese examen, la entidad de salud nos genera un informe. Eso también yo lo guardo por aparte en una carpeta.
+Y sería bueno en realidad que estuviera cargado a cada uno. ¿Sí? ¿Qué más, no? En general es como eso, lo de la parte administrativa.
+
+@9:11 - Jorge Carrera (blasterinformation.com)
+El log de actividades. Por ejemplo, tú quieres saber qué ha hecho tal usuario un día específico dentro del sistema.
+
+@9:24 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, pues mire que este sistema tiene eso. Se lo voy a mostrar, pero en otro lado. Me acabo de acordar de algo.
+Sí, por ejemplo, si yo pudiera ponerle dirección donde vive, el teléfono, el correo electrónico, la fecha de cumpleaños, cosas así.
+Mire, por ejemplo, este sistema, en Francia, la empresa que usa este software, bueno, allá el horario laboral son 35 horas a la semana.
+Yo no sé si Giovanni le mostró, cuando hablo con él, que cuando ellos revisan equipos, ellos deben registrar en el sistema cuánto tiempo se gastan en un diagnóstico.
+Sí, sí. O si están haciendo una reparación, deben registrar cuántas horas se gastaron en esa reparación. Porque resulta que este sistema tiene una función que se llama registro de horas, mírelo aquí.
+
+@10:34 - Jorge Carrera (blasterinformation.com)
+Sí, sí, voy a entrar ahí.
+
+@10:37 - Martin Hendrik (ALFA ELECTRONIC)
+Y resulta que en este módulo, cada persona... Debe tener cada semana completas las 35 horas. Deben estar justificadas con equipos.
+Entonces, bueno, por ejemplo, hoy 8 de abril, esta persona, estoy paradita, ¿casi me ven? Sí. Mira, de ayer lunes esa persona registró 8 horas de trabajo, perdón, del lunes, de ayer martes también 8.
+Hoy miércoles, entonces, yo voy a seleccionar esto, validar, ahí ya él completó 8 horas de trabajo, mire, dice que se gastó acá 5 horas, aquí, mire, acá donde dice tiempo.
+Sí, ajá. 5 horas en este equipo, el 260, 10, triple 11, y que se gastó 3 horas. En este otro, 260-414, ¿sí?
+Y entonces, así él debe, cada persona todos los días debe mostrar en qué equipo se gastó el tiempo. ¿A qué sirve también eso?
+Por ejemplo, cuando un equipo está en reparación y ellos me dicen, en el diagnóstico dicen, estimamos un ejemplo, ocho, cinco horas de trabajo para reparar un equipo.
+Y resulta que el cliente aprobó la reparación, se compraron repuestos, él empezó a instalar repuestos, o a reparar, y al final no se gastó cinco horas, sino que resulta que se gastó 10 o 12 horas, ¿sí?
+Ok. Entonces, ya, yo digo, bueno, yo puedo, a mí eso también me sirve para analizar si una reparación es viable, continuarla o no, porque no solamente se trata de...
+Lo que se gasta en repuestos. Se trata del precio hora hombre. Entonces, si la persona dijo que se gastaba cinco horas y lleva, no sé, dos días, pues ya por costos de mano de obra se está saliendo el presupuesto.
+Quizás ya hay pérdidas. Entonces, a eso sirve en este sistema, que ellos registren en qué equipos trabajaron cada día y cuántas horas trabajaron en cada equipo.
+
+@13:14 - Jorge Carrera (blasterinformation.com)
+Y en tu parte administrativa, cuando tú entras a ver a la persona y le das clic, tú ves su desglose de sus horas diarias.
+
+@13:27 - Martin Hendrik (ALFA ELECTRONIC)
+Por ejemplo, esta persona, mire, acá yo me devolví una semana, acá. Como fue Semana Santa, el jueves y el viernes no hay nada, ¿sí?
+Entonces, solo hay horas de lunes, martes y miércoles. Si yo me paro en otra persona técnica, bueno, digamos que todos no son juiciosos registrando el tiempo completo, pero en la medida de lo posible lo hacen.
+Pero la idea es que sí deberían siempre de manera obligatoria registrar cada día en qué equipos gastaron sus ocho horas del día, ¿sí?
+Y así, digamos, hay días en los que la persona tiene un permiso. Hizo una ausencia, no sé qué. Ese día queda en blanco.
+No, porque pues no trabajó. Este sistema, por ejemplo, yo no lo he usado, pero él sí tiene esa opción.
+Él permite registrar horas que la persona trabaja y horas extralaboradas. Y permisos. Ajá, y días festivos, permisos. Pero digamos que yo acá no lo lleno.
+Solamente llenamos las horas que trabajan normales. Entonces sí, este sistema permite registrar las horas laboradas. Mire que saliendo un poquito pronto del tema de hoy, yo le quería mostrar algo que no le había mostrado.
+Y es que este sistema tiene acá una cosa que se llama, ¿se acuerda que yo le decía que acá había una?
+Opción de extracciones donde yo podía sacar una extracción del sistema de todo lo que yo quiera. Este sistema tiene acá otra opción que se llama tablas como analíticas o algo así.
+Y acá, mire que yo le quería mostrar. Por ejemplo, él me puede mostrar a mí, abril, vamos a decirle marzo.
+Mire, él me muestra de cada mes del año 2026, digamos, cada mes cuántos días hábiles son los que se van a trabajar, ¿sí?
+Porque el mes puede tener 30 o 28 días, pero no en realidad trabaja menos. Entonces, acá salen, ¿cuántos días se elaboran?
+O sea, tú le puedes cargar los variados de Colombia. Yo no, ellos sí. Yo no tengo acceso a eso.
+Por ejemplo, este sistema está configurado con el calendario francés. Acá los festivos, cuando hay un festivo, cuando hay Semana Santa, cuando hay Navidad, nos toca manualmente correr los días, porque no son los mismos festivos que allá.
+Claro. Sí. Entonces, bueno, por ejemplo, acá, tenemos que cargar un momentico.
+
+@17:30 - Jorge Carrera (blasterinformation.com)
+Se refiere a, bueno, que el sistema permite cargar el, los días. calendario de aquí.
+
+@17:35 - Martin Hendrik (ALFA ELECTRONIC)
+El calendario de Colombia, por supuesto, y el cálculo de allí. Sí. Sí, porque cuando se entra una. Orden de compra del sistema y que un equipo tiene un plazo de reparación de 14 días hábiles, él se basa en el calendario que está cargado para calcular esos 14 días hábiles, ¿sí?
+Perfecto. Mire, por ejemplo acá yo le di una opción que se llama análisis de equipos del mes de marzo, marzo 2026.
+Y mire que acá hay algo chévere y es que él me muestra a cierre de marzo cuántos equipos quedaron en diagnóstico, 41.
+¿Cuántos quedaron en posición de aprobación en 05, 48? ¿Cuántos equipos hay cotizados, 687? ¿Sí? ¿Cuántos, entonces, por ejemplo? De esos 687 me dice que 602 son reparaciones, 62 son de ventas nuevas, 21 son ventas usadas, ¿sí?
+Y él me calcula de lo que cada cosa, el valor que representa cada ítem, cuál es el porcentaje en el total, ¿sí?
+Ok. Él me dice también, por ejemplo, cuando los chicos hacen diagnósticos o reparaciones que crean líneas con los componentes, ¿se acuerda?
+Sí, cómo no. Bueno, entonces él muestra, por ejemplo, de lo que está en reparación, que es cotizado para reparación, sí es.
+Él me dice si ya se le cargó líneas de componentes. ¿Y cuánto suma esa materia prima? ¿Cuántas horas se le cargaron a esos 602 equipos?
+664 horas, por ejemplo, dice acá. Estiman los muchachos al momento del diagnóstico que se van a utilizar para reparar esos equipos.
+Esto sí, es como una tabla.
+
+@20:09 - Jorge Carrera (blasterinformation.com)
+¿Esos son los que han pedido prácticamente a nivel gerencial?
+
+@20:13 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, se permite analizar muchas cositas ahí de una vez. Es muy chévere. Dice, por ejemplo, cuántos equipos están en garantía.
+Es como, y mira que, si yo me devuelvo.
+
+@20:32 - Jorge Carrera (blasterinformation.com)
+Claro, me gustaría, si puedes, si puedes, mandame ese, o subirlo al drive. Ajá, para que usted lo vea cómo funciona.
+
+@20:42 - Martin Hendrik (ALFA ELECTRONIC)
+Sí. Listo. Entonces, mire que, por ejemplo, yo estaba viendo que él sí saca un análisis de las acciones comerciales.
+¿Se acuerda cuando hablábamos de las visitas que hacen las comerciales? Sí. Pero como nosotros no lo llenamos, no sale nada.
+Pero entonces significa que este sistema sí saca un detalle de todas las acciones comerciales que hicieron las asesoras en el año, ¿sí?
+Por ejemplo. Pero como no lo estamos llenando en el sistema, no sale nada. No sale nada.
+
+@21:23 - Jorge Carrera (blasterinformation.com)
+Ah, imagínate. Acá dice, muestra a ver esto.
+
+@21:33 - Martin Hendrik (ALFA ELECTRONIC)
+Mire, por ejemplo, acá ya le dije que me muestre. Él dice... Eso yo lo vi, es que como yo casi no lo uso, pero me di cuenta que el sistema lo hace.
+Ah, mire, erosión de la clientela, esto es como evolución de la clientela. Este sistema saca un cuadro donde le muestra a usted por año, mira, por año desde que la empresa existe, cuántos clientes nuevos han llegado, ¿sí?
+Y él le dice, aparte de decirle cuántos clientes nuevos llegaron cada año, le dice cuánto ha facturado usted con esos clientes en cada año, ¿sí?
+
+@22:29 - Jorge Carrera (blasterinformation.com)
+Pero fíjate, yo veo que por ejemplo año 2024, 2025, me lo traen cero.
+
+@22:36 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, no sé por qué. Sí, el cuadro más bien está como al revés. Sí.
+
+@22:44 - Jorge Carrera (blasterinformation.com)
+Porque más bien, deberías decir, 2026, 2025 arriba, que cada vez hay más clientes.
+
+@22:55 - Martin Hendrik (ALFA ELECTRONIC)
+No sé por qué salen cero ahí.
+
+@23:02 - Jorge Carrera (blasterinformation.com)
+Pero es importante tomarlo en cuenta, ese tipo de reportes. Pero es raro, sí.
+
+@23:08 - Martin Hendrik (ALFA ELECTRONIC)
+Pero normalmente es para eso, para ver cuántos clientes llegaron cada año y cuánto facturaron esos clientes en cada año que ha ido pasando.
+Ok. Tan raro que salen cero ahí, sí, no me había dado cuenta. Pero bueno, digamos que eso se podría sacar también con el módulo de extracción del que ya hemos hablado, que uno saca la tabla como uno quiera.
+Lo bueno de este reporte es ya viene bajo un formato, ya establecido. Ya se configura. Está configurado. Solo es darle clic, quiero tal reporte y sale de una, en tablita.
+
+@23:49 - Jorge Carrera (blasterinformation.com)
+Sería bueno que esos reportes que tú quieres que se tomen en cuenta, me los colocas en el drive para saber que el sistema sí, porque sí, tienen que tener esos reportes ya establecidos, indiferentemente de lo de la base de datos.
+
+@24:04 - Martin Hendrik (ALFA ELECTRONIC)
+Ok, eso, eso. Y bueno, a nivel administrativo, acá yo ponía algo, me gustaría saber si es posible. Así como hay un modulito o una pestaña con los datos del personal, saber si puede haber como otra pestaña, esa sería de pronto más ligada al módulo como contable o no sé.
+O no importa dónde se ponga, una pestaña Extraña que donde yo pueda manejar el registro de los gastos de la caja menor, porque actualmente lo manejamos en un Excel.
+Ok, ok.
+
+@24:56 - Jorge Carrera (blasterinformation.com)
+Ahí tú manejarías ingresos, egresos y ajustes.
+
+@25:01 - Martin Hendrik (ALFA ELECTRONIC)
+Pues en realidad, como nuestra contabilidad es externa, yo no necesito un formato tan elaborado o tanto detalle, débito, crédito, no sé qué, no.
+Yo le voy a mostrar el formatito que nosotros tenemos. En realidad, muy sencillo. Una pestaña como donde yo pueda por meses escribir cuál es el presupuesto mensual, la fecha del gasto, el concepto del gasto y el valor y el saldo.
+Ok. Porque al final del mes lo que hacemos es que nosotros le pasamos este archivo a la contadora con la relación de gastos del mes.
+archivo gastos del mes. Ella ya procede a hacer la contabilización, ¿sí? Pero actualmente lo manejo aparte en un Excel, que es este.
+Mes a mes.
+
+@25:53 - Jorge Carrera (blasterinformation.com)
+Mes a mes, sí. A ver, coloca la fecha, el comentario, el debe haber y saldo.
+
+@26:00 - Martin Hendrik (ALFA ELECTRONIC)
+Eso es todo. Sí.
+
+@26:03 - Jorge Carrera (blasterinformation.com)
+Ah, bueno, los remontos.
+
+@26:05 - Martin Hendrik (ALFA ELECTRONIC)
+Acá al ladito hay como un cuadrito donde uno le lleva el controlado. ¿Qué es lo que hay en la caja?
+O eso es como para poner, bueno, tengo tantos billetes de 2.000, tantos de 5.000, monedas, hay tantos. Eso es como para que la persona que maneja la caja esté cuadrada.
+
+@26:22 - Jorge Carrera (blasterinformation.com)
+El desglose del... Del dinero que tiene.
+
+@26:30 - Martin Hendrik (ALFA ELECTRONIC)
+Ok.
+
+@26:31 - Jorge Carrera (blasterinformation.com)
+O sea, que esto todo, esta caja menor, maneja, es puro efectivo. Sí.
+
+@26:36 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, porque son para gastos como gastos hormiga, digamos. Cositas que se puede comprar en
+
+@26:43 - Jorge Carrera (blasterinformation.com)
+Vamos a comprar unos sándwiches, vamos a comprar unos cafés, porque llega un cliente en una reunión y se le da, bueno, vamos a hacer, vamos a comprar unos cafés al cliente, entonces, bueno, sale de Sí, sí, exacto.
+Perfecto. Eso es como lo del módulo administrativo. Claro, y el módulo también maneja usuarios, contraseñas, entonces a uno de los técnicos se le olvidó la contraseña, entonces la reinicias, se la vuelves a crear.
+
+@27:12 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, yo no sé si nosotros ya hablamos de los proveedores o no. Sí. Sí, ya hablamos de los proveedores, que no me acuerdo.
+Los proveedores es algo parecido, mira, acá dice ficha proveedor, es algo parecido a lo que estoy hablando de los empleados, como ficha empleado.
+Entonces, mire que, por ejemplo, acá en la ficha proveedor, algo así sería de pronto la ficha de los empleados.
+acá en la ficha de los proveedores, uno les pone la dirección del Proveedor, el caso del empleado sería la dirección de donde vive, el teléfono, el correo.
+Esto, no sé, la fecha en que ingresó, la fecha de egreso, la fecha de las vacaciones. Acá, por ejemplo, mire que la fecha proveedor sí deja poner contactos.
+Mire, acá y acá. Eso me gustaría con los empleados, que yo pudiera poner contacto en caso de emergencia, parentesco, esposa, el nombre, el teléfono, el correo, la dirección, cosas así.
+Claro. Entonces, esta fecha proveedor, pues, me sirve para eso. Por ejemplo, que yo pudiera poner acá en un cuadrito, esta persona, no sé, es alérgica a tal cosa, a medicamentos tales o no sé qué, alguna observación.
+¿Sí? Ok, alergia a la, perfecto. Sí. Mire que, por ejemplo, acá, dice, en el caso de los... Los proveedores dicen en qué fecha se creó este proveedor en el sistema.
+Y a los proveedores de este sistema les da una clasificación, A, B, C o D. Eso es como para decir si el proveedor es, ¿saben cómo la confiabilidad?
+De cuáles son mis proveedores principales y cuáles son los que siguen si no encuentro eso que quiero en los primeros.
+Ok. Entonces acá los proveedores se clasifican así, con letras. Ok. Ese sí no lo habíamos conversado.
+
+@29:17 - Jorge Carrera (blasterinformation.com)
+¿No? Sí, esa parte de la clasificación del proveedor según su importancia. Ah, ok, perfecto. Sí, este sistema deja hacer eso.
+
+@29:30 - Martin Hendrik (ALFA ELECTRONIC)
+Pero sí, mire que acá es chévere porque esta cucha de proveedor, entonces muestra todos esos daticos de cada proveedor.
+Ok.
+
+@29:42 - Jorge Carrera (blasterinformation.com)
+Proveedor. Perfecto. Bueno, listo, Maribel. Bueno, ya la parte administrativa, claro, lo importante aquí en la parte administrativa, evidentemente, son los reportes, cuando tengas la oportunidad me los subes al Drive, para tener eso como base de lo que tiene que tener el sistema, porque sí, aparte de que, bueno, tienen que tener la pantalla de consultas en la directa, en la base de datos, y que puedas guardar dicho reporte.
+Pero lo que pasa es que esto no viene bajo un formato, la consulta, claro, se puede hacer, se puede salir bajo un formato si uno quiere, si uno lo desea, también se puede hacer.
+
+@30:31 - Martin Hendrik (ALFA ELECTRONIC)
+Ok. Y, por ejemplo, acá, este módulo de empleados, a este módulo de empleados no tiene acceso a todo el mundo, solamente el rol, digamos, gerencial o el rol de administración.
+Administrador, ¿sí? A este módulo donde están todos los datos de los empleados. Ok.
+
+@30:53 - Jorge Carrera (blasterinformation.com)
+Fíjate, yo perfectamente puedo tener acceso al módulo de los empleados, pero no debería tener acceso a modificarlo. Veo que entre la permisología que aparece allí, aparece el acceso, más qué acciones puedo hacer.
+En el caso, yo siempre recomiendo que eso hay que profundizarlo a nivel de los, de mis acciones. Es decir, yo puedo ver el módulo de empleado perfectamente, yo como contador, pero más no lo puedo modificar.
+
+@31:30 - Martin Hendrik (ALFA ELECTRONIC)
+Pero digamos, podrían verlo solamente las personas que uno autorice. Sí. Porque ¿cuál es el riesgo? Alguna vez nos pasó, se lo voy a comentar.
+No sé cómo, bueno. Lo que pasa es que también en la empresa hay empleados que se conocen hace mucho tiempo, trabajaron juntos también en otra empresa.
+Entonces, antes, se conocen hace muchos años. Entonces, hay empleados que conocen a la esposa del otro o a los hijos y se conocen muy bien.
+Una vez nos pasó que a la esposa de un empleado le mandaron un mensaje por WhatsApp del ICAO y la primera reacción del empleado fue acudir a mí y decirme, Aparte de ti, en la empresa, ¿quién más tiene acceso a mis datos personales?
+¿Quién tiene acceso a los datos de mi esposa? ¿De dónde sacaron el número de mi esposa? Entonces, sí hay informaciones que no las puede, así sea solo verlas, no las puede ver cualquier persona.
+Por, digamos, por, ¿cómo se llama eso ahorita? Datos personales y aviados data y todo eso. Es delicado.
+
+@32:45 - Jorge Carrera (blasterinformation.com)
+Muy delicado. Oye, ese trabajador, ¿verdad? Que se las trae. Sí. imagínate quién, o sea, mientras, por Dios, me dejaste.
+Yo me quedo frío, ni me hice quedado frío, ni que tú no tuvieras amigos, ni familiares, solamente yo conozco los datos.
+
+@33:07 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, pero se comprobó que fue una persona de la empresa que mandó ese mensaje. Entonces fue muy delicado, porque tuvimos que, como empleador, demostrar que ese teléfono no salió de nosotros, sino que esa persona se conocía con ellos y por eso tenía el número de la esposa.
+Pero fue una situación delicada. Muy delicada. Sí.
+
+@33:34 - Jorge Carrera (blasterinformation.com)
+Ok, perfecto.
+
+@33:36 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, eso le comento. Perfecto. No, listo.
+
+@33:40 - Jorge Carrera (blasterinformation.com)
+Listo. Claro, el sistema fiel. Este también lo que puede hacer, yo puedo tener acceso al módulo de empleado, más hay ciertos datos que me van a aparecer con asterisco.
+
+@33:54 - Martin Hendrik (ALFA ELECTRONIC)
+Ok.
+
+@33:55 - Jorge Carrera (blasterinformation.com)
+O yo puedo, o tú me puedes dar acceso al módulo de empleado, yo como administrador o contador de la empresa, más hay ciertos datos que me van a aparecer en asterisco porque tú no me lo permites visualizar.
+A ese nivel también podemos llegar.
+
+@34:12 - Martin Hendrik (ALFA ELECTRONIC)
+Ok.
+
+@34:14 - Jorge Carrera (blasterinformation.com)
+Entonces, fíjate al nivel que podemos llegar. Podemos llegar al nivel de, por supuesto, tener acceso a la pantalla. También podemos llegar al nivel de darme permiso o no a ciertas acciones dentro de la pantalla.
+Y también llegar al nivel de que hay ciertos campos que no puedo visualizar.
+
+@34:34 - Martin Hendrik (ALFA ELECTRONIC)
+Ok. Ok.
+
+@34:38 - Jorge Carrera (blasterinformation.com)
+Entonces, Sira, bueno, te lo dejo allí para que lo... Lo pienses, porque tú perfectamente necesitas que el contador de repente tenga acceso para ver ciertos datos, pero hay datos que tú no quieres que él vea, y entonces tú le colocas allí, bueno, tal dato, lo que quiero que me aparezca en asterisco.
+Entonces perfectamente yo entro, él me ve mis datos, pero no ve mi salario, o no ve el teléfono de mi esposa, o no ve lo que me parece en asterisco.
+
+@35:14 - Martin Hendrik (ALFA ELECTRONIC)
+Ok, sí, exacto. Eso también lo podemos manejar. Pues sí, digamos que generalmente, como se hace ahorita, si mi contador necesita algún dato, un empleado me lo pide, y yo le doy ese dato en específico, pero no le doy acceso al sistema.
+Pues es que como es un contador externo que ni siquiera está en la oficina de nosotros, sino que él tiene su propia oficina.
+Listo, listo. No hace falta entonces. dijeros. Exacto. Es como en general eso, en mi modulito administrativo. Bueno, listo, Maribel.
+
+@35:51 - Jorge Carrera (blasterinformation.com)
+Bueno, listo. Ya yo creo que con esto podemos dar como, si no hay otro, bueno, igualito, esto es dinario, es cosa, seguimos conversando, pero ya ya con esto damos como concluido en su gran mayoría, en gran parte, la parte del levantamiento de requerimientos.
+Ya yo he adelantado mucho, ya yo he adelantado gran parte de la documentación. Y yo creo que ya a partir de ahora, ya yo con esto, me reúno ya con los muchachos para entonces entregarles toda la documentación que ya tengo, que ya he desarrollado.
+Y aquí ya vendría ya la parte de desarrollo. Y ese feedback que quizás veamos, tenemos que tener contigo, demostrarte el avance que tenemos, que no tenemos.
+Para que tú nos digas si vamos o no, por buen camino.
+
+@36:46 - Martin Hendrik (ALFA ELECTRONIC)
+Ok. Sí, como para ir mirando cómo va y si hay que corregir algo, o está bien así o no.
+
+@36:53 - Jorge Carrera (blasterinformation.com)
+Sí, o si hubo algo que me faltó quizás profundizar aún más. Entonces, oye, Maribel, tú sabes que en tal parte tú me dijiste tal cosa, pero te repregunto quizás algo que me faltó profundizar.
+Y nada, lo más seguro que te reúnes con Luby ya para afinar todos sus aspectos. Y bueno, Maribel, o por mi parte, feliz y complacido que me hayas permitido reunirme contigo todo este tiempo.
+Aunque seguimos con él, seguimos, porque yo igualito no te abandono ni abandono al equipo, porque ahora voy a la parte de desarrollo a estar con el equipo para que hagan lo que hemos conversado.
+
+@37:39 - Martin Hendrik (ALFA ELECTRONIC)
+Ok. No, pues muchísimas gracias, de verdad que... Sobre todo, muchas gracias por la paciencia que me tuve estas semanitas con el bebé, que tuve como todas esas novedades de que no me podía conectar, de verdad que yo me he sentido bastante apenada porque eso no es agradable, uno quedar mal y se siente feo, ¿sí?
+Se siente uno como, como, se siente mal, o sea, eso no es correcto.
+
+@38:08 - Jorge Carrera (blasterinformation.com)
+No, Maribel, mira, tú voy a ser sincero, Maribel, mira, yo, yo, yo he estado en tu, en tu, en tu, en tu zapatos, no como mamá, porque yo lamentablemente no, puedo, no puedo dar a luz, pero sí a nivel como, como papá, y también como jefe, y como director, y como gerente, y dueño de empresa, porque he tenido, yo también he tenido empresa, y, y aprendí, yo he aprendido que aquí lo muy importante es ser, es ser humano.
+
+@38:37 - Martin Hendrik (ALFA ELECTRONIC)
+Sí. Uno tiene que ser humano.
+
+@38:40 - Jorge Carrera (blasterinformation.com)
+La humanidad, el ser humano es lo que te. Te enaltece. Más allá, por supuesto, uno tiene que cumplir una función laboral, pero la humanidad, el sentimiento, el estar comprometido con el otro en lo que está haciendo, eso es importante.
+O sea, yo se lo dije a Lubin hoy, casualmente, porque Lubin constantemente me pregunta, ¿cómo va? ¿Cómo va? ¿Cómo va?
+Y yo, uy, es que Lubin, tú sabes que Maribel dio a Lubin, qué bueno y tal. Y mira, luego le dije yo, mira, yo sé cómo es eso, yo he sido dos veces pasado por eso, y yo te lo había dicho a Maribel, cuando te das a luz, te cambia todo.
+
+@39:22 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, Dios mío. Te cambia todo. Yo no pensé que fuera así tan, tan, tan. Todo, o sea, ya tu vida, ya no es tuya, tu tiempo ya no es tuyo.
+No, el tiempo ya no, ya no tengo control. No tienes control, depende de él, de él, y él, y él.
+Estoy en ese proceso de mirar cómo ajusto. Muchas cosas que pensé que podía manejarlas con él y me estoy dando cuenta que no.
+

@@ -1,0 +1,1079 @@
+Reunion de Trabajo con Alfa (Remision de Despacho y Facturacion) - March 09
+ VIEW RECORDING - 111 mins (No highlights) 
+@0:00 - Jorge Carrera (blasterinformation.com)
+Hola, Maribel, ¿cómo te va? ¿Cómo estás tú, Ole?
+
+@0:04 - Martin Hendrik (ALFA ELECTRONIC)
+Hola, señor Jorge, ¿cómo estás? ¿Qué tal todo? ¿Qué tal? ¿Cómo amaneces?
+
+@0:08 - Jorge Carrera (blasterinformation.com)
+¿Cómo estás?
+
+@0:09 - Martin Hendrik (ALFA ELECTRONIC)
+Bien, sí, señor, gracias a Dios.
+
+@0:13 - Jorge Carrera (blasterinformation.com)
+Bueno, sé que hoy tienes cita, entre un ratito.
+
+@0:20 - Martin Hendrik (ALFA ELECTRONIC)
+Bueno, nada, bueno, gracias, Maribel, por estar aquí ahorita. Disculpenme el atraso.
+
+@0:26 - Jorge Carrera (blasterinformation.com)
+No, no, no. Maribel, teníamos pendiente para hoy lo que es la parte ya de despacho, la remisión de despacho y la facturación.
+
+@0:38 - Martin Hendrik (ALFA ELECTRONIC)
+Ok, perfecto. Ajá. Listo, te puedo retomar. Están arreglando un apartamento, no sé si se oye mucho ruido. No, para nada.
+
+@0:55 - Jorge Carrera (blasterinformation.com)
+Déjame llevar, déjame ver aquí mi grabadora que no... No la estoy visualizando. Ok. Perfecto. Listo. Gracias, Mariela. Ya estamos listos.
+Perfecto.
+
+@1:30 - Martin Hendrik (ALFA ELECTRONIC)
+Bueno, entonces, la última vez, yo les iba a mostrarle cómo se despachan los equipos, ¿cierto? Sí. Entonces, bueno, cuando un técnico finaliza una reparación o finaliza una revisión en garantía, él le da como cerrar intervención allá en el módulo técnico que ellos manejan y el código se desaparece de la pantalla de ellos.
+cumplí. Sí. Y nos sale acá, en el panel de control del que yo siempre le hablo, en una columna que se llama equipos a despachar, que sería en este caso esta.
+¿Sí? Estos son equipos que entonces ya finalizaron reparación, ya finalizaron revisión en garantía, o son equipos, por ejemplo, que se cotizaron no reparables de una vez quedan en este módulo de equipos por despachar.
+Entonces, por ejemplo, vamos a hacer un ejemplo. Sí, por ejemplo, voy a sacar Gracias.
+
+@2:55 - Jorge Carrera (blasterinformation.com)
+Gracias. Gracias. Gracias. Gracias. Gracias. Gracias. Gracias.
+
+@3:01 - Martin Hendrik (ALFA ELECTRONIC)
+Estos dos códigos de la empresa serie, esas, que se pueden facturar normalmente. Entonces, son dos códigos, 102 y el 143.
+Entonces, yo le doy clic al código, le digo expedición. Este es el cuadrito que siempre sale cuando yo le doy clic a un código.
+Con los datos del cliente, del equipo, cuándo llegó, la falla, ¿cierto? Entonces, yo le digo aquí expedición. Y él me lleva de una vez a la ventana, expedición, que es donde yo hago la remisión de despacho.
+Acá salió el código que voy a despachar y los datos del equipo. Y sale cuando llegó la orden de compra y el número de orden de compra.
+Estos datos se ingresaron cuando yo recibí. Ok. En este software, acá hay una primera celda que dice peso. En Francia sí cobran el despacho, entonces ellos ponen acá cuánto pesa el artículo y él da un valor de despacho según el peso.
+Nosotros no le cobramos al cliente ese valor de despacho, lo asumimos. Entonces yo siempre pongo cero. Ok. Acá también cero.
+Siguiente celda dice posición del equipo. El equipo está en posición 1 porque estaba en reparación. Nosotros cuando vamos a sacar un equipo reparado del sistema, lo ponemos en posición 10.
+Entonces, acá abajo también 10. Listo. Acá como usted puede ver, sale el valor de la reparación. Acá también el valor de la reparación.
+Yo me puedo parar en esta bolita azul de información y ahí yo puedo ver nuevamente el memo que hizo el técnico cuando diagnosticó el equipo.
+De hecho, él me dejó ahí un comentario. Se realizó el mantenimiento, se cambió tal cosa, se hicieron tales mediciones y verificaciones, se energizó el equipo a tal voltaje.
+Se realizó un video de pruebas. Queda listo para envío a planta. Acá hay otra pestañita que es donde salen los comentarios que yo puse cuando hice la cotización.
+Entonces yo también los puedo visualizar. Yo puedo leer yo qué le dije al cliente en la cotización. Acá, en esta pestaña.
+Listo. Acá arribita sale un pequeño cuadrito donde yo veo el fil de discusión o el chat que yo le he comentado que cada persona escribe cositas.
+Y a mano derecha sale una ventanita que se llama reporte de intervención. Esto lo llenan los chicos cuando ya van a sacar un equipo del sistema.
+Ellos empiezan a seleccionar en una serie de opciones que tienen ahí en el sistema dónde estaba ubicada la falla, el posible motivo por el que ese equipo falló.
+a ver. Easy. ¿Se le hizo pruebas en el laboratorio? ¿Y si se debe verificar nuevamente en planta? Y acá abajito, ellos ponen el comentario.
+
+@7:10 - Jorge Carrera (blasterinformation.com)
+Maribel, disculpa la interrupción. Ellos, esta parte, ellos llenan, ellos reparan el equipo y llenan este checklist de qué fue lo que consiguieron, qué se le hizo, qué se le reparó.
+Sí. Aparte de la transcripción manual, que ellos también hacen. Sí.
+
+@7:33 - Martin Hendrik (ALFA ELECTRONIC)
+Ok, perfecto.
+
+@7:35 - Jorge Carrera (blasterinformation.com)
+Sí.
+
+@7:35 - Martin Hendrik (ALFA ELECTRONIC)
+Ya ahorita les voy a mostrar cómo sale ese reporte. Ok. Y acá en esta parte de comentarios, ellos hacen como un resumen, un pequeño resumen, de esta intervención que me pusieron a mí acá en el memo.
+Sí. ¿Por qué digo resumen? Pues porque a los clientes no se les da información. Sí. Gracias. La reparación, ¿sí?
+Sino como global. Entonces, eso se pone acá porque esto que se pone acá sí sale en el reporte de intervención que se le puede imprimir y entregar al cliente.
+Lo que nosotros tenemos acá en el memo es interno.
+
+@8:17 - Jorge Carrera (blasterinformation.com)
+Perfecto. Listo.
+
+@8:19 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces, ahora voy a llenar las informaciones de cada código. Entonces, bueno, este equipo, el 102, ellos dicen equipo con falla y alarma de error, ese error, se realiza reparación electrónica, el mantenimiento completo, se energizó y quedó listo.
+Entonces, acá también hay una serie, mire, una lista desplegable, como en la cotización, Una lista desplegable de comentarios que ya están previamente redactados y que yo los puedo usar para despacho de equipos.
+Entonces, para despacho de equipos yo uso el 1, 6. Unos comentarios preestablecidos allí que perfectamente tú las seleccionas. Sí, ajá.
+Y la idea es que uno pueda ir agregando más comentarios cada vez. ¿Y eso es modificable?
+
+@9:14 - Jorge Carrera (blasterinformation.com)
+¿Tú lo puedes modificar? Esto yo no lo...
+
+@9:18 - Martin Hendrik (ALFA ELECTRONIC)
+o sí, creo que sí. Ah, sí, esto es como que sí se dejan modificar, mire. Ah, ok. Este creo que sí deja.
+Vamos a ver si me deja registrar el 31.
+
+@9:49 - Jorge Carrera (blasterinformation.com)
+Ah, sí, mire que acá sí lo dejó, ¿sí vio?
+
+@9:53 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, ah, no, espectacular.
+
+@9:54 - Jorge Carrera (blasterinformation.com)
+Pero allá en cotizaciones no deja.
+
+@9:57 - Martin Hendrik (ALFA ELECTRONIC)
+No deja. Pero excelente. Claro, porque cada vez yo puedo tener frases diferentes según el equipo, entonces me sirve que se dejen agregar frases o modificar las que ya están.
+Perfecto. Por ejemplo, entonces, si yo miro el 11, le voy a poner acá hardware, así no lo tengo que volver a escribir a mano.
+Registrar. Ah, no, deja, mire, acá ya no me dejó modificar otro. Solo uno. Solo me dejó agregar unos. O sea.
+
+@10:36 - Jorge Carrera (blasterinformation.com)
+O para que él debería permitir modificar o agregar lo que tú consideres. Sí. El administrador.
+
+@10:47 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, me deja agregar, pero no me deja modificar. Entonces, sí es bueno que me deje hacer ambas cosas, el mejor software.
+Ok. Listo. Entonces, los códigos son 1, 6. Listo. Acá en la derechita me sale técnico. Me dice qué técnico hizo esta reparación.
+Me dice como ubicación. Esto está en la estantería de salida. O si estuviera en el almacén, me diría en cuál estantería, la A1, A2 o algo así.
+Eso lo coloca el técnico.
+
+@11:29 - Jorge Carrera (blasterinformation.com)
+Coloca dónde está ubicado.
+
+@11:31 - Martin Hendrik (ALFA ELECTRONIC)
+Dónde dejó el equipo, en qué parte lo dejó almacenado. Sí. Y acá yo le puedo dar clic a la carpeta de siempre, a la donde yo encuentro las fotos del equipo y todo lo demás.
+Acá, en esta carpetita. Listo. Entonces acá sale el precio. Índice de funcionamiento. Entonces, yo no sé si Giovanni le explicó que cuando ellos...
+Pisan equipos, ellos como que les dan una clasificación de qué tan probable es que funcione. Un porcentaje. Y hay unas letras.
+No.
+
+@12:11 - Jorge Carrera (blasterinformation.com)
+¿No? No, me hablo de porcentaje.
+
+@12:15 - Martin Hendrik (ALFA ELECTRONIC)
+Que hay 90%, 80% de que funcione.
+
+@12:19 - Jorge Carrera (blasterinformation.com)
+Ah, entonces le faltó esto.
+
+@12:21 - Martin Hendrik (ALFA ELECTRONIC)
+Cuando ellos diagnostican un equipo, o más bien cuando ya lo están reparando, el sistema les muestra una casilla donde ellos pueden decir qué tan alta, tan baja o tan media es la probabilidad de que ese equipo funcione después de la intervención.
+En este caso, a este equipo le dieron un C+, mire. Índice de funcionamiento C+. Entonces, se le hicieron, ¿qué significa C+,?
+Dice, que se midió contención. No. No. Gracias. Pero no se constató su funcionamiento en el laboratorio. Eso debe ser porque no tenemos la máquina y no tenemos periféricos.
+Entonces es una prueba como parcial. Y acá dice cuáles pruebas se efectuaron. Entonces acá hay varias clasificaciones. Pruebas estáticas con el láser scan, con multímetro.
+Dice, falla encontrada en el C+, C+, se dice que sí, que la falla se encontró. Si yo quisiera cambiar de C+, A, B+, yo lo hago aquí.
+¿Ven? Cambia A+. Pero lo voy a dejar en la que él lo dejó. Este software tiene acá otra opción para comentarios libres, pero yo ya he intentado poner comentarios para el despacho y no me los guardo.
+Ok. Sería bueno que el nuevo software lo deje hacer, porque un ejemplo, si yo quiero ampliar un poco, a lo otro es que este software, yo no sé por qué, cuando yo hago esta remisión de despacho, él me deja escribir, no sé, máximo como unos 30 caracteres por línea.
+Si yo escribo más toda esta línea, no me la imprime, me la saca cortada. Puede ser que ellos utilizan, allá en Francia, un formato distinto, un formato de impresión.
+Pero entonces no debería dejarme escribir más letras de las que va a imprimir. Claro, hay una fallita ahí. Sí, exacto.
+Y acá esta se supone que es una zona de comentarios libres, pero yo la he intentado diligenciar antes y no me sale impresa.
+Entonces, pues no la uso. Pero sí sería bueno que en la cotización sí se puede. Yo digo recomendación. Me no sé qué y yo las escribo acá y sale en la cotización.
+En este formato de despacho yo puedo escribir y no me los imprime. Listo. Acá él tiene una celda que se llama garantía.
+Tres meses, seis meses, doce, veinticuatro. Le voy a poner seis, pero a mí me parece que eso tampoco sale.
+Yo generalmente pues escribo a mano aquí. Sí.
+
+@15:32 - Jorge Carrera (blasterinformation.com)
+Y esa garantía, Maribel, ¿no está en la característica de la empresa? Cuando tú llenas, cargas la empresa, creo que hay un sitio donde tú le colocas qué garantías a esa empresa tú le vas a dar.
+
+@15:46 - Martin Hendrik (ALFA ELECTRONIC)
+Pues lo que pasa es que como eso es por equipo, no es por empresa. Ah, ok. Sí, porque digamos si son ventas son doce meses y si es reparación son seis.
+Hay clientes que... Muy rara vez pasa, pero pasa, que quieren no 12 meses, sino 24. Entonces yo les hago 24, pero eso tiene un, digamos que como un costo adicional, extender la garantía a 24 meses.
+Ok.
+
+@16:17 - Jorge Carrera (blasterinformation.com)
+Tú le colocas aquí la garantía y no te la estás tomando.
+
+@16:20 - Martin Hendrik (ALFA ELECTRONIC)
+A mí me parece, la voy a dejar ahí, pero creo que no sale. Sale solamente esta que puse a mano.
+Ok. Sí. Listo. Este otro código es un, un plus que nosotros cobramos porque fue un diagnóstico en urgencia. Entonces yo solamente escribo esto y ya.
+Acá no le escribo nada más. Los datos son los mismos, la posición 10, el valor. Esto está mi nombre porque esto no fue una reparación, fue una tarifa adicional.
+Listo. Listo. Cuando... Yo ya lleno los datos de lo que yo voy a despachar. Yo le digo transferir acá en este botoncito.
+Ah, ahí me está diciendo que el contacto es obligatorio porque no le puse quién es el contacto del cliente acá.
+No me deja despachar si yo no pongo contacto. Claro, claro.
+
+@17:25 - Jorge Carrera (blasterinformation.com)
+Porque hay varios.
+ACTION ITEM: Add dispatch fields: accessories, payment terms, dispatch type, free text, warranty; print preview; add PO button; add delivery status - WATCH
+
+@17:26 - Martin Hendrik (ALFA ELECTRONIC)
+Tienen que elegir. Son varios. Ya voy a mirar quién, cuál ingeniero es el que es. Jorge Rivera. Listo. Es el señor Jorge Rivera.
+Una pregunta, Maribel.
+
+@17:42 - Jorge Carrera (blasterinformation.com)
+Tú me habías comentado que cuando llega a veces, llegan equipos, llegan con accesorios. Ajá. Y él debe irse también con esos accesorios.
+Sí. Aquí en esta remisión de despacho, donde yo coloco los accesorios. Sí. Y irse
+
+@18:01 - Martin Hendrik (ALFA ELECTRONIC)
+Él no me los está mostrando, pero ahorita que yo haga la impresión, sí va a mostrar si tiene accesorios o no.
+Entonces, sí sería bueno que al momento de hacer, de llenar esto, de una vez yo vea ese campo. Claro.
+Acá no es visible, ¿sí ve que acá no es visible? Sí, no se ve. No, hasta ahorita que yo haga, saque el PDF, es que me va a mostrar si tiene accesorios o no.
+Claro. No, hasta ahorita que Entonces, ahí él ya la generó. Yo lo que hago, en este software toca venir acá a esta partecita superior derecha y buscar aquí la última que acabé de hacer.
+Ok. Cargarla. Debería en realidad mostrarme de una vez el pantallazo de la remisión, pero no lo hace. Toca cargarla y decirle imprimir.
+
+@19:32 - Jorge Carrera (blasterinformation.com)
+Claro, no te da una previsualización antes de imprimirlo. Hasta decirle que la quiero imprimir.
+
+@19:46 - Martin Hendrik (ALFA ELECTRONIC)
+Ahora sí, él me la muestra. Entonces, la historia es la misma. Yo la puedo sacar en PDF, Word o en Excel.
+Y acá yo la veo. ¿Sí? Entonces me sale. El logito de la empresa, quién hizo la remisión, los teléfonos de la empresa, el correo.
+Acá arribita, él le va generando el consecutivo de remisión, la fecha en la que se está haciendo la remisión, saca el código del cliente, orden de envío, los datos del cliente, cuál equipo se está, cuál código de equipo se está sacando del sistema y en qué lugar está almacenado.
+¿Se acuerda que el técnico puso que estaba en la estantería de salida? Sí. Acá dice que está en salida, mire.
+Ok. De esa manera la persona que va a empacar el equipo sabe que lo va a encontrar en la estantería que se llama salida.
+Perfecto. Listo. Y acá salen los datos del equipo que yo voy a despachar. Y los comentarios que yo acabé de poner.
+Datos y comentarios. La garantía se lo que me pongo. Gracias. ¿Señor?
+
+@21:00 - Jorge Carrera (blasterinformation.com)
+La garantía, el campo que tú llenaste de garantía.
+
+@21:04 - Martin Hendrik (ALFA ELECTRONIC)
+No, si ve que solo sale el que dice a mano, el que dice seis meses de garantía, Jago. Sí, no te está trayendo el que colocaste.
+No, no sale. ¿Y ese código que aparece abajo, el termina 143? Este es el código que yo generé para cobrarle al cliente un diagnóstico en urgencia, ¿lo recuerdas?
+Sí. Que yo le dije que era como una tarifa, un plus. No es un equipo, no es un segundo equipo, es que se crea otro código para cobrarle al cliente ese diagnóstico, ¿sí?
+Y le voy a contar algo. Usted dirá, pero ¿por qué no le suma ese valor de diagnóstico a la reparación, cierto?
+Sí. Porque es que a veces llega un equipo para diagnóstico en urgencia. Y un ejemplo, si el equipo no se puede reparar.
+Yo cobro solo el diagnóstico. Entonces ese valor me queda separado de lo que yo pude haber cobrado por la reparación.
+O un ejemplo, yo digo que sí se puede reparar y digo, digamos, vale un millón. Debe un momentico, por favor.
+Sí. ¿Qué pasó, COVID? No me hagan ruido. No, señor, estoy ocupada. No, no me lasten más la puerta. Bueno, pues yo soy acuerita, no me haga más ruido, sino pan, pan, pan.
+Bueno, ya no más. Bueno, entonces, sí, entonces, un ejemplo, puede ser que yo digo, una reparación vale un millón.
+Y el diagnóstico en urgencia vale 300 mil pesos. Y yo los cotizo separados. ¿Por qué? Porque si por alguna razón el equipo no se logra reparar, yo no voy a cobrar el millón.
+Pero sí se cobra el valor del diagnóstico. Ese diagnóstico se cobra independientemente de que el equipo funcione o no.
+Y si yo hago un solo valor global, después para mí es difícil cobrarlo. Entonces, por eso lo hacemos separadito.
+Sí, a tiempo que...
+
+@24:00 - Jorge Carrera (blasterinformation.com)
+En el nuevo sistema, Paola, el que está usted hablando con mucho, así que se llama Paola, disculpa, Maribel, fíjate, ¿qué se piensa hacer?
+Los equipos van a tener un código único, ¿verdad? Y todo lo que tenga contra ese equipo va a salir reflejado contra ese código.
+
+@24:23 - Martin Hendrik (ALFA ELECTRONIC)
+Ok.
+
+@24:25 - Jorge Carrera (blasterinformation.com)
+Es decir, yo cuando pida el historial de un equipo, yo puedo ver los diagnósticos urgentes que se han hecho contra ese equipo.
+Por ejemplo, el equipo, el CO26020102, yo voy a poder ver contra ese código, voy a poder ver los diagnósticos, las reparaciones, la garantía, a quién le pertenece, todo contra ese código.
+
+@24:52 - Martin Hendrik (ALFA ELECTRONIC)
+Ok. Sí, para mí lo importante es que se pueda separar el precio. Gracias. Gracias. Gracias. Gracias. Que salga como en una línea diferente.
+
+@25:02 - Jorge Carrera (blasterinformation.com)
+Sí, sí, de hecho, tú podrías, claro, porque eso va a ser un ítems, un código, un código de ítems, y de repente tú quieres saber, yo quiero saber de, en este trimestre, cuánto he facturado yo por diagnóstico de urgencia.
+
+@25:18 - Martin Hendrik (ALFA ELECTRONIC)
+Sí.
+
+@25:19 - Jorge Carrera (blasterinformation.com)
+Y te va a aparecer, indiferentemente del equipo, indiferentemente del cliente, y te va a aparecer cuánto ha ingresado por ese concepto.
+Ok, no hay problema, está bien, está bien.
+
+@25:33 - Martin Hendrik (ALFA ELECTRONIC)
+Dale, excelente, qué bueno. Listo, bueno. Entonces, en la parte de abajo salen informaciones muy parecidas a las que salen en la cotización.
+Sale cuál es el plazo de pago, que como yo le decía, sería bueno que esto sale, pero arriba, al lado de los datos del cliente.
+Ok. acá, aquí arriba, plazo de pago, que salga por aquí ahorita. Ok. Y abajo van los datos de la empresa, nombre de mí, nuestros teléfonos, nuestra dirección..ín Díos.
+¿Qué más? La ciudad, el país. Bueno, son datos de nosotros. Listo. Entonces, si estuviera en la oficina, yo le digo imprimir.
+Y él me imprime dos, por defecto, dos hojas. Entonces, una es para el cliente y la otra me la firma el cliente y queda para mí.
+Y es la que va para mi archivo, digamos, como soporte de entrega. Ok. En este caso, como no estoy en la oficina, estoy acá en la casa, la voy a generar en PDF.
+Y se la voy a mandar ahorita a la persona encargada para que la impriman y empaquen ese equipo. ¿Sí?
+
+@26:45 - Jorge Carrera (blasterinformation.com)
+Ok, fíjate, María, no sé, tú llegas, imprimes, imprimes esta remisión de despacho. Y se la mandas a la persona encargada de hacer el despacho.
+
+@26:59 - Martin Hendrik (ALFA ELECTRONIC)
+Sí. Entonces, un ejemplo, todos los días, todos los días se imprimen las remisiones o las órdenes de envío de todo lo que ya está listo, ¿sí?
+Se hace un paquetico y se le entrega a la persona de logística, que es la que va a empezar a empacar todo lo de despachar en ese día.
+Ok, unas hojitas ahí, toma. Sí. ¿Qué es lo que hacemos? Ah, nosotros tenemos unos sellitos, mandamos a hacer unos sellos y por detrás de las remisiones les escribimos.
+Esto es para despacho por servia entrega, chon, servia entrega. O recoge, el cliente recoge, entonces por detrás marcamos la hojita con una, con un sellito que dice cliente recoge y las clasificamos.
+Hay otra que dice cliente, otro sello, otro sello que dice cliente contra entrega, entonces le ponemos el sello cliente contra entrega.
+Entonces, ¿qué significa eso? Que primero se le manda la factura y cuando el cliente pague, ahí sí se le despacha.
+Pero entonces lo clasificamos así para no correr el riesgo de que un ejemplo, la persona de despachos me envíe algo que primero el cliente tenía que pagar.
+Y lo que dice despachos servientregas son solo los clientes créditos, los que si tienen 30 o 45 días, eso se puede empacar y se despacha de una.
+Entonces lo que se hace es como que se clasifican en varias. Sí, estados. Sí. Y se empacan, pero si son contra entregas, se quedan ahí empacaditos en la oficina hasta que el cliente paga primero.
+
+@28:40 - Jorge Carrera (blasterinformation.com)
+Ok, yo no podría llenar eso allí en pantalla.
+
+@28:45 - Martin Hendrik (ALFA ELECTRONIC)
+Pues este sistema no tiene esa opción, por eso mandamos a hacer sellos y los marcamos por detrás. Pero sí sería de pronto chévere tener una opción ahí en el software que diga un ejemplo.
+Tipo de despacho. Algo así. Despacho inmediato por transportadora. Otra opción que sea despacho en espera, cliente contra entrega. Cliente recoge.
+Algo así, sería chévere. Así le toca ponerse uno a marcar las hojitas por hojitas. Sí, ¿no?
+
+@29:22 - Jorge Carrera (blasterinformation.com)
+Y una vez aparece ya impreso, le llega todo eso al muchacho, a la persona de hacer los despachos. Y ya es lo que hacen leer y ya ahí está toda la información.
+
+@29:36 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, y que sea una celda editable. Si yo quiero poner otro tipo de comentario, también. Ok.
+
+@29:45 - Jorge Carrera (blasterinformation.com)
+fíjate, entonces esa información le llega al muchacho. El muchacho tiene envíos inmediatos y otro contra facturación. Contra el pago, sí.
+
+@29:58 - Martin Hendrik (ALFA ELECTRONIC)
+Contra el pago, sí.
+
+@30:00 - Jorge Carrera (blasterinformation.com)
+No, no se le despacha. Y entonces él clasifica ahí dentro de su almacén, dentro de su oficina, lo que está pendiente por salir.
+Y despacha, ponte de una vez despacha, lo que son de acrédito, que perfectamente se puede despachar de una vez.
+Cuando él despacha, eso.
+
+@30:20 - Martin Hendrik (ALFA ELECTRONIC)
+Ajá, miren. Una cosita, si ve que acá en la remisión dicen que fecha llegó el pedido y el número del pedido.
+Sí.
+
+@30:27 - Jorge Carrera (blasterinformation.com)
+Todo se despacha con una copia del pedido.
+
+@30:31 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces toca, uno imprime la remisión de despacho y hay que entrar al sistema otra vez, a cada código, e imprimir la orden de compra.
+No sé si es posible que cuando yo despacho algo, de una vez haya como un botoncito, en esa ventana donde se imprime la remisión, un botoncito.
+Que diga orden de compra, y yo le piqué ahí, y de una vez me imprima la orden de compra.
+
+@31:06 - Jorge Carrera (blasterinformation.com)
+De una vez, que salga, claro, y no tenga que estarla buscando. Sí.
+
+@31:12 - Martin Hendrik (ALFA ELECTRONIC)
+Ok.
+
+@31:14 - Jorge Carrera (blasterinformation.com)
+Ahora, ok, perfecto, salió la orden de compra, salió conjuntamente con la remisión del despacho, el muchacho lo tiene allí, entonces, bueno, voy a despachar una que tengo aquí, que son para clientes que son a crédito.
+Y se la mando, me mando el equipo. Ahora, cuando me toque, me manda el equipo, él debería registrar en el sistema ese envío, que fue enviado.
+Entonces, ¿cómo lo hacemos actualmente?
+
+@31:45 - Martin Hendrik (ALFA ELECTRONIC)
+Ajá. Bueno, en este caso, como le digo, como no estoy en la oficina, Entonces, le voy a decir a la persona Sí.
+A la persona encargada. Le voy a mandar el PDF de ese remisión que acabé de hacer. Gracias por video.
+
+@33:14 - Jorge Carrera (blasterinformation.com)
+Fathom, Fathom.
+
+@33:30 - Martin Hendrik (ALFA ELECTRONIC)
+Hace estas órdenes de envío y la que contacta al cliente para preguntarle si va a recoger o si lo mandamos por ser vía entrega.
+Sí. Entonces, como yo la estaba haciendo para el ejemplo, ahí se la mandé en PDF para que ella siga.
+Entonces, ¿ella qué hace? Ella imprime la orden de envío, contacta al cliente y el cliente dice, no, yo la recojo, o no, envíeme a por ser vía entrega.
+Entonces ella marca las hojitas. Con el sello y ya y se las pasa a Sofía que es la persona de despachos y Sofía pone sellos de garantía, toma fotos porque a todos los equipos que salen del sistema se le toman fotos para dejar una evidencia de en qué estado se despachan y procede a empacarlo, meterlo en una cajita y por fuera de la caja va la remisión que acabo de hacer, va la remisión dobladita con la orden de compra dobladita.
+se envinipela y se le genera la guía servientrega, si es servientrega y eso se despacha todos los días, ¿sí?
+
+@34:37 - Jorge Carrera (blasterinformation.com)
+¿Cómo? Y eso para los clientes crédito.
+
+@34:40 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces, por ejemplo, si es un cliente crédito. Gracias.
+
+@34:48 - Jorge Carrera (blasterinformation.com)
+Gracias. Gracias. Gracias. Gracias. Gracias. Gracias. Bueno, aquí en mi casa el internet es un poco más lento que mi oficina.
+Pero ahí se ve perfecto, ahí se ve.
+
+@35:14 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces, mire, la persona de despachos busca el historial de correos donde se confirmó la orden de compra, que es el historial que yo les hablo tanto que a mí me gusta que todo sigue el mismo hilo.
+Acá se confirmó un pedido. Sobre ese mismo historial, entonces, se le dice, bueno, buen día, estimado cliente, confirmamos envío con guía servia, entrega número tal, y se le adjunta la copia de la guía.
+La remisión de ALFA es tal y se le adjunta una copia, que es una como la que yo acabo de hacer, mire.
+Acá se le adjunta el PDF, la remisión. De tales equipos, reparación variador fulanito. Si hicimos pruebas de laboratorio, le decimos a continuación el video con las pruebas de laboratorio.
+mira. Chau. Y se le manda el link de YouTube de ese equipo. Y se le dice, quedamos atentos a las pruebas en planta.
+Esto porque es un cliente que tiene crédito. ¿Sí? O sea, fíjate algo que me estás diciendo que es espectacular.
+
+@36:15 - Jorge Carrera (blasterinformation.com)
+Ustedes le hacen video para que el cliente vea que el equipo es funcionando.
+
+@36:22 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, nosotros tenemos, yo no sé si ya le he mostrado el canal de YouTube que nosotros tenemos o no.
+Nunca se lo he mostrado.
+
+@36:31 - Jorge Carrera (blasterinformation.com)
+No, creo que no, no, no, lo he visto.
+
+@36:34 - Martin Hendrik (ALFA ELECTRONIC)
+A ver. Nosotros tenemos un canal en YouTube donde cargamos los videos de los equipos que se prueban en el laboratorio.
+Pueden ser pruebas parciales o totales. Entonces, mire, por ejemplo, acá tenemos muchísimos videos. Todos los días sacamos videos. Gracias.
+Gracias. De los equipos que van saliendo. ¿Cómo se nombran los videos? Por el código, la marca y el tipo.
+Entonces, por ejemplo, estos son los más recientes, mire, los del viernes, jueves, miércoles, hace dos días, tres días, en fin.
+Código, el equipo, la marca, el tipo. Entonces, digamos, yo voy a entrar acá. ¿Eso video lo hace el técnico?
+
+@37:34 - Jorge Carrera (blasterinformation.com)
+Sí.
+
+@37:36 - Martin Hendrik (ALFA ELECTRONIC)
+La persona de logística, un ejemplo, él finaliza una reparación y el VAI le dice la chica de la recepción o la chica de logística que ya tiene un equipo reparado que necesita hacer un video.
+Entonces, ellas vienen y lo graban y ellas lo montan al canal. Y cuando el equipo se despacha, se le manda al cliente el link de su equipo para que él vea hasta qué...
+Y pudimos probar el equipo en el laboratorio. ¿Sí? Entonces en el video lo que él hace es energizar el equipo y mostrar qué hace.
+ACTION ITEM: Add YouTube video link per equipment code; allow private links; assign dispatcher to upload - WATCH
+Y si hay alguna recomendación en el mismo video se le dice al cliente. ¿Sí?
+
+@38:14 - Jorge Carrera (blasterinformation.com)
+O sea que ya podría tener ese link de YouTube dentro del sistema. Sería súper chévere.
+
+@38:22 - Martin Hendrik (ALFA ELECTRONIC)
+Sería genialísimo. Porque de esa manera yo puedo muy rápido encontrar el video en vez de irme a buscarlo a YouTube cada vez.
+Sí, por ejemplo, un equipo puede venir varias veces por fallas distintas. Sí.
+
+@38:36 - Jorge Carrera (blasterinformation.com)
+Y puede tener dos o tres videos. Sí.
+
+@38:39 - Martin Hendrik (ALFA ELECTRONIC)
+El mismo equipo. Correcto. Y eso estaría allí dentro del sistema, en el historial, para todos los videos.
+
+@38:48 - Jorge Carrera (blasterinformation.com)
+Y no ponerme yo a buscar en YouTube, ¿dónde estará ese video? Entonces, wow, pierdo mucho tiempo.
+
+@38:55 - Martin Hendrik (ALFA ELECTRONIC)
+Normalmente lo que se hace es que con el código que tenemos en el sistema. Ajá. Ajá. Yo voy a YouTube y yo lo busco.
+Perfecto. Y ahí lo encuentro. Sí.
+
+@39:08 - Jorge Carrera (blasterinformation.com)
+En caso, en caso de que eso se, claro, se coloque, se va a colocar.
+
+@39:14 - Martin Hendrik (ALFA ELECTRONIC)
+Ajá.
+
+@39:15 - Jorge Carrera (blasterinformation.com)
+¿Quién sería la persona encargada de cargar ese video?
+
+@39:18 - Martin Hendrik (ALFA ELECTRONIC)
+Dentro del La persona que hace el despacho.
+
+@39:22 - Jorge Carrera (blasterinformation.com)
+Ok. La persona que hace el despacho.
+
+@39:27 - Martin Hendrik (ALFA ELECTRONIC)
+Ok. Cargaría el video. Sí.
+
+@39:36 - Jorge Carrera (blasterinformation.com)
+Perfecto.
+
+@39:38 - Martin Hendrik (ALFA ELECTRONIC)
+Hay video, hay clientes que, por ejemplo, son muy reservados. A ellos no les gusta que los equipos de ellos tengan videos públicos.
+Ajá. Entonces, lo que hacemos es que cuando cargamos un video, YouTube nos da la opción de ponerlo privado. Entonces, ¿sigue estando cargado en YouTube?
+Pero no es vis, no es vis, no lo puede visualizar cualquier persona, solo lo puede visualizar la persona a la que se comparta este link, el link.
+
+@40:10 - Jorge Carrera (blasterinformation.com)
+Claro, claro, coloca el correo del cliente.
+
+@40:14 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, solo el que tenga el link lo ve. Entonces, hay clientes con los que se manejan los videos así, privados.
+Listo, entonces, en este caso, es un cliente que tiene crédito, entonces, de una vez el equipo se pone sello de garantía, se toman fotos, se empaca, se le hace guía, servientrega, se despacha y se hace este correo al cliente notificándole el despacho.
+¿Cierto? Y el siguiente paso es facturar. ¿Sí? Si por el contrario es un cliente que primero tiene que pagar el mensaje que se le envía, no es este diciéndole, le confirmamos el despacho.
+Si no es otro, espérenme ya le voy Busco. Ah, mira, cuando es un cliente que tiene que pagar primero, antes de decirle, le estamos mandando a este equipo, se le manda este otro correo.
+Dice, de acuerdo al correo anterior, su equipo fulanito está listo, desde el correo de facturación se le envió tal factura, por favor remitir copia del pago para poder proceder con el despacho.
+Perfecto. O sea, a este cliente primero se le factura y después se le despacha. A los clientes crédito se les despacha de una vez y ahí sí se puede facturar sin problemas, sin correo, sin afanes.
+Entonces, yo saqué estos dos códigos, ¿cierto? Sí. Me voy a ir al panel de control.
+
+@42:21 - Jorge Carrera (blasterinformation.com)
+Les voy a actualizar.
+
+@42:24 - Martin Hendrik (ALFA ELECTRONIC)
+Esos dos códigos de la empresa Series ya no me salen en esta columna que se llama Equipos por Despachar.
+Ya no me salen acá. Me salen en esta otra columna que se llama Equipos para Facturar. ¿Se acuerda que yo los puse en posición 10?
+Sí. Mírelos, mírelos acá. Entonces, la chica de facturación sabe que lo que le sale en esta columna es porque ya lo puede ir facturando.
+¿Sí? Si es muy urgente. O sea, un ejemplo, es un cliente contra entrega y ese cliente está desesperado. Yo no me espero a que la persona de facturación venga y mire por allá a las 2 de la tarde.
+Ay, ¿qué tengo que facturar? Y venga y los descubra. Normalmente, ¿qué hacemos en este momento por nuestro WhatsApp? Hay que ver si eso lo podemos mejorar con el software.
+ACTION ITEM: Add urgent-billing alerts; add billing fields: external invoice #, payment date, retentions; add pending-payment report - WATCH
+Ajá. Ajá. Ajá. Ajá. No sé si hay, si se pudiera crear una alerta en el sistema, acá en este columna de facturación, que diga que salga una campanita, pero alguna cosa que, o una burbuja de notificación a ella, o no sé, que diga facturar urgente tales códigos, en vez de ponerme a hacerlo por WhatsApp, ¿sí?
+
+@44:27 - Jorge Carrera (blasterinformation.com)
+Allí perfectamente, se puede, la persona que va a facturar, cada vez que entra al sistema, o inclusive dentro del sistema, cuando tú le colocas algo que es urgente para facturar, ella automáticamente le va a aparecer una pantalla, una notificación, por favor, facturar esto urgente.
+
+@44:50 - Martin Hendrik (ALFA ELECTRONIC)
+Ah, sería chévere, sí, bueno.
+
+@44:52 - Jorge Carrera (blasterinformation.com)
+O sea, y no te va, no te puede decir que no lo vio, porque donde tú estés en el sistema, te va a aparecer.
+
+@44:59 - Martin Hendrik (ALFA ELECTRONIC)
+Máquate.
+
+@45:00 - Jorge Carrera (blasterinformation.com)
+O facturar, y cada 10 minutos le podemos decir, casi a cada periodicidad de 10 minutos, pa, le vuelve a aparecer factura, pa, factura, hasta que no facture ese mensaje que a cada rato le aparece.
+No se quita.
+
+@45:14 - Martin Hendrik (ALFA ELECTRONIC)
+No se quita. Excelente, sí, sería bueno. Si tienes cinco equipos urgentes, entonces va a tener, pa, factura.
+
+@45:24 - Jorge Carrera (blasterinformation.com)
+lista. La lista, o le aparece pa, la lista, pa, le aparece lo que es lo que es.
+
+@45:30 - Martin Hendrik (ALFA ELECTRONIC)
+Sí.
+
+@45:31 - Jorge Carrera (blasterinformation.com)
+Y allí, evidentemente, te tiene que verlo porque sí, pues.
+
+@45:39 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, sería muy bueno. Se podría hacer.
+
+@45:42 - Jorge Carrera (blasterinformation.com)
+Ahora, factura.
+
+@45:46 - Martin Hendrik (ALFA ELECTRONIC)
+Cris, Sí, ahora sí sigue cómo se factura, ¿cierto? No, eh, quisiera saber, quisiera terminar, bueno, para ver. El proceso de despacho, ¿me facturaron?
+
+@46:04 - Jorge Carrera (blasterinformation.com)
+¿Cómo me entero que me facturaron? El cliente por el correo.
+
+@46:11 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces, yo no sé cómo es allá, pero aquí, pues nosotros notificamos por correo que se facturó. Esta es como una notificación, sí, es formal, pero el medio correcto es, hay otro correo que se llama facturación arroba alfa.
+Nosotros hacemos la factura en línea con la DIAN, que es la dirección de impuestos y aduanas nacionales acá. Sí, es que me toca mostrarle cómo facturar.
+Ah, no, entonces vamos, sí, sí, vamos a ver cómo facturamos.
+
+@46:52 - Jorge Carrera (blasterinformation.com)
+Y después lo vamos a tomar el proceso del envío. Sí, entonces digamos yo facturamos.
+
+@47:15 - Martin Hendrik (ALFA ELECTRONIC)
+¿Por qué? Bueno, acá en Colombia es obligatorio mandar la factura sí o sí a ese correo. Si usted la quiere después enviar en copia a otros, es listo, libre.
+Pero sí o sí uno debe erradicar la factura al correo principal que cada cliente nos da. Ok. Vamos a mirar si esta empresa lo tiene registrado.
+Mira, el que acabo de hacer lo tiene registrado. Facturación, arroba, series, SASS. ¿Sí? Entonces yo hago mi factura, ya le voy a mostrar cómo se hace.
+Y la chica de facturación, desde nuestro correo de facturación, manda la factura al cliente. Se la manda al correo que ellos nos dieron.
+Va un archivo comprimido, esto lo genera directamente el software de facturación, porque recuerda que yo le dije que nosotros no facturamos directamente con nuestro software, sino con otro software que está autorizado por la DIAN.
+Y del sistema solo sacamos un Excel con los datos que le cargamos a ese software.
+
+@48:40 - Jorge Carrera (blasterinformation.com)
+Ok, está perfecto.
+
+@48:42 - Martin Hendrik (ALFA ELECTRONIC)
+Y cuando generamos la factura, él nos bota un punto simple, que es este, que lleva la factura en PDF y en XLM.
+Mire, esta es la factura en PDF. Gracias. Gracias.
+
+@48:59 - Jorge Carrera (blasterinformation.com)
+Gracias.
+
+@49:01 - Martin Hendrik (ALFA ELECTRONIC)
+Esta es la factura.
+
+@49:03 - Jorge Carrera (blasterinformation.com)
+Esto lo genera el sistema externo.
+
+@49:07 - Martin Hendrik (ALFA ELECTRONIC)
+Lo genera el sistema externo con los datos que sacamos de nuestro software. ¿Qué sacamos de nuestro software? El nombre de la empresa, la ciudad, la dirección, el teléfono, el código postal, el correo de facturación, el número de orden de compra, el valor de la reparación.
+El valor del IVA, el código del equipo, la descripción del servicio. Miren, aquí sale el código de equipo, sale el número de orden de compra y lo que se reparó.
+La cantidad, el need del cliente. O sea, todo esto es... ¿Qué genera con los datos que nosotros sacamos del software?
+¿Sí? Ok.
+
+@50:05 - Jorge Carrera (blasterinformation.com)
+Ustedes, ese Excel, ese sistema nuevo, perdón, externo, ¿es de ustedes, desarrollado por ustedes, de alguien, es de alguien aparte?
+¿El software de facturación?
+
+@50:17 - Martin Hendrik (ALFA ELECTRONIC)
+Sí. Ah, es una empresa externa porque acá solamente se puede facturar por medio de unos software que están autorizados por la DIAM.
+Ok. O sea, entonces quería...
+
+@50:28 - Jorge Carrera (blasterinformation.com)
+Ajá.
+
+@50:30 - Martin Hendrik (ALFA ELECTRONIC)
+Cada empresa elige con qué, con qué empresa contrata ese servicio de facturación electrónica. Y ellos le cuían a uno, un usuario, le voy a mostrar.
+Ajá. Por ejemplo, nosotros, nosotros facturamos con una empresa que se llama Oasis.com. Esta es la aplicación de ellos, míralo.
+Oasis.com.
+
+@50:53 - Jorge Carrera (blasterinformation.com)
+Oasis.com.
+
+@50:54 - Martin Hendrik (ALFA ELECTRONIC)
+Acá yo me puedo loguear, yo ingreso. Es la Sí. Sí. Sí, ve acá, yo estoy registrada, ALFA ELECTRONIC.
+
+@51:07 - Jorge Carrera (blasterinformation.com)
+Yo de alguna manera podría conectarme, ahorita que hacen ustedes, ustedes leen el archivo en Excel para generar la factura.
+
+@51:16 - Martin Hendrik (ALFA ELECTRONIC)
+Ajá, sí, y lo cargamos acá. Entonces, por ejemplo, mire, acá hay una opción que se llama facturas electrónicas, digamos.
+No, espérame, acá no es, es BIN, acá la sustancia está. Ese archivo que ya les voy a mostrar cómo se genera, lo cargamos aquí, se llama 961, interfaz de facturación electrónica, archivo plano de validación previa.
+Y yo lo que hago es seleccionar archivo. Entonces, yo voy y voy y busco ese archivo que saqué del software, de mi software.
+¡Gracias! Entonces, este es el formato que nosotros llenamos cada vez. Ya le muestro cómo se genera. Ok. Acá están todos los datos con los que yo voy a generar la factura.
+Yo le digo abrir, aceptar y ejecutar, y él me genera una factura. La factura que le acabo de mostrar en PDF y en XLM.
+
+@52:28 - Jorge Carrera (blasterinformation.com)
+Perfecto.
+
+@52:30 - Martin Hendrik (ALFA ELECTRONIC)
+Y esa factura nos llega a la bandeja de entrada de mi correo que se llama facturación alfa. ¿Sí? Y yo lo que hago es que, este, se la reenvío al cliente el correo que ellos me dieron.
+
+@52:52 - Jorge Carrera (blasterinformation.com)
+Ok.
+
+@52:53 - Martin Hendrik (ALFA ELECTRONIC)
+Esa es la forma como nosotros radicamos facturas electrónicas.
+
+@52:57 - Jorge Carrera (blasterinformation.com)
+Esa factura, Manuel, es factura. ¿Tú cargas factura por factura? ¿Ese archivo es factura por factura? ¿O yo puedo tener varias facturas en ese archivo?
+
+@53:06 - Martin Hendrik (ALFA ELECTRONIC)
+Se pueden cargar varias, las que uno quiera. ¿El riesgo cuál es? Que si una línea tiene un error, se colapsa todo el archivo.
+Ok. Entonces, igual nosotros no es que facturemos muchísimas líneas todos los días. Claro. No, entonces generalmente cargamos factura por factura.
+Claro. Sí.
+
+@53:32 - Jorge Carrera (blasterinformation.com)
+El alcance ahorita del nuevo sistema, claro, el nuevo sistema no va a facturar, por lo que veo, por lo que me estás explicando, porque la ley te obliga que tienen que ser estas empresas, o así junto con.
+Sí, o otras.
+
+@53:49 - Martin Hendrik (ALFA ELECTRONIC)
+O otras. Digamos, estos correos, este sistema que tenemos actualmente, con este sistema facturábamos. Pero como... como... soz 이쁘, ley.
+Eso cambió hace unos años, porque antes uno facturaba, así como yo hago una remisión, yo sacaba un papel que se llama factura.
+Claro, claro. Entonces yo sí facturaba directamente desde este software. Él tiene ese módulo que se llama facturación, ¿sí? Y digamos que en teoría el software nuevo debe tenerlo, porque de este módulito de facturación o de esta ventanita es que yo saco todos los datos para el archivo plano que cargo en el otro software para hacer la factura.
+Claro, o igual tiene que tenerlo, igual tiene que tenerlo.
+
+@54:40 - Jorge Carrera (blasterinformation.com)
+Solo que imprimirlo va a generar un archivo que va a ser leído por otro sistema. Ah, exactamente, sí.
+
+@54:48 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces, por ejemplo, le voy a mostrar ahora sí como yo saqué mi remisión y ahora voy a hacer una factura, ¿sí?
+Entonces. Entonces, le decía que en esta barrita salen los equipos para facturar, ¿cierto?
+
+@55:15 - Jorge Carrera (blasterinformation.com)
+Sí.
+
+@55:18 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces, si yo quiero facturar este cliente que le acabo de hacer el ejemplo, yo le, es el 102 y el 143.
+Entonces, yo me voy a parar en el 102. Sí. Acá sería chévere que hubiese un botón que dijera de una vez facturar, pero no lo hay.
+Yo lo que hago es que le doy clic a este que dice seguimiento y entro. Bueno, hay varias maneras.
+Yo lo hago por aquí. aquí. Y llego directo al código, con todos sus datos, con la lista de los repuestos y todo eso.
+Y es tu código 10, ¿cómo se factura? Mes, todo lo que se va a facturar cambia a posición 20.
+Y de primeras el mes en que estoy facturando, entonces, marzo, 3.20. ¿Sí? Ok. Y le digo facturar. Mira, acá hay un botoncito que dice facturar.
+Facturar. Cuando yo le doy facturar, acá donde dice número factura, este sistema me va a generar un número de factura.
+Que era la factura que usábamos antes. Ok. Entonces, yo le digo facturar. ¿Está seguro de realizar la facturación? Sí o no.
+Entonces, yo le digo sí. Gracias. Gracias. Gracias. Gracias. Gracias. Entonces, ya facturó.
+
+@57:21 - Jorge Carrera (blasterinformation.com)
+Yo, entonces, se me va a actualizar esto y ya solo me va a quedar un código a nombre de ellos.
+
+@57:27 - Martin Hendrik (ALFA ELECTRONIC)
+Míralo, el otro. El del diagnóstico en urgencia. Ok. Lo que yo le quería decir es que yo puedo facturar un cambio de código, ¿cierto?
+O yo voy directamente al nombre de la empresa. Digamos que yo estaba ahí en Bavaria. Pero yo estoy facturando, quiero facturar desde esa empresa, Seria Estás.
+Entonces, yo la busco por aquí. Eh, yo estoy back Bavaria.
+
+@57:59 - Jorge Carrera (blasterinformation.com)
+Gracias.
+
+@57:59 - Martin Hendrik (ALFA ELECTRONIC)
+Gracias. Gracias. Me voy a la pestaña de códigos y acá están las dos linecitas, mírelas. Si hubiese un equipo en el sistema, pues acá me aparecerían dos.
+En este caso solo hay esas dos líneas. Mire que esta es la que acabé de hacer, ya me quedó en 320.
+Cuando yo facturo algo en este sistema, esa posición ya no se puede modificar. Ya el equipo quedó facturado, no hay reversa.
+La única forma es hacer una nota crédito. Claro. Mire, acá ya no me deja ponerle ni 5, ni 10, ni 1, nada, él no deja cambiar.
+Ah, mire. Y él me generó la factura. Él sigue generando facturas en este sistema, solo que pues ya no las usamos.
+Claro, claro.
+
+@58:50 - Jorge Carrera (blasterinformation.com)
+Mírela.
+
+@58:51 - Martin Hendrik (ALFA ELECTRONIC)
+Acá está. Factura CO935. Me dicen qué fecha la hice. Y como en este sistema uno pone cuál es El plazo de pago del cliente, el de una vez calcula la fecha en que se vence, mírala.
+
+@59:05 - Jorge Carrera (blasterinformation.com)
+O cuando tú le dices facturar, automáticamente él toma todos los datos que ya existen dentro del sistema y te genera la factura.
+
+@59:10 - Martin Hendrik (ALFA ELECTRONIC)
+Me genera la factura, me dicen cuándo la generé, o sea, hoy. Y según el plazo de crédito que tiene el cliente, de una vez me dice cuándo se vence.
+El 8 de abril dice, tiene 30 días de crédito. Ok. Y él tiene otra celdita que dice fecha de pago.
+¿Sí? Entonces, uno puede ingresar acá en qué fecha pagó el cliente. Este sistema también permite ver, por ejemplo, de todas las facturas que tiene generado un cliente, cuáles están pendientes de pago, cuántos atrasos lleva.
+¿Sí? Claro, claro. Y lo que yo quiero adicional en este software es otro campo que sea de comentarios libres.
+Donde yo pueda pueda poner. Ya puedo poner la fecha de pago, pero quiero otro de comentarios libres donde yo pueda escribir qué retenciones me hizo el cliente.
+Sí. Ok. Esto, bueno, yo le voy a dar clic acá. A ver. Bueno, como no me está dejando ver la factura, se la quería mostrar, pero no es grave.
+
+@1:00:43 - Jorge Carrera (blasterinformation.com)
+Entonces, aquí facturaste solamente la reparación del equipo, más no se facturó el diagnóstico urgenico.
+
+@1:00:51 - Martin Hendrik (ALFA ELECTRONIC)
+No, se facturan separados. Ok, perfecto. Entonces, acá está la línea de diagnóstico urgente, mire que sigue en posición. Son 10 y son 300 mil pesos.
+Entonces yo voy a entrar a este código. También puedo entrar por acá. Eso es lo que yo quería mostrarle.
+No necesariamente tiene que ser desde allá, desde el panel de control. Sí, también por aquí. Sí, también. Y miren, los datos son, la ventana es la misma.
+Entonces yo le digo, este 10 lo voy a facturar, entonces se me vuelve 20. ¿Y en qué me lo estoy facturando en marzo?
+Repete.
+
+@1:01:30 - Jorge Carrera (blasterinformation.com)
+Y le digo facturar.
+
+@1:01:34 - Martin Hendrik (ALFA ELECTRONIC)
+¿Está seguro de efectuar la facturación? Sí. Listo. Yo me voy a devolver. Voy a cambiar de año para que me actualice.
+Gracias. Gracias. Gracias. Gracias. Mire que ya están ambos en posición 320.
+
+@1:02:03 - Jorge Carrera (blasterinformation.com)
+Sí.
+
+@1:02:04 - Martin Hendrik (ALFA ELECTRONIC)
+Si yo me desplazo, acá él dice cuál es el número de factura que genero para cada línea. Sí. Perfecto, sí.
+Listo. Entonces, ahora sí, yo digo, bueno, necesito sacar la información para hacer mi factura electrónica con el otro software.
+Entonces, yo me voy al menú inicial y en mi módulo de extracciones, ¿lo recuerda? Sí. Listo. Ya hay una extracción diseñada, creada.
+Se lo voy a mostrar. Entonces, le digo nueva extracción. Esta extracción está guardada con el nombre de facturación electrónica.
+Gracias. Sí.
+
+@1:02:59 - Jorge Carrera (blasterinformation.com)
+Sí. Y él me dice acá, ¿qué quiere facturar?
+
+@1:03:06 - Martin Hendrik (ALFA ELECTRONIC)
+Facturas que usted hizo en el sistema, ¿de cuándo? Entonces, yo le puedo decir de fecha igual a tal fecha o de fecha inferior a tal fecha, ¿sí?
+Entonces, yo le digo, muéstrame las facturas que yo hice en el sistema hoy.
+
+@1:03:27 - Jorge Carrera (blasterinformation.com)
+09 de marzo del 2026. Hace mucho no lo hago, voy a ver si es así porque ya no me acuerdo.
+
+@1:03:39 - Martin Hendrik (ALFA ELECTRONIC)
+Le voy a dar extracción. Ah, mire que acá abajito ya están las columnas de todos los datos que yo necesito que él me saque.
+Ok. Y están organizadas de la manera en que nos lo solicitó la empresa Oasis Comp. ¿De De tal manera que cuando yo subo mi archivo, es perfectamente compatible con el formato que ellos tienen para cargar cada dato, en ese orden.
+
+@1:04:10 - Jorge Carrera (blasterinformation.com)
+Ok, o sea, tú puedes armar cómo quieres tú el archivo, la estructura del archivo como tal. Sí.
+
+@1:04:19 - Martin Hendrik (ALFA ELECTRONIC)
+Yo puedo decir, no, yo necesito que me saque primero la columna del nombre del cliente y no la columna del NIT.
+Pero si yo lo cambio y yo cargo el archivo plano al software de facturación electrónica, hay un error. No me va a hacer la factura porque es que ese software ya está parametrizado para que me acepta los datos en un orden.
+Ok, perfecto. Hay datos que son solo texto, otros son solo números, otros son mixtos. Entonces, este archivo ya está diseñado para que saca los datos que necesito en el orden que ellos me lo pidieron.
+Claro. Sí. Sí. Y hay celdas que solo le caben, no sé, 20 números o tal cosa, todo eso ya está organizado.
+
+@1:05:09 - Jorge Carrera (blasterinformation.com)
+Perfecto. Entonces yo le voy a dar extraer.
+
+@1:05:13 - Martin Hendrik (ALFA ELECTRONIC)
+Y mire, él me sacó las dos líneas de la empresa C10SAS, que es la que acabo de hacer. Él me está diciendo que esto es un NIT, o sea, es una empresa, no es una persona natural.
+El número del NIT, este software, bueno, el nombre del cliente, nosotros acá le pusimos fax, pero esto no es fax, esto es el código postal.
+El teléfono, la dirección, el correo de facturación electrónica de ese cliente. Mi NIT, el nombre de nosotros, nuestro código postal, nuestra dirección.
+Él saca el número de factura que hizo en este sistema, pero esa columna la hicimos es porque ahí vamos, después manualmente nosotros le ponemos el número de factura del otro software.
+¿Manualmente? El consecutivo del otro software, sí. ¿Dónde se lo colocan? ¿En qué parte? Ya ahorita le muestro. Ok. Pero en sí, él me saca, él me está sacando acá en este archivo todos los datos que yo necesito para generar la factura, ¿sí?
+Ok. Entonces, mire, yo le voy a decir, listo, vista previa de este archivo. O sea, yo necesito que el software nuevo también me bota todo esto para poder seguir facturando normal.
+Claro, claro. Y no, guardar. Y no, Eh… Gracias.
+
+@1:07:01 - Jorge Carrera (blasterinformation.com)
+Carpeta Fathom, Fathom, Fathom, Electrónica.
+
+@1:07:13 - Martin Hendrik (ALFA ELECTRONIC)
+Lo saco en archivo Excel y me digo guarda. Entonces acá tengo mi archivo. Yo le cambio estos colores. Estos son todos los datos que él me sacó de mi sistema.
+
+@1:07:56 - Jorge Carrera (blasterinformation.com)
+Ok Ok Ok Ok
+
+@1:08:00 - Martin Hendrik (ALFA ELECTRONIC)
+Cada línea, cada línea es un código SEO. Entonces, mire que acá está el valor del equipo, el valor con el IVA, el valor más IVA, el código del equipo.
+
+@1:08:22 - Jorge Carrera (blasterinformation.com)
+Acá todo el sistema. Todos los datos que necesitas para que el sistema. Sí. Listo.
+
+@1:08:28 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces, yo, ¿qué hago? Nosotros tenemos un archivo plano que nos lo dio la empresa de facturación electrónica. ¿Qué es este?
+Archivo plano validación previa resolución de no sé qué. Míralo. Entonces, ¿yo qué hago? Yo elimino. elimino. Gracias. Espéreme, yo miro cuál fue la última factura que ella hizo.
+Al parecer fue la 3559, lo voy a corroborar en este software. Sí. Listo. Yo, ¿qué hago? Yo cojo estas dos líneas que acabé de generar.
+Este es el archivo donde yo voy controlando todo lo que llevo facturado. Yo pego esas dos línecitas ahí. Y yo empiezo a mirar si hay datos que tengo que corregir.
+8, 60, 5, 11, 9, 11. ¿Qué es lo más? Pues lo ideal es que la persona de facturación, siempre que vaya a facturar algo, lo verifique directamente con la orden de compra del cliente.
+Claro.
+
+@1:11:13 - Jorge Carrera (blasterinformation.com)
+Entonces la voy a abrir. La orden de compra del cliente.
+
+@1:11:45 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, entonces voy a verificar el NIT 86511911, 86511911, sí, raya 8, raya 8, se llaman series SAS, series SAS.
+El código postal. Bueno, si no me sale acá, si normalmente lo saco es del root. Vamos a ver si el root está cargado.
+Sí. Hay una pestaña que en algún momento yo le explicaba que se llamaba como anexos, pero es del cliente, no es de un equipo, sino todos los, la documentación del cliente.
+Sí, ok. Ahí yo guardo la cámara de comercio, el root, comunicados de facturación, toda la información que el cliente me manda y la cargamos acá.
+
+@1:12:56 - Jorge Carrera (blasterinformation.com)
+Y esos campos que te estás pidiendo el archivo. Que no te lo genera automáticamente. Esos campos deberían estar dentro del sistema para que te lo genere de manera automática.
+Y no entrar a ver el documento.
+
+@1:13:11 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, sino que si ve que este cliente solo tiene dos líneas este año. Sí. Es un cliente nuevo. Entonces, por eso tengo que revisar por primera vez que todos los datos estén bien.
+Cuando es un cliente al que ya le he facturado antes, pues los datos ya están verificados.
+
+@1:13:28 - Jorge Carrera (blasterinformation.com)
+Perfecto.
+
+@1:13:30 - Martin Hendrik (ALFA ELECTRONIC)
+5175. Entonces, el código postal está bien. Acá tengo que corregirle algo. Es que en las dos, sí vio que yo tuve que corregir acá.
+Acá estaba el NIT completo. Yo lo borré solamente. Entonces, si es guión ocho, mírelo. Digamos, acá en mi sistema, en un lado se pone el NIT completo.
+Y en el otro lado... Solo el dígito de verificación, porque cuando yo haga la extracción tienen que salir así separados, válida.
+Ok. Ahí ya me quedan guardaditos para la próxima vez, ya no me va a volver a coger ese error.
+¿Sí? Sí. Y listo. Entonces, el nombre, la ubicación, el teléfono. ¿Esto se verifica siempre con el cliente que primera vez se le factura?
+Claro, la verificación inicial.
+
+@1:14:42 - Jorge Carrera (blasterinformation.com)
+Sí.
+
+@1:14:46 - Martin Hendrik (ALFA ELECTRONIC)
+703-668. Este teléfono es diferente. Este teléfono es diferente. Este Ya después, en una próxima ocasión, los datos ya están actualizados, no hay que hacerlo más.
+Carrera 7, aquí no me traigo la cara. El correo de ellos, acá pongo por defecto el mío. Acá en esta columna se pone si es gran contribuyente o no.
+Si ve como es cliente primera vez, me salió vacío. Pero vea, no está lleno en el sistema esa información todavía.
+Entonces, eso yo lo pongo acá en esta primera pestaña.
+
+@1:15:40 - Jorge Carrera (blasterinformation.com)
+Lo saco del root.
+
+@1:15:48 - Martin Hendrik (ALFA ELECTRONIC)
+Esta es una persona jurídica.
+
+@1:15:56 - Jorge Carrera (blasterinformation.com)
+Voy a ligar a esta sombra con la red.
+
+@1:15:59 - Martin Hendrik (ALFA ELECTRONIC)
+Voy Ahí ya quedó guardado ese campo, ya no me va a volver a salir de ese error. Y acá lo voy a hacer manualmente.
+Claro. Listo, me dice tipo de identificación del que está vendiendo el servicio. sea, yo, un NIT, mi NIT, mi dígito de verificación que es cero, mi nombre, mi código postal, mi dirección.
+Y acá, ¿se acuerdan que yo le dije que él saca el número de factura del sistema? Sí. Yo la borro y yo pongo el consecutivo que llevo, pero con este software.
+Esta es la factura 3560. Espérenme un momento, yo le voy a avisar a la persona de facturación que estoy haciendo una factura.
+Me dice que ambas estemos haciéndola. Fathom, Jorge Fathom, Jorge Carrera.
+
+@1:18:00 - Jorge Carrera (blasterinformation.com)
+Esperamos en el momento, ¿qué hablamos con la audiencia? ¿Cuál es la audiencia? ¿Cuál es la audiencia?
+
+@1:18:13 - Martin Hendrik (ALFA ELECTRONIC)
+Bueno, entonces, ella va en la 3559, yo voy a hacer la 3560. La voy a poner en las dos líneas, porque ambas líneas son del mismo cliente, ¿sí?
+Para que me salgan los dos valores en una sola factura. Listo. Estos son parámetros que están configurados, ese 2, toca dejarlo así.
+Acá la fecha de la factura. Entonces, uno la corrobora, que esté bien. Bien. Y la hora siempre dejamos 00, nunca nos ponemos a poner la hora.
+Acá le quito este 8. Gracias. Ya lo que, ya quedó corregido en el sistema, esto no va a volver a pasar.
+Minit, ¿cuándo se vence? Ya dijimos que se vence el 8 de abril. Entonces, los clientes que tienen crédito acá, automáticamente está configurada la extracción para que salga un 0.
+Si fueran contraentrega, salía un 1, como en estas líneas. Ok.
+
+@1:19:30 - Jorge Carrera (blasterinformation.com)
+Sí, 0.
+
+@1:19:33 - Martin Hendrik (ALFA ELECTRONIC)
+Acá en este campo sale el número de orden de compra.
+
+@1:19:37 - Jorge Carrera (blasterinformation.com)
+Listo.
+
+@1:19:48 - Martin Hendrik (ALFA ELECTRONIC)
+Acá toca poner, esto sí, creo que no lo tenemos configurado, me toca arreglarlo porque me imagino que ya lo está haciendo manualmente a toda hora y eso le debe quitar un montón de tiempo.
+Gracias. Gracias. Gracias. En ambos lados se pone la fecha del día en que se está haciendo la factura. Listo.
+Ahora aquí sale el valor de cada código. Acá vuelve y sale. Acá sale solo el IVA. Y acá sale el subtotal más el IVA.
+Aquí. Lo suman. Ok. Eso el software ya me lo entrega sumado. ¿Sí? Aunque acá tengo que mirar algo. Ahorita me dicen que me equivoque.
+Bueno, ya miramos. Listo. Cuando yo voy a hacer en una sola factura dos líneas o más, entonces es ítem uno e ítem dos.
+Lo cambio manualmente.
+
+@1:21:01 - Jorge Carrera (blasterinformation.com)
+Ok.
+
+@1:21:03 - Martin Hendrik (ALFA ELECTRONIC)
+Acá sale el código del equipo, la diferencia es que no sale la palabra CO. ¿Es porque este software con el que facturamos acá solo recibe, creo que, números?
+
+@1:21:14 - Jorge Carrera (blasterinformation.com)
+El sistema cuando detecta que dice 1 es porque es una factura nueva. Si ves que dice 1 y 2, pertenecen a la misma factura.
+O son dos ítems de la misma factura. Aunque tú, para ver, tú colocaste, ah, no, aquí lo colocaste, las facturas, le colocaste el mismo número de factura.
+
+@1:21:32 - Martin Hendrik (ALFA ELECTRONIC)
+El mismo número de factura, las dos líneas. Ok, perfecto, ahí lo identificaste, perfecto. Y anualmente yo voy diciendo cuántos ítems son, 1, 2, 3, 4, 5.
+Perfecto. El software nuestro no puede saber si yo quiero facturar esas líneas todas en una sola factura o no.
+Entonces él no me va a sacar de una vez 1, 2, 3, 4, él me los bota todos como 1.
+Y yo los cambio acá.
+
+@1:21:58 - Jorge Carrera (blasterinformation.com)
+Ok. Sí, eso no es grave, eso puede seguir saliendo así.
+
+@1:22:03 - Martin Hendrik (ALFA ELECTRONIC)
+Acá sale, mire, le voy a mostrar. Cuando yo ingrese la orden de compra de este cliente. Mire que yo puse acá el número de orden de compra.
+Sí. No sé si usted recuerda cuando yo le mostré cómo se ingresaban las órdenes de compra.
+
+@1:22:37 - Jorge Carrera (blasterinformation.com)
+Sí, cuando, sí, sí, sí, claro. Pone acá el número de orden de compra y acá dice en qué fecha llegó la orden de compra, ¿cierto?
+
+@1:22:44 - Martin Hendrik (ALFA ELECTRONIC)
+Sí. Entonces, en la extracción, en esta celda, él me saca ese número de orden de compra, mirelo. 22 421-0.
+Y adicionalmente, él me agrega una descripción. ¿Cuál descripción? Reparación, esta.
+
+@1:23:02 - Jorge Carrera (blasterinformation.com)
+¿Qué es lo que estoy facturando?
+
+@1:23:05 - Martin Hendrik (ALFA ELECTRONIC)
+Reparación. ¿De qué cosa? De un variador. ¿De qué variador? Este. ¿Y cuál serie? Si hay una serie, él me saca los datos del módulo cuando yo registro los equipos en el sistema.
+Claro, son unos datos básicos.
+
+@1:23:23 - Jorge Carrera (blasterinformation.com)
+Sí, ya.
+
+@1:23:24 - Martin Hendrik (ALFA ELECTRONIC)
+Reparación, variador tal, marca tal. Entonces, M los pone todos en una sola celda. Esta no es reparación, este es el diagnóstico.
+Entonces. Gracias. Gracias. Y acá, entonces, viene otra vez el valor unitario, cuál es el porcentaje del IVA, 19%, otra vez el valor, acá viene el IVA otra vez, la fecha en que se vence la factura, que vuelvo y la corroboro, listo.
+Gracias. Gracias. Gracias. Gracias. Si es un cliente que tiene crédito, acá nos, se pone 99. Y si, y si no tiene crédito, se dejan ceros.
+Y la diferencia, acá la, la diferencia es que, acá manualmente sí me toca sumar esto. 3,808.
+
+@1:25:34 - Jorge Carrera (blasterinformation.com)
+Así. Está colocando el monto total de la factura.
+
+@1:25:40 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, acá sale el monto por línea, pero como son dos líneas en la misma factura, sí me toca manualmente sumarlas.
+Y el, y el total va en ambas líneas. Perfecto.
+
+@1:25:52 - Jorge Carrera (blasterinformation.com)
+Bueno, entonces yo hago eso.
+
+@1:25:57 - Martin Hendrik (ALFA ELECTRONIC)
+Una vez que yo verifico todas todas esas informaciones. todas esas informaciones. Bueno, Bueno, mira, yo le avisé que tenía el archivo abierto y ella también lo tiene abierto, entonces no me deja guardarlo.
+Y le dije, ok. Entonces, ella tenía acá una línea, la última factura que hizo fue de este cliente Cartón de Colombia, entonces voy a eliminar esos datos.
+Y los voy a pegar los de la nueva factura, que es la que acabo de revisar. Sí. Sí. Sí.
+Sí. Voy a cruzar los dedos que no me haya quedado nada mal porque como hace rato no facturo. No, de todas maneras, si quieres no.
+
+@1:27:10 - Jorge Carrera (blasterinformation.com)
+O no la hago y que ella la revise.
+
+@1:27:12 - Martin Hendrik (ALFA ELECTRONIC)
+claro.
+
+@1:27:12 - Jorge Carrera (blasterinformation.com)
+Ya yo sé que aquí lo que te genera es el archivo plano, el archivo TXT.
+
+@1:27:17 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, ese archivo, entonces, bueno, yo le voy decir que lo cargue ella porque. Sí, sí, sí. Cerremos esto. Bueno, entonces, básicamente ya lo que yo hago es venir al software de la facturación, ingreso al módulo por donde yo cargo ese archivo plano, que es este 961, y yo cargo ese archivo plano, que sería este, que dice resolución de algo.
+Míralo. Este archivo, mira, ya tiene los datos de la empresa serie SA. ¿Sí ves que sale todo separado por comas?
+Sí, sí. Todo eso. Yo le digo abrir. Sí. Aceptar y ejecutar y Prunel me genera la factura electrónica en PDF y en XML.
+Para ser enviada al cliente.
+
+@1:28:08 - Jorge Carrera (blasterinformation.com)
+Sí, y así se hace la facturación.
+
+@1:28:12 - Martin Hendrik (ALFA ELECTRONIC)
+Ese es el proceso para facturar. Entonces lo que yo quiero es que en el nuevo software efectivamente me siga saliendo, que yo le pueda poner con qué número, acá este es el número de factura del sistema, pero que yo le pudiera...
+
+@1:28:33 - Jorge Carrera (blasterinformation.com)
+El correlativo de la facturación del sistema externo.
+
+@1:28:36 - Martin Hendrik (ALFA ELECTRONIC)
+Que yo pueda poner el número de factura del sistema externo también, o tal vez otra columna, digamos número de factura oasis, algo así.
+Y que yo tenga una... Y acá dice, mira, ¿en qué fecha se vence? Acá yo puedo poner en qué fecha el cliente me paga.
+ya... Y Gracias. Pero yo quiero otra columna de comentarios libres donde yo pueda poner lo que le digo. Acá nos hacen, no sé allá donde usted, pero acá nos hacen retención en la fuente, retención de IVA, retención de una cosa y de otra.
+Y eso, la contadora de esa información es muy importante. Yo actualmente le voy a mostrar, lo hago también en un Excel.
+Mire.
+
+@1:29:26 - Jorge Carrera (blasterinformation.com)
+Todas las retenciones no están en esta factura, en este sistema de facturación. porque no tengo donde registrarlas.
+
+@1:29:35 - Martin Hendrik (ALFA ELECTRONIC)
+Ok. Entonces yo, ¿cómo hago? Yo tengo un archivito. Lo voy a mostrar. Yo tengo un archivo donde yo registro todas las facturas que se hacen.
+Y ahí es donde... Donde voy registrando qué retenciones me hicieron en cada factura.
+
+@1:30:07 - Jorge Carrera (blasterinformation.com)
+Sería ideal que todo esté dentro del sistema para que la contadora pueda visualizarlo.
+
+@1:30:11 - Martin Hendrik (ALFA ELECTRONIC)
+Claro, en vez de tener un Excel para una cosa, un Excel para otra. Claro, claro.
+
+@1:30:17 - Jorge Carrera (blasterinformation.com)
+Entonces necesito un sumarizado, necesito un resumen por cada impuesto y ahí lo vas a ver.
+
+@1:30:22 - Martin Hendrik (ALFA ELECTRONIC)
+Sí.
+
+@1:30:22 - Jorge Carrera (blasterinformation.com)
+Primeral, por rango de fecha. Sí.
+
+@1:30:26 - Martin Hendrik (ALFA ELECTRONIC)
+Ajá. Entonces, esto está como lento, pero espérenme a ver. Ah, mírelo. Entonces, yo acá registro el número, la factura, el valorcito, la fecha, en que la hice, la fecha en que se me vence, el código del equipo, qué cliente.
+Y acá yo pongo en qué fecha pagaron. Gracias. Gracias. Gracias. Y una columna, mire, esta es la que yo quiero que salga en el sistema, donde yo digo qué retenciones me hicieron.
+Entonces, este cliente solo me hizo reteíba, listo, y en el porcentaje correcto, por eso yo le digo retenciones o qué reteíba.
+Pero a veces, por el tipo de régimen que tenemos, digamos, espérenme, eso está muy viejo, eso tiene como un filtro.
+De un momentico. Eso está bien. Gracias. Gracias. Gracias. Gracias. Gracias. Gracias. Gracias. Gracias. Gracias. Gracias. Gracias. Gracias. Fathom, Fathom.
+Fathom, Fathom, Fathom, Fathom, Fathom, Fathom. Quisiera hacerlo directamente en el software, después de estarlo haciendo aquí. Claro, claro. Entonces, sino que como el software no tiene el campo para poner los datos de las retenciones, pues lo hago en un Excel, donde yo lo puedo hacer completo.
+Esas retenciones también tienen que ir en la factura electrónica, ¿no? No. No. No, porque es que lo que pasa es que dependiendo de en qué ciudad está el cliente, me aplican unas retenciones o me aplican otras.
+
+@1:33:31 - Jorge Carrera (blasterinformation.com)
+Ok, y a la hora de cargar esas retenciones, supongamos que a un cliente se le aplica, se le aplica porque está en cierto lugar, ¿esa retención tienes que cargarla en la factura electrónica?
+No.
+
+@1:33:44 - Martin Hendrik (ALFA ELECTRONIC)
+No. Es que las retenciones no las aplico yo, me las aplican ellos a mí. Perfecto. Entonces, mire, por ejemplo, acá yo en el Excel ya hice un filtro de todos los pagos que me entraron en enero.
+Ok. Yo le mando esta relación a la contadora. Ella sabe. ¿Sabe qué pagos me entraron y qué retenciones me hicieron?
+hicieron a ese pago? Claro, entonces ella después entiende si la factura era de 3.600 ¿por qué me pagaron 3.520.000?
+Ah, porque me hicieron tal retención. Ok, yo entiendo. En el software no tengo una columna para ponerle esas retenciones, sino yo sacaría una extracción directamente del software y entraría la fecha de pago directamente en el software.
+¿Pero a qué me sirve entrar la fecha de pago acá si no tengo dónde poner las retenciones? O sea, es hacer más trabajo para nada, ¿no?
+Pero en el nuevo software, si yo puedo poner todo acá, pues ya es más fácil. Perfecto. ¿Sí? Listo, entonces yo hice la factura en Oasis y como le comentaba, cada vez que hago una factura, me llega un correo de esta empresa, Oasis.com, con así.
+Me llega este correo donde dice ALFA ELECTRONIC hizo la factura número tal para tal cliente y me manda el .zip que tiene el PDF y el XML y eso yo se lo mando al cliente, al correo de facturación que él me dio.
+Y así se hace el proceso de facturación. Y así con este archivo es que llevamos el control de los pagos, pero me gustaría que ese control de pagos, como le digo, pues yo lo puedo hacer directamente en el software.
+Claro, llega el cliente y me pagó.
+
+@1:35:44 - Jorge Carrera (blasterinformation.com)
+Me pagó y ¿dónde cargo ese pago? Acá en este Excel.
+
+@1:35:49 - Martin Hendrik (ALFA ELECTRONIC)
+En el Excel. Sí, porque no, como le digo, acá este software sí tiene el campo para poner la fecha del pago.
+Mírelo, fecha de pago. Pero no tengo donde escribir las retenciones, entonces yo no lo registro en el software, por eso lo hago aparte en un Excel.
+Claro. Pero si yo lo pudiera hacer en el software, yo podría sacar directamente del software un informe de todas las facturas que me están debiendo, o de las facturas que me pagaron en este mes, o en cualquier mes, ¿sí?
+
+@1:36:24 - Jorge Carrera (blasterinformation.com)
+Claro, porque fíjate a dónde quiero enlazar, porque yo necesito, todavía tengo el señor del despacho, la muchacha, todavía tengo el despacho, no me ha entregado el equipo, todavía ella tiene el equipo allí en el almacén.
+Bueno, de alguna manera ella tiene que enterarse de que ya pagaron. Sí.
+
+@1:36:49 - Martin Hendrik (ALFA ELECTRONIC)
+¿Cómo se entiende? ¿Actualmente cómo es? Ajá.
+
+@1:36:55 - Jorge Carrera (blasterinformation.com)
+Puede sacar el equipo, si no, no le entregaron. Vamos a cerrar este archivo.
+
+@1:37:00 - Martin Hendrik (ALFA ELECTRONIC)
+Ajá. Y cuando un cliente manda un soporte de pago por el WhatsApp o por el correo, cualquier persona del área administrativa comercial me lo puede mandar por acá.
+Mira, como en este caso, me mandaron un soporte y me dicen, ¿me confirmas por favor si este pago entró?
+Tal código, tal empresa. ¿Qué? Entonces, yo lo que hago es revisar el soporte y miro en el banco que se pago si haya entrado.
+Claro. Voy a verificar de una vez, lo voy a confirmar de una vez. A ver. Dice que pagaron el 6 de marzo.
+Sí, acá ya lo vi. Entonces. Entonces. ¿Yo qué hago? Yo busco en el sistema, esa empresa, Sanelán. No. Sí.
+260, 200. Ah, dice que vale 1.650. Yo tengo un archivito de Excel donde yo calculo mis retenciones. 1.650. Este cliente.
+1881-561.
+
+@1:39:21 - Jorge Carrera (blasterinformation.com)
+En ninguno de los cálculos que tengo me da ese valor, o sea.
+
+@1:39:25 - Martin Hendrik (ALFA ELECTRONIC)
+No coincide. No, entonces me toca empezar a mirar qué retenciones aplicaron, y si no la encuentro, preguntarle al cliente, ¿sí?
+Claro, claro. En caso que coincida. En caso que coincida, yo me voy al Excel que le mostré ahorita, y escribo, ah, entonces yo le digo a las chicas, pago recibido, pueden entregar el equipo, pueden despachar.
+Y voy y registro en mi Excel la fecha del pago y qué porcentajes de retenciones me practicaron. Gracias. 1881-561.
+En ninguno de los cálculos que tengo me da ese valor, o sea. No coincide. No, entonces me toca empezar a mirar qué retenciones aplicaron, y si no la encuentro, preguntarle al cliente, ¿sí?
+Claro, claro. En caso que coincida.
+
+@1:40:38 - Jorge Carrera (blasterinformation.com)
+En caso que coincida, yo me voy al Excel que le mostré ahorita, y escribo, ah, entonces yo le digo a las chicas, pago recibido, pueden entregar el equipo, pueden despachar.
+Y voy y registro en mi Excel la fecha del pago y qué porcentajes de retenciones me practicaron. Gracias. Para poderle enviar a fin de mes la relación a la contadora.
+En este caso, que no coincide nada, te conversa con el cliente para saber qué pasó, qué retenciones hubo en ese pago.
+
+@1:41:11 - Martin Hendrik (ALFA ELECTRONIC)
+Ah, mírelo, ya, ya, 4%. 1881.569, hicieron 4% RTE Fuente y RTE ICA, mírelo, es este. Entonces, un ejemplo, yo les digo.
+No, no, no, no.
+
+@1:42:00 - Jorge Carrera (blasterinformation.com)
+Mi persona se va a hacer un poco antes.
+
+@1:42:03 - Martin Hendrik (ALFA ELECTRONIC)
+Mi persona se a poco antes. Ese archivo donde se registran las fechas de pago y las retenciones no lo lleno yo, la llena la chica la de facturación.
+Entonces yo por eso pongo los datos acá. Cuando yo confirmo el pago, yo verifico retenciones, se las doy y ella es la que me va llenando ese archivo.
+O sea, ella sería la que me alimentaría en el sistema esa información, la fecha del pago y qué retenciones.
+Perfecto. Y ya automáticamente ya pagaron, despachin. Sí. Bueno, ahí no lo escribí, pero... Pero... Ya asumen, pues ya debe saber.
+Ya lo entienden que pueden entregar, sí. Pueden entregar. Y el equipo que se haría dentro del sistema, sumo yo...
+A un estatus de que fue entregado. No tengo donde registrar eso, sería muy chévere que hubiese acá una columna que diga, estado de la entrega, o está, sí, entregado, o pendiente de despacho, no sé.
+Sí, sería chévere. Sí, sí, claro. ¿A no, listo? Sí. Espectacular. Ok, ya estoy cerrando mi ciclo. Antes, por ejemplo, mire, entonces, ¿yo qué hago?
+Digamos, yo digo, bueno, yo quiero saber qué clientes me deben facturas.
+
+@1:43:45 - Jorge Carrera (blasterinformation.com)
+En vez de hacer la extracción en el software, pues yo la hago de mi Excel. Yo saco una extracción de mi Excel.
+Como ahí ya estoy llenando quién me pagó y en qué fecha y qué retenciones me hizo. Pues yo saco.
+marco de este mismo Excel, la extracción de cuáles facturas me aparecen sin pagar y cada, digamos, cada viernes le doy la lista o la misma chica de facturación saca la lista de esos clientes que no han pagado y que la factura ya se venció y les cobran.
+Claro.
+
+@1:44:16 - Martin Hendrik (ALFA ELECTRONIC)
+Pero se podría hacer directamente del software.
+
+@1:44:20 - Jorge Carrera (blasterinformation.com)
+Decirles un ejemplo. Si la fecha de vencimiento era 27 de febrero y no tiene fecha de pago, pues, esta factura saldría en esa extracción de las que están pendientes de pago.
+ACTION ITEM: Implement direct flat-file export for DIAN e-invoicing (Oasis.com) - WATCH
+Y saldrían todas las pendientes para todos. Claro, de una vez. No tienes que estar brincando de un Excel a otro.
+Ajá, exacto. Claro.
+
+@1:44:47 - Martin Hendrik (ALFA ELECTRONIC)
+También estaba viendo el proceso que existe ahorita para la generación del archivo, el archivo plano para el sistema de facturación externo.
+Sí. Claro, ahí podemos eliminar varios...
+
+@1:45:00 - Jorge Carrera (blasterinformation.com)
+Pasos, podemos eliminar varios pasos, de manera tal de que el archivo de una vez cuando salga, salga de una vez el archivo plano directo, de una.
+A la hora de cualquier corrección la haces en el sistema. Y no lo haces en el sistema. sí. La haces en el sistema, el sistema puede una vez botar el archivo plano y no tienes que estar entrando en varios Excel para generar el CSV.
+Sí. Ah, no, listo. Déjame, este proceso sí involucra varias cosas. Esta parte de la remisión de despacho y facturación.
+
+@1:45:47 - Martin Hendrik (ALFA ELECTRONIC)
+De todas maneras, pues me imagino que apenas que se vaya poniendo en marcha el software, uno puede ir mirando qué cosas se optimizan, se hacen más prácticas.
+No, y se va a hacer por módulo. Se hace por módulo, vamos a hacer este módulo y vamos a hacer el otro módulo, mira, nos faltó esto, el otro módulo y vas a engranando poco a poco.
+
+@1:46:08 - Jorge Carrera (blasterinformation.com)
+Claro, tenemos una base que es esta, para no arrancar, o ya esté el esqueleto. Y a partir de aquí ya se debería poder armar todo de una manera bien eficiente, pero siempre queda algo por fuera, eso es normal, y se va ajustando.
+
+@1:46:29 - Martin Hendrik (ALFA ELECTRONIC)
+Perfecto, Maribel. Me llevo esto, me llevo esto, tengo aquí pendiente, ya vendría la parte administrativa, que hace el departamento de administración dentro del sistema.
+Sí.
+
+@1:46:43 - Jorge Carrera (blasterinformation.com)
+Faltaría eso, ¿no? No sé, porque también tengo los hijos. Antes, por ejemplo, sí, cuando un equipo se entrega, ¿qué se hace?
+
+@1:46:52 - Martin Hendrik (ALFA ELECTRONIC)
+Voy a mirar, por ejemplo, voy a mirar este cliente. So we were talking about Fathom, ALFA ELECTRONIC ALFA ELECTRONIC Entonces, por ejemplo, vamos a mirar, miremos esto, este equipo salió en garantía en febrero.
+ACTION ITEM: Enable dispatch photos upload per equipment code - WATCH
+
+@1:47:51 - Jorge Carrera (blasterinformation.com)
+Cuando se entrega un equipo en la misma carpeta donde se cargaron las fotos y todo eso de cuando el equipo ingresó,
+
+@1:48:01 - Martin Hendrik (ALFA ELECTRONIC)
+Se escanea y se carga la remisión firmada por el cliente, como soporte de que ya el equipo quedó entregado.
+
+@1:48:10 - Jorge Carrera (blasterinformation.com)
+¿Y las fotos del equipo saliendo también las cargan aquí? No, esas no las cargamos, pero sí es algo que podemos implementar, claro, que queden cargadas ahí.
+De momento las tenemos cargadas por fuera en un drive.
+
+@1:48:23 - Martin Hendrik (ALFA ELECTRONIC)
+No, no, perfecto.
+
+@1:48:24 - Jorge Carrera (blasterinformation.com)
+Pero sí, deberían cargar, así como se registran las de cuando llega, deberían quedar ahí registrar las de cuando se despacha.
+Cuando se despacha para que se vean la remisión. Sí. Esta es la remisión, mírela, y acá está firmada por ellos, el recibido.
+
+@1:48:41 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces, este soporte en físico se mete en una Z.
+
+@1:48:45 - Jorge Carrera (blasterinformation.com)
+Y el escáner se carga en el código del equipo. En la misma carpetita que se creó cuando el equipo llegó.
+Claro. Y ahí, digamos... Sabemos que ahí concluye el proceso, a menos de que sea un equipo que vuelva en garantía, entonces vuelve y se registra en el sistema y vuelve y se entra.
+Claro, entraría por la parte de, ya no sería por diagnóstico, sino sería ya por garantía, por lo que me explicó Giovanni, y nada, pero el mismo proceso también.
+ACTION ITEM: Draft dispatch/invoicing flowchart - WATCH
+Bueno, Maribel, espectacular, ya voy a armar mi fluograma ahorita, bueno, siempre lo estoy armando, cada vez que salgo de la reunión contigo, inmediatamente, antes de que se me vayan las ideas, armo el fluograma.
+
+@1:49:39 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, es más fácil cuando uno tiene fresquito.
+
+@1:49:42 - Jorge Carrera (blasterinformation.com)
+Fresquito, de una vez lo armo, yo no espero mucho.
+
+@1:49:46 - Martin Hendrik (ALFA ELECTRONIC)
+Sí. Bueno, yo armé para la próxima reunión, no sé el día miércoles, bueno, dependemos del día de hoy, por supuesto, pero yo lo dejé para el día miércoles.
+Dios mío. No te estoy asustando, pero tú sabes cómo es todo. Sí. A ver, ¿quién? Vale, está bien. Muchas gracias.
+Cualquier cosa me avisen. Bueno, sí señor. Chao, gracias, que estés bien. Bueno, buen día. Buen día.
+

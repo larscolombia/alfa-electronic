@@ -629,7 +629,7 @@ type SoftwareBackupInfo = {
                                                             [ngModelOptions]="{ standalone: true }"
                                                             (ngModelChange)="onWarrantyToggle(item)"
                                                             data-testid="is-warranty-check" />
-                                                        <label class="form-check-label" [for]="'is-warranty-' + item.id">Es garantia</label>
+                                                        <label class="form-check-label" [for]="'is-warranty-' + item.id">Es garantía</label>
                                                     </div>
                                                     <div class="row gx-3 gy-2 mt-1" *ngIf="warrantyStateFor(item).isWarranty">
                                                         <div class="col-12 col-lg-4">
@@ -651,7 +651,7 @@ type SoftwareBackupInfo = {
                                                                 data-testid="warranty-first-reception-input" />
                                                         </div>
                                                         <div class="col-12 col-lg-4">
-                                                            <label class="form-label small">Meses de garantia</label>
+                                                            <label class="form-label small">Meses de garantía</label>
                                                             <input
                                                                 type="number"
                                                                 min="0"
@@ -665,7 +665,7 @@ type SoftwareBackupInfo = {
                                                                 class="badge"
                                                                 data-testid="warranty-months-badge"
                                                                 [ngClass]="(warrantyMonthsRemainingFor(item) || 0) > 0 ? 'bg-success' : 'bg-danger'">
-                                                                {{ (warrantyMonthsRemainingFor(item) || 0) > 0 ? "Quedan " + warrantyMonthsRemainingFor(item) + " mes(es) de garantia" : "Garantia vencida" }}
+                                                                {{ (warrantyMonthsRemainingFor(item) || 0) > 0 ? "Quedan " + warrantyMonthsRemainingFor(item) + " mes(es) de garantía" : "Garantía vencida" }}
                                                             </span>
                                                         </div>
                                                         <div class="col-12" *ngIf="warrantyStateFor(item).previousReception">
@@ -679,7 +679,7 @@ type SoftwareBackupInfo = {
                                                         </div>
                                                         <div class="col-12" *ngIf="showWarrantyValidationAlert(item)">
                                                             <div class="alert alert-danger py-2 mb-0" data-testid="warranty-validation-alert">
-                                                                <i class="bi bi-exclamation-triangle me-1"></i>El equipo se registra como garantia pero esta fuera del periodo de garantia.
+                                                                <i class="bi bi-exclamation-triangle me-1"></i>El equipo se registra como garantía pero está fuera del período de garantía.
                                                             </div>
                                                         </div>
                                                     </div>
@@ -3960,7 +3960,7 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
             department: "Servicio tecnico",
             client: record.companyName.trim() || this.prospect?.compania || "Cliente",
             priority: this.isPriorityPaid(item) ? "high" : "medium",
-            assignee: this.prospect?.empleado ?? "",
+            assignee: String(item.assignedTo ?? "").trim() || this.prospect?.empleado?.trim() || "",
             notes: item.failureDescription.trim(),
             equipmentRecordId: record.id,
             equipmentItemId: item.id,

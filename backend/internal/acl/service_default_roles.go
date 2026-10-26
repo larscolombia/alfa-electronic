@@ -106,7 +106,7 @@ WHERE id = $3;
 			return err
 		}
 
-		if _, err := s.seedRolePermissionsTx(ctx, tx, existing.id); err != nil {
+		if _, err := s.seedRolePermissionsTx(ctx, tx, existing.id, seed.name); err != nil {
 			tx.Rollback()
 			return err
 		}
@@ -115,7 +115,7 @@ WHERE id = $3;
 	return tx.Commit()
 }
 
-func (s *Service) seedRolePermissionsTx(ctx context.Context, tx *sql.Tx, roleID string) (RoleSeedSummary, error) {
+func (s *Service) seedRolePermissionsTx(ctx context.Context, tx *sql.Tx, roleID, roleName string) (RoleSeedSummary, error) {
 	moduleAccessResult, err := tx.ExecContext(ctx, `
 INSERT INTO acl_role_module_access (role_id, module_id, is_enabled, updated_at)
 SELECT $1, m.id, true, NOW()
@@ -130,6 +130,13 @@ ON CONFLICT (role_id, module_id) DO NOTHING;
 	// "administracion" cubre HR y gestion de usuarios: datos personales de los
 	// empleados. Se siembra denegada para todo rol y es el administrador quien
 	// concede acceso desde el panel, en vez de nacer visible por defecto.
+	//
+	// Excepción: el Técnico nace con 'agregar: propio' sobre inventario, porque
+	// su operación real es solicitar repuestos (un técnico sin ese permiso se
+	// queda bloqueado en pedir-repuestos con 403). La regla es por nombre de rol
+	// normalizado, igual que el resto del seed. Sólo inserta filas nuevas
+	// (ON CONFLICT DO NOTHING): las empresas existentes conservan lo que su
+	// administrador haya concedido o denegado a mano.
 	actionPermissionsResult, err := tx.ExecContext(ctx, `
 INSERT INTO acl_role_permissions (id, role_id, module_id, action_id, scope_id, created_at, updated_at)
 SELECT
@@ -140,6 +147,7 @@ a.id,
 CASE
 WHEN m.slug = 'administracion' THEN 0
 WHEN a.name = 'ver' THEN 1
+WHEN LOWER($2) = 'técnico' AND m.slug = 'inventario' AND a.name = 'agregar' THEN 1
 ELSE 0
 END,
 NOW(),
@@ -148,7 +156,7 @@ FROM acl_modules m
 CROSS JOIN acl_actions a
 WHERE m.is_active = true
 ON CONFLICT (role_id, module_id, action_id) DO NOTHING;
-`, roleID)
+`, roleID, roleName)
 	if err != nil {
 		return RoleSeedSummary{}, err
 	}

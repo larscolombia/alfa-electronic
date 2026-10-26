@@ -154,7 +154,7 @@ type EditableProfileFieldConfig = {
                         <button class="nav-link" type="button" [class.active]="activeTab === 'equipos'" (click)="activeTab = 'equipos'">Equipos</button>
                     </li>
                     <li class="nav-item">
-                        <button class="nav-link" type="button" [class.active]="activeTab === 'cotizacion'" (click)="activeTab = 'cotizacion'">Cotizacion</button>
+                        <button class="nav-link" type="button" [class.active]="activeTab === 'cotizacion'" (click)="activeTab = 'cotizacion'">Cotización</button>
                     </li>
                     <li class="nav-item">
                         <button class="nav-link" type="button" [class.active]="activeTab === 'archivos'" (click)="activeTab = 'archivos'">Archivos</button>
@@ -520,14 +520,14 @@ type EditableProfileFieldConfig = {
                     @if (activeTab === "cotizacion") {
                         <div class="card adminuiux-card">
                             <div class="card-body border-bottom d-flex gap-2 flex-wrap">
-                                <a class="btn btn-theme" routerLink="/app/crm-cotizaciones"><i class="bi bi-plus-lg me-1"></i> Crear cotizacion</a>
+                                <a class="btn btn-theme" routerLink="/app/crm-cotizaciones"><i class="bi bi-plus-lg me-1"></i> Crear cotización</a>
                                 <button class="btn btn-outline-secondary" type="button"><i class="bi bi-download me-1"></i> Exportar</button>
                             </div>
                             <div class="table-responsive">
                                 <table class="table align-middle mb-0">
                                     <thead>
                                         <tr>
-                                            <th>Cotizacion</th>
+                                            <th>Cotización</th>
                                             <th>Nombre</th>
                                             <th>Total</th>
                                             <th>Fecha</th>
@@ -538,7 +538,7 @@ type EditableProfileFieldConfig = {
                                     </thead>
                                     <tbody>
                                         <tr>
-                                            <td>Cotizacion#{{ 420 + prospect.id }}</td>
+                                            <td>Cotización#{{ prospectCodeLabel(prospect) }}</td>
                                             <td>{{ prospect.nombre }}</td>
                                             <td>COP ($) {{ prospect.valor }}</td>
                                             <td>{{ prospect.creado }}</td>
@@ -560,7 +560,7 @@ type EditableProfileFieldConfig = {
                                     <div class="border rounded p-3 bg-light-subtle">
                                         <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
                                             <span class="badge text-bg-success">OC {{ linkedPurchaseOrder.number }}</span>
-                                            <span class="small text-secondary">Cotizacion: {{ linkedPurchaseOrder.quoteCode }}</span>
+                                            <span class="small text-secondary">Cotización: {{ linkedPurchaseOrder.quoteCode }}</span>
                                         </div>
                                         <div class="small text-secondary">
                                             <div><strong>Fecha:</strong> {{ linkedPurchaseOrder.date || '--' }}</div>
@@ -568,7 +568,7 @@ type EditableProfileFieldConfig = {
                                         </div>
                                     </div>
                                 } @else {
-                                    <div class="text-secondary small">Este prospecto aun no tiene OC asociada desde cotizaciones.</div>
+                                    <div class="text-secondary small">Este prospecto aún no tiene OC asociada desde cotizaciones.</div>
                                 }
                             </div>
                         </div>
@@ -1038,9 +1038,9 @@ export class CrmProspectDetailComponent {
         "Visita presencial",
         "Correo de seguimiento",
         "Whatsapp de seguimiento",
-        "Reenvio de cotizacion",
+        "Reenvío de cotización",
         "Recoleccion de equipo",
-        "Entrega de cotizacion",
+        "Entrega de cotización",
         "Revision tecnica con cliente",
         "Confirmacion de orden de compra",
         "Seguimiento post despacho",
@@ -1100,13 +1100,21 @@ export class CrmProspectDetailComponent {
         if (!trimmed) {
             return undefined;
         }
+        // El id ya es el uuid del backend; el intento numérico queda como
+        // compat con enlaces antiguos guardados con el id sintético.
         if (/^\d+$/.test(trimmed)) {
-            const byNumericId = getProspectById(Number(trimmed));
-            if (byNumericId) {
-                return byNumericId;
+            const legacyIndex = Number(trimmed);
+            const byPosition = getProspects().find((prospect, index) => index + 1 === legacyIndex);
+            if (byPosition) {
+                return byPosition;
             }
         }
-        return getProspects().find((prospect) => prospect.backendId === trimmed);
+        return getProspectById(trimmed);
+    }
+
+    prospectCodeLabel(prospect: ProspectRecord): string {
+        const key = String(prospect?.backendId ?? prospect?.id ?? "").trim();
+        return key ? key.slice(0, 8).toUpperCase() : "--";
     }
 
     private applyResolvedProspect(prospect: ProspectRecord | undefined): void {

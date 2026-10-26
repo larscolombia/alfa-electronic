@@ -1,0 +1,665 @@
+Reunion de Trabajo LARS - ALFA - March 25
+ VIEW RECORDING - 62 mins (No highlights) 
+@0:01 - Jorge Carrera (blasterinformation.com)
+Hola, Maribel, ¿cómo te va? Buenas tardes. Hola.
+
+@0:27 - Martin Hendrik (ALFA ELECTRONIC)
+Hola, buenas tardes. Hola, ¿cómo te va?
+
+@0:30 - Jorge Carrera (blasterinformation.com)
+Maribel, ¿cómo estás? Hola, señor Jorge, ¿qué tal todo?
+
+@0:33 - Martin Hendrik (ALFA ELECTRONIC)
+¿Cómo estás, bebé? Bien, está dormido.
+
+@0:37 - Jorge Carrera (blasterinformation.com)
+Vamos a aprovechar. Me toca aprovechar.
+
+@0:41 - Martin Hendrik (ALFA ELECTRONIC)
+Aprovechar.
+
+@0:42 - Jorge Carrera (blasterinformation.com)
+Bueno, rápidamente, entonces fíjate, vamos a aprovechar. Ok, ya hablamos de compras. Compras, nos tocaría ya sea inventario, logística o administrativo.
+aprovechar. a Vamos Gracias.
+
+@1:01 - Martin Hendrik (ALFA ELECTRONIC)
+Ok, entonces, bueno, la logística, ¿qué sería? ¿El despacho? La logística sería más como el despacho, ¿cierto?
+
+@1:12 - Jorge Carrera (blasterinformation.com)
+Sí, eso lo hemos hablado en el transcurso de las reuniones, el despacho, la recepción. Sí, cuando hablamos de logística, es el manejo del aparato, ¿no?
+Una vez. ¿Cómo? ¿Cómo? ¿Quién? ¿La muchacha? ¿Quién se lo dan? ¿Quién lo recibe? ¿Podríamos hablar de la logística de manera muy...?
+
+@1:39 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, yo creo que ya la hemos como medio revisado, pero la podemos complementar. Permítanme. Ajá. Bueno, digamos que cómo es la parte logística.
+Entonces, ¿cómo funciona la logística? Cuando un equipo finaliza intervención, ya sea porque finalizó reparación o porque finalizó revisión en garantía o porque de pronto es un equipo no reparable y hay que devolverlo al cliente o un equipo prestado, lo que sea.
+Acá en el panel de control hay esta columna que se llama equipos a como a despachar. Y acá él me lo muestra, igual que en la columna de cotizaciones, por cliente.
+Todo esto es lo que está listo para sacar del sistema. Entonces, él me dice de cada cliente cuáles equipos están listos para despacho.
+Bueno, yo me puedo parar en cada código y veo como, ahí se me abre como un cuadrito con las informaciones generales del equipo.
+Perfecto. La información que hemos visto siempre, el código, en qué fecha llegó, en qué lugar está almacenado, cuál técnico lo revisó, salen los datos del equipo, salen la información de la falla, sale de qué cliente es, y bueno, etc.
+Entonces, por ejemplo, vamos a mirar, puede ser este. Entonces, digamos que yo voy a despachar este equipo. Entonces, yo me paro aquí en el código y le digo Expedición.
+Hay un botoncito ahí que dice Expedición. Eso para verlo a mayor detalle. ¿Esto es ya para generar la remisión de...?
+De despacho. Ok.
+
+@4:01 - Jorge Carrera (blasterinformation.com)
+Ajá.
+
+@4:02 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces, espéreme, devuelvo y lo muestro otra vez. Entonces, siempre que yo le doy clic a un código, salen esos datos del equipo y salen acá varios botoncitos.
+Ok, varios menús.
+
+@4:20 - Jorge Carrera (blasterinformation.com)
+Sí, acá la información general.
+
+@4:23 - Martin Hendrik (ALFA ELECTRONIC)
+Este es como el chat del que ya hemos hablado. Sí. Acá salen unos botoncitos que dicen, este, seguimiento del equipo, cotización.
+Esto significa cotización detallada, pero este no lo uso. Acá dice expedición, que es el que vamos a usar.
+
+@4:43 - Jorge Carrera (blasterinformation.com)
+Ajá.
+
+@4:44 - Martin Hendrik (ALFA ELECTRONIC)
+Y acá dice retornar al técnico. Si por alguna razón el técnico sacó este equipo por error del sistema, yo puedo venir a este equipo, a este botón, y le digo retornar al técnico.
+a Y Se lo devuelvo. Se me desaparece de mi panel de equipos por despachar y vuelvo y le salí al técnico.
+
+@5:07 - Jorge Carrera (blasterinformation.com)
+Perfecto. Y este que dice salir.
+
+@5:11 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces, en este caso, yo le voy a decir expedición. Entonces, este menú se parece mucho al menú de las cotizaciones.
+Es casi que lo mismo. Ok. El diseño es muy similar. Salen los datos del cliente, el contacto. Acá sale el sistema.
+Cada vez que yo hago una remisión, él le va dando un consecutivo. Entonces, acá es expedición. Por eso la E, CEO de Colombia.
+Año, mes y el consecutivo de remisión que en el que vamos. ¿Ese consecutivo se inicia, se reinicia mensualmente? Sí, digamos esta sería la remisión.
+La última que se hizo fue la 110 del mes de marzo. Esta sería la 111. La 111 de marzo del año 26.
+Perfecto. Y cada año, cada mes se le empieza 1, 2, 3, 4, así. Sí. Listo. Acá, por ejemplo, me sale cuál es el plazo de pago de ese cliente.
+Como, él me muestra como un resumen de lo que yo le he cotizado, de lo que no han pagado.
+¿Qué más? Estas cositas no las usamos. Bueno. Y acá, él me cargó los datos del equipo que yo voy a despachar.
+Si yo quisiera desplazarlo. Voy a echar otro acá en esta menú desplegable. Si hubiera otro equipo, acá me saldría.
+Y yo podría decirle otro. De momento solo estaba en salida este.
+
+@7:11 - Jorge Carrera (blasterinformation.com)
+Por eso solo lo mostramos.
+
+@7:13 - Martin Hendrik (ALFA ELECTRONIC)
+No sé si usted recuerda que cuando yo hacía las cotizaciones, había una bolita azul donde yo encontraba información.
+
+@7:21 - Jorge Carrera (blasterinformation.com)
+Aquí también, miren.
+
+@7:25 - Martin Hendrik (ALFA ELECTRONIC)
+Información. Yo acá puedo volver a revisar lo que escribió el técnico en el memo cuando hizo el diagnóstico y la reparación.
+Acá me sale otra pestañita con los comentarios que yo puse en la cotización de este equipo. Mírelos.
+
+@7:44 - Jorge Carrera (blasterinformation.com)
+Básicamente del historial, ¿no? Sí.
+
+@7:47 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces yo puedo, al momento de hacer esta remisión de despacho, yo puedo ver en estas pestañitas lo que se dijo en el diagnóstico y en la reparación por parte del técnico y lo que yo escribí en
+La cotización, cuando le hice la cotización al cliente. Acá sale. Ok. Acá en esta partecita, él me bota un cuadro de selecciones múltiples.
+Este cuadrito lo llenan los técnicos cuando terminan la reparación de los equipos. ¿Qué fue lo que se le hizo al equipo?
+Sí, esto de hecho lo podríamos mejorar en el nuevo software porque acá está muy plano, como muy generalizado. Lo podríamos de pronto detallar un poquito más.
+Pero básicamente acá ellos dicen en qué sector del equipo encontraron falla. Si en la fuente de alimentación, en el control, en la comunicación, potencia, etc.
+Una posible causa y si no se sabe se le pone otros. Ok. Y acá en pruebas realizadas, acá tenemos dos opciones.
+¡Muy ¡Muy Sobre banco de pruebas de laboratorio y si no se hizo prueba en el laboratorio se le pone que se debe verificar en sitio.
+Digo que se podría mejorar porque por ejemplo acá podríamos poner un poquito más de detalle porque realmente las pruebas que se realizan, aunque no son en banco de pruebas, muchas veces sí son pruebas parciales.
+Se podrían poner, tocaría ver exactamente qué definiciones vamos a usar con Giovanni, pero podríamos poner por ejemplo pruebas en laboratorio con 110, con 24 voltios, con 5 voltios, pruebas de video, pruebas de comunicación, no sé, un poquito más de detalle de lo que sí se hace, que generalmente se hace.
+
+@9:50 - Jorge Carrera (blasterinformation.com)
+Que sea algo parametrizado, ¿no? Que se te lo puedan modificar. Sí, también.
+
+@9:56 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, podría ser.
+
+@9:58 - Jorge Carrera (blasterinformation.com)
+No, no, no. No para el escálogo.
+
+@10:00 - Martin Hendrik (ALFA ELECTRONIC)
+Y acá abajo hay una sección de comentarios donde el técnico da un poquito más de detalle en sus palabras de lo que se le hizo al equipo.
+Por ejemplo, acá dice, se realiza mantenimiento preventivo, se retira la zona quemada, se ubican protecciones, se cambiaron tales componentes, se verificó que prende y genera fuentes correctamente.
+Esto que está acá, ahorita se lo voy a mostrar, sale en un documento que se llama reporte de intervención cliente, ¿sí?
+El sistema solo genera estos reportes. Ah, y hay algo muy bueno que podríamos hacer en el nuevo software, es que este software solo me genera el reporte para la primera vez que yo intervengo el equipo.
+Si el equipo vuelve a venir en garantía, él ya no me genera reportes. Y en realidad eso es un poquito...
+Claro, porque si el equipo viene en garantía es porque algo sigue en falla. Entonces, en la segunda revisión hay algo diferente.
+Entonces, el cliente a veces pide el reporte de la segunda intervención y el sistema no lo genera. ¿Qué me toca hacer?
+Irme a buscar el reporte de la primera intervención, sacarlo en Word y manualmente modificarlo y llenarle los datos con lo que se le hizo en la segunda intervención.
+¿Sí? Es un error porque sí debería poderse generar un reporte cada vez que un equipo se registra en el sistema, sea primera, segunda o tercera vez que se revisa.
+Claro, claro.
+
+@11:44 - Jorge Carrera (blasterinformation.com)
+Siempre tiene que mostrar lo que se le hace al equipo. Sí. Entonces, eso sería una cosa por mejorar para el nuevo software.
+
+@11:54 - Martin Hendrik (ALFA ELECTRONIC)
+Listo. Entonces, todo esto yo lo puedo visualizar cuando yo le doy clic a este botoncito. No le voy a dar clic otra vez y se desapareció.
+Ok. Listo. Acá él me dice peso, siempre le ponemos peso cero porque nosotros no les cobramos a los clientes por el despacho.
+Posición del equipo está en 1, 1 porque ya tenía los repuestos completos para hacer la reparación. Cuando el equipo sale, un equipo en posición 1, cuando sale, sale en posición 10.
+Sí. Listo. Precio de venta. Acá me sale un cuadrito con el precio de la reparación. Ok. Índice de funcionamiento.
+Entonces, esta es otra tablita que le sale a los técnicos cuando ellos están reparando un equipo. Que me parece que usted me decía que Giovanni no se la había mostrado.
+Esta tablita, cuando ellos reparan un equipo, el sistema les pregunta, ¿todas estas letras? Significan una serie de pruebas. Entonces ellos escogen la letra que representa esas pruebas que ellos hicieron.
+Digamos acá, él escogió C+, eso significa, ¿se le puso tensión? Sí. ¿Se le constató el funcionamiento? No. pruebas realizadas, pruebas estáticas con ACERSCAN y con multímetro.
+
+@13:32 - Jorge Carrera (blasterinformation.com)
+O sea, esto es como algo agregado al banco de pruebas.
+
+@13:38 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, digamos, al final esto se podría comunificar en este reporte. Sí.
+
+@13:48 - Jorge Carrera (blasterinformation.com)
+En este. Sí. Hacer de una vez todo ahí.
+
+@13:52 - Martin Hendrik (ALFA ELECTRONIC)
+Claro. ¿Cierto?
+
+@13:54 - Jorge Carrera (blasterinformation.com)
+Cierto. Claro.
+
+@13:55 - Martin Hendrik (ALFA ELECTRONIC)
+Que salga acá, ese cuadrito salga acá. Nis. Sí. Bueno, acá por ejemplo él me da opción de ponerle garantía pero creo que no sale.
+
+@14:08 - Jorge Carrera (blasterinformation.com)
+Sí, verificamos que no sale. Le voy a poner seis meses pero a mí me parece que eso no sale.
+
+@14:15 - Martin Hendrik (ALFA ELECTRONIC)
+Y comentarios creo que tampoco salen. Voy a poner unos punticos. No sé por qué esa función creo que no está funcionando.
+Listo. Y acá es para escribir en la remisión. Acá hay una lista desplegable igual que en la cotización. Donde yo le digo al cliente qué se hizo.
+Entonces ya hay unas frases configuradas. Entonces yo le pongo retorno después de la reparación. Este equipo debe ser probado sobre la instalación.
+Seis meses de garantía. Acá yo manualmente le escribo hardware. Este software tiene el problema que yo le había comentado.
+decirte. Usted que no sé por qué, no deja, si yo escribo todo el reglón, no sale, tiene un límite de caracteres.
+
+@15:10 - Jorge Carrera (blasterinformation.com)
+Sí, a pesar de que tiene todo ese ancho, pero tiene un límite interno. Sí, no lo imprime.
+
+@15:16 - Martin Hendrik (ALFA ELECTRONIC)
+No lo imprime. Acá sale, ¿qué técnico hizo la reparación de ese equipo? Que en este caso es Christian David Torres, C.D.
+Torres. Y acá esto, en Plasimo, esto es como ubicación. Acá es estantería de salida. Acá lo que me dice es en cuál estantería está el equipo en este momento, en la que se llama salida.
+Acá se supone que yo puedo agregar comentarios nuevos. Vamos a ver. Sí. Y el nuevo software también debe... ¿Quería poder permitirlo?
+Que yo cada vez… Lo que no te permite es editar lo que ya hay. Vamos a mirar, creo que es en cotizaciones que no deja editar.
+Espéreme, yo miro acá. Vamos a ver. Ah, sí, sí deja. No deja, mire. No deja infracción de… Y debería dejar.
+Claro, sí, debería. Y acá en esta carpeta yo tengo acceso por si yo quiero volver a mirar las fotos del equipo, la remisión con la que llegó, todos los documentos.
+Sí, sí recuerda esta carpetica. Sí, cómo no.
+
+@16:51 - Jorge Carrera (blasterinformation.com)
+De los adhunts. Claro. Listo.
+
+@16:54 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces, si hubieran más equipos para sacar de ese cliente… Por ejemplo, ellos se llaman GoTronMotion, 260-332. No, las demás cosas están todavía en reparación.
+Entonces, solo hay este para despachar. Si hubieran más, pues yo me paro. Mire que, entonces lo que yo le he comentado alguna vez, este software, tanto en cotizaciones como en remisiones de despachos, solo me deja llenar cuatro equipos.
+Mire.
+
+@17:51 - Jorge Carrera (blasterinformation.com)
+En la lista, la lista que tienes pendiente para enviar, te aprecian al máximo cuatro.
+
+@17:57 - Martin Hendrik (ALFA ELECTRONIC)
+Solo puedo hacer cuatro, poner cuatro. Yo en una remisión. Si yo tengo cinco, me toca hacer otra remisión. Ah, imagínate.
+Entonces, mire, uno, acá dos, tres, y este cuatro. Mire, él no me deja poner más. Máximo puedo poner en una remisión o en una cotización cuatro equipos.
+Y debería yo poder poner los que sea. Claro. Porque yo tengo que hacer una por cuatro y volver a entrar y hacer otra por los otros.
+Entonces, un ejemplo, si yo voy a despachar veinte equipos, pues me toca hacer cinco remisiones y cinco remisiones con código diferente.
+
+@18:41 - Jorge Carrera (blasterinformation.com)
+Pero una remisión, Maribel, disculpa, una remisión, por ejemplo, tú me vas a mandar un equipo a mí y eso viene con una remisión hacia mí.
+Sí. O sea, una remisión por cliente.
+
+@18:58 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, pero... Pero este sistema en una sola remisión me deja poner máximo cuatro equipos.
+
+@19:05 - Jorge Carrera (blasterinformation.com)
+Hay que decir que si yo de repente me van a reparar cinco a mí, o seis, cuatro y después tienes que hacer otra y ahí me incluye la que falten.
+Sí, correcto. Ok, imagínate.
+
+@19:20 - Martin Hendrik (ALFA ELECTRONIC)
+Ajá, entonces no, debería uno poder hacer la remisión por los equipos que haya. Claro, claro. Sí, listo. Entonces, bueno, habiendo ya llenado estos daticos, yo le digo aquí transferir, le voy a dar transferir.
+Esto es por si yo la quiero guardar en PDF, pero no. Listo. Ella debería abrirme de una vez el PDF para imprimirlo, para lo que sea, pero no.
+El sistema lo genera y mira, se desaparece. Claro, ¿qué pasó? Tengo que venirme acá a esta parte derecha. Acá dice último número generado, la 112.
+Entonces, yo puedo acá buscar remisiones por nombre de cliente, mire. Puedo buscar la remisión de Coca-Cola y busco cuál.
+Por código de equipo, yo digo, quiero la remisión de tal equipo. O la busco por el código de la remisión, la última que hice.
+En este caso, entonces, la 112.
+
+@20:52 - Jorge Carrera (blasterinformation.com)
+Tienes que volver a traer para poderla. La llamo.
+
+@20:56 - Martin Hendrik (ALFA ELECTRONIC)
+Yo la llamo. Aquí está, mire. No se deja modificar, ni anular, ni nada. Si yo, si algo me quedó mal, me toca hacer otra en blanco y empezar en blanco, llamar el código del equipo y volver a llenar todo.
+¿Y si la quieres anular?
+
+@21:18 - Jorge Carrera (blasterinformation.com)
+No, no se deja anular.
+
+@21:20 - Martin Hendrik (ALFA ELECTRONIC)
+No, no se deja anular ni modificar. La que quedó hecha, quedó hecha. Si quedó mal, toca hacer otra.
+
+@21:30 - Jorge Carrera (blasterinformation.com)
+Sí, pero para tus estadísticas, por ejemplo, yo quiero saber cuántos equipos mandé yo a Jorge, cuántos le mandé a Jorge.
+Entonces resulta que de cinco remisiones realmente dos se hicieron bien, porque sabes, hubo un inconveniente y de las cinco, dos.
+Para tus estadísticas dicen que me mandaste cinco.
+
+@21:53 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, es verdad, pero digamos que como las estadísticas se hacen es con códigos de equipo. Y... O si no, con remisiones o cosas así.
+Ok.
+
+@22:03 - Jorge Carrera (blasterinformation.com)
+No me afecta.
+
+@22:04 - Martin Hendrik (ALFA ELECTRONIC)
+Pero efectivamente sería bueno que se dejara modificar, editar, porque si me quedó algo mal escrito. Claro. Tengo que volver a llenar todo y sería más rápido si simplemente le digo editar y corrijo lo que me quedó mal.
+Claro, perfecto. Más bien que de pronto si yo le digo editar, que me deje en algún lado un registro de qué información se cambió y en qué fecha y quién la cambió.
+Un ejemplo, remisión editada por Maribel tal fecha y que salga cuál información fue la que cambié. Sí, porque me imagino que también ellos lo tienen así bloqueado por seguridad como para si yo hago una remisión y después no la altero.
+Sí, yo creo que es por eso.
+
+@22:56 - Jorge Carrera (blasterinformation.com)
+Sí, yo creo que quizás es... Fíjate, yo me... Mandé algo y salió, pero resulta que yo me meto y la cambio, y pongo y quito algo que realmente sí mandé, pero lo quito, y lo pongo como que no mandé.
+Entonces, claro, hay un problema de seguridad. Es correcto, sí. Claro, ¿qué se podría hacer allí? Allí lo que se podría hacer es que te quede un log, un log de lo que se le ha hecho, como tú perfectamente me estás diciendo, un registro de que se le ha hecho la revisión.
+Mira, se le eliminó un registro, se le modificó tal campo, pero que se permita, ¿no?
+
+@23:46 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, sí, listo. Entonces, bueno, para comentarle eso, que estas no se dejan editar ni nada. Acá yo la llamo, la llamé, y ahora sí le digo acá a la derecha.
+Y cuando le doy imprimir, ahora sí él me la va a mostrar en PDF, Word o Excel, lo que yo quiera.
+Mírela, acá sale. Nosotros le decimos no remisión, sino orden de envío. Ok. Acá sale muy, es básicamente el mismo formato de la cotización, pero es una orden de envío.
+Acá dice el número de, el consecutivo de la orden de envío, qué fecha se hizo, para cuál código cliente, los datos del cliente, nuestros datos, qué equipo estoy despachando, en qué estantería se encuentran, los datos del equipo y los comentarios que yo le acabé de poner.
+Y acá abajito, igual que la cotización, dice el... La condición de pago que tiene el cliente y los datos de la empresa, de nosotros.
+Razón social, teléfono, el NIT, el correo de facturación electrónica.
+
+@25:14 - Jorge Carrera (blasterinformation.com)
+Ok, entonces tú a este pese lo das al muchacho del almacén para que despache.
+
+@25:19 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces, esto generalmente se imprimen, este sistema ya está como configurado para que uno le dice imprimir, y él imprime dos.
+¿Por qué dos? Porque una la firma el cliente y se queda para nosotros y la otra se le da al cliente.
+Ok. Entonces, él ya viene configurado para que se imprimen dos hojitas. Entonces, esto se le da a la persona de logística.
+Todos los días se sacan las órdenes de envío de los equipos que se pueden ir despachando. Se le entregan a la persona logística.
+Y ella empieza a poner sellos de garantía, a tomarle fotos a los equipos que va a despachar para dejar registro en qué estado se despachan.
+Les toma fotitos, los empaca, le pega por fuera a la caja. Si es para despacho a otra ciudad, pues le pega por fuera esta orden de envío.
+Junto con la guía de la transportadora. Ok. Algo que me gustaría a mí, espéreme, yo miro, es que resulta que cuando nosotros hacemos despachos, nosotros tenemos que adjuntarle a la caja.
+Creo que sí sale, pero ya se me olvidó, espéreme, ya mire. Miren.
+
+@26:59 - Jorge Carrera (blasterinformation.com)
+Miren.
+
+@27:03 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, sí es importante que cuando yo hago la remisión de despacho me salga la carpeta con los adjuntos, la que yo le hablaba ahorita.
+Sí. Porque cuando nosotros imprimimos la orden de envío, necesitamos imprimir de una vez la orden de compra del cliente, que está guardada en esa carpeta.
+
+@27:26 - Jorge Carrera (blasterinformation.com)
+Que sale de una vez impreso esa orden de compra.
+
+@27:30 - Martin Hendrik (ALFA ELECTRONIC)
+O también, porque para que las cajas sean recibidas en las empresas deben ir acompañadas de la orden de compra que ellos nos mandaron.
+Entonces, acá, ¿qué nos toca hacer? Imprimir esto y ir a buscar esa carpeta e imprimir la orden de compra.
+¿Y los anexos?
+
+@27:47 - Jorge Carrera (blasterinformation.com)
+En caso de que no, el anexo no, sí, el equipo que suplementario auxiliar.
+
+@27:55 - Martin Hendrik (ALFA ELECTRONIC)
+¿Aparece también allí?
+
+@27:58 - Jorge Carrera (blasterinformation.com)
+Normalmente sí.
+
+@28:00 - Martin Hendrik (ALFA ELECTRONIC)
+Y en esa carpeta, digamos en esa carpeta solo salen las fotos, la orden de compra, el formato de falla que se subió al principio cuando se creó el código del equipo.
+No sé si fuera posible que acá salieran, cuando yo voy a imprimir la orden de envío, que acá saliera un botoncito que dijera orden de compra y yo le doy clic y ahí me sale y yo le imprimo de una vez.
+Sí, te puede aparecer en la pantalla. O que acá salga un botoncito que diga anexos y yo le doy clic ahí y yo escojo cuáles voy a imprimir.
+Ah, porque los anexos tú no los imprimes todos. No, todos no, porque recordemos que en la carpeta de anexos hay fotos, pueden haber.
+
+@28:52 - Jorge Carrera (blasterinformation.com)
+Ah, no, disculpa, anexos me refiero yo a componentes. Que me prestan para yo probar el equipo. Ah. Me explico.
+Llega un equipo, pero claro, con un daño a reparar, pero eso viene acompañado de otros componentes para su prueba, ¿no?
+La prueba del mismo.
+
+@29:19 - Martin Hendrik (ALFA ELECTRONIC)
+Pues resulta que este software, cuando yo voy a despachar un equipo que trae otro en préstamo. Ajá, en préstamo.
+Cuando yo voy a, digamos que este equipo, este equipo que yo estoy sacando, trae otro en préstamo. Ajá. Cuando yo lo pongo aquí, él de una vez me, en este caso no pasa, pero si fuera el caso, él me bota un mensajito de alerta que dice, este equipo viene junto a tal otro código, desea despacharlo también.
+¿Bien? Entonces, digamos, yo le digo, sí. Y él de una vez me lo carga. Ajá. Aquí en el siguiente recuadro.
+Ah, no, espectacular. Sí, es cuando el cliente nos manda algún equipo en préstamo para hacer pruebas o algo, en el sistema lo que hacemos es como atarlos, de tal manera que cuando yo saco el que está en reparación, sucede eso.
+Él me bota un mensajito acá de recordatorio, oiga, este equipo trae en préstamo tal otro código, lo quiere despachar y yo le digo sí, y él de una vez me carga los datos del otro equipo que es en préstamo.
+Entonces en la orden de envío van a salir, en ese caso salen dos equipos, el que estaba en reparación más el equipo que el cliente nos entregó en préstamo.
+En préstamo.
+
+@30:55 - Jorge Carrera (blasterinformation.com)
+Sí.
+
+@30:57 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces acá saldría otro. Código y acá normalmente el comentario sería retorno equipo en préstamo. Así es cuando hay equipos en préstamo.
+Ok.
+
+@31:17 - Jorge Carrera (blasterinformation.com)
+Listo.
+
+@31:18 - Martin Hendrik (ALFA ELECTRONIC)
+Resulta que el reporte de intervención del que hablábamos ahorita, ¿cierto? Sí.
+
+@31:26 - Jorge Carrera (blasterinformation.com)
+Donde yo le digo qué fallas tenía el equipo y todo esto.
+
+@31:32 - Martin Hendrik (ALFA ELECTRONIC)
+Este software solo lo deja sacar, como yo le decía, una vez, la primera vez. ¿Por qué? Porque la primera vez es cuando yo lo facturo.
+Si él vuelve en garantía, él no deja sacar reportes de intervención para equipos en garantía, que yo le decía no.
+Debería poderse sacar siempre. siempre. Sí. No. Gracias. Entonces, ¿qué pasa? Resulta que este equipo está siendo reparado por primera vez y aún así, mire que me sacó la remisión sin reporte, ¿sí?
+Resulta que para poder sacar el reporte, yo tengo que ir donde el cliente. De un momentico, conteste una llamada, por favor.
+
+@32:24 - Jorge Carrera (blasterinformation.com)
+Sí, sí.
+
+@32:28 - Martin Hendrik (ALFA ELECTRONIC)
+¿Aló? Hola, ¿cómo estás? Hola, ¿cómo vas? Es que estoy acá en la reunión con el señor del Zopar. Ah, dime.
+ya, Dime. No, rápidamente, es que se me ocurrió decir de que Giovanni había dicho que si le mandabas el listado de la facultad de un poco porque está en su vida.
+Ah, ok. Pero es para él. Ah, me tocó antes de buscarlas. Bueno. Dice, Bueno. Sí, señor. Chao. Listo. Entonces, ¿yo qué tengo que hacer?
+O sea, lo ideal sería que si yo saco la remisión de una vez me salga el reporte. No.
+
+@33:16 - Jorge Carrera (blasterinformation.com)
+Claro, por lo menos que te deje el cuadrito, como tú muy bien me lo comentaste, un cuadrito que tú lees el chulito, ¿verdad?
+Y automáticamente si tiene el chulito, eso sale impreso con la remisión. Ajá, bueno. En este caso, no.
+
+@33:31 - Martin Hendrik (ALFA ELECTRONIC)
+Miren, el que yo acabé, el equipo al que yo le acabé de hacer la remisión es este de acá que está en posición 10.
+Yo tengo que venir, en este software es así, tengo que venir y facturarlo. Facturarlo significa, ay. O sea, llega en garantía tienes que facturarlo.
+
+@34:00 - Jorge Carrera (blasterinformation.com)
+¿Facturarlo?
+
+@34:01 - Martin Hendrik (ALFA ELECTRONIC)
+No, en garantía ya no va a dejar facturar nada porque las garantías no se facturan.
+
+@34:06 - Jorge Carrera (blasterinformation.com)
+¿Por qué los vas a facturar?
+
+@34:09 - Martin Hendrik (ALFA ELECTRONIC)
+Esto no es una garantía, esto es una reparación. Ajá, ¿pero ya está facturado? No, apenas le estoy haciendo la remisión de despacho.
+Ok, ah, esto es un equipo.
+
+@34:23 - Jorge Carrera (blasterinformation.com)
+Claro, porque hay unos que tú envías una previa factura. Que tienen que facturar porque son clientes que, bueno, que no son muy habituales.
+Y primero se les factura, ellos después pagan y después tú les envías. Sí. En este caso no, esto es un cliente ya habitual.
+Este tiene crédito.
+
+@34:44 - Martin Hendrik (ALFA ELECTRONIC)
+Ok, tiene crédito. Pero, o sea, yo tengo que facturar en este software. Es una factura, digamos, ficticia. Porque la factura real yo la hago es con un software colombiano acá.
+Para que sea válida ante la DIAN. Esta facturación que yo voy a hacer en este momento es una facturación de este software en específico.
+Un paso más en el proceso. Si yo no hago este proceso como de facturación, él no me saca el reporte.
+Entonces, mire, equipo facturado es posición 20. Yo cambio el 10 por 20. Y le pongo facturado en, ¿en qué mes?
+En marzo. 3.20. Acá. Y le digo facturar aquí, mire. ¿Vale? ¿Está seguro de facturar? Sí. Entonces. Entonces. Entonces. Entonces.
+Entonces. Bueno, acá él me lo quiere sacar en PDF, yo digo que no, vamos a por aquí, que no.
+Listo, entonces yo me devuelvo, voy a cambiar de año para que se me actualice. Y mire que el equipo que estaba en posición 10 ahora dice 320 acá, ¿sí lo ven?
+Sí. Bueno, entonces, 260-332. Voy a ir a las Bonds de Expedición o a los órdenes de envío. Voy a buscar otra vez la última que hice.
+Voy a Le voy a decir imprimir. Ay, no me salió. Espérenme, que me está haciendo quedar mal este software.
+Ahí tú facturaste. Reporte, sí, está seleccionado. Ah, no, ya sé, creo que ya sé qué fue lo que pasó.
+Es que allá en la oficina están haciendo más remisiones, entonces yo saqué, le di clic a la que no es.
+
+@37:40 - Jorge Carrera (blasterinformation.com)
+Ah, ok.
+
+@37:41 - Martin Hendrik (ALFA ELECTRONIC)
+Veo que era la 113. Erbel, no, no, no, no, no, no, no, no, no, no, no, no, Gracias. Esta sí es, Doutron Emulsion.
+Mire, le voy a decir que voy a imprimir la remisión. Mire que ahora sí, acá arriba sale otro botón que dice reporte de intervención.
+Ahora sí me va a salir.
+
+@38:47 - Jorge Carrera (blasterinformation.com)
+Es decir, para que él te saque esto, tienes que facturar.
+
+@38:53 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, imagínese. Y no. Por eso es que yo le digo que él solo deja sacar reportes la primera vez cuando le quiere.
+Y pues se factura. Cuando el equipo vuelve para una garantía, por ejemplo, no deja sacar el reporte porque las garantías no se facturan.
+Pero yo debería poder sacar un reporte en cualquier caso, para una reparación, para una garantía, para lo que sea.
+¿Sí? Sí.
+
+@39:26 - Jorge Carrera (blasterinformation.com)
+¡Guau! Ya, perfecto. Esto no lo habíamos conversado la vez anterior, creo.
+
+@39:39 - Martin Hendrik (ALFA ELECTRONIC)
+Sí lo habíamos como tocado el tema. Ok. Cuando yo le mostré cómo se facturaba.
+
+@39:46 - Jorge Carrera (blasterinformation.com)
+Sí, pero esta parte de que no pueden sacar el reporte de intervención, sino hace esta factura, entre comillas, ilusoria, ¿no?
+Vamos a ver. ¿Qué mucho Vamos a llamarlo de esa manera, para poder sacar este reporte de intervención, aunque esto es algo que tiene que salir siempre.
+
+@40:07 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, debería salir de una vez cuando yo le digo generar remisión de despacho, pues él me debería generar de una vez el reporte, así yo no facture de una vez, yo debo poderle entregar al cliente ese reporte.
+Igual que la orden de compra.
+
+@40:23 - Jorge Carrera (blasterinformation.com)
+Sí.
+
+@40:26 - Martin Hendrik (ALFA ELECTRONIC)
+Ok.
+
+@40:28 - Jorge Carrera (blasterinformation.com)
+Perfecto.
+
+@40:31 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, sí, señor.
+
+@40:34 - Jorge Carrera (blasterinformation.com)
+Listo, han anotado ese punto.
+
+@40:42 - Martin Hendrik (ALFA ELECTRONIC)
+¿Qué más? Permítame, señor.
+
+@40:51 - Jorge Carrera (blasterinformation.com)
+Cuando el señor despacha, hace el envío, él no toca el sistema, él no dice ya despachado, ¿Ya ha enviado el número de guía de la empresa que transporta?
+
+@41:07 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, entonces, bueno, esto se le entrega a la persona de despachos. Como le digo, ella toma, pone stickers de garantía a los equipos, toma fotos, empaca.
+Y ya después, ¿qué se hace? Con esta orden de envío, nosotros tenemos un convenio con CEPI Entrega. Entonces, tenemos la plataforma de CEPI Entrega.
+En este momento no me acuerdo los datos, pero entramos con el usuario y la clave y generamos la guía de despacho de la transportadora con estos datos que están acá.
+¿Sí? Escribimos para qué empresa va, para qué persona, a qué dirección, en qué ciudad. Gracias. ¿Qué Le ponemos cuánto pesó la caja, cuáles medidas tiene, qué lleva por dentro, entonces variador tal.
+Y se le manda un correo como estos. Nuevamente sobre el mismo historial donde se mandó la cotización y donde se confirmó la orden de compra, el mismo.
+Ah, miren, por ejemplo, acá hay una, miren. Entonces, buen día, estimado cliente, confirmamos envío con guía de servia entrega número tal.
+Y si le adjunta la copia de la guía de entrega, mírela. Así nos queda la guía de servia entrega, como este.
+Dice despacho ALFA ELECTRONIC y va para tal cliente. En. En el contenido siempre ponemos el código de la remisión que le estamos despachando al cliente.
+El peso de la caja, las medidas. Entonces se le dice al cliente cuáles guías se le despacharon, se le adjunta la copia.
+La remisión de ALFA. Mírela. Acá ella se la adjuntó, que es esta. Y de los siguientes equipos, entonces uno le dice qué fue lo que se le despachó con esa guía, tal equipo y tal otro.
+En este caso eran equipos no reparables, pero puede ser que sí sean equipos reparados. Entonces, por ejemplo, acá sí se reparó esto, un motor.
+Y cuando son reparados se le agrega este otro comentario. Quedamos atentos a los resultados de las pruebas en planta.
+Ok, un pie, un pie ahí de página.
+
+@43:57 - Jorge Carrera (blasterinformation.com)
+Y esto es lo que se hace siempre que se des.
+
+@44:00 - Martin Hendrik (ALFA ELECTRONIC)
+Despacha algo, a otra ciudad, o a un cliente también en Bogotá, pero que pide que le despachemos por transportadora.
+¿Y este número, Maribel, de envío, ese número no se coloca en el sistema?
+
+@44:15 - Jorge Carrera (blasterinformation.com)
+¿Fue entregado, enviado al número tal?
+
+@44:18 - Martin Hendrik (ALFA ELECTRONIC)
+No, este sistema no tiene esa función. Sí sería bueno que uno pudiera escribirlo en algún lado, por ejemplo. Acá donde me sale en la lista de todos los equipos de ese cliente, tuviera como una columna que dijera guía, guía despacho transportadora y que yo la pudiera escribir.
+O que dijera guía transportadora y número de guía del despacho, entonces yo escribiera ser guía entrega, guía tal. O DHL, guía tal.
+Como para uno tener acá mismo en el sistema la trazabilidad de con qué guía se le despacho al cliente.
+Hay otra cosa y es que este sistema las remisiones las saca sin valor. Sí, sí, sí, sí, ve acá, no traen valor.
+A mí me gustaría que cuando yo hago un despacho, acá hubiese un botón o algo que dijera incluir precio.
+Porque es que resulta que sí tenemos clientes que nos piden enviar estas órdenes de envío valorizadas. ¿Y qué nos toca hacer?
+Pues sacarla en Word y manualmente ponerle el precio. Sí. Ok, opción para incluir, ok. Sí, una opción que diga incluir precio y que él le ponga de manera automática el mismo precio de la cotización.
+Entonces, por ejemplo, acá toca sacarla en Word para que yo la pueda... Y yo le escribo acá valor y acá al frente le escribo el precio.
+¿Sí?
+
+@46:06 - Jorge Carrera (blasterinformation.com)
+Entonces, si no, tienen que hacerle usted mismo en Word.
+
+@46:09 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, mire, me toca descargarla en Word, yo la guardo en algún lado y manualmente le escribo acá valor y acá voy y miro en el sistema cuál fue el precio y la reparación y se lo pongo y le saco el IVA y lo sumo.
+Y ahí sí la imprimo. Eso pasa sobre todo con los clientes que están en zona franca, por ejemplo. Toca mandar las remisiones valorizadas.
+
+@46:40 - Jorge Carrera (blasterinformation.com)
+Sí, ahí hay algo. Sí, eso hay que rehacerlo. Veo muchos puntos que no se entiende porque el sistema no es, este no lo hace.
+Sí.
+
+@46:55 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces, bueno, yo le decía, así se notifica. Cuando va por transportadora. La otra opción es que no se despacha por transportadora, sino que el cliente pasa directamente a la oficina y recoge.
+En ese caso no se hace correo y no se hace guía de servia entrega, sino que el sistema también siempre imprime dos ejemplares de la orden de envío.
+Siempre. Y el cliente firma una que nos la quedamos nosotros y se queda con la otra. Y la que él firma, lo que hacemos es que venimos al sistema y en el código del equipo la cargamos en la carpeta donde van todas las cosas, las fotos, las remisiones, todo eso.
+Entonces, por ejemplo, si ellos recogieron este equipo, yo vengo a Adjuntos, le digo Agregar, voy y escaneo esa remisión, sí, firma y la cargo.
+Y le escribo acá. Este orden de envío firmada por el cliente y así es el proceso logístico del despacho.
+
+@48:12 - Jorge Carrera (blasterinformation.com)
+No, hay muchos, muchos, muchos aspectos a mejorar a nivel del sistema. Sí, eso en cuanto a esto. Ok, esta es la parte de, ok, ¿qué más se nos puede escapar aquí en la logística?
+
+@48:31 - Martin Hendrik (ALFA ELECTRONIC)
+A mí me gustaría, por ejemplo, si ve que nosotros a veces hacemos despachos por ser bien entrega y a veces no.
+
+@48:41 - Jorge Carrera (blasterinformation.com)
+Ajá.
+
+@48:41 - Martin Hendrik (ALFA ELECTRONIC)
+Que hubiese acá como un checklist, otra columna o no sé, que dijera tipo de despacho y yo le, yo le, yo le hago un chulito si fue por transportadora, chulito la columna transportadora, a lo que hablábamos ahorita.
+Chulito. Chulito, Transportadora, yo selecciono cuál transportadora, Servia, Entrega, Envía, Coordinadora y Número de Guía. O Chulito, a una columna que diga cliente recogió.
+Claro, esa es otra opción, perfecto. Sí, porque por ejemplo acá yo todo este poco de equipos no sé, solo viendo la lista así, yo no sé si fueron por transportadora o si el cliente los recogió.
+Pero me toca ponerme a este equipo, por ejemplo, con cuál orden de envío se despachó, SO260-737, irme a buscar en el historial de correos a ver si fue por transportadora.
+No sale, entonces yo asumo que fue que lo recogieron, entonces voy a entrar ahí. ¿Sí ven? En cambio si fuera más interactivo, pues sería más...
+Rápido saber cómo se entregó el equipo. Muchas adjuntas. Víctor. Víctor. Aquí está cargado. Me toca hacer toda esta ruta para darme cuenta que fue que lo recogieron.
+Sí, no, mucho, mucha vuelta. Miren, acá está el soporte de que lo recogieron.
+
+@50:32 - Jorge Carrera (blasterinformation.com)
+Ok. Listo.
+
+@50:37 - Martin Hendrik (ALFA ELECTRONIC)
+Claro, sería súper chévere ver acá algo que dijera seguimiento del despacho. Por transportadora o recogieron. Y si fue por transportadora, ¿con cuál y con cuál número de guía?
+Algo así.
+
+@50:54 - Jorge Carrera (blasterinformation.com)
+El seguimiento de nuestras portadoras es el momento que tú lo colocaste para... Para envío, momento que el muchacho del almacén, o sí, el encargado de despacharlo, lo colocó en el sistema para hacer de entrega o para la empresa correspondiente.
+En el momento que le llegó al cliente, el cliente lo recibió, porque es importante saber si el cliente lo recibió.
+Sí, correcto.
+
+@51:27 - Martin Hendrik (ALFA ELECTRONIC)
+Y ahí ya tiene una traceabilidad.
+
+@51:33 - Jorge Carrera (blasterinformation.com)
+Sí. Sí. Y todo esto se ha manejado no por ti, o claro, tú como la ministra ahora lo puedes hacer, pero eso lo haría, tendría que hacer el muchacho, el encargado del envío.
+
+@51:48 - Martin Hendrik (ALFA ELECTRONIC)
+Exactamente, sí, señor. Ok.
+
+@51:52 - Jorge Carrera (blasterinformation.com)
+Bueno, Maribel, no sé qué otra cosa. Bueno, pendiente ahorita. Bueno, Inventario y administrativo, pero no sé si, bueno, no sé si otra cosita para conversar referente a logística.
+No, la logística es como eso.
+
+@52:11 - Martin Hendrik (ALFA ELECTRONIC)
+Ah, bueno, cuando uno hace órdenes de envío, por ejemplo, no sé si usted recuerda que cuando uno registraba un equipo en el sistema, uno le ponía si traía accesorios.
+Ok. Sí, cuando uno hace una orden de envío y es un equipo que trae accesorios, él también muestra ese comentario de manera automática.
+
+@52:38 - Jorge Carrera (blasterinformation.com)
+Claro, claro, claro. Este equipo no trae accesorios, entonces no salió nada.
+
+@52:43 - Martin Hendrik (ALFA ELECTRONIC)
+Pero si en el campo accesorios dice caja, CD o lo que sea, en ese caso acá saldría ese reglón que dice accesorios y dice cuáles.
+Y la persona de logística sabe que. Tiene que mandar ese equipo con esos accesorios.
+
+@53:05 - Jorge Carrera (blasterinformation.com)
+Hay posibilidad de que algún accesorio yo no lo envíe. Por ejemplo, me explico.
+
+@53:12 - Martin Hendrik (ALFA ELECTRONIC)
+Pero eso ya es porque de pronto uno no revisa bien la orden de envío y manda solo el equipo.
+
+@53:19 - Jorge Carrera (blasterinformation.com)
+Me llegan dos equipos de la misma empresa, dos equipos de la misma empresa y un accesorio, un accesorio que me sirve para los dos.
+Sí. En el momento de reparar uno o el otro, es posible que se me vaya, yo despache este. Porque me quedo con el accesorio porque todavía no he reparado este.
+Ok. O sea, no le mando el accesorio porque me hace falta porque no he terminado de reparar el otro equipo.
+Pues normalmente el accesorio se despacha.
+
+@53:59 - Martin Hendrik (ALFA ELECTRONIC)
+accesorio. O sea, le Con el equipo al cual se le cargó en el sistema. Si el accesorio, si es un solo accesorio para los dos equipos y el equipo que se va a despachar primero es el que ha registrado con el accesorio, de una vez el sistema lo saca.
+
+@54:18 - Jorge Carrera (blasterinformation.com)
+Ok. Sí, ahí habría que manejar. O sea, es un caso, el caso que nos sucede, muy raro. Pero es como la ley de Murphy, hay que ver la posibilidad de que suceda.
+
+@54:36 - Martin Hendrik (ALFA ELECTRONIC)
+Ajá, sí. ¿Cómo se va a manejarlo?
+
+@54:41 - Jorge Carrera (blasterinformation.com)
+Pues, a veces sí, yo me meto en el sistema con mi usuario administrador y yo le asigno ese accesorio al equipo que todavía tengo.
+Me tocaría hacer el cambio manualmente. Manualmente.
+
+@54:51 - Martin Hendrik (ALFA ELECTRONIC)
+a ir al sistema y decirle el accesorio que viene con el equipo 132, lo quito, lo borro y voy.
+Se lo cargo al 133. Y listo.
+
+@55:04 - Jorge Carrera (blasterinformation.com)
+Y listo.
+
+@55:04 - Martin Hendrik (ALFA ELECTRONIC)
+Tocaría hacerlo así, sí. Sí, perfecto.
+
+@55:08 - Jorge Carrera (blasterinformation.com)
+Bueno, Maribel, tengo pendiente a lo que es administrativo, inventario, casi lo hemos tenido listo, pero fíjate, yo tengo la reunión ahorita.
+No sé.
+
+@55:26 - Martin Hendrik (ALFA ELECTRONIC)
+Yo creo que la parte administrativa la podemos programar conmigo. Inventario, yo creo que sí es mejor que se lo muestre Giovanni, porque ellos lo manejan todos los días y lo manejan súper bien.
+Se lo va a poder explicar mucho mejor que yo. Ok. Déjeme, yo le mando un mensaje a Giovanni, si él puede, mañana.
+¿Mañana usted podría ir en la franja de la mañana o en qué horario?
+
+@55:52 - Jorge Carrera (blasterinformation.com)
+Eh, lo tengo para la mañana, a las 10 la mañana. Claro, lo puedo mover, si él le conviene más a...
+Hola José, lo puedo mover. Listo.
+
+@56:05 - Martin Hendrik (ALFA ELECTRONIC)
+Deme un segundito, yo le pregunto de una vez a Giovanni. Sí, sí, sí. Hola Mari. Hola Vaquero, ¿cómo vas?
+Bien, ¿cómo vas? Bien, bien Vaquerito, una pregunta. Es que estoy acá en reunión con el señor Jorge del software.
+Digamos que ya vamos como completando las informaciones que ellos necesitan para levantar la información. Me queda explicarles una partecita administrativa y me queda explicarles la parte de cómo se maneja el inventario de repuestos.
+¿Tú podrías mañana? ¿En la mañana? Sí, no, a la hora que tú me ibas. Espérame tranquilo. Don Jorge, ¿me recuerda mañana a qué horas es que usted tendría disponibilidad?
+
+@57:16 - Jorge Carrera (blasterinformation.com)
+Podríamos conversar a las 10 de la mañana. ¿Te queda bien a las 10, vaquero?
+
+@57:22 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, no hay problema. Listo, entonces yo te comparto el link que me va a dar el señor Jorge, ¿listo?
+Bueno, María. Angie está incapacitada, entonces normalmente puedes, está incapacitada nuevamente, entonces normalmente puedes usar el portátil de ella, ¿vale?
+Listo, eso es súper. Listo, vaquero, gracias. Bueno, María, así que vamos, estén bien, saludos al monito, chao. Bueno, chao.
+Sí, ¿qué a las 10?
+
+@57:54 - Jorge Carrera (blasterinformation.com)
+Excelente, a no, espectacular. No, no, vamos a quedar así, entonces yo ahorita el link... Eh, pues, es el mismo este, pero yo igualito te lo confirmo, el mismo link.
+
+@58:04 - Martin Hendrik (ALFA ELECTRONIC)
+Ah, eso, listo, y yo se lo paso a Giovanni.
+
+@58:08 - Jorge Carrera (blasterinformation.com)
+Eh, déjame verificarlo de una vez, este es el, termina en FB, FBH. Sí, FBH. Perfecto, es el mismo link, igualito yo te lo comparto para, para tenerlo allí.
+Bueno, nada, espectacular, entonces, bueno, estamos terminando. La parte administrativa, bueno, la podemos ver después, ya sea el viernes o el lunes, tú me comentas.
+Y mañana veo la parte de inventario con Giovanni.
+
+@58:38 - Martin Hendrik (ALFA ELECTRONIC)
+Le dejo pendiente confirmarles si el viernes o el lunes, porque, eh, estoy, tengo que ir a mi cita de retiro de puntos de mi cesárea y no me han dicho si es el viernes o el lunes.
+Bueno, no.
+
+@58:53 - Jorge Carrera (blasterinformation.com)
+Pero mañana, normalmente mañana ya lo sé.
+
+@58:56 - Martin Hendrik (ALFA ELECTRONIC)
+Maribel, eso es una operación que tú tienes.
+
+@58:59 - Jorge Carrera (blasterinformation.com)
+See ya. Sí, eso es, cuidado, es una operación.
+
+@59:04 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, ahí vamos en nuestra recuperación, Dios mío. Dale, claro que sí, claro que sí.
+
+@59:11 - Jorge Carrera (blasterinformation.com)
+Bueno, no te quito más tiempo porque te dediques a Emilio.
+
+@59:16 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, es que me toca cogerlo en su hora de sueño porque es que él se duerme, lo que pasa es que no siempre se duerme, no siempre sé a qué hora se va a dormir.
+Pero lo que sí es seguro es que cuando se duerme, duerme tres horas. Ah, gracias a Dios. Y me toca cuando se duerme, aprovechar y hacer todo lo que puedo hacer.
+No, no, no, aprovecho ahorita.
+
+@59:44 - Jorge Carrera (blasterinformation.com)
+Yo tengo dos hijos y uno de ellos nació en Japón, un horario de Japón.
+
+@59:51 - Martin Hendrik (ALFA ELECTRONIC)
+Sí.
+
+@59:52 - Jorge Carrera (blasterinformation.com)
+De día dormía y de noche era que lloraba. Sí. A los tres, cuatro años. Fue más o menos agarrando.
+Ay, no, mucho tiempo. Sí. A los tres años, a los tres años. No, tranquila, no, pero tú y yo, Emilio, se portan muy bien, excelente.
+
+@1:00:14 - Martin Hendrik (ALFA ELECTRONIC)
+No, es cuando duerme, es excelente. No, claro que sí. Yo ya sé que tengo mis tres horitas ahí para hacer algo.
+Claro, y de encantar. Sí, no sé si es, o sea, él a veces se despierta y así como puede ser que come tetica y se duerme en una hora, a veces no se duerme de una vez y me dura dos horas, dos horas y media despierto.
+Entonces, es difícil hacer algo porque pues de pronto llora o algo y me toca esperar hasta que se duerma.
+
+@1:00:45 - Jorge Carrera (blasterinformation.com)
+No, no, y hay que hablarle mucho, ponerle canción, muchos besitos, mucho cariño. mira, nada, eso hay que, bueno, eso es que vamos a escucharlo con mucho amor.
+Sí. Aprovecharlo porque crecen rápido, ¿viste? Gracias. ¡Ay, Dios mío! Sí. Dale, ya, bueno, entonces, bueno, estamos pendientes.
+
+@1:01:06 - Martin Hendrik (ALFA ELECTRONIC)
+Bueno, muy amable, muchas gracias. Gracias, que estés bien.
+

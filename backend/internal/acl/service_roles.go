@@ -137,7 +137,7 @@ VALUES ($1, $2, $3, $4, true, $5, $6);
 		return Role{}, RoleSeedSummary{}, err
 	}
 
-	summary, err := s.seedRolePermissionsTx(ctx, tx, role.ID)
+	summary, err := s.seedRolePermissionsTx(ctx, tx, role.ID, role.Name)
 	if err != nil {
 		return Role{}, RoleSeedSummary{}, err
 	}

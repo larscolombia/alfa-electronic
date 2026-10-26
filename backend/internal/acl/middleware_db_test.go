@@ -293,3 +293,66 @@ func TestSeedCatalogCoversRequiredModules(t *testing.T) {
 		}
 	}
 }
+
+// Hallazgo t07: el rol "Técnico" debe nacer con 'agregar: propio' sobre el
+// módulo inventario (sin eso el técnico recibe 403 al solicitar repuestos).
+// El seed es perezoso e idempotente: re-aplicarlo no duplica ni pisa lo que un
+// administrador haya concedido o denegado a mano.
+func TestTechnicianRoleSeededWithAddOnInventory(t *testing.T) {
+	db := openTestDB(t)
+	s := NewService(db)
+	companyID := testCompany(t, db, "tecnico-inventario")
+
+	ctx := context.Background()
+	if _, err := s.ListRoles(companyID); err != nil {
+		t.Fatalf("ListRoles (seed): %v", err)
+	}
+
+	var scopeID int
+	err := db.QueryRow(`
+		SELECT rp.scope_id
+		FROM acl_role_permissions rp
+		JOIN acl_roles r ON r.id = rp.role_id
+		JOIN acl_modules m ON m.id = rp.module_id
+		JOIN acl_actions a ON a.id = rp.action_id
+		WHERE r.company_id = $1 AND r.name = 'Técnico'
+		  AND m.slug = 'inventario' AND a.name = 'agregar'
+	`, companyID).Scan(&scopeID)
+	if err != nil {
+		t.Fatalf("consultar permiso agregar/inventario del Técnico: %v", err)
+	}
+	if scopeID != 1 { // 1 = propio
+		t.Errorf("scope_id = %d, esperaba 1 (propio)", scopeID)
+	}
+
+	// El middleware lo ejerce de punta a punta: POST (agregar) pasa, y los demás
+	// módulos no administrativos quedan como antes (sólo 'ver').
+	e := newTestApp(s, "inventario", "Técnico", companyID)
+	if rec := doRequest(t, e, http.MethodPost, "/probe"); rec.Code != http.StatusOK {
+		t.Fatalf("POST inventario con rol Técnico devolvio %d, body: %s", rec.Code, rec.Body.String())
+	}
+
+	// Re-seed idempotente: mismos permisos, sin filas duplicadas.
+	if err := s.ensureDefaultRoles(ctx, companyID); err != nil {
+		t.Fatalf("ensureDefaultRoles (re-aplicado): %v", err)
+	}
+	var count int
+	if err := db.QueryRow(`
+		SELECT COUNT(*)
+		FROM acl_role_permissions rp
+		JOIN acl_roles r ON r.id = rp.role_id
+		WHERE r.company_id = $1 AND r.name = 'Técnico'
+	`, companyID).Scan(&count); err != nil {
+		t.Fatalf("contar permisos del Técnico: %v", err)
+	}
+	var moduleCount, actionCount int
+	if err := db.QueryRow(`SELECT COUNT(*) FROM acl_modules WHERE is_active = true`).Scan(&moduleCount); err != nil {
+		t.Fatalf("contar modulos: %v", err)
+	}
+	if err := db.QueryRow(`SELECT COUNT(*) FROM acl_actions`).Scan(&actionCount); err != nil {
+		t.Fatalf("contar acciones: %v", err)
+	}
+	if expected := moduleCount * actionCount; count != expected {
+		t.Errorf("permisos del Técnico = %d, esperaba %d (modulos x acciones, sin duplicados)", count, expected)
+	}
+}

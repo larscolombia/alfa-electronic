@@ -190,6 +190,10 @@ func (s *Service) UpsertProject(companyID string, req UpsertProjectRequest) (Pro
 			}
 		case errors.Is(err, sql.ErrNoRows):
 			// Proyecto nuevo: cualquier estado del catalogo es un inicio legal.
+			// Si nace de la recepción de equipos, el técnico responsable del ítem
+			// (asignado en el wizard) manda sobre el responsable por defecto que
+			// envía el cliente: el proyecto debe nacer con el assignee real.
+			s.applyEquipmentAssignee(companyID, req.Properties)
 		default:
 			return Project{}, err
 		}

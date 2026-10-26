@@ -1,0 +1,777 @@
+Reunion de Trabajo LARS - Alfa - March 24
+ VIEW RECORDING - 75 mins (No highlights) 
+@0:00 - Martin Hendrik (ALFA ELECTRONIC)
+Se quede ahí. Buenos días. Hola, Maribel, ¿Cómo te va?
+
+@0:06 - Jorge Carrera (blasterinformation.com)
+Hola, señor Jorge, ¿Qué más? No, tranquila.
+
+@0:12 - Martin Hendrik (ALFA ELECTRONIC)
+La logística se me atrasó un poquito. No, eso es normal, todo cambia, todo, todo, todo, ya uno pasa a segundo plano.
+
+@0:21 - Jorge Carrera (blasterinformation.com)
+Y le va a presentar.
+
+@0:23 - Martin Hendrik (ALFA ELECTRONIC)
+Hola, ¿Cómo se llama?
+
+@0:26 - Jorge Carrera (blasterinformation.com)
+Emilio Josué. Emilio Josué. ¿Cómo estás? Vale. Ay, mira, qué lindo, qué precioso. Dios lo bendiga.
+
+@0:37 - Martin Hendrik (ALFA ELECTRONIC)
+Hoy voy a acompañar a la mamá a trabajar, vamos a ver cómo nos va. Está, está pila, está despierto.
+Bueno, siempre me acompaña en la barriga, ahora ya está por fuera la barriga.
+
+@0:49 - Jorge Carrera (blasterinformation.com)
+Bueno, bueno, él sabe, sabe ya cómo es la cosa. Sí, ya conoce el tema. Bueno, a, tú me dices, si le damos una hora, hora y media.
+Gracias.
+
+@1:00 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, hagamos, miremos a ver cómo nos va porque pues es la primera, la verdad hasta hoy me tomé la semana pasada y hoy es que voy a retomar como trabajo a ver cómo me adapto con él.
+Entonces pues iniciamos y ahí miramos, ¿sí? Sí, damos horas, hora y media. Usted me dirá qué tema quiere que le muestre hoy.
+
+@1:23 - Jorge Carrera (blasterinformation.com)
+Fíjate, Maribel, tenemos pendiente lo que es la parte administrativa, la parte logística, inventario y compras. Ok.
+
+@1:32 - Martin Hendrik (ALFA ELECTRONIC)
+El último proceso que vimos fue el de cotizar, cotizar, no.
+
+@1:37 - Jorge Carrera (blasterinformation.com)
+Vimos el despacho, remisión de despacho.
+
+@1:40 - Martin Hendrik (ALFA ELECTRONIC)
+Ah, y cómo facturar, ¿cierto? Y facturación.
+
+@1:44 - Jorge Carrera (blasterinformation.com)
+Listo. Entonces nos faltaría lo que nos falta, lo que tengo anotado aquí, lo que es la parte administrativa, la parte logística, inventario y compra.
+Ok.
+
+@1:56 - Martin Hendrik (ALFA ELECTRONIC)
+Ah, pues si quiere entonces lo que podemos hacer es que ahora le muestro. ¿Cómo se procede con la compra de repuestos?
+Sí, podría ser eso.
+
+@2:11 - Jorge Carrera (blasterinformation.com)
+Ok, pues podemos ver ahorita compras y no sé si eso está ligado con inventario. Sí, sí, sí está ligado con el inventario.
+Ah, bueno, perfecto.
+
+@2:25 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces, permítame, le voy a compartir la pantalla. ¿Cómo se hace la compra de repuestos? ¿Sí? Ok. Listo, entonces, vámonos por acá.
+
+@3:08 - Jorge Carrera (blasterinformation.com)
+Ese estatus, claro, una vez que el analista inspecciona, llega a un estatus, me recuerda si es 1 o 11.
+
+@3:20 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces, el primero es cero, que es diagnóstico, y cuando el equipo ya está confirmado por el cliente, pasa a, se cotiza y pasa a 5, y cuando lo confirman, con orden de compra, pasa a posición 05.
+Ok. Voy a abrir un módulo, un módulo, ¿qué? Técnico. Permíteme yo abrir un módulo técnico. Entonces, en 05 lo que hace el técnico es validar qué repuestos debe comprar.
+Y, por ejemplo, listo. Entonces, digamos, acá este equipo está en posición 0-5, ¿sí?
+
+@4:16 - Jorge Carrera (blasterinformation.com)
+Sí. Sí.
+
+@4:47 - Martin Hendrik (ALFA ELECTRONIC)
+Por ejemplo, ¿sí vio? Ahí había una casillita que dice stock.
+
+@4:51 - Jorge Carrera (blasterinformation.com)
+Ok, abajo a la derecha. Sí.
+
+@4:54 - Martin Hendrik (ALFA ELECTRONIC)
+Y él viene y busca primero si en el stock está el repuesto que él necesita. Entonces digamos que él dice que necesita de este.
+Ya, mi amor. Ya. No pasa nada. Vamos a adaptarnos. ¿Listo? A nuestro estilo de vida. Sí. Si la mamá debe trabajar mi vida.
+Entonces tú la acompañas, bueno. Pero vamos a estar tranquilos, los dos. Vamos a hacer algo. Yo te doy comida y yo trabajo.
+Sí. Tú comes y yo trabajo. A ver. A ver. Eso. Abre, grande, come. Abre. Abre. Come, papa. Stock, y revisa primero en el stock si el repuesto que necesita está ahí.
+¿Sí? Ponerla ahí. Ya. Uf. Listo. Entonces digamos que él necesita una unidad. Entonces él le va a decir Es que yo yo como este módulo como de los técnicos casi no lo uso.
+Pero bueno, hay una opción que no tengo claro ahorita cómo es que uno le dice sacar del stock, digamos, una unidad.
+Ok.
+
+@7:14 - Jorge Carrera (blasterinformation.com)
+Ok. Él extrae una... ¿Cuánta unidad del stock? Creo que es acá.
+
+@7:27 - Martin Hendrik (ALFA ELECTRONIC)
+Ah, reservar. Es esta, creo que es esta. Mira, dice que en el stock debe haber mínimo una y hay tres.
+¿Sí? Dice mínimo una y hay cuantidades tres. Y mire que acá hay una cosita que dice reservadas. O sea, él le muestra a uno si de esas tres que hay en el stock, ya alguien reservó una o dos para alguna reparación.
+En este momento dice reservadas cero. Entonces, yo le voy a decir reservar. Ajá. Dice, entonces, él saca esta, este cuadrito.
+Correcto. Con los datos del componente. Dicen qué cajón está. Y dice, bueno, hay tres. ¿Cuántas quiere reservar para esta reparación?
+Yo le digo una. ¿Sí? Él dice nuevo stop, dos. ¿Sí lo ven? Sí. Yo le digo, mira, este es el LM385.
+LM385. Yo le digo validar. Y voy a devolverme a ver si me quedo bien. No me quedo bien, pero bueno.
+Me toca con Giovanni y de pronto nos sale esa parte. Pero normalmente acá se crea una línea.
+
+@8:58 - Jorge Carrera (blasterinformation.com)
+OK.
+
+@8:59 - Martin Hendrik (ALFA ELECTRONIC)
+Con los datos de ese repuesto del stop que yo reservé para esta reparación. ¿Sí?
+
+@9:05 - Jorge Carrera (blasterinformation.com)
+OK.
+
+@9:06 - Martin Hendrik (ALFA ELECTRONIC)
+Si otra persona va a buscar ese repuesto, ya no le va a mostrar que hay tres disponibles, sino dos.
+Porque yo reservé uno. ¿Sí? OK.
+
+@9:16 - Jorge Carrera (blasterinformation.com)
+Sí. ¿Sí? Sí.
+
+@9:16 - Martin Hendrik (ALFA ELECTRONIC)
+Si él, por el contrario, necesita un repuesto que no está en el stock, en ese caso, se le dice acá este otro botón, solicitud de compra, ¿sí?
+Si yo le doy clic ahí, miren, solicitud de compra, se creó una línea, ¿sí la ve? Sí, arriba, ¿no?
+Ajá, entonces, bueno, en mi módulo administrativo yo no lo puedo hacer acá, pero en el de ellos, sí. Ellos crean la línea y le dicen editar, y cuando la editan, le ponen qué tipo de componente es, con qué proveedor se compra, cuántos necesitan, qué valor tiene.
+Ok, el precio estimado. El precio se saca de la página del proveedor. Ok.
+
+@10:13 - Jorge Carrera (blasterinformation.com)
+Porque ellos tienen acceso a esas páginas.
+
+@10:15 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces ellos... Entonces, miran con qué proveedor se consigue, el precio en el que está y completan estos datos que pide acá el sistema.
+Acá es nombre del proveedor, en plazo siempre se pone uno, el qué es, si es un condensador, una resistencia, lo que sea.
+La referencia del componente, cuántos necesita, el valor, la marca, y él va agregando las líneas, ¿sí? De todo lo que necesita.
+Mire que acá abajo el sistema me va sumando lo que suman todas las líneas que él va agregando, ¿sí?
+Y así él me va dando un estimado de cuánto se va gastando en repuestos.
+
+@11:06 - Jorge Carrera (blasterinformation.com)
+Ok, hasta el momento, este ejemplo tiene tres, cuatro, cinco, seis, seis componentes. Hay uno que dice tres.
+
+@11:17 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, son cuatro referencias, de una son tres unidades y de las otras son de a una. Ok. Acá se pone el valor unitario en esta columna, ¿sí?
+Entonces, cuando son cosas del stock, solo le pueden poner este chulito de validación, el técnico cuando ya lo saca efectivamente del stock.
+Sí, mire que si yo le quiero dar chulito a esta otra línea que dice stock, él me dice, confirma que quiere sacarlo del stock.
+Entonces, yo no le voy a decir que sí porque yo no estoy haciendo esa reparación, pero si son ellos, ellos le dicen sí y sacan esa unidad que habían reservado, la sacan de manera definitiva del stock.
+
+@12:07 - Jorge Carrera (blasterinformation.com)
+Perfecto. Y ya está totalmente descontada.
+
+@12:10 - Martin Hendrik (ALFA ELECTRONIC)
+Y queda con el chulito, queda validado que ya la sacaron, digamos, él acá ya sacó dos, mire. Entonces, Tienen chulito, le falta sacar este, ¿sí?
+Eso con lo del stock, diferente a las otras líneas que se crearon, esas otras líneas no están en mi inventario, sino que toca importarlas, ¿cierto?
+Sí. Entonces, mire que la línea está en blanco. Acá abajo hay unos cuadritos de colores y unos significados. Cuando un técnico crea varias líneas que tocan importar, porque no están en el inventario, él las deja en blanco, sin validar, sin el chulito, ¿sí?
+Cuando ya el cliente confirma la reparación, se le da chulito, mire, así. Ok, eso porque para que lo compren.
+Sí, si no se le da chulito, a mí no me sale en la lista de comprar. Ok.
+
+@13:14 - Jorge Carrera (blasterinformation.com)
+Entonces, ahí, mire que yo leí chulito.
+
+@13:16 - Martin Hendrik (ALFA ELECTRONIC)
+Y se puso rosado. Rosado significa en curso de validación o en proceso de compra, vamos a decirlo así. Rosado.
+Cuando está en rosado, a mí ya me va a salir, ahorita que le muestre, en mi módulo donde están todos los repuestos que toca comprar.
+Si la persona no le da chulito y no queda rosado, ese repuesto no se agrega a la lista de la compra.
+Sí. Cuando yo hago la compra de componentes en el sistema, el repuesto pasa de rosado a naranja. Naranja significa en espera, en espera de, ¿cómo le vamos a decir?
+En importación, vamos a decirlo. Ahí te tengo una pregunta, Maribel.
+
+@14:07 - Jorge Carrera (blasterinformation.com)
+Fíjate lo siguiente, hay algo que me preocupa un poco. Y es que, te comento, los muchachos, ellos reservan... Componente, reservan la pieza.
+Y hay que esperar porque el cliente acepte la cotización. Pero el cliente se puede tardar semanas, un tiempo, mientras el componente está reservado y nadie lo puede tocar.
+Pero de repente hay una reparación urgente que ya está paga y resulta que no la puedo utilizar porque ya está reservada por alguien que todavía no ha aprobado.
+Correcto.
+
+@14:44 - Martin Hendrik (ALFA ELECTRONIC)
+¿Cómo hacen esos casos? Pues normalmente ellos miran, se puede mirar para qué equipo está reservado, ¿sí? Se utiliza y se compran más para que cuando se vaya a usar el otro, hayan unidades.
+
+@15:03 - Jorge Carrera (blasterinformation.com)
+Ok. Es decir, ellos pueden entrar, ven que no hay existencia, pero también pueden ver si hay un monto reservado.
+Si hay un monto reservado de lo que yo quiero, se verifica y entre ellos conversan para ver. Gracias. Sí.
+
+@15:19 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces se crea una línea nueva para el inventario para reabastecerlo. Entonces, digamos, yo saco las dos que tenían separadas, pero yo ya creo de una vez una línea nueva con dos más para reabastecerlo y asegurarme que no le van a faltar esas dos unidades a que las queden separadas.
+Ok.
+
+@15:42 - Jorge Carrera (blasterinformation.com)
+Ok.
+
+@15:43 - Martin Hendrik (ALFA ELECTRONIC)
+Vamos. Ya. Tranquilo. Me pregunto, ¿tiene un vaso? Entonces, bueno. Listo. Pasa a naranja cuando yo ya hago la compra de repuestos, que ya le muestro cómo se hace.
+Eresoyo. tema. Y cuando el repuesto llega de importación que se hace la validación en el sistema de que ya llegó pasa a color verde.
+Cuando todo está recibido el sistema pasa a bueno cuando cuando falta que llegue algo esto pasa a posición 11 y cuando llega todo pasa a posición 1 listo para reparar.
+Entonces, bueno, le voy a quitar el churito porque esto todavía. Ah, no, sí, eso ya está confirmado. No, quitemoslo porque eso ya lo inventé.
+Tengo esas líneas. Entonces, eso es para mostrarle cómo se van agregando las líneas de lo que toca comprar. ¿Sí?
+Entonces, está lo que es el stock y está lo que sí toca importar. Entonces, cuando ellos crean esas líneas...
+Entonces, miramos otro código. Entonces, miramos Vamos a mirar este, a ver si tiene líneas creadas. Mire, por ejemplo este, ya tiene varias cosas que están en el stock, las grises.
+Sí. La naranja es porque yo ya la compré, de hecho yo la compré con este pedido, mírelo. Cuando yo creo, cuando yo hago compras, esa lista de compras adquiere un código.
+Mire, este repuesto, este repuesto naranjado quedó comprado con la compra que tiene este código. Si yo me paro ahí, mírela, esto fue todo, esto fue lo que yo compré.
+
+@18:00 - Jorge Carrera (blasterinformation.com)
+En esa lista de compras.
+
+@18:02 - Martin Hendrik (ALFA ELECTRONIC)
+En lista de compras, mírela, la compra número 260-3005 del proveedor UTSURS. Tiene todos estos repuestos que hay acá. Como yo ya los compré, se pasó a naranja, ¿sí ve?
+
+@18:16 - Jorge Carrera (blasterinformation.com)
+Sí.
+
+@18:17 - Martin Hendrik (ALFA ELECTRONIC)
+Mírenla, ya no es rosada, sino narana. Estos siguen rosados porque yo no los he comprado. Pero apenas yo los compre, que ya les voy a mostrar cómo es, se pasan a narana.
+¿Listos? Perfecto. Entonces, a mí me salen acá, en mi panel de control. Yo tengo acá algo que me gustaría como separar.
+Y es que, en este panel de control, me salen en este mismo, en esa misma barra, digamos, todo lo que tengo que cotizar con lo que ya confirmaron los clientes.
+El sistema me lo tiene mezclado. O sea, me gustaría que fuera una barra con lo de cotizar y otra barra con lo que ya está aprobado.
+
+@19:11 - Jorge Carrera (blasterinformation.com)
+Claro, te pueden aparecer. Claro, el total. ¿Por comprar? Otro, uno lo confirmado y otro por lo no confirmado. Y otro por cotizar, sí.
+
+@19:24 - Martin Hendrik (ALFA ELECTRONIC)
+Sí. Entonces, por ejemplo, acá están mezcladas. Entonces, esto ya fue confirmado. Entonces, yo entro. Yo le digo seguimiento, que es este botoncito, seguimiento.
+Y como ellos ya terminaron de agregar todos los repuestos que necesitan, yo verifico que todo esté chuleado. O sea, para que no se me quede ninguna línea sin comprar.
+Ok. Y lo paso a posición 11. Acá le escribo 11. Entonces, el código a ellos les va a aparecer ahora, en el equipo les va a aparecer ahora en esa posición, lo que significa que ya todo está en proceso de importación.
+Entonces, miren, 260-20-159. Le voy a dar transferir. Me voy para atrás. Y ya no me salí acá, ¿sí ven?
+Se desapareció. Sí. Yo hago ese mismo procedimiento con todo lo que esté aprobado. Este también está aprobado. Vamos a mirar si tiene repuestos para chulearos y todo eso.
+Estos solo son cosas del stock. Cuando solo son cosas del stock, es decir, que no hay líneas para importar.
+Yo no lo pongo en posición 11 porque no hay que importar nada. Yo lo pongo de una vez en posición 1.
+O sea que él ya puede empezar a reparar eso.
+
+@21:01 - Jorge Carrera (blasterinformation.com)
+O sea que en ese momento tú lo estás autorizando. O sea, no es que él saca del stock el inventario y él se pone a repararlo.
+él tiene que esperar que tú lo pongas en posición 1. Sí, señor. Exactamente.
+
+@21:12 - Martin Hendrik (ALFA ELECTRONIC)
+Yo soy la que les pone los equipos en posición de... Gracias. Gracias. Gracias. Listo, repare, ¿sí? Ok, tú se lo autorices.
+Sí, acá hay otro del mismo cliente, mírelo. Entonces, yo voy a entrar ahí. Le digo seguimiento. Mire que a este sí le va a comprar cosas, ¿sí ve?
+Este sí tiene rosaditos que son para importar. Todos están chuleados. Este sí se lo voy a poner en 11.
+Significa que tiene importación. Tiene que esperar a que llegue a todo. Le digo transferir. Mire, este es 260-326. Transferir.
+Atrás. Ya no me sale acá. ¿Ve? Todos tengo zonas para cotizar. Ahora, mire, entonces yo me voy a ir al menú principal.
+Y acá hay una opción que se llama gestión de compras y dice compras proveedores. Es en este módulo donde se hacen la compra de los repuestos.
+Entonces yo le doy clic ahí y le voy a decir actualizar para que él me agregue todos los repuestos que últimamente se chulearon.
+
+@22:39 - Jorge Carrera (blasterinformation.com)
+Que ya tú has aprobado para comprar. Sí, entonces yo le voy a actualizar y esta lista se va a agrandar.
+
+@22:45 - Martin Hendrik (ALFA ELECTRONIC)
+Mírela. Mire todo lo que se agrandó. ¿Por qué? Porque normalmente el día que nosotros utilizamos para pedir repuestos de todo lo que se confirmó en la semana son los viernes.
+Entonces los chicos el viernes es el día en que miran qué fue todo lo que se aprobó por los clientes y empiezan a agregar las líneas de repuestos.
+Ok. Entonces digamos yo hoy voy a comprar todo lo Que ellos tienen agregado hasta el momento. Mire que voy a ordenar, yo acá puedo ordenar por código, por posición, mire, por stock o por número de cliente, puedo ordenar por referencia del repuesto, mire, por cantidad, por precio, puedo ordenarlo por técnico, puedo ordenarlo por proveedor, lo que yo quiera.
+Voy a ordenarlo por código, y mire que el que yo chuleé los repuestos ahorita era el 260-326, si no me equivoco.
+Se lo voy a mostrar para mostrarle que las líneas ya me salen acá. Mírelo, mírelo, todas estas son las que yo chuleé ahorita.
+Cada vez que yo chuleo una línea y le doy aquí en mi módulo compras proveedor, yo le doy a actualizar, esas líneas ingresan al pedido que tengo que hacer.
+
+@24:15 - Jorge Carrera (blasterinformation.com)
+Si yo no me equivoco, le doy
+
+@24:16 - Martin Hendrik (ALFA ELECTRONIC)
+No se agrega. Claro, ahí se agrega la línea, más no se suma.
+
+@24:22 - Jorge Carrera (blasterinformation.com)
+Por ejemplo, si hay otra línea más, por ejemplo, un transitor, el mismo tipo de transitor que ya alguien lo pidió y yo vuelvo a pedir otro para otro cliente, allí no se me suma, no se me pone dos transitorios.
+
+@24:36 - Martin Hendrik (ALFA ELECTRONIC)
+No porque el sistema me muestra cuántas unidades son para cada equipo en el específico. Ok, un detalle.
+
+@24:45 - Jorge Carrera (blasterinformation.com)
+Sí, ajá, sí.
+
+@24:47 - Martin Hendrik (ALFA ELECTRONIC)
+Esto sí me serviría al momento de… Sí sería útil hacer eso, pero ¿cómo hacerlo? No, sería momento que genere el documento de compra, ¿no?
+
+@25:04 - Jorge Carrera (blasterinformation.com)
+Sí.
+
+@25:04 - Martin Hendrik (ALFA ELECTRONIC)
+¿Por qué? Porque es que resulta que, ahí haciendo un paréntesis, ¿no? Sí. Cuando yo hago importaciones y que por X o Y razón valen más de dos mil dólares, resulta que toca nacionalizar.
+La mercancía. Y la nacionalización de mercancías se demora según el número de líneas que tenga el pedido. ¡Oh, imagínate!
+Entonces, como yo compro tantas cositas chiquitas, pues hay muchas líneas. Entonces, así sea chiquito y así no pese, ellos determinan el tiempo de nacionalizaciones por cantidad de líneas.
+Entonces, se puede demorar 15 días, 20 días, porque, digamos, nacionalizan en 5 días un pedido de 150 líneas. Por cada 45 líneas más, se va subiendo 2, 3 días más.
+Entonces, eso me pasó hace poco y tuve un pedido de 180 y pico líneas y esa nacionalización se me demoró pasados los 15 días.
+Entonces, se me atrasaron varias reparaciones. Sí sería útil que cuando yo hago ya, cuando yo monto el pedido a la página.
+Si hay repuestos repetidos, si de alguna manera se sumen, se unifiquen las líneas. Acá en el sistema me va a quedar registrado cuántos son para cada equipo, pero sí sería bueno que al hacer la extracción se haga como una sumatoria de todo lo que es igual.
+Porque si un ejemplo, si hay 10 líneas iguales, cada una de una unidad, y eso pasa con muchos repuestos, pues la nacionalización se demora muchísimo.
+En cambio, si él me suma, pasa a 180 líneas, pasan a cero, no sé, 70. Mucho menos.
+
+@26:57 - Jorge Carrera (blasterinformation.com)
+Claro, es más rápido.
+
+@27:00 - Martin Hendrik (ALFA ELECTRONIC)
+Sí. Entonces, ¿qué pasa? Yo tengo un proveedor que se llama Mauser. Ese proveedor, cuando yo le cargo la lista de compras para realizar, él automáticamente sí me suma los que son iguales.
+Pero en el otro proveedor, no sé si es que me falta cacharrear la página y de pronto sí tenga la opción y yo soy la que no la ha validado.
+En el otro proveedor yo cargo la lista de repuestos y él no me lo suma. ¿Y eso es una hoja de Excel?
+
+@27:31 - Jorge Carrera (blasterinformation.com)
+¿Qué cargas? Es un Excel, sí.
+
+@27:34 - Martin Hendrik (ALFA ELECTRONIC)
+Ok.
+
+@27:35 - Jorge Carrera (blasterinformation.com)
+Bueno, de todas todas, ese Excel tiene que venir sumarizado, ese Excel tiene que venir ya con todos los repuestos que son iguales ya sumados.
+
+@27:44 - Martin Hendrik (ALFA ELECTRONIC)
+No, pues en este proveedor que los suman, que él los suma, no vienen sumados, vienen las líneas separadas y él, y esa es la página del proveedor la que la suma.
+Entonces le voy a mostrar, por ejemplo, yo voy a, yo tengo que comprar repuestos hoy, de hecho yo puedo comprar de una vez para mostrarle.
+Ok. Entonces, listo, esta es mi lista de lo que tengo que comprar en este momento. Entonces. Yo acá, ¿qué tengo que hacer?
+Yo le voy a decir. Voy a comprar todo lo que se llame Mouser. Voy a llamar al proveedor que ya lo tengo creado en el sistema, Mouser.
+Listo, él me bota los datos del proveedor. Acá en este campo, por defecto, yo le tengo que poner algo, si no, no me deja avanzar.
+
+@28:41 - Jorge Carrera (blasterinformation.com)
+Aquí te tengo una duda, fíjate, los componentes, algunos componentes pueden ser para Mouser, otros pueden ser para el otro cliente, el otro proveedor.
+Tengo 100 pedidos, líneas. ¿Cómo sé yo que de las 130 es para Mouser y las 70 se las voy a pedir al otro?
+¿O yo las marco aquí? ¿Cómo es ese proceso para yo diferenciar quién le voy a comprar a qué proveedor?
+
+@29:14 - Martin Hendrik (ALFA ELECTRONIC)
+Qué pena, me repite.
+
+@29:17 - Jorge Carrera (blasterinformation.com)
+En esta pantalla, ¿cómo yo diferencio? ¿Qué le voy a comparar a cuál proveedor? Por ejemplo, tengo 100 líneas y las primeras 30.
+
+@29:31 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, porque mire, voy a borrar, acá donde hice mouse, lo voy a borrar y le voy a decir actualizar.
+Listo. Cuando esto está en blanco, él me muestra aquí las líneas de todos los proveedores. Mire que acá hay varios proveedores.
+DGK, Mouser, Quest. Ah, ok.
+
+@29:57 - Jorge Carrera (blasterinformation.com)
+O sea, cada repuesto que está allí hay un proveedor y puede pasar que un repuesto pueda ser dado por dos o tres proveedores.
+
+@30:10 - Martin Hendrik (ALFA ELECTRONIC)
+¿Cómo? Esa pregunta no la entendí.
+
+@30:12 - Jorge Carrera (blasterinformation.com)
+Ah, por ejemplo, la 007... 0072, no bueno, 0072 no tiene nada, vamos a agarrar la 135, que dice que el proveedor es Arrow, pero perfectamente, aparte de Arrow, también puede ser Mouses, o también puede ser LG, para un solo equipo.
+
+@30:36 - Martin Hendrik (ALFA ELECTRONIC)
+Para un solo equipo pueden haber varios proveedores, o ahí solamente puedo colocar uno solo. No, yo para un equipo puedo comprar repuestos en cualquier proveedor, no pasa nada.
+Ok. Simplemente que cuando yo hago la compra de repuestos, yo no la hago por equipo, yo la hago por proveedor.
+
+@30:59 - Jorge Carrera (blasterinformation.com)
+Ok, entonces aquí en este proveedor, ¿siempre me vas a colocar uno solo?
+
+@31:06 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, entonces, por ejemplo, yo voy a decir, espérame que a este proveedor, los chicos no me le pusieron, a este repuesto, mire que no me le pusieron de qué proveedores.
+Sí.
+
+@31:15 - Jorge Carrera (blasterinformation.com)
+Entonces, venga yo a
+
+@31:16 - Martin Hendrik (ALFA ELECTRONIC)
+Lo voy a validar, lo voy a buscar. Está en Mouser y tiene existencia. Entonces yo le voy a decir que esto es de Mouser.
+Este es el mismo, sí, entonces esto es de Mouser. Listo. Ok, coloca solo uno. Este también no tiene, no dice de qué proveedor es, voy a validar si es Mouser.
+
+@32:00 - Jorge Carrera (blasterinformation.com)
+732 DR.
+
+@32:06 - Martin Hendrik (ALFA ELECTRONIC)
+Si tienen, este también es Mouser, listo. Este, mire, un equipo puede tener líneas de varios proveedores, no pasa nada.
+
+@32:16 - Jorge Carrera (blasterinformation.com)
+Gracias.
+
+@32:16 - Martin Hendrik (ALFA ELECTRONIC)
+Cuando yo voy a comprar repuestos, yo los clasifico es por proveedor, no por equipo.
+
+@32:21 - Jorge Carrera (blasterinformation.com)
+Ok, ok.
+
+@32:22 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces yo acá, mire, yo acá ordené por proveedor. Acá me sale la listica de todo lo que es DuteSource, Stout, Quest Components, Neewar.
+Lo que más compramos es en Mouser y en DGK. Entonces mire, me sale ahí todo lo de Mouser, DGK, Jamaica, bueno, locales.
+Ok.
+
+@32:45 - Jorge Carrera (blasterinformation.com)
+Él me saca ahí todo.
+
+@32:47 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces yo le digo, bueno, voy a empezar a comprar solo DuteSource. Entonces yo le digo, yo le digo al sistema, acá dice proveedor.
+Yo le digo, muéstrame solo lo que es DuteSource, Prun, y él me lo filtra. Mire, ¿sí vio?
+
+@33:01 - Jorge Carrera (blasterinformation.com)
+Sí, sí.
+
+@33:03 - Martin Hendrik (ALFA ELECTRONIC)
+Acá este campo toca llenarlo por defecto.
+
+@33:07 - Jorge Carrera (blasterinformation.com)
+Comentario.
+
+@33:09 - Martin Hendrik (ALFA ELECTRONIC)
+Él me va a crear un número de compra ahorita que yo compre esto. Entonces, mire, voy a abrir la página de este proveedor que se llama DuteSource.
+Listo, este es el proveedor. Yo sé que con este proveedor se puede comprar también con lista de Excel, pero en el momento no lo he hecho.
+Como con ellos es tan poquito, yo siempre los cargo uno a uno. Ok. Pero tengo que ensayar cómo se hace.
+Para poder comprar repuestos en este sistema, acá donde dice plazo, yo tengo que tener eso lleno. Si no, no me deja comprarlo.
+En el software nuevo, sí, toca dejar ese plazo porque a veces no es, acá se pone por defecto. Un día, pero a veces puede ser realmente que el proveedor se demora mucho, entonces sí toca poner el plazo.
+Ok, eso lo determina ustedes. Podría ser que por defecto salga uno.
+
+@34:28 - Jorge Carrera (blasterinformation.com)
+Ok.
+
+@34:30 - Martin Hendrik (ALFA ELECTRONIC)
+Y ya si es más tiempo que uno lo cambie manualmente. Porque es que va a haber ahorita que compre Mouser o DGK, la lista es muy larga y yo a veces paso mucho tiempo llenando con uno, uno, uno, uno.
+Lo traiga por defecto. Otra cosa, y es que este sistema, cuando nosotros compramos repuestos, mire, yo voy a ordenar ahora por precio.
+Para nosotros hacer estadísticas de lo que se gastan las reparaciones, este sistema tiene clasificados los repuestos en precios. Todo lo que cuesta menos de 8 dólares, se le pone una L.
+Sí. Y cuando vale más de 8 dólares, se le pone RP. Gracias.
+
+@35:16 - Jorge Carrera (blasterinformation.com)
+¿Y eso por qué, Mare?
+
+@35:19 - Martin Hendrik (ALFA ELECTRONIC)
+Pues es como para sacar estadísticas de qué tanto se consumen repuestos según los precios. Pero digamos que en el nuevo sistema se podría simplificar y poner solamente RP, todo lo que sean reparaciones.
+Por ejemplo, mire, acá en esta columna que dice oferta, ya dice RP. Cuando es una venta, no sale RP, que es reparación, sino sale VE, que es venta.
+Y cuando es fabricación, sale FA. Entonces, bueno, creo que esta clasificación de acá sobraría. Aunque ya me salga esta de aquí, está súper bien.
+
+@36:09 - Jorge Carrera (blasterinformation.com)
+O sea, por lo menos para qué estás usando el repuesto, si es para la venta, si es para reparación, o para otro.
+
+@36:16 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, porque al final del año yo puedo sacar una extracción y ver cuánto me gasté en componentes para reparar, cuánto para vender y cuánto presupuesto en fabricar algo, ¿sí?
+Con eso sería suficiente, en realidad esta línea me sobraría. Pero en este sistema yo sí tengo que todo lo que es menos de 8 dólares ponerle una L, si no él no me deja comprar.
+Y más de 8 dólares, RP. Y si es una venta, le pongo VE, venta, venta nuevo. Y si es venta usado, VO.
+Pero estas mismas líneas ya salen acá en esta otra columna, en la de oferta. O sea, se repite. Y acá me tomo un montón de tiempo llenar eso manualmente, ¿sí?
+Esto no sería necesario. Entonces, bueno, vamos a comprar esto. Mire que al final estas dos líneas, mire, esta y esta es el mismo repuesto, ¿sí la ven?
+Sí. Esto, entonces yo voy a copiar esto acá en mi proveedor. Ellos dicen que necesitan. Este sistema dice, bueno, ¿cuánto necesita el técnico?
+Cinco, mire, cinco. Y para esta otro componente que termina en 26, necesito solo tres. Esto es cuánto necesita y esto es cuántos se están comprando.
+¿Por qué? Porque puede ser que necesite cinco, pero resulta que cuando yo miro acá me sale más barato comprar diez que cinco.
+Entonces yo puedo poner acá, pidieron cinco, pero compré diez. Claro, pues tú necesitas llenar el stop para futuras también.
+Yo sé que de esa compra me van a sobrar cinco que se van a ir al stock. Entonces, por eso hay dos columnas, cantidad que se necesita y cantidad que se compró.
+Y acá es el precio. Entonces, acá se necesitan ocho. Entonces, mire, dice que Fuji, necesitan Fuji porque a veces hay otras marcas o no sé qué.
+Entonces, yo les digo, yo quiero el original y necesito ocho. Ahí, ocho. Este proveedor no me da precios más así.
+Dicen, si compra diez, salen a dos, seis. Entonces, digamos, yo voy a comprar de momento los ocho. ¿Qué pasa?
+Eso es muy subjetivo. Yo compro más unidades solo de ciertos repuestos que yo sé que van a rotar. Si así salga más baratico, si es un repuesto que yo sé que no rota, yo no compro más unidades, compro solo los que pidieron, ¿sí?
+Le saca ocho y yo las agrego al carrito. Y listo. Entonces yo me paro aquí y le digo descender línea, mire, descender línea.
+Cuando yo desciendo la línea y voy a agregar la otra porque dan dos líneas del mismo repuesto. Claro. Eso significa que yo voy validando lo que ya agregué al carrito de compras.
+¿Sí? Voy a agregar ahora este otro. De este se necesitan dos. Entonces yo vengo y lo busco aquí. Dice dos.
+dos. Dice dos. Originales, dos. De hecho, acá venden mínimo dos, mírenlos. Los agredí a mi carrito de compras. Y bajo la línea para validar que ya la agredí a mi carrito de compras.
+El siguiente, tengo dos líneas igualitas. Dos por acá y dos por acá, sea, se necesitan. Claro. Entonces ya digo, listo, ahora quiero cuatro de este.
+Originales y quiero cuatro. Listo. Y bajo estas dos líneas. Si por error hice algo, yo me paro en la línea y le digo subir.
+Mire, acá dice, yo la puedo devolver. Claro.
+
+@41:06 - Jorge Carrera (blasterinformation.com)
+Pero si eventualmente la bajaste, no vamos a subirla. Exacto, yo la puedo subir.
+
+@41:11 - Martin Hendrik (ALFA ELECTRONIC)
+Yo la puedo eliminar si por alguna razón es una línea que está mal o algo. La voy a volver a bajar, listo.
+Voy con el siguiente. De este se necesitan dos. Si se necesitan dos, no voy a decir que voy a comprar uno, voy a corregir esto.
+Entonces, dos. Listo. Ahora voy a poner acá dos. Listo. Dos originales, Intersil, listo. Lo agrego a mi carrito y lo bajo.
+Ahora voy a comprar este otro. Se necesitan siete. Entonces, por ejemplo, mire que él me puso acá. Hay algo que no estoy haciendo, que se me está pasando y es que él me puso que valen a cuatro dólares cero nueve.
+Entonces. Si compro más de 5 salen a 1.36, yo corrijo ese precio para que mi presupuesto sea realista. Perfecto.
+Listo, entonces yo le digo necesito 7, 7 y los agrego al carrito y bajo la línea. Ahora este, se necesita 1.
+1. Dice que vale 8.22, ese precio está bien, entonces lo agrego y bajo la línea.
+
+@43:11 - Jorge Carrera (blasterinformation.com)
+Este se necesita 1.
+
+@43:25 - Martin Hendrik (ALFA ELECTRONIC)
+Ah, mire, por ejemplo, este repuesto no lo voy a poder comprar. Este repuesto solo está disponible para compras sobre consulta.
+¿Sí ve que acá no hay precio?
+
+@43:39 - Jorge Carrera (blasterinformation.com)
+¿Y qué significa eso? O no tienen existencia.
+
+@43:42 - Martin Hendrik (ALFA ELECTRONIC)
+No hay existencia. Me toca contactarlos y ver si sí me lo consiguen y cuánto vale. Entonces, este repuesto no lo puedo agregar a este pedido.
+¿Qué voy a hacer? Voy a mirar si de pronto está en otro proveedor y en este caso lo compro por otro lado.
+Lo compro por otro lado. Mire, Mouser lo tiene restringido. Voy a mirarlo con otro proveedor. Generalmente compramos en Utesource cuando los otros proveedores no lo tienen.
+Este tampoco lo tiene. Entonces, ahí, me toca hacer? Decirle a este técnico que para este equipo Algo. Gracias. Este repuesto está restringido con los proveedores habituales y está fuera de existencias con el proveedor que él me lo puso.
+Tiene que buscarle un reemplazo. ¿Listo? Entonces, por ahora voy a comprar solo lo que ya tengo en el carrito.
+Entonces, como le digo, acá como es una lista chiquita, yo los hago así uno a uno. Pero en los otros proveedores yo cargo el Excel largo.
+Entonces, voy a corroborar que no me falte nada, MB14, MB14, ACPL, ACPL, L7532, LT son 4, 4, 0, 22, este es el 5, L0, 2, 5, MB3758, 5 y 3, 8.
+Entonces, bueno, acá yo le digo... Gracias. Gracias. Listo, esto es todo lo que yo voy a comprar con usted.
+
+@45:19 - Jorge Carrera (blasterinformation.com)
+OK, check out.
+
+@45:20 - Martin Hendrik (ALFA ELECTRONIC)
+Check out. Mis datos ya están guardados. Yo le digo mándemelo con mi cuenta de HL. Mi NIT para temas de declaración de impuestos.
+Tengo un cupón de dos dólares, entonces lo voy a usar. Claro. Le digo estoy de acuerdo. Tantan. Yo pago con mi Paypal.
+
+@45:53 - Jorge Carrera (blasterinformation.com)
+Si quiere, ajá. Si quiere, no me presente la pantalla. Bueno. Esta parte para no. Listo. Ahí ya ahorita la compro.
+
+@46:01 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces, bueno, voy a cerrar la compra acá. Entonces, voy a cerrar la compra en el sistema solo de las líneas que ya bajé.
+Esta se va a quedar sin comprar porque ya le comenté que no hay.
+
+@46:14 - Jorge Carrera (blasterinformation.com)
+OK.
+
+@46:14 - Martin Hendrik (ALFA ELECTRONIC)
+Yo le digo acá arriba. Y Imprimir, y él va a cerrar esta compra. Mire, imprimir. Sí, bastante poquito. Ah, bueno, le voy a decir cancelar.
+Miren, normalmente, esta es la compra que yo saco con los otros proveedores y yo la saco en Excel. Solo que como acá es tan chiquita, yo no lo hago.
+Yo le digo quitas y ya. Ok.
+
+@47:01 - Jorge Carrera (blasterinformation.com)
+Automáticamente ya el cambio de estatus del sistema.
+
+@47:04 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, entonces, mire, si yo ordeno por proveedor.
+
+@47:09 - Jorge Carrera (blasterinformation.com)
+Ajá. De Utesur solo me quedó una línea sin comprar, la que hablamos ahorita.
+
+@47:16 - Martin Hendrik (ALFA ELECTRONIC)
+Yo me... Yo a ir al menú de inicio del sistema y ahora no voy a entrar a compra proveedor, sino a entregas proveedor.
+Vamos a decirle así. Sí. Ok. Y acá le voy a decir, muéstrame UTSURS, los pedidos del proveedor UTSURS. Y acá le digo, acá dice cuál orden de compra.
+Entonces yo me paro acá y yo le digo la de hoy, 24 de marzo, mire. Acá sale otra, la del 11.
+Es porque no ha llegado. Acá en este módulo me salen todos los pedidos que yo he hecho de cada proveedor.
+Entonces, me voy a parar en el que acabé de hacer. Miren, entonces lo que yo compré ahorita, me vuelve a salir acá.
+Entonces. Un ejemplo, esa caja llega a importación hoy, porque asumamos que este pedido yo lo hice la semana pasada y la caja llegó hoy.
+Entonces acá dice como número de remisión de entrega, si el pedido trae una remisión, si no yo le pongo rayas, lo que sea, no pasa nada.
+Y yo empiezo, yo destapo la caja y empiezo a buscar, eso vienen unos paqueticos marcados con la referencia de cada componente.
+Entonces, ¿yo qué hago? Yo empiezo a mirar que de la CPL H300 venían 7. Necesitaban 7, yo compré 7 y yo verifico que venga etiquetado con 7 unidades.
+Si vienen 7 unidades, yo digo, sí, llegaron 7. Me paro acá y le digo descender. Acá no le voy a dar descender porque es que si lo hago, creo una falsa llegada.
+Claro, claro, claro. Pero apenas yo empiece a decirle, sí, llegaron 7, acá llegaron también 2, acá también. Bien, dos.
+Acá llegó uno. Sí, llegó todo. Y yo voy bajando las líneas. Cuando yo bajo todo, le digo actualizar. Inmediatamente, todas esas líneas que estaban en color naranja, que significan en importación, pasan a color verde.
+Y significa que ya llegaron. Y yo le doy a actualizar y este pedido queda acá arriba en blanco y todo queda abajo recibido.
+Así es como se ingresa al sistema las compras de repuestos.
+
+@49:53 - Jorge Carrera (blasterinformation.com)
+El técnico se entera porque ve que el estatus cambia desde el componente, ¿no? El equipo.
+
+@50:05 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces, ahí le voy a explicar algo. Un equipo puede tener repuestos de varios proveedores, ¿cierto? Sí. Acá yo estoy, digamos que yo voy a entrar.
+Los repuestos que llegaron de UTSURS, pero imaginemos que este código, mire, 260-21-59 está actualmente posición 11. ¿Por qué? Porque estaba esperando repuestos de importación.
+Si este equipo solo estaba esperando esta línea de UTSURS, apenas yo la bajo y lo actualizo, el sistema automáticamente lo va a pasar a posición 1, o sea, listo para reparar.
+Pero si ese código tiene varias líneas de varios proveedores, solo se va a cambiar a posición 1 cuando lleguen todos los repuestos.
+Entonces, un ejemplo. Llegó este de UTSURS, pero también está esperando repuestos de Mauser. Él va a seguir en posición 11 porque el sistema ve que todavía hay líneas que no se han recibido.
+Ok.
+
+@51:15 - Jorge Carrera (blasterinformation.com)
+Cuando... Cuando...
+
+@51:16 - Martin Hendrik (ALFA ELECTRONIC)
+La última línea que esté en proceso de importación se valide como recibida pronto en la pasaposición 1.
+
+@51:26 - Jorge Carrera (blasterinformation.com)
+Perfecto. Sí.
+
+@51:28 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces, así es como funciona la compra de componentes y la validación de cuando llegan para que el sistema se actualice.
+Si el componente que se compró no es para un equipo, sino que acá dice stock, por ejemplo. Entonces, yo le digo descender y él me va a mostrar un cuadrito.
+En este caso no hay nada para el stock. Venga, miramos en el pedido viejo. Aunque a este proveedor casi no le compramos cosas para el stock.
+No, miremos por ejemplo un mouse. Ah, mire, de Mouser, mire, este es un pedido que ya llegó, mire que se bajaron todas las líneas, mírela hacia acá abajo.
+
+@52:26 - Jorge Carrera (blasterinformation.com)
+Ah, perfecto.
+
+@52:27 - Martin Hendrik (ALFA ELECTRONIC)
+Les faltó bajar una línea, debe ser que se repuesto. ¿Algún motivo? Acá dice, disponible. Ah, vea, el técnico me lo hizo comprar en Mouser, pero Mouser no tiene, por eso no llegó.
+Ojo, acá hay una nota, dice que está disponible, pero en GGK. O sea, este repuesto tengo que volverlo a comprar, pero ahora con el otro proveedor.
+
+@52:53 - Jorge Carrera (blasterinformation.com)
+O sea, fíjate, muy importante, a pesar de que cuando tú estabas haciendo la compra, tú consultabas, tú consultabas la disponibilidad antes de comprarlo, y compraste, pero fíjate que la fina cuando te llegó, no te llegó uno.
+
+@53:07 - Martin Hendrik (ALFA ELECTRONIC)
+Puede pasar, sí, que al momento de que nos despachan la mercancía, ya no hay la unidad, entonces no llega.
+Y tú. Hay volverla a comprar por otro lado o algo. Sí.
+
+@53:21 - Jorge Carrera (blasterinformation.com)
+¿Este ítem quedaría? Entonces, quedan pendientes, sí. ¿Yo qué hago?
+
+@53:27 - Martin Hendrik (ALFA ELECTRONIC)
+Cada vez que yo compro repuestos, yo vengo y miro si hay pedidos viejos con líneas que no hayan llegado y yo vuelvo y las compro.
+Sería bueno que tuviéramos como un panel acá en Entregas Proveedor, un panel que me muestre la lista de todos los repuestos que no han llegado.
+Claro. Como un resumen, porque acá me toca un ejemplo, yo me paro acá, si hay cinco pedidos sin llegar, a mí me toca entrar uno por uno y ver qué repuestos no llegaron de cada pedido.
+Claro, un sumarizado. Sí. Entonces, bueno, lo que le quería mostrar es que mire que este proveedor Mouset tiene líneas que son para el stock, ve, mire acá dice, stock.
+Sí. Cuando y cuando son para el stock, él les crea un código. Miren, todo lo que es para el stock, termina en 0, 0, 0.
+Año, mes y 0, 0, 0. Este código 0, 0, 0 no se usa nunca para ningún equipo. Siempre es para el stock.
+Entonces, cuando yo bajo una línea que es para el stock, es que quiero hacer el ejemplo, pero sí, hagamos el ejemplo para que allá no dejan.
+O sí, pero sí.
+
+@54:53 - Jorge Carrera (blasterinformation.com)
+Bueno, fíjate que la columna ofre, no está en blanco, no dice RP, no dice que es para repuesto. Porque es para el inventario, entonces no la hace obligatoria.
+
+@55:05 - Martin Hendrik (ALFA ELECTRONIC)
+Pero cuando yo bajo una línea que es para el stock, yo la bajo y él me saca un cuadrito.
+Ya no me deja mostrárselo porque la línea ya se bajó. Él me saca un cuadrito donde dice... Dicen... Es...
+Este repuesto va para el cajón número tal. Actualmente hay en inventario cero. Usted compró uno, entonces la nueva existencia es uno.
+Y yo le digo validar. Y prun, la línea queda abajo y el inventario también se actualiza de una vez.
+
+@55:35 - Jorge Carrera (blasterinformation.com)
+Perfecto.
+
+@55:36 - Martin Hendrik (ALFA ELECTRONIC)
+Así funcionan las líneas que se compran para alimentar el inventario.
+
+@55:40 - Jorge Carrera (blasterinformation.com)
+Ok, este ítem que no llegó al final, me imagino que tú lo marcarás, lo marcas para devolverlo a un estatus pendiente por comprar.
+
+@55:53 - Martin Hendrik (ALFA ELECTRONIC)
+Pues, digamos, ahí está en posición, este equipo, mírenlo, está en posición 11.
+
+@55:58 - Jorge Carrera (blasterinformation.com)
+Sí.
+
+@55:59 - Martin Hendrik (ALFA ELECTRONIC)
+Y va a seguir en posición 11 hasta que ese repuesto llegue. Tome el tiempo que tome. Entonces, voy a mirar si están en DGK.
+
+@56:12 - Jorge Carrera (blasterinformation.com)
+Miren, no hay, hay cero.
+
+@56:15 - Martin Hendrik (ALFA ELECTRONIC)
+Lo voy a buscar. Tampoco hay, lo voy a buscar, acá pues, no hay, espéreme, te busco una cosita, Sí, voy a hacer una cosita.
+Entonces, lo voy a buscar con el número del fabricante, a ver si con ese número es más, más rápido.
+Gracias. Gracias. Gracias. Gracias. Entonces, mire lo siguiente. En Mouser, este es el número del fabricante. El repuesto sí está, pero con otro código, mírelo.
+Ah, ok. Mire, dice que hay 59. Entonces, yo lo voy a actualizar acá. Listo. Y acá le voy a decir, ya no le voy a decir comprar en Digicare, le voy a escribir, volver a comprar en Mouser.
+Ya yo lo agrego en el pedido de hoy, entonces. Estaba mal etiquetado.
+
+@58:11 - Jorge Carrera (blasterinformation.com)
+Sí, existía. Sí, claro.
+
+@58:13 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces, ya yo lo agrego y eso llega a... Hoy es martes, lo despachan por ahí el jueves, esto llega el lunes, ¿sí?
+Pero entonces ya listo, solucionado. Yo le voy a decir actualizar y ya él me quedó cargado otra vez con el nuevo dato del repuesto.
+
+@58:31 - Jorge Carrera (blasterinformation.com)
+O sea que cuando vuelvas a entrar a la pantalla, lo que hay pendiente por comprar, te va a aparecer este.
+
+@58:35 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, miren, Mouser, del 28 de febrero, miren, ya quedó actualizado con el nuevo número 584D. Ya, ya listo, yo lo puedo volver a comprar.
+Entonces tal vez en la compra pasada se cargó, pero claro, como ese código estaba mal, pues al final no lo despacharon porque estaba mal etiquetado.
+Claro.
+
+@59:02 - Jorge Carrera (blasterinformation.com)
+Listo.
+
+@59:04 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces, así es el proceso de comprar y de registrar en el sistema cuando llega un pedido de importación, ¿sí?
+Ahora, digamos, si yo quisiera comprar... ¿Digamos Mouser? Sí, Mouser. Acá yo le pongo línea o lo que sea. Esto es lo que hay que comprar de Mouser.
+Ok, ahí está.
+
+@59:34 - Jorge Carrera (blasterinformation.com)
+¿Lo nuevo más lo que cambiaste ahorita? No, acá no sale.
+
+@59:39 - Martin Hendrik (ALFA ELECTRONIC)
+No sale. Sí sería bueno que se agregará aquí. O sea, porque es que la línea que estábamos viendo ahorita ya se incluyó en un pedido.
+Debería llegar. Como ya está incluida en un pedido, aunque no haya llegado, ya no se me suma aquí. Pero sí sería bueno que las líneas que no han llegado salieran acá en compras pendientes y me saliera...
+¿En un nuevo pedido? Sí, me saliera un comentario como repuesto sin recibir. Y que yo acá defino si vuelvo y lo compro o no.
+No sé, algo así. ¿Cierto?
+
+@1:00:17 - Jorge Carrera (blasterinformation.com)
+¿Y cómo haces tú entonces para comprar ese que quedó aquí? Haces una compra manual, te metes y lo compras.
+
+@1:00:24 - Martin Hendrik (ALFA ELECTRONIC)
+Yo saco el Excel de todo lo que está aquí ahorita y después de manera manual voy y agrego los pendientes de los pedidos viejos.
+Ok. Entonces, por ejemplo, miren, si ve que acá me sale esto en blanco, me toca empezar a llenar uno, uno, si no, él no me deja bajar la línea.
+¿A qué ordeno por precio? Y me toca empezar a llenar esto con las letras que le dije. Todo lo que vale menos de ocho dólares le pongo una L.
+Ok. ¿Le parece si le hago este ejemplo y de pronto pudiéramos dejar hasta acá hoy? Sí, claro, por favor, demasiado, no, no, por favor.
+
+@1:01:16 - Jorge Carrera (blasterinformation.com)
+Pues nos faltaría mañana, podemos conversar sobre inventario. Sí. No, no, espectacular. Listo.
+
+@1:01:27 - Martin Hendrik (ALFA ELECTRONIC)
+Es que le quiero mostrar cómo se hace la compra con el Excel, que es lo único que me falta.
+Mira que Emilio, Emilio, ¿no? Emilio está. El papá me está ayudando aquí mientras yo estoy con usted.
+
+@1:01:45 - Jorge Carrera (blasterinformation.com)
+No, no, por Dios. Demasiado. A ver, RP.
+
+@1:01:51 - Martin Hendrik (ALFA ELECTRONIC)
+Es que como dije, el primer día que queremos retomar como trabajo.
+
+@1:01:56 - Jorge Carrera (blasterinformation.com)
+Estamos progradual, poco a poco. Intentando todo.
+
+@1:01:59 - Martin Hendrik (ALFA ELECTRONIC)
+Listo, mire, ya llené todo eso, ¿cierto? Sí. Entonces, mire, acá me lo dejaron huequito. Entonces yo voy a buscar este repuesto.
+Este es Mouser, lo voy a buscar en Mouser. Gracias. Gracias. Gracias. Gracias. 132 de ELECTRONIC, ANFO, Blasthole, Blasthole, Blasthole, Blasthole, Blasthole.
+Bueno, esta yo no la hago manual uno a uno porque son muchos. Entonces yo me paro en cada línea y los voy a bajar.
+Como si ya los tengo agregados al carrito. Yo empiezo a bajar líneas. Porque acá lo que yo quiero es generar mi Excel para cargarlo a la página del proveedor.
+
+@1:03:03 - Jorge Carrera (blasterinformation.com)
+Yo bajo todo. ¿Ese formato de Excel es estándar o tienes que configurar el sistema? Según el formato del proveedor.
+
+@1:03:19 - Martin Hendrik (ALFA ELECTRONIC)
+Yo le borro, él saca varias columnas, yo le borro varias y le dejo solo dos ya. Ah, ya le voy a mostrar porque, por ejemplo, se podría programar el nuevo sistema para que me saque solo las dos columnas que yo necesito y no todas esas que este sistema me saca, que me toca borrarlas manualmente.
+Claro.
+
+@1:03:37 - Jorge Carrera (blasterinformation.com)
+Sí.
+
+@1:04:10 - Martin Hendrik (ALFA ELECTRONIC)
+Listo, ahí ya voy a terminar de bajarlas todas. Sí ve que con esos proveedores son más líneas y a veces son muchísimas líneas.
+
+@1:04:16 - Jorge Carrera (blasterinformation.com)
+Debería haber un botón que diga bajado masivo. Bajar todo. Ay, sí, sería excelente.
+
+@1:04:23 - Martin Hendrik (ALFA ELECTRONIC)
+Por favor, apunte esa idea.
+
+@1:04:26 - Jorge Carrera (blasterinformation.com)
+Bajar todo.
+
+@1:04:27 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, bajar todo, claro. Yo acá bajando línea por línea me vuelvo... Listo, ahí ya se bajaron todas. Excelente. Ahora yo le voy a decir imprimir.
+Miren, tan... Eso no lo había pensado. Qué maravilloso. Sí, un botoncito.
+
+@1:04:46 - Jorge Carrera (blasterinformation.com)
+Listo, entonces le voy a decir imprimir.
+
+@1:04:51 - Martin Hendrik (ALFA ELECTRONIC)
+Claro, porque es que yo a veces paso un montón de tiempo bajando las líneas. No, no, no.
+
+@1:04:57 - Jorge Carrera (blasterinformation.com)
+Un botón, mira, todo, masivo, pa, ya. Sí.
+
+@1:05:02 - Martin Hendrik (ALFA ELECTRONIC)
+Bueno, ahí se quedó pensando un poco. Son bastante. Listo. Miren, miren, él me va a generar acá el pedido de compra.
+Miren, me lo saca en PDF. Lo puedo sacar en Excel. Yo lo quiero en Excel. Yo tengo una carpeta que se llama pedido de componentes y yo la marco.
+Mouser, marzo 24. Yo la marco así con la fecha. Y en Excel, guarda. Quitar, me salgo. Miren que acá ya no me salen mousers, solo quedan los otros.
+
+@1:05:44 - Jorge Carrera (blasterinformation.com)
+Sí. Listo.
+
+@1:05:45 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces yo me voy a ir a mi carpeta. Listo. Y yo tengo que empezar a borrar todo lo que no necesito.
+Que en resumen, en resumen yo solo dejo dos columnas. El número de parte del proveedor. Y la cantidad. Son las únicas dos columnas que necesito.
+Ok.
+
+@1:06:24 - Jorge Carrera (blasterinformation.com)
+Eliminar. Listo.
+
+@1:06:27 - Martin Hendrik (ALFA ELECTRONIC)
+Me regreso. Dice que acá hay 56 líneas por comprar. Listo. Le voy a decir guardar. Y mire que me voy a venir entonces ahora a Mouser y le digo.
+Bueno, le hicimos sesión. Le digo lista de materiales. Le digo crear nueva lista. Cargar hoja de cálculo. Seleccionar archivo.
+Yo busco el de hoy, Mouser Mouser 24. Abrir. Cargar hoja. Este proveedor sí me unifica, sí me suma los componentes que son iguales.
+Si hay cinco iguales, cinco líneas iguales, él las vuelve una sola línea y los suma.
+
+@1:07:27 - Jorge Carrera (blasterinformation.com)
+Y debe coincidirte con lo que ya tú tienes en el sistema. Sí, le digo siguiente.
+
+@1:07:32 - Martin Hendrik (ALFA ELECTRONIC)
+Él me dice esta columna, ¿qué es? Yo le digo número de parte Mouser y mire que la otra es cantidad.
+Siguiente. Procesar. Procesar. Procesar. Procesar. Procesar. Listo. Ahora él me muestra acá todo lo que yo cargué. Y él me empieza a decir si algo de lo que yo cargué no hay.
+Por ejemplo, 595 SNG-74H. Este.
+
+@1:08:55 - Jorge Carrera (blasterinformation.com)
+No hay. No hay.
+
+@1:08:57 - Martin Hendrik (ALFA ELECTRONIC)
+Yo lo marco acá en mi excel en amarillo. Y lo elimino. Listo. Voy bajando. Todo lo que esté en verdecito es porque sí está.
+Estos son esos avisos para decirme que eso ya no se produce. Cuando vendan el último ya no van a vender.
+Ok. Cuando acá la cantidad está en verde es que está ok. Ok, ok, normalmente, chon, chon, chon, acá hay otro.
+399, le dije. Miren. Tampoco hay, lo elimino. Listo. Le voy a decir, agrégueme al carrito todo lo que está disponible, agréguelo.
+Ver carrito. Con este proveedor pasa algo curioso. Yo no sé por qué pasa eso, pero él nunca me agrega el carrito de compras y el repuesto que está de primeras.
+Mira que está 5, 11 u 6, que es el que está de segundas.
+
+@1:10:30 - Jorge Carrera (blasterinformation.com)
+Pero has probado, has probado, Maribel, de dejar esas líneas en blanco, esas primeras, y que a partir de allí, te leas, es decir, dejar la línea 2, 3, 4 en blanco y empezar desde las 6.
+
+@1:10:46 - Martin Hendrik (ALFA ELECTRONIC)
+Creo que sí, lo he hecho y me parece que no lo toma. No me acuerdo, me tocaría ensayar. Ok.
+El hecho es que me toca siempre ese, comprarlo manualmente. Dale, regalo, Giga, manual. Una unidad, entonces le digo, no, comprar.
+Seguir comprando. Y adicionalmente, entonces, ¿yo qué hago? Yo voy al sistema y yo miro qué me falta, que me llegue de los pedidos viejos, en este caso, ¿cierto?
+Lo que tenemos por ahí pendiente.
+
+@1:11:16 - Jorge Carrera (blasterinformation.com)
+Ah.
+
+@1:11:16 - Martin Hendrik (ALFA ELECTRONIC)
+Ah, Entonces, Mouser, resulta que hay un pedido pendiente del 28. La línea que hablábamos ahorita, entonces yo la hago, copio, dice que 1.
+Entonces, me vengo acá. BRZ. Hay 59, le digo que me agregue 1. Debe cambiar el 45, listo. Entonces, yo acá le digo, en comentarios, lo volví a comprar el 24 de marzo.
+Así, si se hace el seguimiento, ya se sabe que yo lo volví a comprar. OK. Y le digo, listo.
+Ver carrito. Y yo empiezo a revisar que acá diga, se envía ahora. Mira, mire que a pesar que decía...
+Sabía que este repuesto estaba disponible ahorita en el paso anterior. Acá me dice pedido pendiente. Mire, eso porque es, dice que no hay inexistencias, o sea, había una información falsa.
+¿Tienemos este repuesto? Dice no hay. Entonces, ¿yo qué hago? Es el 771HF4, este, tampoco, amarillo. Y lo elimino. A veces me sale disponible en tres días.
+Todo lo que no está disponible para envío inmediato, yo lo elimino.
+
+@1:12:56 - Jorge Carrera (blasterinformation.com)
+Claro, claro, claro.
+
+@1:12:57 - Martin Hendrik (ALFA ELECTRONIC)
+Yo no puedo atrasar 40 líneas por un repuesto. Entonces, yo compro 39 y el otro lo compro aparte solito.
+Para que no se me atrasen los demás. Entonces, todo esto dice, se envía ahora, se envía ahora, se envía ahora, chum, chum.
+Acá hay otro, 667. Mírenlo. Este tampoco. Yo lo elimino. Otro, mire, ahí. 874, el eje. Componentes que no se recibieron y que me salga la línea y en qué fecha se supone que lo compré.
+Porque es que ahí yo le mostré, yo tengo que entrar proveedor por proveedor, pedido por pedido, a ver qué fue lo que nos llegó.
+Sería más práctico que me saliera un solo cuadrito con las líneas que no llegaron. Ok.
+
+@1:14:07 - Jorge Carrera (blasterinformation.com)
+Claro, claro, claro, claro, claro. Dale, Maribel, entonces usted dijo, para que te dedique a Emilio, Emilio, Emilio. Ah, muchas gracias.
+Dale. Mañana, mañana no sé si a la misma hora.
+
+@1:14:21 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, yo le estaría avisando si se me corre pronto el horario del bebé. Normalmente, es que normalmente yo le doy tetica y él se duerme.
+Pero hoy no, se me durmió. No, tú me avisas, no te preocupes.
+
+@1:14:32 - Jorge Carrera (blasterinformation.com)
+Listo, listo, perfecto. Dale, chao, gracias Maribel. Gracias, muy Chao.
+

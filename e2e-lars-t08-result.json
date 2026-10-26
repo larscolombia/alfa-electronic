@@ -1,0 +1,61 @@
+{
+  "test": "e2e-lars-t08-compras",
+  "requirement": "Aprobar solicitud -> linea de compra pendiente -> enviar -> recibir -> stock acreditado con auditoria",
+  "baseUrl": "https://alfa.software.net.co",
+  "data": {
+    "reference": "SOL-T08-1792912283334",
+    "purchaseRequest": "SOL-T08-1792912283334",
+    "quantity": 3,
+    "technician": "pw-tecnico-t08@alfa.local",
+    "ghostReference": "GHOST-T08-1792912283334"
+  },
+  "checks": {
+    "adminLoggedIn": true,
+    "technicianReady": true,
+    "inventoryReferenceReady": true,
+    "purchaseRequestCreated": true,
+    "landedInventoryOrders": true,
+    "requestApprovedViaUI": true,
+    "purchaseLineGenerated": true,
+    "purchaseLineListed": true,
+    "lineSentViaUI": true,
+    "lineReceivedViaUI": true,
+    "stockIncreased": true,
+    "movementAuditRecorded": true,
+    "ghostReferenceAbsent": true,
+    "ghostLineCreatedAndSent": true,
+    "ghostReceiveRejectedOrWarned": true,
+    "ghostStockNotCredited": true
+  },
+  "bugEvidence": {
+    "reference": "GHOST-T08-1792912283334",
+    "lineId": "po-1792912316418-jswr6",
+    "receiveHttpStatus": 400,
+    "feedbackText": "La referencia 'GHOST-T08-1792912283334' no existe en el catalogo de inventario. Cree la ficha primero o corrija la linea de compra.",
+    "receivedQuantityAfter": 0,
+    "referenceCreatedByReceipt": false,
+    "stockMovementForReference": null
+  },
+  "observations": [
+    "OK: usuario tecnico ya existia (409): pw-tecnico-t08@alfa.local.",
+    "OK: solicitud SOL-T08-1792912283334 creada por 'pw-tecnico-t08@alfa.local' (cantidad 3).",
+    "OK: linea generada po-1792912292194-j1nwb (purchaseLineId enlazado en la solicitud), estado pendiente/aprobada.",
+    "OK: stock de SOL-T08-1792912283334 0 -> 3 (+3).",
+    "OK: movimiento de entrada mov-1792912310407-32z8h + auditoria RECEIVE_PURCHASE_LINE registrados.",
+    "OK (check negativo): el sistema rechazo o advirtio el recibo sin ficha de inventario (http=400, feedback='La referencia 'GHOST-T08-1792912283334' no existe en el catalogo de inventario. Cree la ficha primero o corrija la linea')."
+  ],
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 400 ()"
+  ],
+  "pageErrors": [],
+  "screenshots": {
+    "01-solicitud-pendiente-listada": "/var/www/alfa.software.net.co/playwright-artifacts/e2e-lars-t08-1792912283334-01-solicitud-pendiente-listada.png",
+    "02-solicitud-aprobada": "/var/www/alfa.software.net.co/playwright-artifacts/e2e-lars-t08-1792912283334-02-solicitud-aprobada.png",
+    "03-linea-compra-generada": "/var/www/alfa.software.net.co/playwright-artifacts/e2e-lars-t08-1792912283334-03-linea-compra-generada.png",
+    "04-linea-enviada": "/var/www/alfa.software.net.co/playwright-artifacts/e2e-lars-t08-1792912283334-04-linea-enviada.png",
+    "05-linea-recibida": "/var/www/alfa.software.net.co/playwright-artifacts/e2e-lars-t08-1792912283334-05-linea-recibida.png",
+    "06-stock-acreditado": "/var/www/alfa.software.net.co/playwright-artifacts/e2e-lars-t08-1792912283334-06-stock-acreditado.png",
+    "07-ghost-recibo-sin-aviso": "/var/www/alfa.software.net.co/playwright-artifacts/e2e-lars-t08-1792912283334-07-ghost-recibo-sin-aviso.png"
+  },
+  "error": ""
+}

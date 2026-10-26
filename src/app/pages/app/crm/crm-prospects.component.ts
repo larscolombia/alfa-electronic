@@ -136,6 +136,7 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
                                         <a class="text-decoration-none fw-semibold" [routerLink]="['/app/crm-prospectos', row.id]">{{ row.nombre }}</a>
                                         <div class="d-flex flex-wrap gap-1 mt-1">
                                             <span class="badge text-bg-primary" *ngIf="row.empleado">{{ row.empleado }}</span>
+                                            <span class="badge text-bg-secondary" *ngIf="isProspectConverted(row.id)" data-testid="prospect-converted-badge" title="Este prospecto ya fue convertido en cliente">Convertido</span>
                                             <span class="badge text-bg-success" *ngIf="row.cotizaciones">{{ row.cotizaciones }} cot.</span>
                                             <span class="badge text-bg-info" *ngIf="row.zona">{{ row.zona }}</span>
                                             <span class="badge text-bg-warning" *ngIf="row.valor">COP ($) {{ row.valor }}</span>
@@ -509,7 +510,9 @@ export class CrmProspectsComponent {
     sortDirection: "asc" | "desc" = "asc";
 
     get visibleProspectRows(): ProspectRecord[] {
-        const rows = this.prospectRows.filter((row) => !this.convertedProspectIds.has(row.id));
+        // Sin filtrado: un prospecto convertido a cliente SIGUE listado (con
+        // badge "Convertido"), no desaparece silenciosamente por colisión de ids.
+        const rows = this.prospectRows;
         if (!this.sortKey) {
             return rows;
         }
@@ -594,11 +597,11 @@ export class CrmProspectsComponent {
     formNota = "";
     prospectBranches: ProspectBranchDraft[] = [];
     private stopDraftWatch: () => void = () => undefined;
-    private readonly convertingProspectIds = new Set<number>();
-    private readonly convertedProspectIds = new Set<number>();
+    private readonly convertingProspectIds = new Set<string>();
+    private readonly convertedProspectIds = new Set<string>();
 
     private equipmentCountMap: Record<string, number> = {};
-    private nextFollowupByProspectId: Record<number, ProspectFollowupBadge> = {};
+    private nextFollowupByProspectId: Record<string, ProspectFollowupBadge> = {};
 
     goBack(): void {
         if (typeof window !== "undefined" && window.history.length > 1) {
@@ -975,15 +978,15 @@ export class CrmProspectsComponent {
         });
     }
 
-    isConvertingProspect(prospectId: number): boolean {
+    isConvertingProspect(prospectId: string): boolean {
         return this.convertingProspectIds.has(prospectId);
     }
 
-    isProspectConverted(prospectId: number): boolean {
+    isProspectConverted(prospectId: string): boolean {
         return this.convertedProspectIds.has(prospectId);
     }
 
-    nextFollowupBadge(prospectId: number): ProspectFollowupBadge | null {
+    nextFollowupBadge(prospectId: string): ProspectFollowupBadge | null {
         return this.nextFollowupByProspectId[prospectId] ?? null;
     }
 
@@ -1283,7 +1286,7 @@ export class CrmProspectsComponent {
         );
 
         forkJoin(requests).subscribe((results) => {
-            const badgeMap: Record<number, ProspectFollowupBadge> = {};
+            const badgeMap: Record<string, ProspectFollowupBadge> = {};
             for (const result of results) {
                 if (result.badge) {
                     badgeMap[result.prospectId] = result.badge;

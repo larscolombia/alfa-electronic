@@ -264,7 +264,7 @@ const SIMILARITY_STOPWORDS = new Set([
                     <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                         <div>
                             <h6 class="mb-0">Equipos similares reparados</h6>
-                            <p class="text-secondary small mb-0">Coincidencias por marca, tipo, servicio y descripcion de falla para predecir recurrencia.</p>
+                            <p class="text-secondary small mb-0">Coincidencias por marca, tipo, servicio y descripción de falla para predecir recurrencia.</p>
                         </div>
                         <span class="badge text-bg-light">{{ similarCases.length }} caso(s)</span>
                     </div>
@@ -312,7 +312,7 @@ const SIMILARITY_STOPWORDS = new Set([
                             <div class="col-12 col-lg-5">
                                 <h6 class="mb-2">Fallas recurrentes detectadas</h6>
                                 <div class="small text-secondary" *ngIf="recurrentFailures.length === 0">
-                                    Los casos similares no incluyen suficiente descripcion de falla para agrupar patrones.
+                                    Los casos similares no incluyen suficiente descripción de falla para agrupar patrones.
                                 </div>
 
                                 <div class="mb-2" *ngFor="let failure of recurrentFailures">
@@ -501,6 +501,7 @@ const SIMILARITY_STOPWORDS = new Set([
                                 </div>
                             </div>
 
+                            <p class="small fw-semibold text-secondary mb-2">Repuestos usados</p>
                             <div class="table-responsive">
                                 <table class="table table-sm align-middle mb-0">
                                     <thead>
@@ -951,7 +952,7 @@ export class WorkEquipmentHistoryComponent implements OnInit {
                 return;
             }
 
-            const inventoryState = this.emptyInventoryState();
+            const inventoryState = await this.loadInventoryState();
             const built = this.buildHistory(records, projects, inventoryState, reference, identifier);
             if (!built) {
                 this.errorMessage = "No encontramos coincidencias del equipo en los registros disponibles.";
@@ -1725,6 +1726,33 @@ export class WorkEquipmentHistoryComponent implements OnInit {
 
     private sortByDateDesc(left: string, right: string): number {
         return Date.parse(right || "") - Date.parse(left || "");
+    }
+
+    /**
+     * Carga reservas y movimientos reales de inventario para alimentar la tabla
+     * "Repuestos usados" de cada intervención (buildMaterialUsage).
+     * Gap de API (backend): /inventory/reservations y /inventory/movements no
+     * aceptan filtro por equipo ni por orden de trabajo, así que se cargan
+     * completos y el cruce se hace en cliente por workOrder/equipmentTag del
+     * proyecto. Idealmente el backend expondría GET ...?equipmentTag=.
+     */
+    private async loadInventoryState(): Promise<InventoryState> {
+        const empty = this.emptyInventoryState();
+        const [reservations, movements] = await Promise.all([
+            firstValueFrom(
+                this.inventoryApi.listReservations().pipe(
+                    timeout(15000),
+                    catchError(() => of([] as ReservationRecord[])),
+                ),
+            ),
+            firstValueFrom(
+                this.inventoryApi.listMovements().pipe(
+                    timeout(15000),
+                    catchError(() => of([] as MovementRecord[])),
+                ),
+            ),
+        ]);
+        return { ...empty, reservations, movements };
     }
 
     private emptyInventoryState(): InventoryState {

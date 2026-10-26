@@ -54,6 +54,9 @@ export interface CrmQuoteRecord {
     purchaseOrderUploadedAt?: string;
     createdAt?: string;
     updatedAt?: string;
+    /** Factura generada al convertir la cotizacion (0/null cuando aun no hay). */
+    invoiceId?: number | null;
+    invoicedAt?: string;
 }
 
 export interface ListCrmQuotesQuery {

@@ -34,6 +34,8 @@ type QuoteRow = {
     purchaseOrderNumber?: string;
     purchaseOrderDate?: string;
     purchaseOrderFileName?: string;
+    invoiceId?: number | null;
+    invoiceCode?: string;
 };
 
 type QuoteLine = {
@@ -77,7 +79,7 @@ type QuoteLine = {
                             <i class="bi bi-plus-lg me-1"></i> Crear Cotizacion
                         </button>
                         <button class="btn btn-outline-secondary" type="button">
-                            <i class="bi bi-stack me-1"></i> Plantilla De Cotizacion
+                            <i class="bi bi-stack me-1"></i> Plantilla De Cotización
                         </button>
                         <button class="btn btn-outline-secondary" type="button">
                             <i class="bi bi-download me-1"></i> Exportar
@@ -120,6 +122,9 @@ type QuoteLine = {
                                     </td>
                                     <td>
                                         <span class="badge" [class.text-bg-secondary]="row.estado === 'Borrador'" [class.text-bg-info]="row.estado === 'Enviado'" [class.text-bg-success]="row.estado === 'Aprobado'">{{ row.estado }}</span>
+                                        <span class="badge text-bg-primary ms-1" *ngIf="row.invoiceId" data-testid="quote-invoiced-badge" title="Esta cotización ya fue convertida en factura">
+                                            Facturada<span *ngIf="row.invoiceCode"> · {{ row.invoiceCode }}</span>
+                                        </span>
                                     </td>
                                     <td class="text-end">
                                         <button class="btn btn-sm btn-outline-primary me-2" type="button" (click)="openPurchaseOrderModal(row)">
@@ -128,7 +133,7 @@ type QuoteLine = {
                                         <button
                                             class="btn btn-sm btn-outline-success me-2"
                                             type="button"
-                                            *ngIf="row.estado === 'Aprobado'"
+                                            *ngIf="row.estado === 'Aprobado' && !row.invoiceId"
                                             [disabled]="convertingQuoteToken === row.token"
                                             (click)="convertQuoteToInvoice(row)"
                                             data-testid="convert-to-invoice-btn">
@@ -291,8 +296,8 @@ type QuoteLine = {
                         </div>
 
                         <div class="col-12 mb-3">
-                            <label class="form-label">Descripcion</label>
-                            <textarea class="form-control" rows="3" [(ngModel)]="quoteDescription" placeholder="Describe condiciones generales de la cotizacion..."></textarea>
+                            <label class="form-label">Descripción</label>
+                            <textarea class="form-control" rows="3" [(ngModel)]="quoteDescription" placeholder="Describe condiciones generales de la cotización..."></textarea>
                         </div>
 
                         <div class="col-12 mb-3">
@@ -321,7 +326,7 @@ type QuoteLine = {
                                 <table class="table align-middle mb-0">
                                     <thead>
                                         <tr>
-                                            <th style="min-width: 280px;">Servicio / Descripcion</th>
+                                            <th style="min-width: 280px;">Servicio / Descripción</th>
                                             <th style="width: 120px;">Cantidad</th>
                                             <th style="width: 150px;">Precio unitario</th>
                                             <th style="width: 150px;">Impuesto %</th>
@@ -438,7 +443,7 @@ type QuoteLine = {
 
                             <div class="row gx-3 gy-3">
                                 <div class="col-12">
-                                    <label class="form-label">Numero de OC <span class="text-danger">*</span></label>
+                                    <label class="form-label">Número de OC <span class="text-danger">*</span></label>
                                     <input class="form-control" type="text" [(ngModel)]="purchaseOrderNumberDraft" maxlength="120" placeholder="Ejemplo: OC-2026-00158" />
                                 </div>
 
@@ -472,11 +477,11 @@ type QuoteLine = {
                 <div class="modal-dialog modal-dialog-centered" role="document">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title">Eliminar cotizacion</h5>
+                            <h5 class="modal-title">Eliminar cotización</h5>
                             <button type="button" class="btn-close" aria-label="Close" (click)="closeDeleteModal()"></button>
                         </div>
                         <div class="modal-body">
-                            <p class="mb-1">¿Está seguro de que desea eliminar la cotizacion <strong>{{ pendingDeleteRow?.codigo }}</strong>?</p>
+                            <p class="mb-1">¿Está seguro de que desea eliminar la cotización <strong>{{ pendingDeleteRow?.codigo }}</strong>?</p>
                             <p class="text-secondary small mb-0">Esta accion no se puede deshacer.</p>
                             <p class="text-danger small mb-0 mt-2" *ngIf="quoteDeleteErrorMessage">{{ quoteDeleteErrorMessage }}</p>
                         </div>
@@ -737,7 +742,7 @@ export class CrmQuotesComponent implements OnInit {
     openEditQuoteForm(row: QuoteRow): void {
         const quoteId = this.quoteIdByToken[row.token];
         if (!quoteId) {
-            this.quoteSaveErrorMessage = "No se puede editar: ID de cotizacion no encontrado.";
+            this.quoteSaveErrorMessage = "No se puede editar: ID de cotización no encontrado.";
             return;
         }
 
@@ -779,7 +784,7 @@ export class CrmQuotesComponent implements OnInit {
                 this.cdr.detectChanges();
             },
             error: (error) => {
-                this.quoteSaveErrorMessage = this.resolveErrorMessage(error, "No se pudo cargar la cotizacion para edicion.");
+                this.quoteSaveErrorMessage = this.resolveErrorMessage(error, "No se pudo cargar la cotización para edición.");
                 this.cdr.detectChanges();
             },
         });
@@ -801,7 +806,7 @@ export class CrmQuotesComponent implements OnInit {
         const quoteId = this.quoteIdByToken[row.token];
         if (!quoteId) {
             this.quoteConversionMessage = "";
-            this.quoteConversionError = "No se puede convertir: ID de cotizacion no encontrado.";
+            this.quoteConversionError = "No se puede convertir: ID de cotización no encontrado.";
             return;
         }
 
@@ -811,13 +816,18 @@ export class CrmQuotesComponent implements OnInit {
         this.financeBillingApi.createInvoiceFromQuote(quoteId).subscribe({
             next: (invoice) => {
                 this.convertingQuoteToken = null;
-                const code = `${invoice.seriesPrefix || ""}${String(invoice.sequenceNumber).padStart(3, "0")}`;
-                this.quoteConversionMessage = `Cotizacion ${row.codigo} convertida en la factura ${code} (borrador) en Facturacion.`;
+                // 6 dígitos: mismo formato que el listado de Facturación y que
+                // el consecutivo oficial del backend (lpad 6). El usuario paga
+                // con este número, así que debe ser idéntico en todos lados.
+                const code = `${invoice.seriesPrefix || ""}${String(invoice.sequenceNumber).padStart(6, "0")}`;
+                row.invoiceId = invoice.id;
+                row.invoiceCode = code;
+                this.quoteConversionMessage = `Cotización ${row.codigo} convertida en la factura ${code} (borrador) en Facturacion.`;
                 this.cdr.detectChanges();
             },
             error: (error) => {
                 this.convertingQuoteToken = null;
-                this.quoteConversionError = this.resolveErrorMessage(error, "No se pudo convertir la cotizacion en factura.");
+                this.quoteConversionError = this.resolveErrorMessage(error, "No se pudo convertir la cotización en factura.");
                 this.cdr.detectChanges();
             },
         });
@@ -838,7 +848,7 @@ export class CrmQuotesComponent implements OnInit {
 
         const quoteId = this.quoteIdByToken[row.token];
         if (!quoteId) {
-            this.quoteDeleteErrorMessage = "No se puede eliminar: ID de cotizacion no encontrado.";
+            this.quoteDeleteErrorMessage = "No se puede eliminar: ID de cotización no encontrado.";
             return;
         }
 
@@ -853,7 +863,7 @@ export class CrmQuotesComponent implements OnInit {
             },
             error: (error) => {
                 this.isDeletingQuote = false;
-                this.quoteDeleteErrorMessage = this.resolveErrorMessage(error, "No se pudo eliminar la cotizacion.");
+                this.quoteDeleteErrorMessage = this.resolveErrorMessage(error, "No se pudo eliminar la cotización.");
                 this.cdr.detectChanges();
             },
         });
@@ -862,7 +872,7 @@ export class CrmQuotesComponent implements OnInit {
     openPurchaseOrderModal(row: QuoteRow): void {
         const quoteId = this.quoteIdByToken[row.token];
         if (!quoteId) {
-            this.quotePurchaseOrderErrorMessage = "No se puede cargar OC: ID de cotizacion no encontrado.";
+            this.quotePurchaseOrderErrorMessage = "No se puede cargar OC: ID de cotización no encontrado.";
             this.quotePurchaseOrderSuccessMessage = "";
             return;
         }
@@ -887,7 +897,7 @@ export class CrmQuotesComponent implements OnInit {
                 this.cdr.detectChanges();
             },
             error: (error) => {
-                this.quotePurchaseOrderErrorMessage = this.resolveErrorMessage(error, "No se pudo cargar la cotizacion para registrar OC.");
+                this.quotePurchaseOrderErrorMessage = this.resolveErrorMessage(error, "No se pudo cargar la cotización para registrar OC.");
                 this.cdr.detectChanges();
             },
         });
@@ -928,13 +938,13 @@ export class CrmQuotesComponent implements OnInit {
         const row = this.pendingPurchaseOrderRow;
         const quote = this.pendingPurchaseOrderQuote;
         if (!row || !quote) {
-            this.quotePurchaseOrderErrorMessage = "No se pudo preparar la cotizacion para registrar OC.";
+            this.quotePurchaseOrderErrorMessage = "No se pudo preparar la cotización para registrar OC.";
             return;
         }
 
         const quoteId = this.quoteIdByToken[row.token];
         if (!quoteId) {
-            this.quotePurchaseOrderErrorMessage = "No se puede guardar OC: ID de cotizacion no encontrado.";
+            this.quotePurchaseOrderErrorMessage = "No se puede guardar OC: ID de cotización no encontrado.";
             return;
         }
 
@@ -1321,7 +1331,7 @@ export class CrmQuotesComponent implements OnInit {
             },
             error: (error) => {
                 this.isSavingQuote = false;
-                this.quoteSaveErrorMessage = this.resolveErrorMessage(error, "No se pudo guardar la cotizacion en backend.");
+                this.quoteSaveErrorMessage = this.resolveErrorMessage(error, "No se pudo guardar la cotización en backend.");
                 this.cdr.detectChanges();
             },
         });
@@ -1345,7 +1355,7 @@ export class CrmQuotesComponent implements OnInit {
                 } else if (result.emailStatus === "desactivado") {
                     this.quoteEmailMessage = "";
                     this.quoteSaveErrorMessage =
-                        `La cotizacion quedo guardada y marcada como Enviada, pero el correo NO salio: ` +
+                        `La cotización quedó guardada y marcada como Enviada, pero el correo NO salió: ` +
                         `${result.warning ?? "el servidor no tiene SMTP configurado"}. ` +
                         `Quedo registrada en el outbox de correos para cuando se configure.`;
                 } else {
@@ -1361,8 +1371,8 @@ export class CrmQuotesComponent implements OnInit {
                 // se guardó, pero el usuario debe saber que el cliente no se
                 // enteró: reportarlo como éxito sería mentir.
                 this.quoteSaveErrorMessage =
-                    `La cotizacion quedo guardada, pero el correo NO se envio: ` +
-                    this.resolveErrorMessage(error, "no se pudo enviar el correo de la cotizacion");
+                    `La cotización quedó guardada, pero el correo NO se envió: ` +
+                    this.resolveErrorMessage(error, "no se pudo enviar el correo de la cotización");
                 this.cdr.detectChanges();
             },
         });
@@ -1512,6 +1522,10 @@ export class CrmQuotesComponent implements OnInit {
 
     private buildApiQuotePayload(row: QuoteRow, preview: PublicQuotePreview): CrmQuoteRecord {
         const prospect = this.findProspectByName(row.prospecto);
+        // El backend declara prospectId como entero; el id real del prospecto es
+        // su uuid, así que sólo se reenvía cuando el valor guardado es numérico
+        // (enlaces legados). El vínculo real va por nombre/correo del payload.
+        const numericProspectId = Number(prospect?.id);
         const quoteID = this.quoteIdByToken[row.token] ?? row.token;
         const existingRow = this.quotesRows.find((item) => item.token === row.token);
 
@@ -1520,7 +1534,7 @@ export class CrmQuotesComponent implements OnInit {
             token: row.token,
             codigo: row.codigo,
             prospecto: row.prospecto,
-            prospectId: prospect?.id,
+            prospectId: Number.isFinite(numericProspectId) && numericProspectId > 0 ? numericProspectId : 0,
             empresa: preview.empresa,
             correo: preview.correo,
             movil: preview.movil,
@@ -1562,6 +1576,7 @@ export class CrmQuotesComponent implements OnInit {
             purchaseOrderNumber: String(item.purchaseOrderNumber ?? "").trim(),
             purchaseOrderDate: String(item.purchaseOrderDate ?? "").trim(),
             purchaseOrderFileName: String(item.purchaseOrderFileName ?? "").trim(),
+            invoiceId: Number(item.invoiceId) > 0 ? Number(item.invoiceId) : null,
         };
     }
 
@@ -1627,7 +1642,7 @@ export class CrmQuotesComponent implements OnInit {
             descuentoTipo: this.discountType,
             descuentoValor: Math.max(0, Number(this.discountValue) || 0),
             lineas: lines,
-            nota: this.recipientNote.trim() || "Gracias por revisar esta cotizacion.",
+            nota: this.recipientNote.trim() || "Gracias por revisar esta cotización.",
             terminos: this.termsAndConditions.trim() || "Documento sujeto a aprobacion comercial.",
             estadoCliente: "Pendiente",
         };

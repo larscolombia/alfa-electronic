@@ -1,0 +1,489 @@
+Reunion de Trabajo LARS - ALFA - March 30
+ VIEW RECORDING - 51 mins (No highlights) 
+@0:08 - Jhovany (ALFA ELECTRONIC)
+Hola Jorge, ¿cómo estás? Hola, vale, bien, ¿cómo estás? Bien, qué pena, que es que me morí un momentico que no he encontrado un cómputo.
+
+@0:19 - Jorge Carrera (blasterinformation.com)
+No, vale, tranquilo. Este, ya, déjame ver aquí, bien. Muy bien.
+
+@0:27 - Jhovany (ALFA ELECTRONIC)
+Listo Jorge, entonces, me comentaba Maribel que esta sesión era como para ampliar un poquito el tema del inventario.
+
+@0:39 - Jorge Carrera (blasterinformation.com)
+Sí, yo siento que puede ser rápida, porque ya tú más o menos me has comentado algo, y quizá ahorita lo que vamos a detallar un poco más el proceso.
+
+@0:49 - Jhovany (ALFA ELECTRONIC)
+Sí, entonces, digamos que la persona que maneja el inventario lo hace desde el módulo. Técnico, entonces básicamente lo que hace es...
+Ahorita estás presentando, no, no puedo ir. Ah, espérame ya. Ajá. Voy a loguearme acá, pero voy a compartirte la pantalla.
+Listo. ¿Ya ves mi pantalla, Jorge? perfecto. Listo, entonces, digamos que la persona que hace esto, pues digamos, nosotros ya tenemos establecidas como unas 15.000 líneas de componentes electrónicos que tiene...
+En una clasificación que ya nos las da el sistema, ¿sí? Entonces, básicamente es acá donde decimos Stock. Entramos al módulo técnico y en el primer pantallazo está la pantalla de Stock.
+Este Stock lo puede manipular, tiene permisos para acceder, manipular, cambiar, crear fichas para crear todo eso. Todo, todos los, todos los técnicos.
+
+@2:32 - Jorge Carrera (blasterinformation.com)
+Todos los técnicos pueden acceder al menú de inventario.
+
+@2:36 - Jhovany (ALFA ELECTRONIC)
+Sí, digamos que en este momento sí, nos tocaría, por ejemplo, revisar con Maribel, qué tan, qué tan viable seguir con, con esto así, ¿sí?
+Porque pues, al final también es un riesgo, por ejemplo, que una persona nueva llega, entre y pum, haya algo loco ahí.
+Entonces. Claro, porque, claro, hasta el momento lo que me ha comentado Maribel, Maribel.
+
+@3:01 - Jorge Carrera (blasterinformation.com)
+Claro, y tú también me hiciste esa acotación. Maribel me dice que el técnico puede reservar.
+
+@3:08 - Jhovany (ALFA ELECTRONIC)
+Yo sé que tú me comentaste que eso no es tan... No es tan bueno. No es tan bueno.
+
+@3:15 - Jorge Carrera (blasterinformation.com)
+Pero nada, hiciste que el técnico puede reservar y nada, y eso al final lo que te genera, como tú muy bien me comentaste, que esa reservación queda por mucho tiempo, pero un equipo que no se repara, no se ha reparado, y mientras tanto el componente queda ahí reservado, y cuando se necesita una emergencia, bueno, ustedes toman la decisión de tomar eso que está reservado.
+
+@3:40 - Jhovany (ALFA ELECTRONIC)
+Sí, claro, porque queda esa vaina ahí como congelada por el tiempo que... indefinido. Entonces, pues digamos que sí sería bueno verificar el tema de las reservas.
+Y lo que te digo ahorita en cuanto también a que... a que hayan unas funciones, por ejemplo, que... Que se puedan otorgar solamente a las personas que manejan el inventario que tienen la experiencia para hacerlo.
+Por ejemplo, crear una ficha. En este momento, desde cualquier módulo técnico, yo puedo crear una ficha o hacerle modificaciones al inventario en cuanto a sumar componentes o a quitar también.
+Entonces, digamos que, ¿qué necesitamos desde el inventario en cuanto a la parte técnica? O sea, si todos los módulos tienen que tener acceso a ver todo el inventario, a tomar cualquier cosa del inventario, lo que sea.
+Y yo creo que hasta ahí, en este caso, hay la posibilidad de que yo también pueda sumar alguna cantidad a las cosas del inventario, pero no sé qué.
+¿Qué tanto lo hacemos nosotros? No, bueno, no creería que mucho. O por ejemplo, que yo tenga una referencia de este tipo de sensor, yo lo elijo y le digo sumar al stock.
+Entonces le sumo uno y ya en vez de quedar tres, quedarían cuatro, que es lo que me dice acá.
+
+@5:24 - Jorge Carrera (blasterinformation.com)
+Ok, entiendo, Jhovany, que estos repuestos que están en el inventario tienen una codificación cada uno.
+
+@5:34 - Jhovany (ALFA ELECTRONIC)
+Sí, entonces tienen una clasificación. Entonces, ¿qué es lo que nosotros manejamos acá? Un stock mínimo, que es esta columna, que se define cuando se crea la ficha.
+Entonces, por ejemplo, yo estoy creando la ficha de algo nuevo y ahí yo le digo si necesito que me tenga mínimo una unidad y me crea una alerta cuando una alerta y una
+La línea de compra apenas yo uso esa última unidad o dependiendo del mínimo. Si el mínimo es 10, pues apenas usé el número 10 y pasé de 10 a 9, pues me crea una línea de compra con los datos que están guardados en el sistema.
+Esa línea la crea automáticamente. Entonces, por ejemplo, si yo entro a este sensor y le digo que me deje ver la ficha Stock, que es esta ficha se crea cuando llega un elemento nuevo, entonces, ¿qué me va a mostrar en ese ficha Stock?
+Familia, te trae familia y tipo. Sí, entonces, familia, marca, tipo, designación, que la designación tiene... ¿Es designación? La designación es una descripción.
+Ah, ok. Entonces, por ejemplo, esto está en la familia de Capteur. Que en francés es sensor, es un sensor marca LEM, esta es la referencia del sensor, y acá podría poner en la designación, yo podría poner que es un sensor de corriente.
+Por ejemplo, en este caso no lo pusieron. Me dice la cantidad que voy a ingresar, la cantidad que hay en el stock, el mínimo.
+Este optimal, no sé para qué sirve. El óptimo, pero no, sí. El precio, esto creo que significa unidad de valor, unidad de venta, no sé eso qué significa.
+Precio de venta, esto no sé qué es, el CMUP. Podría mirar, porque sí, no sé qué es. Este stock, me dice, lo voy a dar acá a modificar para que podamos ver las opciones que hay de...
+Gracias, Luchito. Las opciones que hay de como elecciones. Entonces, son las mismas, sino que acá ya se me deja modificar.
+Entonces, en este stock hay varias opciones y tiene que ver con que hay ciertas funciones que nosotros sí manejamos acá, no manejamos acá, perdón, y en Francia sí.
+Entonces, el consumable es cuando yo estoy poniendo un componente que es nuevo. Entonces, todo lo que en el stock a me parece como consumable son componentes que hemos comprado nuevos.
+Lo que pasa es que también hay componentes obsoletos que nos toca comprar de segunda mano. En este caso, nos toca tener la precaución de probarlos antes de instalarlos en los equipos, pues para que no tengamos ningún inconveniente.
+Oye, lo que es claro.
+
+@9:00 - Jorge Carrera (blasterinformation.com)
+Con el stop, Jhovany, el stop. ¿Ustedes lo usan?
+
+@9:05 - Jhovany (ALFA ELECTRONIC)
+¿Qué significa stop?
+
+@9:07 - Jorge Carrera (blasterinformation.com)
+¿Es el tipo de componente?
+
+@9:12 - Jhovany (ALFA ELECTRONIC)
+El estado del componente, entonces. Ah, es el estado. Consumable es nuevo, ocasión es usado y pues nosotros solo usamos esas dos.
+Ok. Entonces básicamente lo que decimos es, este es un sensor, lo que ya vimos acá, tengo tres, me costaron tanto.
+En el stop le digo si es nuevo o es usado. Ok. Y acá, esta es mi ubicación dentro de la estantería que está designada para el stop.
+Entonces se ubicó en la cajita R61. Entonces nosotros tenemos unos carros de componentes que nos dan una ubicación por columnas y por filas.
+Entonces las columnas. Sí, las columnas son las letras y la fila son los números. Entonces, en la letra R61, ahí en ese cajoncito, yo voy a encontrar tres sensores, voy a encontrar tres sensores de esta referencia.
+Y acá hay una pestaña, bueno, hay una pestaña adicional de especificaciones. Entonces, el BOTIER significa el empaque, es una palabra que en español debería ser empaquetado.
+Ok. Entonces, es algo muy técnico, entonces solamente le decimos empaquetado y yo le digo, por ejemplo, que este es un empaquetado SOIC 14.
+Ahí ya me lo completa con lo que ya hay. Ok. Entonces, empaquetado SOIC, hay empaquetado DIP, hay empaquetado, no sé, TSSOP, no sé si está acá, TSSOP, sí.
+Entonces, es algo muy técnico, entonces es una clasificación de empaquetado. Amperaje y Potencia. Esa es una filita que es muy técnica.
+Y acá nos dice los datos de donde yo compré ese sensor. Entonces todo esto se ingresa al momento de crear la ficha, que es como si esto estuviera en blanco y yo ya le hubiera puesto todos estos temas.
+Y yo digo que se compró en DGK con este número yo lo puedo comprar. Esa es la orden de compra.
+Sí, entonces por ejemplo en las líneas que yo veo acá, en la parte de compras donde me imagino que ya Maribel te explicó esta parte.
+Entonces cuando el stock se pone mínimo, cuando paso de 1 a 0 o del número mínimo al anterior, entonces él me crea una linecita como esta para el stock.
+Y como ya está almacenado, donde se compra, que por ejemplo acá se indica. Y el número, la referencia de IGK, entonces él me crea esta linecita completa con todos los datos.
+Entonces, digamos que el que eso funcione bien, depende de que yo entre bien mi ficha cuando la cree.
+
+@12:18 - Jorge Carrera (blasterinformation.com)
+Bueno, esa ficha es de creación del repuesto, mas no es la entrada. Una cosa es la creación de la ficha, o que es decir que el repuesto no existe, entonces necesito crearlo.
+
+@12:39 - Jhovany (ALFA ELECTRONIC)
+Y la otra es registrar una entrada. Ok, sí, entonces estamos hablando de dos cosas diferentes. El registro de la entrada es de un equipo que yo voy a reparar.
+
+@12:53 - Jorge Carrera (blasterinformation.com)
+No, no, no, no, reparen, ponte, hay un componente que me falta. Un repuesto, pero un repuesto que me falta.
+Y nada, me lo mandé a comprar y es para stock. Ya me llegó. ¿Cómo lo agrego yo al inventario?
+
+@13:09 - Jhovany (ALFA ELECTRONIC)
+Ah, listo, listo. Entonces.
+
+@13:11 - Jorge Carrera (blasterinformation.com)
+Pero ahorita me estás explicando la creación desde que no existe. Pues no existe repuesto y lo voy a crear la primera vez.
+
+@13:45 - Jhovany (ALFA ELECTRONIC)
+Formate Yo lo voy a dejar en un cajoncito ubicado para la persona que maneja el inventario en la bolsita donde se identifica que es este componente.
+Entonces es en una bolsita que me llegó. En donde decía que habían dos, pero la persona cuando vaya y revise la bolsa va a ver que hay uno.
+Entonces, ¿qué es lo que tiene que hacer esa persona? Coger esta referencia, la copia y entra al módulo de stock.
+Entonces, acá en este módulo de stock, la va a buscar a ver si está. Entonces, acá yo ya lo pegué y no me apareció ninguna coincidencia.
+Cuando me aparece una coincidencia, él me lo completa así, mira, ¿sí ves? Sí. Entonces, está uno que se parece, pero no está, mejor dicho, el igualito que yo tengo acá, ¿sí ves?
+Ahí ya no me apareció nada.
+
+@14:45 - Jorge Carrera (blasterinformation.com)
+Ajá.
+
+@14:47 - Jhovany (ALFA ELECTRONIC)
+Entonces, ¿qué es lo que tiene que hacer esa persona? Si, por ejemplo, él tuviera una bolsita con esta referencia, él entra.
+Aquí, se refiere. Gracias por ver La selecciona y le suma el número que va a meter al stock. Entonces, si había uno y yo le dejé uno, entonces le suma el otro y ya van a quedar, como me dice acá, me va a quedar dos.
+Ok. En este caso, como no está creada y no lo tengo en mi stock, entonces yo le digo blank y le digo una nueva ficha.
+Ok. En esta nueva ficha yo tendría que poner que esta vaina es un, no sé, un circuito integrado.
+
+@15:41 - Jorge Carrera (blasterinformation.com)
+Ahí debería, ahí debería desplegarse un menú de familias.
+
+@15:45 - Jhovany (ALFA ELECTRONIC)
+Sí, entonces digamos que lo puedo, ah no, no lo puedo desplegar hasta que yo no pongo la primera letra.
+En este caso no es de desplegar, sino que es de completar. Ok. Entonces circuito integrado. Shock. Shock. Marca, entonces por ejemplo puede ser Marcat o Chiva, la familia puede ser un, no sé, un amplificador operacional que nosotros le ponemos a OP, y acá le ponemos designación, puede ser también a OP, creo que se puede aparecer las dos.
+Entonces yo le digo que voy a ingresar por ejemplo 2, que el mínimo va ser 1, que me costó 5 dólares, la unidad de valor siempre la dejamos en 1.
+Le digo acá que va a ser un elemento consumable que es nuevo, ¿sí? Y que la voy a dejar en el armario T20, por ejemplo.
+Ustedes se manejan siempre en dólares, ¿no?
+
+@16:51 - Jorge Carrera (blasterinformation.com)
+Aquí en la ficha.
+
+@16:53 - Jhovany (ALFA ELECTRONIC)
+Sí, en la ficha la manejamos en dólares porque compramos en dólares. Ok, perfecto.
+
+@16:58 - Jorge Carrera (blasterinformation.com)
+Perfecto.
+
+@17:01 - Jhovany (ALFA ELECTRONIC)
+Listo, entonces le digo que por ejemplo es un ZOIC, un ZOIC 8, de 20 voltios, de 2 amperios, de 1 vatio.
+Eso ya es muy técnico, ¿sí? Sí. Y acá, de acá para abajo está la información de dónde me llegó ese componente.
+Entonces, por ejemplo, lo compré en NGK. La referencia es 50, esta me la inventé. Bueno, yo le doy validar, él me crea una línea en el stock con esas características.
+Y me le da un número interno consecutivo. Un ID, ¿no?
+
+@17:51 - Jorge Carrera (blasterinformation.com)
+Sí.
+
+@17:51 - Jhovany (ALFA ELECTRONIC)
+Que en este caso sería mi ID, sí señor, como mi ID de stock. Y ya, ahí yo la crearía y me debería aparecer acá.
+Entonces, por ejemplo, Por si yo busco un ID del stock, que sea, no sé, 155, y le doy extracción, él me muestra que, bueno, en este caso dice que no hay resultados, busquemos el 156.
+Listo, entonces este es el elemento en mi ID 156, es un circuito integrado, marca Texas Instrument, esta es la referencia, circuito integrado, este es el empaquetado, y el voltio de amperaje lo dejamos en cero, y es el número interno 156, es un elemento nuevo, consumable.
+Y esto me dice que está en el stock de Colombia, en este caso, como tú sabes que manejaban varios centros de servicio.
+
+@18:47 - Jorge Carrera (blasterinformation.com)
+Hay algo que me está generando cierta preocupación, y es la parte de, claro, lo primero es que todos los técnicos tienen acceso al módulo de inventario.
+Lo otro es que si a mí me llega un componente, un repuesto, yo debería buscarlo en mi módulo de inventario, yo técnico, debería buscarlo para agregarlo, ¿no?
+En todo caso. Pero es posible, pero veo que las búsquedas tú las haces por tipo o familia, pero no se hace quizás por el código del componente, el código.
+
+@19:32 - Jhovany (ALFA ELECTRONIC)
+Si la hago por el código del componente, sí. Entonces, lo que yo te decía, entonces, por ejemplo, en el tipo, el tipo es el número, el código del componente.
+Entonces, ese tipo es el que yo he digitado acá, y es la referencia como tal del componente, y no me aparece nada, acá me dice que no está en el stock.
+Si no me lo autocompletas porque no está en el stock, pero de todas maneras yo lo puedo copiar y le doy extracción y él de una vez me dice, esto no está en el stock.
+
+@20:08 - Jorge Carrera (blasterinformation.com)
+Ok, fíjate porque en la ficha, Jhovany, yo vi que decía familia, colócate la familia, y después decía algo que decía tipo, pero el tipo que aparece en la ficha es distinto a este tipo.
+Sí, entonces, Ben, yo te muestro.
+
+@20:26 - Jhovany (ALFA ELECTRONIC)
+Entonces, el tipo, vamos a tomar otra vez como el número interno, 156. El tipo es la referencia como universal del integrado.
+Ah, ok, ok. Y la familia viene a ser que es un circuito integrado, marca, y la descripción viene a ser también un circuito integrado.
+Entonces, sí hacemos la búsqueda por referencia, que al final el tipo debería decir referencia.
+
+@20:55 - Jorge Carrera (blasterinformation.com)
+Ok, ahora fíjate, ponte que yo soy el técnico y bueno, y ese día... Ya no me sentía bien. Y coloqué la referencia, pero la coloqué mal, busqué mal el producto y estoy viendo que no existe.
+Y la voy a crear. Y la creo con un número de referencia totalmente errado. Cuando realmente sí existe. Realmente el producto sí existe en inventario.
+Entiendo. ¿Qué sucede en esos casos? ¿Quién me valida esa información?
+
+@21:31 - Jhovany (ALFA ELECTRONIC)
+Nada, hay un error humano que si pasa lo que tú dices, eso quedó mal creado y ya. Claro. Digamos que el tema es que, sí, o sea, no hay como un feedback en cuanto a la creación que me diga que esa referencia sí está bien digitada, ¿no?
+sea, dependemos de que la persona que lo haga lo haya ingresado.
+
+@22:01 - Jorge Carrera (blasterinformation.com)
+Claro, existe, ustedes tienen un reporte de consolidado, o un reporte que me valide lo que tengo en inventario. Es decir, reporte, sin reporte, porque, o sea, ¿cómo yo puedo localizar esas fallas de tipeo?
+
+@22:22 - Jhovany (ALFA ELECTRONIC)
+En este software no se pueden localizar, la única sería hacer una, revisar, por ejemplo, qué es lo último que ha entrado en el inventario, pero por consecutivo interno, o sea, pero no, no, no, no, no la hay, Jorge.
+
+@22:39 - Jorge Carrera (blasterinformation.com)
+Claro, claro, porque yo puedo tener una resistencia, me llegó hoy una resistencia, la cargué, estoy asumiendo que eso es algo nuevo, pues resulta que yo soy un técnico nuevo dentro del equipo, y para mí, yo asumo que eso es nuevo.
+La metí, y me llegaron 20, y la meto, pero no lo estoy metiendo en la referencia. ¿Qué debe ser?
+Si yo le metí una referencia ahí, todo extraña. Entonces... Digamos que en este caso, ¿qué es lo bueno?
+
+@23:07 - Jhovany (ALFA ELECTRONIC)
+Ajá. La creación de fichas solo la hace una persona que es la encargada del inventario. Ok. La manipulación en cuanto a ir sacando el inventario, sí la hacemos todos.
+Entonces, si varios necesitan este circuito integrado, pues cualquiera puede ingresar y cogerlo.
+
+@23:28 - Jorge Carrera (blasterinformation.com)
+Ok. La creación de fichas solamente la hace una sola persona. Sí.
+
+@23:32 - Jhovany (ALFA ELECTRONIC)
+Entonces, digamos que... Y pues es una persona que tiene todo el conocimiento para hacer esa creación.
+
+@23:38 - Jorge Carrera (blasterinformation.com)
+Claro, claro. Que el plante de crear debe verificar muy bien de que realmente no existe. Sí.
+
+@23:43 - Jhovany (ALFA ELECTRONIC)
+Sí. Digamos que se hace... Eso sí se hace de... Digamos, no hay forma de mirar si la persona comete ese error que tú dices.
+O sea, que si lo tipea mal. Claro. No hay la única es ponernos a hacer una extracción de las últimas...
+No sé, de los últimos 100 consecutivos que se han... Y que otra persona mire. Pero pues digamos que lo bueno es que solo lo hace una persona y las otras personas no crean fichas, digamos que es solo manipulación del stock como tal.
+Ok.
+
+@24:18 - Jorge Carrera (blasterinformation.com)
+Cuando a me llega esos repuestos, ¿a quién le llega? ¿Le llega compra?
+
+@24:25 - Jhovany (ALFA ELECTRONIC)
+¿Le llega el técnico? Listo. Entonces, yo creo que María te alcanzó a explicar. En este menú, en la parte administrativa, hay una cosa que se llama liberación.
+Yo tengo acá, acá me aparecen las últimas cosas que se han comprado. Por ejemplo, con este proveedor de GK, me aparece esta última.
+La orden que se compró el 24 de marzo. Esto me aparece acá arriba. Eso quiere decir que no ha llegado.
+No lo tenemos todavía en nuestro poder. Ok.
+
+@25:12 - Jorge Carrera (blasterinformation.com)
+Físicamente, Jhovany, cuando llega a la empresa, llegó una caja. Una caja, sí. ¿Quién revisa esa caja? ¿A quién le llega?
+Exacto.
+
+@25:24 - Jhovany (ALFA ELECTRONIC)
+Entonces, una persona administrativa entra a ese menú en el que yo estoy. Ajá. Y nos llegan, no sé, cientos de bolsitas de componentes.
+Entonces, por ejemplo, ella empieza a entrar a las bolsitas. Entonces, ella dice, esta bolsita ya llegó, la chulea acá, y le dice descender.
+Entonces, ella empieza a entrar a todas esas bolsitas, ¿sí? Y las marca con este código. Para poderla identificar. Y les pone, aparte del código, la identifica para qué técnico va.
+Esto va para... Técnico J. Toscano. Entonces le pone J. Toscano y la marca con esto. La segunda bolsita, lo mismo.
+J. Toscano, así. La que sigue, la que sigue y así esta ya no, entonces esta ya va con otro código y va para L.
+Es abogado. Y entonces ellas clasifican todo lo de lo que le llegó a Toscano, lo que le llegó, entonces acá la vamos a poner por, entonces lo que le llegó a Ramírez, lo que le llegó a C.
+de Torres, lo que le llegó a J. Vaquero, a J. C. Toscano, a Flores, todo eso. Entonces, y tenemos una estantería en donde se guardan todas esas bolsitas para cada persona.
+Entonces a Ramírez le tienen que aparecer todas estas bolsas abajo. Y estas son las que él va a para, por ejemplo, esta la va a usar para reparar este código.
+Esta la va a para reparar todo esto. Y lo que le sobra de esas reparaciones es lo que va a entrar a alimentar el stock.
+¿Sí? Además de eso... Además de lo que le llega a los técnicos, entonces hay otras líneas que vamos a ver que dicen, acá no traen como un código de cliente, sino dicen es stock.
+Entonces, por ejemplo, mira esta, si ves esta que dice stock, y creo que fue lo único que se pidió stock, sí, es la única línea que hay de stock.
+Esta línea se tuvo que haber creado o con una cantidad mínima de algo que se puso y algo que se bajó.
+Entonces ella, la persona que está ingresando las bolsitas, ya la marca es que es para el stock, y la dejan en el cajón de stock, donde la persona que hace la entrada del inventario, va a buscar esta referencia, por ejemplo, entonces la vamos a buscar.
+Él va a entrar acá en el móvil del inventario cuando ya. Tiene su bolsita, la va a identificar, va a ver que probablemente está en cero, sí, está en cero, y la va a alimentar, espérate que está, por lo que tenía ese número interno, entonces está acá, el mínimo es uno y está en cero.
+Entonces él va a entrar a esta ficha, y le va a decir, sumar al stock, va a buscar la cajita U71, la mete allá, le suma uno, y ya el stock nuevo me queda en uno, ¿sí ves?
+
+@28:35 - Jorge Carrera (blasterinformation.com)
+Ok, perfecto. Tengo la duda en el caso de los técnicos, porque fíjate, ok, eso me queda en mi cajita correspondiente a Ramírez, Ramírez entra al sistema, ve que ya le llegó el producto, y bueno, nada, ve, lo agrega, bueno, nada, acepta.
+Lo va a buscar físicamente, lo toma, y una vez lo usa, pero nunca entra al inventario.
+
+@29:08 - Jhovany (ALFA ELECTRONIC)
+Sí, digamos que los componentes que pedimos para las órdenes de servicio o para los códigos que tenemos en reparación como tal, no entran al stock.
+Perfecto. Entonces, por ejemplo.
+
+@29:30 - Jorge Carrera (blasterinformation.com)
+Entran si sobran, como tú perfectamente me comentas. Entran si sobran, sí, señor.
+
+@29:34 - Jhovany (ALFA ELECTRONIC)
+Esa es la dinámica. Entonces, por ejemplo, para yo reparar este equipo Emerson, yo pedí todas estas líneas. Esto es lo que estoy haciendo ahorita abajo en mi mesa.
+Entonces, por ejemplo, yo pedí todas todos estos componentes, uno, dos, tres, cuatro, cinco, pedí seis referencias, siete referencias de componentes.
+Estas son bolsitas que contienen estas referencias. Pero yo cojo estos 12 componentes que me llegaron, yo los cojo de mi cajón y los instalo en el equipo sin que entren al stock.
+Si de esos 12 me llega a sobrar algo, un par, los dejo en su bolsita y se los dejo marcados a la persona para que los entre al stock.
+
+@30:20 - Jorge Carrera (blasterinformation.com)
+Perfecto, que es el encargado alimentario.
+
+@30:23 - Jhovany (ALFA ELECTRONIC)
+Pero nunca entran al stock hasta que me sobran o ya está creado la referencia en el stock y se puso en cantidad mínima y se hizo un autocompli.
+Ok.
+
+@30:38 - Jorge Carrera (blasterinformation.com)
+Ok, claro, porque son repuestos importados. O sea, se compran de una vez para el uso del momento de la reparación del componente.
+
+@30:49 - Jhovany (ALFA ELECTRONIC)
+Exacto, sí, digamos que estaba reparando un computador, se le dañó el display, esa es una línea que yo... Compré, la creé, espero a que llegue, cuando llegue, se reporta en el sistema acá que efectivamente llega, ya se baja la línea, ya que llega el pedido, lo instalo, saco mi equipo reparado y sale, y ahí no tuvo que ir con el stock.
+
+@31:19 - Jorge Carrera (blasterinformation.com)
+Ok, ese repuesto que yo mando a importar, claro, en el momento que lo mando a importar, yo debo de crearlo en el sistema, yo debo de crear, que necesito un repuesto de esta característica, código tal, tipo tal, familia tal, pero fíjate, el técnico allí está creando una ficha de un repuesto que necesita, mas no es la misma ficha de inventario.
+
+@31:48 - Jhovany (ALFA ELECTRONIC)
+Sí, no es la misma. Entonces esa era la que yo te explicaba que, por ejemplo, si para esto me toca volver a pedir algo, entonces yo le digo.
+Acá Ayud, ese es algo que necesito, ya no está en el stock, definitivamente. Entonces yo le digo, crear una línea de compra.
+Entonces lo que yo creo, cuando estoy haciendo la reparación, y necesito comprar algo, solamente una línea de compra. Bueno, estos datos que yo entro acá, son los que se ven reflejados acá, de esta forma.
+Entonces, para este código, el compañero JM Flores, para que esta línea se creara, tuvo que haber entrado, como yo entré acá, y dijo que se iba a comprar, en el proveedor, en el proveedor DigiK, con esta referencia, con esta referencia,
+Referencia del proveedor, un condensador, y necesitaba tres, y cada uno vale a tanto, que es llenar, es básicamente llenar todo esto.
+Llena todo esto, le da el chulito, y esa línea se crea. En el sistema administrativo acá, en el comandé, se crea acá, y se me va a ver reflejada en mi...
+Código de reparación, se me va a reflejada acá. Pero esto es solo una línea de compra. Sí. Y de lo que estamos...
+Y la otra es... Es un... Ya eso sí es un componente en el stock. Del stock.
+
+@33:48 - Jorge Carrera (blasterinformation.com)
+Claro, y si le crean su entrada, le crean su ficha, porque ya es algo que ya está dentro de la empresa.
+
+@33:55 - Jhovany (ALFA ELECTRONIC)
+Exactamente.
+
+@33:57 - Jorge Carrera (blasterinformation.com)
+Dale. Dale.
+
+@33:59 - Jhovany (ALFA ELECTRONIC)
+Dale. O una ubicación, todo ese tema.
+
+@34:06 - Jorge Carrera (blasterinformation.com)
+Ok, ahí estoy claro. ¿Quién ajusta? A la hora de ajustar inventario, ¿ajusta solamente el muchacho responsable del inventario?
+
+@34:17 - Jhovany (ALFA ELECTRONIC)
+Podemos ajustar también nosotros porque a veces pasa, por ejemplo, que nosotros necesitamos un componente. Y vemos que, por ejemplo, en el inventario decía que habían cinco y yo cogí la cajita, saqué el que necesitaba y quedaron dos.
+Entonces el inventario está desajustado. Entonces en ese momento tenemos dos salidas. O le decimos a la persona que nos ayude a ajustar en el inventario o lo hace cada quien ajustándolo.
+Digamos que eso no tiene problema. Digamos que esas son las restricciones que te digo que toca. En cuanto al ajuste del inventario, a la creación de fichas, porque por ejemplo, no sé, ahorita nosotros somos nueve personas, pero cuando seamos veinte, cuando ya el control sea más fuerte, o no sé, o sea, digamos, al final cualquiera puede ajustar el inventario y, no sé, cogerse algo, ¿me entiendes?
+
+@35:24 - Jorge Carrera (blasterinformation.com)
+Sí, allí lo que pasa, también es lo que siento, que puedes crear un cuello de botella, porque si dejas todo el ajuste y al sacar componentes a una sola persona, entonces se te crea una cuello de botella porque las veinte personas están solicitándole al muchacho movimientos en el sistema y el muchacho está full con otras cosas, y hasta que el muchacho no haga eso, tú no puedes, tú no sacar ni ajustar ni meter en el inventario.
+Sí, sí, exacto. Y tú necesitas rapidez, o sea, tú como técnico necesitas de una vez, este, coger y ya, coger y ya, o y no esperas que el muchacho termine de salir del baño y que vaya y venga y entonces, pero por lo otro también es cierto lo que tú dices, tienes 20 personas, entonces hay alguien que ajustó, sacó de más y se desaparece el producto, claro, estoy consciente que hay un lock, hay un lock de actividades dentro del sistema.
+
+@36:27 - Jhovany (ALFA ELECTRONIC)
+Digamos que eso es algo que nos tocaría consultar con Maribel para ver si lo quiere manejar igual o ¿Qué quiere hacer ahí?
+Generalmente tiene que haber un responsable, siempre.
+
+@36:41 - Jorge Carrera (blasterinformation.com)
+Siempre debe haber un responsable y uno lo que hace es solicitar al almacén una salida o un ajuste o una entrada.
+Uno solicita al almacén, al encargado del inventario y él se encarga de hacer el movimiento. Exacto.
+
+@36:59 - Jhovany (ALFA ELECTRONIC)
+Gracias. Gracias. Gracias.
+
+@37:00 - Jorge Carrera (blasterinformation.com)
+Pero el técnico simplemente se encarga de reparar, no se encarga, generalmente no se encarga de estar sacando ni metiendo del inventario.
+Sí, generalmente es así.
+
+@37:11 - Jhovany (ALFA ELECTRONIC)
+A mí me parece que el software está como creado para, no sé, para manejar un centro de servicios en donde solamente, no sé, hay cinco técnicos y ya.
+Y, pero por ejemplo, no, no, no está adaptado a un tema donde hayan veinte, treinta técnicos haciendo esto mismo.
+Claro, claro, claro.
+
+@37:41 - Jorge Carrera (blasterinformation.com)
+Tendrían que pensarlo, tendrían que pensarlo. Si ustedes deciden que sea solamente el muchacho del almacén, quien agregue, ajuste, saque y meta, entonces tendríamos que crear un módulo de solicitudes de movimiento, donde cada técnico...
+
+@38:00 - Jhovany (ALFA ELECTRONIC)
+Durante el día solicita movimiento. Necesito tal resistencia. Es una salida. La necesito.
+
+@38:09 - Jorge Carrera (blasterinformation.com)
+Entonces, él tiene que esperar que el muchacho del inventario haga la salida y después de haya salida, le entregan la resistencia.
+
+@38:18 - Jhovany (ALFA ELECTRONIC)
+Así sería muy lento. Así ya sería, no sería tan bueno. Bueno, digamos que yo lo diría solamente para modificar el tema de, o sea, que la persona sí pueda sacar cosas del stock porque las necesita.
+Pues más no, no puede ni ajustar ni crear fichas.
+
+@38:42 - Jorge Carrera (blasterinformation.com)
+Sí, que no ajuste y que no cree fichas.
+
+@38:46 - Jhovany (ALFA ELECTRONIC)
+Ahí nos daríamos como un poquito más de control, diría yo. Sí, sí, tienes razón.
+
+@38:53 - Jorge Carrera (blasterinformation.com)
+Por la premura de reparar, si te pones a esperar que te creen el movimiento, entonces imagínate, se te crea un cuello.
+
+@39:03 - Jhovany (ALFA ELECTRONIC)
+Entonces, ¿qué más tenemos por acá?
+
+@39:08 - Jorge Carrera (blasterinformation.com)
+No, bueno, coméntame, coméntame, Giovanni, del sistema actual de inventario, ¿qué ves tú que se pueda mejorar? Algo que tú digas, no, mira, esto no está bien y yo quisiera que esto se agregara tal o cual cosa.
+
+@39:22 - Jhovany (ALFA ELECTRONIC)
+Sí, hay un tema que es, nosotros tenemos acá en el inventario, entonces yo entro al inventario y hay una pestaña que se llama en cantidad insuficiente, que es esta que está acá.
+Entonces, cuando yo entro ahí, él me muestra todas las líneas de inventario que tienen cantidad mínima y no se ha suplido esa cantidad mínima.
+Y me dice cuándo se ha comprado eso, por ejemplo, este, línea. La compraron el 11 de septiembre del 2025 y todavía están ceros, ¿sí?
+Y así hay muchas, o sea, tenemos 9 páginas de eso, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, son 15 por 9, o sea, es una, bueno, casi por 8.
+Yo trato de estar pendiente de ese tema porque ¿qué es lo que pasa? Este rezago de inventario mínimo se nos crea porque, por ejemplo, hicimos el pedido y el fabricante, el distribuidor, perdón, no tenía eso y simplemente no nos lo envió.
+Y ahí quedó el tema. Entonces, ese tema, no sé cómo lo podemos mejorar para que no se rezague así porque, o sea, mira, son, son 90, son más de 100 líneas.
+Con cantidad insuficiente que me toca, que me toca entrar a cero. Te muestro. Entonces, por ejemplo, yo le digo a esta vaina, esto quedó en cantidad insuficiente y se compró en septiembre, ¿no?
+Entonces, a mí me toca entrar a mirar con mis proveedores esta misma referencia, donde la encuentro, bueno, me toca, ¿cómo es que yo entro acá?
+que ya se me olvidó. Entonces, yo entro acá y le digo, creo que le doy a demanda, Sí, le doy a demanda, y entonces, ¿qué me toca hacer?
+Es esta línea, me toca entrar a modificarla manualmente, entonces, digamos, ya no lo voy a comprar en ese proveedor, sino le escribo, borro esta vaina, le doy a X.
+Y acá le digo, lo voy a comprar ahora por DGK, él me lo autocompleta. Me toca cambiarle acá el número con que lo voy a comprar, todo esto.
+Desciendo esta línea y la confirmo. Entonces es un tema como bien engorroso. Por eso está tan rezagado. Pero es súper importante porque todo lo que nosotros consideramos importante, le ponemos cantidad mínima en el stock.
+Entonces precisamente si está en el stock es porque es algo crítico para tener ahí y que en cualquier momento nos puede salvar la vida en cuanto a necesito de este circuito integrado para reparar un equipo que vale 50, 100 millones de pesos y solo me hace falta eso.
+Pero no lo tengo en el stock porque desde septiembre lo compré y ahora me toca esperar una semana más.
+Mientras se importa, semana y media. Y bueno, son temas que eso debería estar ahí. Entonces, ese seguimiento no es tan bueno.
+sé cómo. Claro, pero lo que pasa es que ¿cómo sabes tú?
+
+@43:12 - Jorge Carrera (blasterinformation.com)
+¿Cómo te enteras de que el producto ya está, ya lo tiene el proveedor? Sí, claro.
+
+@43:20 - Jhovany (ALFA ELECTRONIC)
+No lo sabes.
+
+@43:21 - Jorge Carrera (blasterinformation.com)
+No lo sabes hasta que se lo vuelves a pedir.
+
+@43:24 - Jhovany (ALFA ELECTRONIC)
+Exacto. Y o como, o por ejemplo que, que él me dé ciertas, o no sé si más bien es algo que toca dejar así y es una función que, pues que debe hacer alguien más juiciosamente, no sé, cada semana.
+
+@43:43 - Jorge Carrera (blasterinformation.com)
+Eso es lo que te iba a comentar, lo que pasa es que no quería meterme en el asunto, pero, pero siento que es un tema que alguien debería hacer semanalmente.
+Semanalmente alguien debería meterse y mandar a comprar lo que haga falta a los distintos proveedores.
+
+@44:01 - Jhovany (ALFA ELECTRONIC)
+Sí, es verdad.
+
+@44:03 - Jorge Carrera (blasterinformation.com)
+No existe, no existe, hasta que llega un momento que esas, no sé, repuestos, lo vayan reduciendo y darle un tiempo de intento, si el tercer intento con este proveedor, no, pues, cambio de proveedor para ese repuesto.
+O lo eliminó el stock. O lo eliminó en un momento que, dentro de unos meses, no lo vuelves a conseguir más nunca, eso tienes que eliminar lo del stock y lo eliminas de tu inventario.
+Sí, claro.
+
+@44:37 - Jhovany (ALFA ELECTRONIC)
+Pero. Entonces, sí, digamos que el tema sería ahí como más de organización de nosotros. Igual, ¿qué te iba a decir?
+
+@44:52 - Jorge Carrera (blasterinformation.com)
+Claro, puede haber un reporte, lo que sí se te puede dar, un reporte de repuestos. En un sumarizado, o sacarse un consolidado de repuestos que tienen más tiempos en cero, en estos mínimos.
+
+@45:11 - Jhovany (ALFA ELECTRONIC)
+Eso sería chévere poderlo filtrar. Digamos que aquí me parece un filtro de todo lo que está agotado de la cantidad mínima.
+Pero entonces sería bueno, por ejemplo, que yo lo pudiera organizar por fecha, a ver qué es lo más viejo y eliminar, empezar a eliminar eso.
+Porque claro, acá deben haber unas cosas viejas que hemos comprado y comprado y creado otra línea y nunca llegó y todo eso.
+Y llevamos así, no sé, un año. Pero no lo sabemos. Entonces, esa idea sí sería bien chévere. Porque acá no me dice desde cuándo me aparece la última fecha en que yo lo compré.
+Por ejemplo, si esta estaba en el 11 de septiembre del 2025 y yo lo compro hoy, esto... Simplemente se me modifica la fecha por 30 de marzo del 2026, pero no sé cuánto llevo comprándolo y cuánto lleva esa abogina en cantidad mínima.
+
+@46:08 - Jorge Carrera (blasterinformation.com)
+Se te elimina el historial de cuándo lo pediste.
+
+@46:14 - Jhovany (ALFA ELECTRONIC)
+Se reemplaza por la última fecha de compra, pero no sé desde hace cuánto lo estoy comprando y haciendo el mismo trabajo, ¿me entiendes?
+Y como hay tantas, entonces es difícil saberlo.
+
+@46:23 - Jorge Carrera (blasterinformation.com)
+Claro, entonces allí debería ver por lo menos desde cuándo se está esperando, desde cuándo está esperando, desde cuándo está en cero y cuándo fue su último intento de compra.
+Sí, súper bien, sí, así debería ser. Y a partir de allí, si tú ves que tiene tres años en cero tratando de comprarse, bueno, nada, eso ya no existe en el mercado, se elimina.
+
+@46:48 - Jhovany (ALFA ELECTRONIC)
+Y pues sí, este filtro en cantidad mínima es importante, que si no te lo había mostrado, que es una función también que estaba ahí, creo que es la última que me hacía falta mostrarte.
+Un filtro de cantidad mínima. Y ya. Ya el resto es, digamos que en resumen, ¿qué es? Desde el principio lo que se hizo fue comprar un stock que se alimentó creando todas las fichas necesarias.
+Entonces digamos que en principio empezamos con 2.000 referencias, entonces pues hubo que crear 2.000 fichas desde cero. Desde ahí se crearon los consecutivos internos, se crearon la clasificación de marcas, de designación, de familias.
+Y eso se ha ido alimentando con todo lo que nos sobra de las reparaciones que consideramos que viene a ser crítico en cuanto a los equipos que nos llegan en el día a día.
+Y pues nada, ahí ya sería como partir de la abstracción de lo que ya tenemos y mirar cómo se organiza toda esa información en cuanto a que todas las personas puedan acceder.
+Gracias. Funcionen todos los filtros y ya.
+
+@48:05 - Jorge Carrera (blasterinformation.com)
+Ok, fíjate, Jhovany, en algunas empresas se hace anualmente o cada cierto tiempo una verificación del almacén contrasistema. Sí. Donde manualmente yo veo cuántas tengo, las cuento y verifico cuánto hay en el sistema.
+
+@48:27 - Jhovany (ALFA ELECTRONIC)
+Eso se hace anual o cada cierto tiempo en todas las empresas. La verificación de inventario. ¿Ustedes lo hacen? No, no lo hemos hecho.
+Desde que se creó el stock no se ha hecho esa verificación de inventario. Ok.
+
+@48:44 - Jorge Carrera (blasterinformation.com)
+¿Ustedes tienen cierres anuales? Sí.
+
+@48:49 - Jhovany (ALFA ELECTRONIC)
+Tenemos cierre de dos semanas a final de año. Ok.
+
+@48:53 - Jorge Carrera (blasterinformation.com)
+¿Tú consideras que se debería generar un módulo dentro del sistema para ese cierre anual de inventario?
+
+@49:02 - Jhovany (ALFA ELECTRONIC)
+Sí, claro, digamos que sería, sería óptimo mantener ese inventario así. Estamos hablando de 10.000 piezas, o sea, como tú me dices.
+No sé de pronto, Maribel, siquiera cómo invertir tiempo en eso. Pero eso es un tiempo que al final te ahorra costos.
+
+@49:22 - Jorge Carrera (blasterinformation.com)
+Claro. Porque en la medida que yo sepa que lo que dice ahí, o no digamos que no es cierto, porque lo que dice ahí vamos a decir que es cierto.
+Pero en el recurso de los años, los errores se van acumulando, se van acumulando y termina después de 10 años siendo un monstruo totalmente inglés.
+
+@49:44 - Jhovany (ALFA ELECTRONIC)
+Eso es una vaina que para hoy hacer el, deben haber muchas cosas que hay que corregir.
+
+@49:54 - Jorge Carrera (blasterinformation.com)
+Sí, generalmente, te voy a ser sincero, generalmente las empresas, cuando van, el cierre. En lugar, utilizan unos días para eso.
+Cierras y vamos a contar lo que tengo en inventario contra lo que tengo en el sistema.
+
+@50:10 - Jhovany (ALFA ELECTRONIC)
+Dale.
+
+@50:11 - Jorge Carrera (blasterinformation.com)
+Y todo el equipo en eso. Es para que lo tomen ahí en cuenta. Sí, eso es para tenerlo.
+
+@50:20 - Jhovany (ALFA ELECTRONIC)
+Nunca lo hemos hecho. Dale, Jhovany. Entonces, nada.
+
+@50:24 - Jorge Carrera (blasterinformation.com)
+Siento que, bueno, por la parte de inventario, ya tú me habías comentado, me estás completando con lo que estamos hablando ahorita.
+Y listo. Yo siento que ya con esto, no sé si me quieres agregar otra cosa.
+
+@50:37 - Jhovany (ALFA ELECTRONIC)
+No, Jorge, pues ya ahí iremos sobre todo este mundo haciendo mejoras. Dale. Dale, espectacular, Jhovany.
+
+@50:50 - Jorge Carrera (blasterinformation.com)
+Oye, gracias, Vale. Gracias por tu tiempo. Y bueno, tranquilo, seguimos conversando.
+
+@50:55 - Jhovany (ALFA ELECTRONIC)
+Sí, Jorge. Buen día. Chao, que estés bien.
+

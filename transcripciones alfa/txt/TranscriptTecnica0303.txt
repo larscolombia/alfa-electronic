@@ -1,0 +1,648 @@
+Reunion de Trabajo Alfa - March 03
+ VIEW RECORDING - 82 mins (No highlights) 
+@0:00 - Jorge Carrera (blasterinformation.com)
+¿Cómo estás, Giovanni?
+
+@0:01 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Hola, Jorge, ¿cómo va a todo? ¿Cómo estás, Jorge? Espectacular. Bien, bien, acabamos un buen trabajo, gracias a Dios. Qué bueno.
+
+@0:12 - Jorge Carrera (blasterinformation.com)
+Bueno, nada, Giovanni, este, habíamos quedado ayer en la parte de la posición 11. Listo, sí, señor.
+
+@0:23 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Espérame, entonces voy a abrir. Ajá. Voy a abrir acá otra vez el módulo técnico. Pero espérame, te comparto pantalla primero.
+Choc, choc, choc. Perfecto. Listo, entonces voy a... ¿Ya ves mi pantalla? Sí, perfecto.
+
+@0:53 - Jorge Carrera (blasterinformation.com)
+Listo, entonces me voy a bloquear.
+
+@0:59 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Listo. Entonces quedamos en que había la posición en que solicitaba componentes, la posición 05, y cuando acababa mi lista se pasaba a posición de espera de compra de componentes que sería la posición 11.
+Hay unos casos, por ejemplo, en la que no voy a usar componentes que necesiten ser comprados, sino simplemente entro acá a la reparación que está por pedir componentes y le empiezo a bajar, por ejemplo, no sé, 5 líneas del stock y lo cierro.
+Ese, el sistema me debería evaluar de que cuando lo cierro no me quede en posición de espera de componentes, sino me queda en posición de reparación, porque no tengo que hacer compras, sino todo está en el...
+A veces nos puede pasar eso. Entonces digamos que es una evaluación en la que él mira si hay líneas...
+Pedidas que no han llegado de componentes, lo deja acá. Y si ya llegaron, lo pasa de 11 a 1.
+O si paso de 0.5, si cierro en 0.5 y solo puse líneas del stock, se me pasa directamente a 1 porque ya está listo para reparación.
+Porque tengo todo. Esa es como la dinámica de estas cuatro columnas, ¿sí? Ok. Entonces, cuando yo voy a, cuando yo ya tengo listo un equipo para reparar, por ejemplo, voy a mirar uno que estaba reparando ahorita, que es esta urgencia.
+Entonces, yo entro. Cada vez que entro en cualquiera de las columnas que manejemos, me lanza la, me lanza la pantallita de, de información, como resumida, podríamos decirlo.
+O sea, cuando yo le doy el clic, que lo voy a hacer acá en el módulo administrativo, acá me aparece.
+Es esta misma pantallita acá, sino que acá me aparece por allá, por lo que está con el Internet Explorer.
+
+@3:06 - Jorge Carrera (blasterinformation.com)
+Igual el tiempo de reparación del equipo empieza a rodar.
+
+@3:16 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Exactamente, entonces yo ya entro a esto, digamos que ya lo voy a reparar, ya me llegaron, por ejemplo en este caso, esto solo tenía una línea de compra, que es esta verde, y del resto tenía cosas que yo ya le saqué al stock.
+Entonces le saqué del A11, esta referencia de condensador, le saqué el 1. Le saqué del BB13, esta referencia de condensador, 2 condensadores y así.
+Entonces este equipo solamente es, le voy a instalar esto, estas cosas, a veces nosotros adelantamos y las instalamos cuando ya le estamos pidiendo compras.
+Porque como ya hay una orden de compra del cliente, ya ahora sí le puedo meter el tiempo que necesito.
+Entonces, por ejemplo, en esta, en este equipo, ya podemos ver el cuadro de horas. Y es que yo estimé que me iba a demorar 6 horas, ¿sí?
+Y ya le he cargado 3 horas y media en tiempo. Ok. Entonces solamente me quedan 2 horas y media para repararlo en teoría, pues para ajustarme a ese tiempo.
+Aunque tú lo puedes ajustar, ¿no?
+
+@4:33 - Jorge Carrera (blasterinformation.com)
+Tú puedes ajustar tu tiempo máximo. Y yo mire, no, no, ya va a 6, no, ya va a 6, 8.
+
+@4:39 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Sí, digamos que a veces lo hacemos en menos o a veces nos pasamos. Y entonces eso son lo que te digo que son los KPIs que nos genera el sistema administrativo.
+Ok. Entonces, bueno, por ejemplo, en todos los códigos yo le hago... Yo le hago cierre como cierre a la gestión.
+Entonces, cuando estaba en posición de diagnóstico, le hice cierre a la gestión, terminé el diagnóstico y eso quedó en manos de la persona que hace las cotizaciones.
+Entonces, cuando ya me lo aprueban y está en 05 y yo hago mi listado de componentes y le doy cierre, quedan manos, ya hay una aprobación en el sistema, en el administrativo, donde me aprueba los componentes y me pasa ya sea a posición 11 o a posición 1.
+En esta posición 1 de reparación, también hay un cierre. Entonces, yo entro al código y, por ejemplo, si le fuera a dar cierre a esto, entonces le escribo acá lo que le tenga que escribir.
+Esto es lo que yo te decía que me... Me gustaría como cambiar y es que tuviera una división. Entonces, por ejemplo, esto fue lo que yo puse en el diagnóstico.
+Se energizó, el SD no enciende, la CPU interna no arranca, hay que reparar unas fuentes y unas tarjetas y ya está acabada.
+Entonces, por ejemplo, lo que a veces hacemos es que ponemos esto como así.
+
+@6:24 - Jorge Carrera (blasterinformation.com)
+Claro, tú quieres una separación dentro de ese blog de notas que tienes allí, una cosa que sea de diagnóstico, otra cosa que sea de qué pasó en cada parte.
+
+@6:38 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Sí, porque entonces acá lo que yo digo es reparación en la fuente. Ah, bueno, entonces, antes de eso, que será lo que yo estaba haciendo ahorita.
+Entonces, se prueba, fuente principal. Fathom y sin carga genera los voltajes OK. Entonces acá, cuando pongo carga, la fuente se va a la fuente izquierda.
+Entonces, por ejemplo, acá yo voy a poner qué es lo que le voy a reparar, todo eso, las pruebas que le hice, si tiene video de prueba, es todo muy detallado, ¿sí?
+Pero entonces ahí ya sería la parte de la reparación, ya no tendría nada que ver con esto, ¿ves? Entonces sí me gustaría como que pudiéramos hacer una separación.
+Y acá podemos poner el ítem que tú dices del porcentaje para que eso me pueda generar otro KPI en el sistema administrativo.
+Sería súper bueno. Eso sería súper chido y analizarlo. ítem allí, el campo de porcentaje. Sí, entonces. Entonces digamos que esta es una reparación que yo ya voy a terminar, ya terminé, por ejemplo.
+Y lo que yo hago es, antes de cerrarla, yo copio esta información. Porque la voy a necesitar ahorita adelante.
+Entonces yo voy a decirle fin de intervención, como a las otras posiciones. Me sale las horas que le voy a cargar, igual que en las otras posiciones.
+Entonces, por ejemplo, yo ya empecé a intervenir, me demoré las dos horas que me hacen falta. Se las pongo ahí, me sale el mismo cuadrito de las pruebas que le hice.
+Este cuadrito, digamos que puede variar entre el diagnóstico y entre la reparación, porque por ejemplo hay equipos que vienen quemados, que en el diagnóstico solamente les podemos hacer una prueba que es acá con estos aparatos que nosotros tenemos.
+Pero ya en la etapa de reparación, como yo ya lo habilité, le quité los cortos, le quité todo. Entonces, por ejemplo, le puedo hacer una prueba sobre banco de prueba.
+Entonces, sí varía, o sea, sí es algo que voy a poner acá. Perfecto. seleccione el ítem, le doy verdecito y acá me aparece un reporte de intervención que este lo compartimos con nuestros clientes.
+Es algo muy básico. Pero entonces, me dice la ubicación de la falla. Entonces, yo le pongo entrada potencia, hay una sobrecarga o una sobretensión.
+Que tiene que ver con, por ejemplo, con envejecimiento. Y las pruebas realizadas sobre banco de prueba, acá sería súper chévere poner otro ítem porque solamente tenemos sobre banco de prueba o a verificar en sitio.
+Entonces, a veces nosotros hacemos pruebas parciales, pruebas parciales en el laboratorio, ese no está. Digamos que es como muy, este de pruebas realizadas es como muy blanco o .
+Sobre banco de prueba o pruébelo en su plan. Ok. Y acá en los comentarios, nosotros tratamos de comentarle al cliente, por ejemplo, acá yo me traje la información que tenía en el memo, pero no le voy a poner al cliente como esa información tan específica porque hay cosas que son internes.
+Sino que yo miro que puedo reutilizar de ahí. Entonces, yo le digo, se energiza 110, no enciende, se pegó internamente blanca, reparación de fuentes.
+Y entonces acá yo quiero. Quito esto de valores, no he intervenido, le quito el porcentaje, le quito los proveedores que estoy usando.
+Este espacio es muy pequeño, ¿sí ves? Como tú ves, es un poco difícil de acomodar, entonces sería bueno hacerlo un poquito más grande.
+Y acá tengo la, como el espacio que yo le dejo, y le pongo ahora así, yo a mí me gusta dejarle por ejemplo, esto que yo vi, que era como, es muy interesante ver cómo estaba antes.
+Ya no, no encendió, encendió, y no estaba intervenido. Y acá yo pongo la parte de la reparación, entonces se prueba fuente principal, y sin carga no genera voltajes, etc.
+Entonces, esto no lo voy a poner, porque esto lo voy dejar como interno, le voy a poner que hay una reparación en
+Fuentes, en las fuentes internas. Y bueno, acá yo le pongo lo que sea. Sigo, entonces, este reporte de intervención, apenas le doy el verdecito, él me lo guarda.
+Ah bueno, obligatorio. Ah bueno, acá si yo no le selecciono los ítems, me lanza un aviso de que en las tres columnas debo seleccionar algo.
+Es prerequisito para poder pasar. Lo selecciono, me deja modificar el memo por si quiero ponerle algo más. Entonces me lo vuelve a mostrar y acá yo le puedo poner más cosas al memo.
+Acá ya me dice en qué posición lo voy a dejar. Entonces este equipo estaba en la posición P2. Y si yo ya le doy acá, él me bota el último cuadro en el que me dice, desea confirmar de que va a terminar la intervención.
+Entonces si yo le digo. Lo que sí, es igual que en las otras posiciones, ese equipo ya se me desaparece y debe ser un equipo menos que yo tengo en mi columna de reparación.
+Entonces acá este código ya no me debería aparecer, sino sigo con los otros que tengo para reparar. Ese código ¿dónde va a aparecer?
+Le va a aparecer al área administrativa en... en la parte que se llama estos que son las reparaciones que están por cerrar.
+Entonces las reparaciones que están por cerrar entonces están alimentadas por todo lo que sacamos los nueve muchachos que trabajamos acá que reparamos.
+Entonces por ejemplo si reparamos cinco cosas al día y las cerramos, estas reparaciones a cerrar se van a ver alimentadas por eso.
+
+@14:00 - Jorge Carrera (blasterinformation.com)
+O sea, tú como técnica ya no vuelves a ver el aparato. Sí, ahí ya no tengo nada que ver.
+
+@14:08 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Entonces, es como ese ciclo. Entonces, lo diagnostiqué, si me lo aprobaron, vuelve y me aparece, le pido componentes, lo cierro.
+Si hay componentes con compra, me queda en esta posición de espera de componentes. Si no, me queda en mi lista de elementos a reparar.
+Cuando ya me llegue, entonces yo de acuerdo a esta prioridad voy atacando uno a uno. Le voy poniendo, a veces pasa que en esta posición, en la posición uno, entonces yo cojo lo que me llega para instalar de importación.
+Pero puedo seguir también accediendo al stock. En todas las posiciones yo entro y accedo a este stock. Ahí estoy en posición de reparación y, por ejemplo, se me pasó pedirle un integrado.
+Entonces, un 339. video! ver video! ¡Gracias Entonces, por ejemplo, este. Entonces yo entro, lo selecciono y lo saco del stock para lo que yo necesito, lo valido y sigo.
+O sea, puedo seguir interactuando con el stock en todas las posiciones. Y cuando ya acabo, le doy cierre, se me desaparece de mi lista de reparaciones, de mi columna de reparaciones.
+Esa es solo, digamos que estas posiciones de la 11 hacia la izquierda son de esa dinámica. Siguen en todas las posiciones, manejan los colores de prioridad, que son estos que están acá.
+¿Qué más te puedo decir? Ah, bueno, hay otra cosita y es que...
+
+@15:48 - Jorge Carrera (blasterinformation.com)
+Pero, disculpa, Ivani, ahí lo que sí observé fue la parte del informe al cliente. La vi como un poquito manual.
+Sí.
+
+@16:00 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Digamos que ahí el tema es muy manual porque depende de los daños del equipo, depende de, o sea, hay unas cosas más complejas que otras, unos informes más largos, digamos que es más como un checklist de donde yo digo, ¿dónde ubiqué la falla?
+Probablemente, la otra columna es probablemente a qué se debió esa falla y la tercera columna es qué pruebas le hice y abajo en los comentarios desgloso eso un poquito, es un informe muy básico porque nosotros no hacemos informes ni con fotos, ni digamos, no, o sea, es algo muy básico y los clientes ya lo saben porque está en nuestra política de reparación que ellos Yo veo en esta notificación, en ese informe, veo tres, tres momentos.
+
+@17:00 - Jorge Carrera (blasterinformation.com)
+Tres grandes momentos donde el técnico llena información. Una que es el diagnóstico, cuando el técnico llena información referente al diagnóstico.
+La otra es los repuestos que necesito para su reparación. Y el tercer momento es el definitivo de qué fue lo que se le hizo al equipo como tal.
+Entonces fíjate, por el momento que se le manda el informe al cliente, yo podría seleccionar qué le voy a mandar.
+Primero, yo evidentemente creo que el diagnóstico siempre hay que mandarlo y marcar. Yo me imagino un informe donde yo no tenga que estar escribiendo nada.
+Simplemente yo marco que debe salir ya el diagnóstico, que yo previamente ya se hizo. Sí.
+
+@17:53 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Debería salir lo que se le hizo al equipo.
+
+@17:56 - Jorge Carrera (blasterinformation.com)
+Acá está. ¿Verdad? Y si quiero comentar cualquier otra cosa, también se coloca. O es no volver a escribir lo que ya escribiste.
+
+@18:07 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Sí, digamos que, por ejemplo, en el informe sería bueno que, por ejemplo, yo pudiera, yo lo hago de forma manual, en cuanto a que copie el memo, y lo modifico.
+Entonces, por ejemplo, eso se podría hacer manualmente en esta etapa, y la persona, la persona lo que hace es, pues, modificar esto y ya.
+De acuerdo a lo que pasa es que, digamos, que al cliente que no le decimos, no le decimos específicamente que le hicimos, ni tampoco que le cambiamos.
+Ok. Ok. Entonces, ahí sale un resumen, esta misma información en un formato plano que yo creo que Maribel te lo va a mostrar más adelante.
+
+@20:09 - Jorge Carrera (blasterinformation.com)
+Imágenes, como me comentan, no, en inglés se informa, no hay imágenes. No, no hay imágenes.
+
+@20:15 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Y tampoco hay listado de repuestos. Entonces, sí, digamos que es muy específico de que se haga de forma manual para no compartir información importante con el cliente.
+
+@20:24 - Jorge Carrera (blasterinformation.com)
+Ok, fíjate, entiendo yo que hay una garantía. Listo, entonces ahí vamos.
+
+@20:32 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Ese nos hace falta. Eso es en la reparación. Tenemos dos posiciones más que son importantes y es la posición 16, que es los equipos en garantía, y la posición 13, que son los equipos en préstamo.
+Entonces, los equipos en préstamo son equipos que también etiquetamos. Entonces, por ejemplo, estamos reparando un controlador de un motor.
+Y el cliente me prestó el motor para hacer pruebas y los cables. Entonces para mantener un orden y para darle como una trazabilidad al préstamo, nosotros lo etiquetamos también, lo entramos como si fuera un equipo en cuanto a que le tomamos fotos, marca, serie, tip, modelo.
+Todo normal como se entra eso, los diagnósticos, pero lo que hacemos es que se pone en posición 13 y se ancla, digamos, este equipo Caterpillar que tengo acá, que es el código 133, está anclado al código 132, que es un código que tengo en garantía, que lo veo acá.
+Es un préstamo que me hicieron. Y a esos códigos les aparece este simbolito que está acá, que me dice que tienen algo en préstamo.
+Algo anclado, hay algo anclado. Entonces, esos son los, la posición número 13, una columna de equipos con código que están en préstamo para realizar pruebas de las reparaciones que estamos haciendo.
+
+@22:20 - Jorge Carrera (blasterinformation.com)
+El 13 o el 16, ¿cuál de los dos es el equipo principal? El equipo en préstamo es el equipo 13.
+
+@22:29 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Y el equipo principal puede ser un equipo que esté en garantía, que es la posición 16, o un equipo que esté ya, que esté en reparación.
+
+@22:40 - Jorge Carrera (blasterinformation.com)
+Ok, o sea que el 16 es mi equipo principal y los accesorios están en el 13.
+
+@22:46 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Los accesorios están en el 13 y los equipos principales pueden estar en la columna de garantías, que es la 16, o en la columna 11, que es en espera de repuestos, o en la columna 1, que es para reparación, o en la columna...
+Columna 05, cualquiera pueden estar. Perfecto. La columna 16 son equipos en garantía, entonces estos equipos en garantía se entran, los entra Natalia normal, les pone todos los datos y lo que pasa es que van a entrar con una información que es esta y me dicen cuál es el código anterior.
+Con el que ellos venían, entonces acá donde dice, a la parte derecha donde está ese cuadro amarillo, hay un ítem que dice ANSIEN NÚMERO AFFER, entonces aparece otro código que dice CO2208, entonces eso quiere decir que este nuevo código tenía un código anterior que es el 2208-0117.
+Si yo entro y busco ese código, voy a encontrar la información. La intervención anterior que se hizo. Entonces nos da la trazabilidad.
+Si esa fue la primera vez que se reparó, entonces nos va a decir, se reparó, se le hizo tal cosa en el memo, nos va a, digamos, dar la descripción, nos va a aparecer un listado de componentes que se le cambiaron y pues efectivamente no funcionó.
+Entonces el cliente nos va a decir, por ejemplo, no, es que venía porque no prendía, pero es que ya prende, pero no está comunicando.
+Pues tiene un problema adicional. Entonces es como esa trazabilidad. Entonces estos equipos, a estos equipos yo puedo acceder de manera normal como a los otros.
+Entonces entro acá. Entro al equipo, es la misma ventana que con los demás. garantía no, digamos que entre todas no nos varía, no nos va a variar las funciones, nada.
+Y a este equipo yo, por ejemplo, ya le trabajé dos horas. No tiene horas estimadas porque las horas estimadas solamente se dan en el diagnóstico.
+Le trabajé dos horas y todas estas líneas ya las pedí y ya llegaron. ¿Qué tenemos en particular en las garantías?
+Que por ejemplo yo pido cosas y me toca a mí mismo estar pendiente cuando llegan. No hay una alerta porque solamente tenemos una posición.
+No es como las reparaciones de que yo pido repuestos y se me pasa a otra posición y ya sé que si están en esa posición están esperando y que cuando llegan se me pasan a la posición de reparación.
+No. Como la garantía solamente tengo una posición, entonces digamos que la falencia es que yo pido los componentes y me toca a mí mismo estar pendiente si ya llegaron.
+
+@25:52 - Jorge Carrera (blasterinformation.com)
+Fíjate, justamente eso te lo iba a preguntar porque lo tengo en la posición 16, pero ¿y qué pasa si pido?
+Si yo pido un componente, ¿verdad? Para que se compre, él debería pasar a la posición 1, no a la 11, debería pasar a la 11, porque está a la espera de comprarse algo, porque indiferentemente si tiene garantía o no, él ingresó y está esperando por una compra de un componente.
+
+@26:21 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Por ejemplo, podríamos crear otra columna que sea la, no sea la posición 16 y no sea la posición 26, por ejemplo.
+Y cuando yo hago el listado de componentes, si yo le tengo que comprar cosas acá, le hago un listado, ¿sí?
+Y le doy cierre y me pasa a otra columna en la que yo ya sé que es una garantía, pero es una garantía que está esperando componentes, que ya la vi, ¿sí?
+Y cuando lleguen los componentes me vuelva a la 16, algo así.
+
+@26:56 - Jorge Carrera (blasterinformation.com)
+Claro, ahora la pregunta es, ¿el tratamiento de la logística? Equipos, cuando entran por primera vez o entran en garantía, ¿el tratamiento es igual o distinto?
+A nivel de su reparación, a nivel del técnico.
+
+@27:09 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Digamos que nosotros intentamos darle prioridades a las garantías porque son cosas que ya están facturadas y son cosas que ya necesitamos responderle en un tiempo más óptimo al cliente porque pues por la primera vez que las enviamos no nos funcionan.
+Entonces, si tratamos de que apenas llegan, debemos revisarlas y si hay que comprarle algo, lo compramos de una vez.
+Así estemos haciendo reparaciones, abrimos el campo para revisar las garantías. Entonces, es algo importante. Entonces, es algo crítico. Entonces, sí nos hace falta como tener esa posición adicional en la que, listo, en las posiciones 16 están equipos en garantía que me llegaron, pero necesito de que cuando ya pida componentes, las pase a otro lado, yo ya sepa que las que están...
+Están en 16, son las que tengo por revisar y cuando me lleguen los componentes me vuelvan a esa posición pues para poner, para ponerme a trabajar en eso.
+
+@28:11 - Jorge Carrera (blasterinformation.com)
+Ok, garantía. Cuando un equipo llega en garantía, ponte que lo reparé yo, yo lo reparé y resulta que el equipo llegó.
+Y ustedes evidentemente cuando se meten ven quien lo reparó y se lo remiten a ese mismo técnico.
+
+@28:27 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Sí, entonces queda asignado desde la entrada, digamos que cuando se le cargan los datos de cuál era el código anterior y me trae toda la data, él me dice de una vez quien lo revisó y a esa misma persona naturalmente se le asigna, pero de manera manual yo también lo puedo cambiar.
+Pero normalmente es a la misma persona, digamos que si hay una criticidad en que necesito que ese equipo sea revisado.
+Hoy y la persona que, por ejemplo, que lo reparo está de vacaciones, entonces pues se lo asigno a otra persona manualmente.
+
+@29:07 - Jorge Carrera (blasterinformation.com)
+Ahí no se hace informe, al momento que lo cierras, que lo reparas.
+
+@29:11 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+En el momento que yo cierro la garantía también me genera informe, Jorge. Entonces el informe se genera en dos etapas, en la reparación porque hay una intervención que se le da salida al cliente y en la garantía porque hay efectivamente una intervención adicional que también le doy salida a su cliente.
+
+@29:33 - Jorge Carrera (blasterinformation.com)
+¿Cómo te enteras tú si en un trimestre o en el año el porcentaje de equipos que han sido devueltos por garantía por técnico?
+Ok, sí.
+
+@29:49 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Todos esos KPIs los genera el sistema. Entonces en el sistema administrativo yo puedo ver, se puede revisar cuántas garantías le llegan en el periodo.
+Que yo quiera evaluar a un usuario, a un técnico, por ejemplo, se pueden ver indicadores de tiempos de cumplimiento, porque como yo tengo los tiempos en el cambio de los colores, entonces puedo evaluar esa persona en qué porcentaje me está cumpliendo con esos tiempos que estoy estableciendo.
+Entonces puedo ver quién es más efectivo en los tiempos, quién recibe menos garantías, quién saca más cantidad de equipos, en cuanto a monto de reparaciones ya de dinero, quién produce más, quién compra, como los componentes también quedan mapeados a quién me los compra.
+Entonces era lo que yo te mostraba ayer, que si vemos en la hoja de gestión de compras, las líneas que me crea el sistema.
+Me dice acá qué usuario me las creó. Entonces este me las creó el usuario J2K, esta me las creó el usuario L es abogal, esta me la creó el usuario J Vaquero.
+Ay, este yo no lo eliminé de ayer, lo voy a eliminar. Entonces, por ejemplo, yo puedo ver de quién me gasta más plata en componentes.
+Y, por ejemplo, hace también una valoración de que quién me gasta plata en componentes y eso, y esa, y hay un diferencial entre lo facturado.
+Claro. Entonces, eso me da un nivel también de eficiencia porque quién gasta menos recursos y me hace más facturación.
+Eso, eso, digamos que toda esa información me genera, genera indicadores. Eso, digamos que en el sistema actual ya está.
+Ok. Porque tocaría centrar a mirar, digamos que eso ya toca con Maribel, pero toda esa data... La hay. O sea, ¿cuántos equipos me saca al mes o en un año cada persona?
+Todo eso.
+
+@32:10 - Jorge Carrera (blasterinformation.com)
+Fíjate, yo como técnico mandé a comprar un componente y el componente tarda, ¿vale? Tarda, tarda, tarda, se consigue, no se consigue, no se consigue.
+Me imagino que llega un punto y estoy en la posición 1. Tiene que ser reparado. No, estoy en la posición, sí, no, en la 11.
+
+@32:29 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Estoy en 11.
+
+@32:29 - Jorge Carrera (blasterinformation.com)
+Estoy en 11. Y pasa el tiempo, ¿vale? Y nada que se consigue. Me imagino que llega un momento que se pone, no se pone en rojo, porque rojo es cuando tú lo colocas urgente, que él se pone en rojo.
+Manualmente, Manualmente, por lo menos que se pone en naranja o en amarillo. Sí, entonces, por ejemplo, mira este caso.
+
+@32:52 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Yo tengo un equipo en 11 que ya se me puso en amarillo porque hay que entregarlo mañana, ¿sí? Pero no he recibido los repuestos.
+Entonces me toca entrar a mirar qué pasó. ¿Qué es lo que pasa? Que si sería bueno, por ejemplo, una alerta a esto que le hace falta.
+A esto le hace falta algo de este proveedor. Ya llegó todo. Mira, todo esto está en verde. Todo esto ya llegó.
+Pero me hace falta solo una cosa. ¿Ok? Entonces, por ejemplo, si sería bueno una alerta de, por ejemplo, ¿yo qué te puedo decir?
+Por lo menos unos, una semana antes, yo ya debería tener los repuestos de lo que necesito reparar. Ese es más o menos como un promedio.
+O sea, estos equipos que están en once, una semana antes de que se me venza el plazo, ya deberían tener los componentes y estar en uno.
+Si no, eso debería generar... ¿Para qué? Para, por ejemplo, si hay un atraso en la importación, pues por lo menos yo poderle generar un correo a mi cliente antes de que él espere su equipo.
+Entonces, por ejemplo, cinco días antes le digo, señor cliente, ya por logística sabemos que hay un atraso en la importación de los componentes que necesitamos para la reparación de su equipo.
+Queremos informarle que la fecha que teníamos debe ser postergada, digamos, del 3 de marzo al 10 de marzo. Y yo ya ahí me anticipé a un problema, porque se llega el día y si el cliente lo necesita urgente, mañana mismo me va a llamar.
+Ya está listo el equipo, ya está con pruebas. Claro. Y entonces yo le digo, ay, no, es que mire, se me olvidó decirle que eso está atrasado y entonces ya se va a molestar.
+Entonces, ese tipo de controles sería súper bueno tenerlo en cuanto a los... Atrasos en cuanto a qué? En cuanto a los tiempos establecidos de reparación y también a los tiempos establecidos de garantía, porque en la garantía también tiene un tiempo en el que me pasa de verde a amarillo y de amarillo a naranja.
+Esos tiempos los podemos establecer, yo creo que nos toca establecerlos con Maribel porque los que maneja actualmente el sistema son muy cortos.
+Porque por ejemplo yo me llegó una garantía hoy, digamos que yo fui muy eficiente y la revisé mañana y le pedí componentes y esos componentes se compran los viernes y llegan normalmente entre semana y semana y media, pero a la semana la garantía ya se me pone en amarillo, entonces ese tiempo no es real.
+
+@35:53 - Jorge Carrera (blasterinformation.com)
+O sea, fíjate algo, el momento que el, ya fíjate lo que tú dices, el momento que el equipo burra.
+Si regresa, la garantía debería pausarse, tiempo de garantía, pausarse, ponte, yo tengo mi fecha de garantía mañana, mañana es mi fecha límite, y ingresó hoy, es decir, estoy dentro de la garantía, pero de alguna manera a mí todavía me debe quedar un día de garantía.
+
+@36:24 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Claro, sí.
+
+@36:25 - Jorge Carrera (blasterinformation.com)
+Un día de garantía en el momento que el equipo sale, que es reparado y sale, el día de a quedarme, un día de garantía, y no gastarse ese día de garantía dentro de la empresa.
+
+@36:37 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Ah, ok, entonces te voy a decir, entonces, lo que yo te hablo de los tiempos, es en nuestros tiempos de respuesta, el cambio de colores, en la posición de garantía, tiene que ver con los tiempos de respuesta, entonces, por ejemplo, cuando llega nuestro tiempo de respuesta, más o menos en las garantías, es de dos semanas.
+Entonces, la primera semana, mientras importamos cosas y revisamos, y la segunda, mientras Mientras instalamos. Esos son los tiempos que de pronto hay que ajustar acá en cuanto a los cambios de colores.
+De verde a amarillo y a naranja. O sea, a tiempo, se me vence en uno o dos días o vencido.
+En cuanto a los tiempos de garantía, ya como tal del equipo, eso, digamos que eso, lo que yo he visto es que es muy manual.
+Entonces, por ejemplo, cuando llega un equipo en garantía, Natalia, que es la que hace el ingreso, verifica en el código cuándo salió.
+Entonces, digamos, el cliente me dio aceptación de la garantía el día, no sé, el primero de julio del año pasado.
+¿Sí? Entonces, ella va y mira y dice el primero de julio y llegó hoy 3 de marzo, listo, ya no tiene garantía y lo entra a diagnóstico.
+Eso lo hace ella de manera manual. Pero, por ejemplo, Por puede pasar que llega, se despachó a principios de enero y llegó ahorita, entonces ella va y lo mira, ah, no, se despachó en enero, todavía entra en garantía, lo pone en garantía, pero eso lo hace de manera manual ella.
+No sé cómo se puede automatizar en cuanto a un contador de días en que me dé una alerta si está en garantía o no, pues me imagino que no debe ser tan complicado.
+
+@38:28 - Jorge Carrera (blasterinformation.com)
+No, no, porque claro, en el momento que el equipo entra, va a entrar con su QR o con su código, el código de ALFA, se ingresan y automáticamente se ve que está en garantía todavía.
+Y ya no entraría a la posición 05 ni a la 1, se entraría directamente a la posición 16.
+
+@38:52 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+A la posición 16, sí señor.
+
+@38:57 - Jorge Carrera (blasterinformation.com)
+Tiempo de garantía. Tiempo. Tiempo. Claro, sí siento que hay un cuello de botella respecto al pedido de los componentes, porque fíjate, si a mí me llega un equipo, me llegó ayer, lunes, algo sencillo de reparar, pero necesito un repuesto, pero es sencillo de reparar, ya él pierde una semana.
+
+@39:26 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Sí, digamos que eso sí es natural, porque es ya la parte ya muy técnica, porque a veces se puede necesitar una cosita de nada, una resistencia de cierto valor, que es específico, como hemos dicho, y miren todo el esto, intenté hacer lo que pude, y grabe, me tocó comprarla.
+
+@39:49 - Jorge Carrera (blasterinformation.com)
+Comprarla, entonces ya se pierde de lunes a viernes, el equipo está ahí, o sea, el equipo ahí. Y bueno, se compró el viejo.
+Mientras llega, entonces dos, tres días. O ya va ser casi dos semanas.
+
+@40:08 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Dos semanas.
+
+@40:09 - Jorge Carrera (blasterinformation.com)
+Entonces, claro, tus tiempos de respuesta, de reparación de equipo, no importa lo complicado que es, no importa lo complicado que sea, siempre va a ser en promedio dos semanas.
+
+@40:22 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Sí, lo mínimo que nosotros manejamos es, por ejemplo, a veces los clientes nos llegan con una urgencia. Me dicen, necesito esto porque estoy parado.
+Y fuimos a mirar y tocó comprar cosas. Y gente me dice, cómprelas y yo le pago el envío. Entonces, en esos casos, ahí sí, compramos hoy mismo y se le transfiere al cliente ese costo.
+Y, por ejemplo, si compro hoy, ya hoy martes, pues puede que me llegue el lunes de la siguiente semana.
+
+@40:56 - Jorge Carrera (blasterinformation.com)
+Claro, pero eso no queda registrado dentro del sistema porque eso ya es por la parte administrativa.
+
+@41:00 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Sí, eso ya es interno, entonces nosotros, por ejemplo, con esa compra aprovechamos y compramos más cosas.
+
+@41:06 - Jorge Carrera (blasterinformation.com)
+Con ese envío, aprovechando.
+
+@41:08 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Pero normalmente acumulamos para cierto día y ahí vamos comprando porque digamos que el costo de envío siempre es importante y pues eso se nos transfiere al porcentaje que tenemos ahí de ganancias.
+
+@41:25 - Jorge Carrera (blasterinformation.com)
+Bueno, listo, listo, espectacular. O dentro del sistema, ¿dónde yo ingreso los datos del técnico?
+
+@41:36 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Sí, todas las habilitaciones y todo eso se hace acá desde la parte del software administrativo. Desde el usuario de Maribel, ella yo no sé cómo entra por acá y, bueno, ella entra algo de parametrización, alguna cosa.
+Y acá le genera los, es acá allá, por eso es donde entré. Entonces, aquí... Acá están todos los usuarios que tenemos habilitados.
+Entonces, uno entra a menú principal, acá, Shun, y acá están los usuarios. Y acá está, si el usuario tiene permiso de edición, visualización, de cargar, y acá hay otra pestañita donde están otros permisos para crear un usuario nuevo.
+Entonces, es una ventana donde me da la opción de ver los permisos que tienen los usuarios, qué usuarios tengo, y ahí mismo puedo crear un usuario nuevo para cuando cambia una persona o entre una persona nueva.
+Ok.
+
+@42:34 - Jorge Carrera (blasterinformation.com)
+Pero eso es dentro de la parte administrativa.
+
+@42:36 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Acá, como tú puedes ver, en esta ventana es solo operativo. Operativo. El corazón del negocio, que es la reparación, está acá, pero no tiene nada que ver.
+Está muy aislado de la parte administrativa, como tú lo puedes ver. Nosotros no hacemos ni registros de nada que tenga que ver con los clientes.
+sea, cuando tenemos interacciones con los clientes. Son interacciones muy técnicas y por ejemplo a veces son post llamadas pero todo se hace a través del área comercial y por ejemplo yo tuve que llamar para este código a pedir una información de alguna cosa.
+Entonces en el fil de discusión yo le digo llame a tal persona, me contestó el ingeniero y le pregunté acerca de cómo se pueden hacer pruebas y ya bueno digamos que en el tablero que manejan todos ahí yo registro para que lo puedan ver los otros usuarios pero es lo máximo de interacción que yo tengo con la parte administrativa.
+
+@43:34 - Jorge Carrera (blasterinformation.com)
+A través de la comercial. Sí, todo es a través de la comercial.
+
+@43:38 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Entonces este cuadro es esto. Entonces todos los códigos que tengo la posibilidad de yo buscar acá un código entonces CO25 y lo busco y me lo deja ver.
+Ahora me hace falta explicarlo, lo último que me hace falta explicarte es esta parte de los iconos de arriba.
+Y eso es 51.
+
+@44:00 - Jorge Carrera (blasterinformation.com)
+No, no lo usen.
+
+@44:01 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Esto, la posición 51 no la usamos y la posición 9X tampoco. Eso tiene que ver con que las personas que nos suministran el software tienen otras posiciones para materiales de intercambio y posiciones de pruebas para ventas.
+Entonces, por ejemplo, les traen un equipo dañado. Yo tengo un equipo en el stock que está bueno. Entonces hago un intercambio y eso me, como que lo registro en estas posiciones.
+Eso digamos que ya es otro, otra posición de negocio que nosotros no manejamos. Ok.
+
+@44:41 - Jorge Carrera (blasterinformation.com)
+Actualmente no se usa. Sí.
+
+@44:44 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Entonces, eh, que, que, que me hace falta explicarte estas posiciones de arriba. Ok. eh, esto, este ícono es para situarse en la ventana principal.
+Digamos que este no tiene, es por si yo estoy... En otra parte que estoy explorando, ahí me pasa la ventana principal.
+Este carrito es para yo hacer pedidos. Entonces, si yo le doy acá, él me deja crear líneas de pedido para el stock.
+Y, pero es que, bueno, no recuerdo si para, a ver, yo reviso. Perdón, para el stock o para cualquier código, si yo tengo identificado el código.
+Entonces, lo que yo hago acá es crear una nueva línea y me manda al cuadrito en donde yo pongo el proveedor.
+Donde yo pongo el proveedor, pongo acá que es una memoria, la referencia de la memoria, ta, ta, ta, ta, todo.
+Y eso se me va a ir a las líneas que tengo creadas en el stock, acá en el sistema, en la parte de compras.
+Entonces, en la parte de compras, normalmente, yo te voy a mostrar acá, esto es todo lo que hay para...
+Y son cosas que normalmente están para códigos en específico, entonces para este código que es una venta, es un teclado, para este código hay que comprar este autoacoplador, pero acá en este cuadro también se me ven reflejadas las líneas que me puedan pedir los técnicos que necesitan para algo.
+Digamos, por ejemplo, ellos pueden ver en su criterio de que hay una referencia que se necesita para mantener para cierto tipo de equipo y lo que ellos hacen es la piden, la pueden pedir, o no, eso no tiene problema.
+Y cuando llega, se va a ingresar, como es una línea de stock, se va a ingresar al inventario. Ok.
+Entonces, esa es como la dinámica. O si ya está en el inventario y de pronto está en cantidad insuficiente, se va a ingresar al cajón que corresponde.
+Entonces, en este cuadro me deben aparecer eso, las líneas que yo compro para mis códigos de reparación y para mis cosas de stock.
+
+@47:11 - Jorge Carrera (blasterinformation.com)
+Es posible, Giovanni, disculpa, que si yo quiero, resulta que un técnico ayer pidió un componente específico. Sí. Yo no lo sé, yo no lo sé, porque él pidió un componente.
+Y yo hoy veo que me hace falta ese componente y necesito pedirlo. Y entro en esa pantalla y lo pido.
+Pido lo que el otro técnico ayer también pidió. ¿Eso suele suceder o no sucede?
+
+@47:46 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Sí, entonces, por ejemplo, también pasa cuando estoy reparando varios equipos que son iguales y pido la misma referencia de componentes, entonces, y en la misma cantidad.
+Entonces, por ejemplo, p... Pedidas referencias de componentes y cada una pedida 5. Entonces, todas esas líneas me van a aparecer acá en la parte administrativa de manera separada.
+¿Por qué las tengo que ver de manera separada? Porque cuando ingresan los componentes, si unificara, me quedaría muy difícil saber cuántos son para este técnico y cuántos son para este otro.
+Entonces, cuando son líneas separadas, aunque yo sé que me llegaron, que compré 100 de X referencia, entonces tengo 5 líneas de esas que me suman las 100.
+Entonces, sé que esos 120 son para tal persona, 10 para otra y así voy repartiendo. Lo mismo para el stock.
+Ok. ¿Listo? Entonces, eso en el tema de acá de solicitar para el stock y también me da la posibilidad de que si yo tengo el código de un equipo, yo lo tecleo acá.
+Y le doy pídame para tal equipo. Pero digamos que eso no lo hacemos ahí. Normalmente lo hacemos desde cada código.
+No tiene sentido hacer desde ahí. Es más, esto para el stock. El tercer ícono es precisamente el stock. Digamos que yo puedo acceder a modificar o a sacar cosas del stock si estoy ya acá dentro de un código.
+O desde la ventana principal yo le doy acá stock y me da esto. Entonces es la misma ventana en donde yo puedo ver la ubicación en cuanto a letra y a número, la familia, la marca, la referencia, la designación que tiene.
+El número interno, por ejemplo, el número interno 788, yo le doy extracción y me dice que ese número está asignado a un ST202, que es un circuito integral.
+De este empaquetado y es un material nuevo, consumible nuevo. Entonces yo puedo hacer desde acá el stock, por ejemplo, yo puedo mirar todo en cantidad insuficiente.
+Tengo ocho páginas de cosas que están en cantidad insuficiente y es que yo les puse un mínimo y no hay nada.
+Eso lo vamos actualizando semana a semana porque a veces pasa que son compras que no llegaron y quedaron ahí en el aire y puede pasar también que son compras que la cantidad mínima eran 10 y el proveedor solo me mandó 5.
+Entonces siguieron en insuficiente o que por ejemplo cuando la persona de compras va a realizar ya como tal la compra, se da cuenta que con ese proveedor no habían, pero como son cosas del stock.
+Al final, por ejemplo, eliminaron la línea o, digamos, se hizo algún cambio de manual. Entonces, en esta cantidad insuficiente, el acá me dice la fecha, en esta columna me dice la fecha en que se hizo la compra.
+
+@51:14 - Jorge Carrera (blasterinformation.com)
+Pero pues, eso nunca llegó.
+
+@51:17 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Entonces, son cosas que nos toca irnos actualizando. Entonces, lo hacemos cada determinado tiempo. Hacemos como la depuración de todo eso.
+
+@51:26 - Jorge Carrera (blasterinformation.com)
+Tú, en ese sentido, necesitarías una alerta. Una alerta que te digan o te muestre solamente los equipos que están por debajo del mínimo.
+
+@51:39 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Sí, digamos que sería más, como esto es de buscar con quién lo puedo comprar o buscar si definitivamente voy a quitar eso del stock.
+Porque a veces también puede pasar de que, por ejemplo, yo tenía en el stock hace cinco años cierta referencia de componente que era nuevo.
+Y... Y me convenía tenerlo nuevo, pero a esta fecha lo busco con todos mis proveedores y ya no, no hay nuevo en el mercado.
+Entonces yo digo, no, pues a qué me vale tener un componente, por ejemplo, que yo pueda comprar de segunda en el store, no, prefiero tener cosas nuevas en el store.
+Entonces, ¿qué hago? Elimino esa línea de compra, pero también elimino eso de mi store. Ok. Entonces, es como ese manejo de inventario que hay que hacer.
+
+@52:35 - Jorge Carrera (blasterinformation.com)
+Wow. O sea, me imagino, bueno, eso lo voy a ver más adelante, el manejo del inventario. Sí, el manejo del inventario es bien fuerte.
+
+@52:45 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Bien fuerte.
+
+@52:46 - Jorge Carrera (blasterinformation.com)
+Ah, bueno, perfecto. Ah, bueno, así viene, entonces lo funcione.
+
+@52:50 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Entonces, por ejemplo, por ejemplo, acá yo me puedo, con el primer ícono, salir a mi ventana principal. Ya vimos los tres primeros.
+Es. Esto que se llama documentación técnica no lo usamos, porque ya no tenemos acceso a las bases de datos de Francia.
+En realidad nunca hemos tenido acceso, pero a cierto tipo de documentación, pues yo te voy a decir cómo lo accedemos, pero este ícono no lo encontramos.
+Sería interesante, por ejemplo, empezar a subir toda nuestra documentación al software. Perfecto. Porque actualmente, por ejemplo, lo que hemos hecho es que teníamos una carpeta compartida en Dropbox, pero por ejemplo, ahorita ese Dropbox estaba con los usuarios, estaba con los usuarios que nos, con el dueño del software, y ya nos dijo que ya no teníamos más Dropbox, y al final lo que hicimos fue un backup y lo tenemos en un Discord.
+Pero esa información es súper importante, por ejemplo, organizarla. Gracias. Y tener acceso ahí, por ejemplo, a ciertos manuales, que los manuales estén organizados por marcas, por familia, equipo, podría ser, todo eso nos deberíamos tomar el tiempo en que estuviera en el software y que no se pierda al final, porque si por ejemplo ese disco duro se me daña mañana, ¿qué voy a hacer?
+
+@54:23 - Jorge Carrera (blasterinformation.com)
+Claro, fíjate, aquí lo que me estás comentando, bien importante, se requeriría un módulo, un módulo de, inclusive no solamente manuales, también de videos, porque puede ser que en YouTube o un video X, se explique cómo reparar o un nuevo procedimiento para reparar algún componente.
+
+@54:46 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Claro, sí.
+
+@54:47 - Jorge Carrera (blasterinformation.com)
+Y entonces, claro, la persona que ya está dentro de ALFA, que tiene tiempo en ALFA, perfectamente no le hace falta ver el video, pero alguien que llegue nuevo y mira, ve el video tal que ahí se te...
+Explica cómo reparar ese componente dentro de ese equipo. Y la persona perfectamente se mete en el sistema y ve el video.
+Sí, claro.
+
+@55:09 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Sí, no, eso digamos que lo que pasa es que como dependíamos del proveedor del software en Francia, entonces lo que pasaba era que, pues primero él no restringió toda la información, porque pues era conocimiento de ellos, ¿no?
+Y segundo, nosotros no teníamos la posibilidad de desarrollar ese conocimiento para nosotros. Y ahí lo que yo quería decir, si le daba clic, te muestra a quién.
+No, no, no, no, no, no, no, no. Entonces sería muy interesante empezar a hacer ese, como, como, como ese, como esa cosa.
+instrucción de conocimiento que podamos tener a través de manuales, de que nos funcione en los códigos un histórico de una mejor forma, lo que yo te comentaba ayer.
+Eso nos va a ayudar a crecer bastante. Ok. Sí, entonces, es en cuanto a ese icono de documentación. En este, esto no lo usamos, no sé para qué sirve.
+Composan, programé, claro. No, a ver. Esto no lo usamos. Este es mi reloj de tiempos. Entonces, para mi usuario, este es mi reloj de tiempos de esta semana.
+Entonces, por ejemplo, acá me muestra los tiempos que yo cargué ayer y los tiempos que he cargado hoy. Normalmente, yo debería tener cargada diariamente como mínimo siete u ocho horas de trabajo.
+Que son asignadas a ciertos equipos. Entonces, por ejemplo, yo te voy a mostrar que acá en el día de hoy le cargué una hora a este equipo y están los comentarios que veíamos ayer en los tiempos, también me van a aparecer.
+Entonces, por ejemplo, si yo le quiero cargar horas a algún equipo el día de hoy, porque se me pasó, por ejemplo, al final de la jornada, yo busco el CO, CO25, 02, 07, alguno de estos, por ejemplo, y le cargo horas y las adjunto y me bajan automáticamente acá.
+Ok. Entonces, es el manejo que yo tengo como usuario del control de mis tiempos. Entonces, y puedo moverme por semanas, por ejemplo, si vemos la semana pasada, así estas semanas, miren, todas estas semanas.
+Y ahí va variando.
+
+@58:01 - Jorge Carrera (blasterinformation.com)
+O que tú tienes un resumen de horas cargadas en el sistema de manera semanal. De manera semanal.
+
+@58:11 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Y las puedo modificar diariamente de acuerdo a los trabajos que vaya haciendo. Ok.
+
+@58:17 - Jorge Carrera (blasterinformation.com)
+Entonces, eso es el relojito.
+
+@58:23 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Estas dos pestañas son unas pestañas de extracción. En este momento, con las modificaciones que nos han hecho el software, no nos funcionan tan bien.
+Pero la idea cuál es. Que yo puedo entrar a estas pestañas, decirle que voy a hacer una extracción técnica.
+Nosotros solo hacemos extracciones técnicas. Entonces, por ejemplo, acá no habría otra opción que yo use. Debería aparecerme solo extracción técnica.
+Y yo puedo empezar a buscar equipos, por ejemplo... Por todas estas clasificaciones, ¿sí? Entonces, ¿qué clasificaciones tengo? Por ejemplo, tengo marca, que voy a poner, que voy a buscar un equipo Siemens, el número de oferta que es el CO, CO25, los que nosotros manejamos, el número de mes, la familia de equipo, el centro de servicios, que en este caso, pues, solo somos nosotros, ahí como ellos tienen más, pues, buscan por centro de servicio, la designación, la posición, el código, de la oferta, el tipo, ¿qué es otra de toda esta vaina?
+Año, y, por ejemplo, voy a buscar equipo Siemens, que haya reparado mi usuario J Vaquero, a ver qué me sale.
+Entonces, acá me bota de una vez que yo, que hay 338 líneas Siemens a nombre de J Vaquero, que son los dos, los dos ítems que yo le puse.
+Y yo puedo empezar, por ejemplo, A buscar un equipo que sé que repare cierto año o bueno, eso nos sirve para encontrar equipos similares.
+A veces, por ejemplo, el histórico nos da equipos que son iguales, pero acá yo puedo empezar a buscar equipos similares de acuerdo a la marca y si yo me acuerdo, por ejemplo, que lo repare o en qué año o bueno.
+Y acá lo que yo puedo hacer es copiar uno de estos del cual yo encontré información. Sería bueno, por ejemplo, tener un acceso directo.
+Si yo le doy acá, él no me lanza a la ventana de la información específica del equipo. De esa intervención.
+Si yo le doy acá, me bota de esa cámara, mira, a un internet que no hace nada. Entonces me toca irme manualmente a la ventana principal y yo pego ese código y lo busco.
+Entonces es un equipo Siemens que se reparó para este cliente, que se le compraron estos componentes, y que yo puedo ver el memo, y acá es la información del memo, daño en la potencia, chan, chan, chan.
+Si es que este memo ya no lo puede intervenir. No, porque ya fue entregado. Porque ya fue entregado, es lo que yo te decía ayer.
+Para equipos entregados el memo ya quedó con el tema. Esa es la ventana de extracciones que es súper útil.
+
+@1:01:29 - Jorge Carrera (blasterinformation.com)
+Ok.
+
+@1:01:30 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Esto dice el Rechercher. Entonces el Rechercher es un administrador de documentos de la gente que nos hace el software.
+Entonces en el Rechercher yo puedo buscar, por ejemplo, documentación de este tipo de equipo. Entonces yo le pongo una palabra, él empieza a buscar y me muestra toda la documentación.
+¿Qué hay de ese tipo de equipos? ¿Qué incluye esa documentación? Incluye correos. Señor.
+
+@1:02:11 - Jorge Carrera (blasterinformation.com)
+Ah, yo digo que esto es distinto porque estábamos hablando que, ah, pero esto es un documento de Francia. Exacto, sí.
+
+@1:02:21 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Entonces, por ejemplo, él me dice que esta vaina me encuentra, por ejemplo, en correos electrónicos, información que tenga en esa palabra.
+Entonces, mira, acá me dice esto, Park Drive, ta, ta, ta, y me dice que, bueno, esto en algún momento lo enviaron o lo subieron a, lo usaron para alguna cosa.
+Es el Park Drive. Esto todavía funciona. Digamos que a esta información que es muy técnica, todavía tenemos acceso. Y me baja del usuario este, por ejemplo, este es un datasheet que probablemente no lo encuentren en otro lado y está escaneado por ellos directamente.
+O alguien lo escaneó del original y ahí está guardado. Pero digamos que está muy relacionado con la documentación técnica, sino que no entro yo a buscarlo.
+O sea, podríamos hacer un solo ítem que sea la documentación técnica, pero le implementamos un buscador. Ok.
+
+@1:03:36 - Jorge Carrera (blasterinformation.com)
+Y entonces con las palabras que yo le ponga.
+
+@1:03:39 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Ese es el Rechercher. Pero es que lo trae en francés.
+
+@1:03:43 - Jorge Carrera (blasterinformation.com)
+Sí. En francés.
+
+@1:03:46 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Además de que esto tiene la ventaja de esto, es que tiene el acceso a los correos electrónicos. Entonces, por ejemplo, si un técnico le escribió a otro, le digo, oye, hermano, es que no le encuentro problema.
+A tal equipo, está pasando esto, usted me puede ayudar. Entonces, todos esos correos yo los puedo ver ahí. ¿Y cómo es eso?
+Sí, entonces, en ese rechazo. Espérate a ver si yo encuentro un correo en el que estábamos buscando. Esto es un PDF, esto es un PDF, esto es un PDF.
+Entonces, mira, por ejemplo, este es un correo electrónico que mandó de Coriuntasatá a técnico Sacerti. A todos los técnicos se lo envió.
+Y dijo que es un correo con respecto al variador para Mator Bruxless, marca el AOPCM2. Y ya estáis. De menor.
+No. Y adjuntó este PDF, que es el que se va a abrir. Entonces, a todos los técnicos de allá de Francia, de los centros de servicio, les mando este correo en donde dice que está compartiendo una información de un control de posicionamiento y ya, digamos que no sé esto para qué será, pero les mando esta foto con un PDF.
+No sé si es, por ejemplo, para ver cómo está el banco de prueba ya montado y que no lo vayan a modificar, alguna cosa.
+Pero si ves que son correos.
+
+@1:05:39 - Jorge Carrera (blasterinformation.com)
+Sí, vale, qué loco.
+
+@1:05:42 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Sí, esta vaina está integrada con el correo que manen a esos personajes. Ok.
+
+@1:05:51 - Jorge Carrera (blasterinformation.com)
+Ese es el Rechercher.
+
+@1:05:52 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Acá hay una cosa que se llama, creo que esto es capitalización. Bueno, después de la lupita que es el Rechercher.
+Muy bien. Está esta casita, que esa es como una pantalla principal de funciones, pero nosotros en nuestro día a día no la usamos.
+O sea, en esta casita, aquí yo puedo acceder al Rechercher, que es esta misma lupa, o a la extracción, que es esta misma paginita.
+Son las dos únicas cosas que nosotros usamos de este menú principal. Sí, no tiene sentido. digamos, si nosotros lo quitamos, no pasa nada, porque si tenemos un ítem de documentación, que es este Rechercher, que lo podríamos implementar con el buscador, y otro ítem de extracción, ya todas las otras funciones no lo hacemos.
+Lo otro que manejamos acá en este ítem, es un, ellos le dicen a... Anuario es un directorio, pero nosotros no lo tenemos habilitado.
+Normalmente, por ejemplo, si le diéramos acá, si teclaramos el directorio y buscáramos algún nombre que nosotros sepamos, como allá son muchos centros de servicio, entonces, por ejemplo, yo me podría contactar con las personas que trabajan en el centro de servicio de León o las personas que trabajan en el centro de servicio de alguna otra ciudad, de Moulouse.
+Entonces, ahí veo quién está trabajando, me da el número o el correo y yo lo contacto, porque sé que en ese centro de servicio que es especializado me van a responder cierta pregunta, pero es como una comunicación interna que ellos tienen.
+Ok.
+
+@1:07:43 - Jorge Carrera (blasterinformation.com)
+¿Tú te lo han hecho? No, eso no, porque acá estamos todos.
+
+@1:07:48 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Acá por comunicarnos.
+
+@1:07:50 - Jorge Carrera (blasterinformation.com)
+Claro, claro. Subimos de piso y ya.
+
+@1:07:55 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Sí, por supuesto. Bien, ese no lo usamos. Y este otro. Otro asistencia es para, creo que es para el tema del software.
+Entonces si yo necesito asistencia, si tengo algún problema, entonces me comunico con asistencia. Y trae un ítemcito acá de preguntas, de ayuda.
+Vamos donde explica las funciones del software. Entonces está así, el típico help de los programas, para explicar para qué sirve cada cosa.
+Y la desconexión, para yo salirme de mi usuario.
+
+@1:08:40 - Jorge Carrera (blasterinformation.com)
+Ok. Anotado aquí. Ok.
+
+@1:08:47 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Y con eso acabamos. Ahí terminamos.
+
+@1:08:50 - Jorge Carrera (blasterinformation.com)
+Ahora la pregunta de las mil, de las mil. De, de, que tienes años usando el sistema. Que lo conoces de arriba y de abajo.
+Yo tengo aquí varios apuntes ya. ¿Qué consideras tú prioritario que debería tener el nuevo sistema? O ¿qué fortaleza debería tener el nuevo sistema respecto a esto?
+¿Qué deberíamos mejorar?
+
+@1:09:18 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Como tú lo ves, el sistema se mueve. Eso que me estoy moviendo sobre Internet Explorer, que eso ya es una vaina obsoleta.
+Pero esto funciona, digamos, muy fluido. Teniendo en cuenta que también es un flujo de información bastante fuerte, pero funciona súper bien de que yo le pongo acá el mouse y de una vez me bota la pantalla súper rápido.
+de que si yo accedo también me bota las ventanas súper bien. Digamos que para mí es importante conservar esa fluidez de...
+O sea, visual, ¿no? Muy visual, sí, porque, por ejemplo, a veces... A veces yo entro a códigos en los que me toca hacer unas 10 líneas de estas, crear 10 líneas de componentes.
+Entonces tiene que ser una interacción muy visual en la que yo le digo adjuntar línea, voy y saco mi tablita, la lleno acá, me adjunta una y ya voy por la segunda línea, que sea muy dinámico.
+Así con ese tipo de dinámica es importante conservarla, el tema de las prioridades es importante, el tema de lo que decíamos ayer de mirar a ver qué tipo de alertas se pueden generar en cuanto a los cambios de estado de los componentes, en cuanto si hay algún problema con algo que no llega, crear la posición adicional.
+Para las garantías, para saber si ya les pedí componentes, eso es muy importante que no lo tenemos ahora. Pues el tema de que ya va a ser en español, que es súper bueno para cuando llegue alguien nuevo, que eso es inminente.
+El tema de que el software nos incluya la documentación es súper importante. Claro. Eso es bien importante. Hay otro tema y es que nosotros manejamos unos pequeños backups de software que vamos extrayendo de las tarjetas o de los equipos.
+Entonces yo quisiera también que eso lo pudiéramos organizar con el software en cuanto a que nos dé una alerta de si ese equipo tiene un backup de software.
+Cuando tú te te refieres...
+
+@1:11:59 - Jorge Carrera (blasterinformation.com)
+refieres... Account software, ¿a qué te refieres?
+
+@1:12:02 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Entonces, por ejemplo, nosotros tenemos una tarjeta electrónica que tiene unas memorias fijas con un programa fijo que se ejecuta en la tarjeta.
+Perfecto. Nosotros tenemos unos equipos en los cuales extraemos ese programa. ¿Qué es lo que pasa? Que a mí me llegó ese equipo en el 2020, le hice la abstracción del programa, efectivamente lo tengo ahí guardado en algún lugar, ¿sí?
+Pero ahí quedó. Entonces, está marcado con el CO, está marcado de que es X tipo de equipo, pero ahí quedó.
+Entonces, si acá en el 2026 me llega una tarjeta igualita de otro cliente o del mismo cliente, y se dañaron las memorias.
+Entonces, ahí no hay quien recupere por ningún modo ese software. Pero resulta que... Gracias. Yo ya hice ese trabajo en el 2020, y ese trabajo vale oro porque ese software no lo tiene nadie.
+Entonces, debería, por ejemplo, en los códigos, en las familias de equipos, crearme algún tipo de alerta en la que me diga, este software ya lo descargó alguien.
+Ok. Está guardado en tal carpeta. ¿Qué te parece eso, Jorge? Podría ser como que, porque tengo una, un delicado de apuntos a cada equipo, cuando llegue.
+Sí. En el software hay algún. A mí se me hace que, un ítem. Y ahí hay un tipo de equipos para crear una carpeta donde se puedan cargar manuales, softwares, todo ese tipo de Entonces, acá ya hay unos ítems que Francia no nos deja usar, en donde hay documentación.
+Entonces, yo ya le decía... A Jorge, de que lo necesitamos implementar para nosotros, que va a ser como nuestro Dropbox.
+¿Es cosa que te dijeron si el sistema tenemos que tener una carpetita donde te deje ver todos los documentos que ya hemos cargado antes en el sistema para ese tipo de equipo?
+A mí se me hace útil de que, por ejemplo, como dentro de la reparación, por ejemplo, acá, un ícono nuevo que sea solo informativo y que yo pueda manipular en cuanto a qué.
+En cuanto a que yo entro acá a la reparación, ¿cierto? Digamos que hay un ícono acá en donde él me alerte que ya tengo un software que alguien descargó.
+¿Que dónde está? No sé. Pero ese, ese, digamos que eso lo podemos ver en la organización de la documentación.
+Pero yo ya sé que para este tipo de equipo... Acá hay un icono que se prende o se apaga cuando alguien ya le hizo algún tipo de backup a ese tipo de equipos.
+Entonces, ese se tiene que dejar modificar también, porque si no lo hay en este momento y yo lo hago, le doy la ruta o lo guardo donde sea la ruta y lo prendo para que en un futuro alguien ya sepa.
+¿Sí me entiendes? Y digamos que, por ejemplo, también haya una ruta, un acceso directo, exactamente, de softwares, entonces de backups.
+Entonces, por ejemplo, cuando yo ya, por tipo de equipo, entonces cuando yo, este tipo de equipo tiene esa alerta prendida, yo entro a ese icono y automáticamente me lleva a una carpeta en donde están lo que los demás compañeros.
+Ya etiquetaron y descargaron. Ok, en este caso hay una cosa que se llama, hay algo que ya se llama documentación técnica, pero yo quiero crear otro ícono que sea aparte para el software.
+Entonces, esa documentación técnica que va a traer manuales, planos, información de los clientes técnica. Y que eso no se pueda borrar, eso es súper importante.
+
+@1:16:33 - Jorge Carrera (blasterinformation.com)
+Manejado por el administrador. Manejado por el administrador.
+
+@1:16:37 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+La documentación técnica y los softwares no se pueden borrar. Entonces, ¿qué pasa? Digamos si me llegó una pantalla y esas pantallas que nos han llegado, no, es que se les borró el software.
+Y acá yo ya entré al sistema y eso me dio la alerta de que ya hay un backup en algún momento de la vida y yo entro ahí.
+Y eso me sirve, o sea, me va a evitar. Mucho tiempo de buscarlo y además que va a ser muy certero en que cuando el cliente necesite ese software lo va a poder encontrar súper fácil.
+Ok, claro. Eso es importante, entonces para nosotros ¿qué es importante? La gestión de las reparaciones sea igual. A mí me interesa que la gestión de las reparaciones sea igual, añadiendo la columna de los componentes de espera para las garantías.
+Listo. Aparte de eso que necesito gestionar también con mi software técnico, la documentación técnica, las extracciones son súper importantes para nosotros.
+Y quiero añadir el manejo de backups de software. Eso es súper importante. Eso va a estar dentro de...
+
+@1:18:00 - Jorge Carrera (blasterinformation.com)
+Dentro del, por supuesto, eso va a estar dentro del módulo de documentación. O si te metes allí, igual lo vas a conseguir.
+Pero aquí vas a tener el botón de acceso directo. Sí, exacto.
+
+@1:18:11 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Entonces, digamos que sea tan fácil de que si yo accedo a un código de reparación, ese código ya me diga acá con una alerta en un ícono, tengo un backup en algún momento de la vida.
+Entonces, eso me va a ser muy útil en la parte técnica. Y, pues, bueno, que pueda ser la búsqueda de la documentación, que pueda ser el manejo de inventario a través de cómo se está haciendo, cómo te mostré.
+ACTION ITEM: Schedule team brainstorm re: new system improvements - WATCH
+Y, pues, yo creo que sería hasta ahí. Yo, que tengo planeado hacer una reunión con los muchachos y hacer una lluvia de ideas para ver qué cosas podemos mejorar, pero ya teniendo esta base.
+Ok.
+
+@1:18:58 - Jorge Carrera (blasterinformation.com)
+Ahora, fíjate la pregunta. Fíjate. Ese software que se puede respaldar, asumo yo de que se subiría también al sistema, al módulo de documentación.
+Y hay otro. Sí. Para que no lo tengas en otro lado. Hay dos casos.
+
+@1:19:18 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Hay dos casos. Entonces, cuando hago, por ejemplo, un backup de una memoria ETHROM, que es lo más básico. Entonces, eso es una cosa que pesa CAS, o sea, un CAS.
+Ok. Entonces, eso no es nada. O sea, eso se puede subir súper fácil. Pero hay temas de cuando hago Java Caps de documentación, de programas que, por ejemplo, ya son discos duros de computadores industriales.
+Entonces, eso nos tocaría ver cómo lo manejamos. Pero, por ejemplo, que aunque sea me dé la alerta de que está, y por ejemplo, no, está en el disco duro de respaldo de la empresa.
+
+@1:19:56 - Jorge Carrera (blasterinformation.com)
+Claro, que te diga, está en un dispositivo externo. Exacto, pero está.
+
+@1:20:01 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Entonces eso es súper bueno porque por ejemplo nos ha pasado que hemos tenido software de equipos iguales y no los hemos usado para hacer pruebas, para arrancar otro equipo porque no sabemos que alguien lo hizo.
+Y pues eso ya se vuelve pues cuando una sola persona lo maneja pues es fácil, pero ya que somos nueve y los nueve bajando programas y ya tenemos que organizar eso.
+
+@1:20:32 - Jorge Carrera (blasterinformation.com)
+Ah no, claro, perfecto, listo Giovanni. Pero lo que me comentaste ahorita me interesó mucho también que se vas a reunir con el equipo para ver qué mejora, aparte de la que ya me comentaste, se le puede, se puede agregar.
+
+@1:20:48 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Sí, yo creo que de pronto a final de semana que estemos un poquito más desocupados, digamos, sí, podemos hacer eso.
+ACTION ITEM: Schedule follow-up w/ Giovanni & Maribel for Mar 5 10:00–12:00 - WATCH
+
+@1:20:54 - Jorge Carrera (blasterinformation.com)
+Dale, bueno, vamos a, entonces, doy como culminada hasta el momento. ¿Tú comentas esta parte técnica? Sí, yo creo que no, se nos pasó nada.
+
+@1:21:03 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+No se nos pasó nada.
+
+@1:21:04 - Jorge Carrera (blasterinformation.com)
+Bueno, lo seguimos conversando. Yo estaría, o sea, tengo entendido que ya para el viernes van a estar full. No sé si tienen chance para conversar el día jueves.
+
+@1:21:20 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Sí, está bien. ¿El jueves? Sí, está bien.
+
+@1:21:24 - Jorge Carrera (blasterinformation.com)
+Ok, le colocamos el mismo horario. Sí, sí, señor. De 10 a 12. Listo. Bueno, Vale. Gracias.
+
+@1:21:40 - ALFA Electronic Colombia (ALFA ELECTRONIC)
+Muy amable. Saludos, Maribel. Bueno, por aquí está. Chao, que te vean. Chao, Maribel. A vos, gracias, señor Vale. Chao, que te vean.
+

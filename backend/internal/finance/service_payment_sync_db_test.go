@@ -313,3 +313,66 @@ func TestCancelledInvoiceIsImmutable(t *testing.T) {
 		t.Errorf("el pago sí debe existir registrado, pagos = %d", n)
 	}
 }
+
+// 9. Retención en la fuente como porcentaje (caso real t14): factura de
+// 1.190.000, pago de 1.142.400 con reteFuente=4 (%) → la retención valorizada
+// (4% del total = 47.600) completa el pago: la factura queda Pagada con saldo 0
+// sin necesidad de un segundo pago "fantasma". El pago complementario del 4%
+// retenido también debe poder registrarse (el guard mide el cupo en efectivo).
+func TestRetentionPercentCompletesInvoice(t *testing.T) {
+	db := openTestDB(t)
+	s := NewService(db)
+	companyID := testCompany(t, db, "pagosync-retencion")
+
+	seedInvoiceTotal(t, db, companyID, string(InvoiceStatusPending), 1190000)
+
+	req := paymentRequest("FAC-2026-31", 1142400)
+	req.ReteFuente = 4 // porcentaje, como envía la UI
+	req.RetentionComments = "Retención en la fuente 4% practicada por el cliente"
+	if _, err := s.CreatePayment(companyID, req); err != nil {
+		t.Fatalf("CreatePayment con retención: %v", err)
+	}
+
+	st := readInvoice(t, db, companyID)
+	if st.status != InvoiceStatusPaid {
+		t.Errorf("status = %q, esperaba %q tras pago de total-4%% + retefuente 4%%", st.status, InvoiceStatusPaid)
+	}
+	if !almostEqual(st.balance, 0) {
+		t.Errorf("balance_amount = %v, esperaba 0 (la retención completa el pago)", st.balance)
+	}
+	if !almostEqual(st.paid, 1190000) {
+		t.Errorf("paid_amount = %v, esperaba 1190000 (monto + retención valorizada)", st.paid)
+	}
+
+	// Pago complementario del valor retenido: el guard lo permite (cupo en
+	// efectivo = 47.600) y la factura sigue Pagada con saldo 0 y paid acotado.
+	if _, err := s.CreatePayment(companyID, paymentRequest("FAC-2026-31", 47600)); err != nil {
+		t.Fatalf("pago complementario del 4%%: %v", err)
+	}
+	st = readInvoice(t, db, companyID)
+	if st.status != InvoiceStatusPaid || !almostEqual(st.balance, 0) || !almostEqual(st.paid, 1190000) {
+		t.Errorf("tras el pago complementario: %+v, esperaba (Pagado, paid=1190000, balance=0)", st)
+	}
+
+	// Borrar el pago con retención recalcula: queda sólo el complementario.
+	payments, err := s.ListPayments(companyID, ListPaymentsQuery{})
+	if err != nil {
+		t.Fatalf("ListPayments: %v", err)
+	}
+	var retentionPaymentID int64
+	for _, p := range payments {
+		if p.ReteFuente == 4 {
+			retentionPaymentID = p.ID
+		}
+	}
+	if retentionPaymentID == 0 {
+		t.Fatal("no se encontró el pago con retención en el listado")
+	}
+	if ok, err := s.DeletePayment(companyID, retentionPaymentID); err != nil || !ok {
+		t.Fatalf("DeletePayment del pago con retención: (%v, %v)", ok, err)
+	}
+	st = readInvoice(t, db, companyID)
+	if st.status != InvoiceStatusPartial || !almostEqual(st.balance, 1142400) {
+		t.Errorf("tras borrar el pago con retención: %+v, esperaba (Pago parcial, balance=1142400)", st)
+	}
+}

@@ -34,6 +34,12 @@ type InvoiceOption struct {
 // hay un vínculo más fuerte que usar. Es exactamente el mismo criterio del JOIN
 // que calcula credit_enabled, para que el selector y la puerta de pago no
 // discrepen sobre quién es el cliente.
+//
+// El JOIN del EXISTS acepta el client_id con o sin el prefijo 'crm-client-':
+// las facturas nacidas de cotización guardan 'crm-client-' || crm_clients.id
+// (service_billing_from_quote.go) mientras que las creadas manualmente pueden
+// guardar el uuid puro; sin la doble forma el modal "Vincular factura" quedaba
+// vacío para las facturas de cotización.
 func (s *Service) InvoiceOptions(companyID, remissionID string) ([]InvoiceOption, error) {
 	var clientNIT, clientName string
 	err := s.db.QueryRow(
@@ -51,7 +57,7 @@ func (s *Service) InvoiceOptions(companyID, remissionID string) ([]InvoiceOption
 	}
 
 	rows, err := s.db.Query(`
-SELECT fi.id, COALESCE(fi.reference_code, ''), COALESCE(fi.external_number, ''),
+SELECT fi.id, ` + invoiceDisplayCodeSQL + `, COALESCE(fi.external_number, ''),
 	COALESCE(fi.client_name, ''),
 	COALESCE(to_char(fi.issue_date, 'YYYY-MM-DD'), ''),
 	COALESCE(fi.total, 0), COALESCE(fi.balance_amount, 0), fi.status
@@ -62,7 +68,7 @@ WHERE fi.company_id = $1
   AND EXISTS (
 	SELECT 1 FROM crm_clients cc
 	WHERE cc.company_id = fi.company_id
-	  AND cc.id = fi.client_id
+	  AND (cc.id = fi.client_id OR ('crm-client-' || cc.id) = fi.client_id)
 	  AND cc.soft_delete = false
 	  AND (
 		($2 <> '' AND lower(cc.nit) = lower($2))

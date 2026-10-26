@@ -1,0 +1,960 @@
+Inicio proyecto - Alfa Electronic - February 23
+ VIEW RECORDING - 121 mins (No highlights) 
+@0:00 - Jorge Carrera (blasterinformation.com)
+Pepa Lubin, ¿qué tal? Chamo.
+
+@0:02 - Ludwig Angarita
+Bien, vale. Empezando la semana con todo.
+
+@0:06 - Jorge Carrera (blasterinformation.com)
+Dale, dale. Esperando a Maribel. ¿Cómo la pasaste el fin de... Bien, vale. Bien. El domingo, con la familia. Bueno, igual, las compras, las cosas.
+Y todo el pool de energía para votar el honrón con este proyecto. Sí, eso va a salir súper bien.
+
+@0:33 - Ludwig Angarita
+O un buen levantamiento y esto queda súper.
+
+@0:39 - Jorge Carrera (blasterinformation.com)
+Sí, porque veo que es más pequeño que inclusive... ¿Cómo fue lo que hicimos con aparcar?
+
+@0:50 - Ludwig Angarita
+Fathom, esa cosa me manda correo a mí avisándome de la reunión y me manda una transcripción. ¿Tú le puedes desactivar eso?
+
+@0:58 - Jorge Carrera (blasterinformation.com)
+O un AMB. O
+
+@1:00 - Ludwig Angarita
+Porque yo recibo todo de acá, que tú puedes conectar eso, yo recibo un...
+
+@1:09 - Martin Hendrik
+Muy bien, ¿cómo te ha ido?
+
+@1:10 - Ludwig Angarita
+¿Cómo van tus cosas?
+
+@1:12 - Martin Hendrik
+Bien, gracias a Dios, afortunadamente. Bien. Hola, señor Juli, buenos días. Hola, Maribel, ¿cómo estás? Bien, bien, sí, señor, muchas gracias.
+Están espectacular.
+
+@1:24 - Ludwig Angarita
+Yo no te prendo la cámara porque me hizo llorar mi novia esta mañana y se me corrió todo el maquillaje.
+
+@1:32 - Martin Hendrik
+No hay problema, el audio está perfecto. Listo.
+
+@1:36 - Ludwig Angarita
+Bueno, entonces, ya se conocían con Jorge, estamos súper listos para poder empezar. Yo le di parte del contexto de la última reunión a Jorge, entonces, la dinámica de este proceso de levantamiento de requerimientos es muy simple.
+Vamos a tener una serie de sesiones que se van a programar a partir del día de hoy. Entonces, al finalizar vamos a decidir qué día y a qué hora nos vamos a reunir durante las próximas dos semanas aproximadamente.
+La idea es que nos estemos con los stakeholders, Jorge. Con Maribel, acordamos que van a ser ella y Giovanni, listo.
+Yo tengo aquí, solo que no se alcanza a ver en la cámara.
+
+@2:17 - Martin Hendrik
+Hola, Juan.
+
+@2:18 - Ludwig Angarita
+No te había visto. Entonces, ¿cuál es la idea? Que podamos hacer todo el levantamiento de requerimientos, entender módulo a módulo y detallar campo a campo qué información debe tener, qué tipo de dato, bueno, tú ya sabes cómo se hace esto, esto está de más de 7.
+Pero lo que hicimos la última vez, Maribel, digamos que fue supremamente superficial en comparación a lo que vamos a hacer con Jorge en estas sesiones, ¿listo?
+ACTION ITEM: Documentar proceso de recepción actual de Alfa; luego revisar con Ludwig - WATCH
+Entonces, Jorge, esto no te lo había contado, parte del proceso que yo pude evidenciar es que la logística inicial del ingreso de los equipos, cuando llegan a ellos, digamos que todavía está un poco atrás.
+Atrás, Atrás. Necesito que la documentación. Documentemos, ¿OK? Vamos a documentarla completa y luego tú y yo nos vamos a sentar y vamos a reformular todo el proceso de inicio de los equipos.
+¿Por qué? Porque resulta que encontramos que se puede llegar a reutilizar códigos QR, encontré información bien importante sobre las etiquetas que traen los equipos, porque los equipos por dentro, las tarjetas de lógicas, tienen unas etiquetas, entonces podemos tener parte de eso para nosotros también optimizar ese proceso.
+proceso de recepción de los equipos. ¿Listo? Entonces, ¿qué es lo que vas a hacer ahorita inicialmente? Documenta cómo lo tienen hecho, porque en función a eso vamos a contabilizar ya internamente tú y yo la cantidad de pasos y cómo reducimos eso de cara a los usuarios en la plataforma.
+¿Listo? Esto sí, en el inicio les tenemos que meter AI para que lo tengas presente. Entonces, ahora sí, me voy a poner en silencio, los voy a dejar hacer su magia, y si hay alguna...
+
+@5:07 - Jorge Carrera (blasterinformation.com)
+¿Qué completo de la pieza? O sea, ¿desde que ingresa hasta que se le entrega nuevamente al cliente? ¿Qué departamentos?
+Pues básicamente todos.
+
+@5:21 - Martin Hendrik
+Recepción, comercial, área técnica, área administrativa, facturación, administrativo. Todo funciona en torno al software. El único proceso, digamos, que lo hacemos un poco exteriorizado, es que el software actual, como es un software extranjero, digamos, no factura, no está autorizado para facturar directamente acá en Colombia.
+Entonces lo que hacemos es, con un archivo, sacamos los datos que necesitamos y se los cargamos a un software que sí está autorizado para generar la factura.
+Es como lo único que hacemos externo al software actual, pero el resto todo lo manejamos.
+ACTION ITEM: Enviar a Jorge/Ludwig: mapa/línea de tiempo, formato recepción, listado familias, capturas/video, exportaciones, listado campos/validaciones - WATCH
+
+@6:09 - Jorge Carrera (blasterinformation.com)
+Ok, entonces por lo que me comenta Maribel, tengo recepción, comercialización.
+
+@6:18 - Martin Hendrik
+Sí, entonces yo en la reunión inicial sé que había hecho un como un mapita de procesos a mi estilo, permítame, yo mire si lo encuentro y se lo comparto en un momentito.
+
+@6:32 - Jorge Carrera (blasterinformation.com)
+¿Tú tienes mi correo, Maribel? Sí, sí, o si se lo mando el correo también puede ser.
+
+@6:39 - Martin Hendrik
+Permítame. Sí, entonces. Ok, sí, en cuanto ya completa. Yo también los había plasmado en este documento, si les voy a mostrar, como el, como el, como la línea de tiempo o el proceso, como el proceso que se lleva con cada equipo desde que entra hasta que sale, ¿sí?
+Perfecto.
+
+@7:35 - Jorge Carrera (blasterinformation.com)
+Yo lo tengo como, como identificado. Ok, allí tengo el, del departamento de recepción, comercialización, técnica, facturación. ¿Qué otro me faltaría?
+
+@7:50 - Martin Hendrik
+Administrativo. O sea, está entonces, eh, recepción de equipos, diagnóstico de equipos, que eso lo hace el área técnica. Eh, está el área administrativa que soy yo, que yo hago, que hago las cotizaciones.
+Es, está el área comercial. que hace seguimiento a esas cotizaciones y que ingresa los pedidos al sistema. Está el área de facturación, que se encarga de generar las facturas, porque este sistema, digamos, que él factura.
+Solo que sacamos esos datos para el software que realmente factura. Está el área de logística, que es la que saca las remisiones para el despacho de los equipos.
+Y está inventarios. Hay un área de compras que entonces maneja todo lo que es compra de repuestos, que va unida al inventario también.
+
+@8:59 - Jorge Carrera (blasterinformation.com)
+Ok, perfecto. Entonces, fíjate, Maribel, a partir de aquí, porque quiero identificar cuáles son los... GOD. GOD. POR ANTO Dentro del proceso.
+Y, por supuesto, vamos a empezar a conversar.
+
+@9:14 - Martin Hendrik
+Ah, yo había hecho como esto, pero me imagino que ustedes lo adaptan a como ustedes mejor les parece que fluya la información.
+
+@9:25 - Jorge Carrera (blasterinformation.com)
+Ok, mándame eso también, espectacular.
+
+@9:28 - Martin Hendrik
+Yo había hecho como eso. Ah, no, no, no, mándame.
+
+@9:31 - Jorge Carrera (blasterinformation.com)
+Sí, perfecto. Porque lo que quiero hacer es un flujo, el flujo de las reuniones. O el flujo lo vamos a hacer a partir del flujo del, del, de la pieza.
+Que sigue el equipo. Ajá, perfecto. Entonces, por supuesto, ahorita vamos a conversar referente a lo que es la recepción.
+¿Qué es la recepción? ¿Cómo funciona la recepción? ¿Qué registran? ¿Cómo les llega el documento? Háblame, muéstrame todo el proceso de la recepción.
+
+@10:06 - Martin Hendrik
+Listo. Voy a irlo mostrando en el software de una vez. Ok.
+
+@10:12 - Jorge Carrera (blasterinformation.com)
+Aterrizado a la realidad, ¿cierto?
+
+@10:14 - Martin Hendrik
+Sí. Entonces, este es mi software. Entonces, lo primero que yo hago es que yo, a mí me llega un equipo, cualquiera que sea, y yo me voy a esta opción de acá.
+No sé si la está viendo. Bonde Intervención. Ajá, ok. Es que el software está en francés, pero es como si yo fuera, como si ahí dijera, registro de equipos.
+Es espectacular.
+
+@10:43 - Jorge Carrera (blasterinformation.com)
+Registrar un equipo.
+
+@10:44 - Martin Hendrik
+Registrar un equipo. Eso es lo primero que yo le doy clic cuando me llega un equipo. Entonces. Préstame, alcherito, préstame el móvil y tengo acá, ¿verdad?
+¿Por qué? Se tiene el tipo ahí. Ah, perfecto. Vamos a imaginar que nos llegó este aparatico. ¿Sí? Y vamos a...
+Vamos decir que es del cliente ALFA ELECTRONIC. Entonces, acá donde dice nombre cliente, como ALFA ELECTRONIC ya está creado, yo escribo que lo mandó ALFA ELECTRONIC.
+
+@11:25 - Jorge Carrera (blasterinformation.com)
+Ok. Maribel, ¿quién registra eso? ¿Una secretaria o cualquier persona dentro del equipo?
+
+@11:30 - Martin Hendrik
+Cualquier persona lo puede hacer abajo en el, o sea, en realidad cualquier persona en el área administrativa o comercial lo puede hacer, porque tiene como los permisos en el sistema.
+Pero normalmente quien realmente lo hace es la persona que está abajo en la recepción, la que recibe las cajas, cuando los equipos llegan por transportadora, o cuando un cliente llegue, ella es la que recibe al cliente.
+Entonces es la persona de la recepción. Ok.
+
+@11:59 - Jorge Carrera (blasterinformation.com)
+de continuar aquí, siento que hay un paso previo, porque fíjate, yo no debería registrar. Cualquier equipo que me llegue, porque quizás hay un filtro, porque fíjate, yo puedo llegar ahorita a Alpha Electronics y ponte que te llevo mi, ¿qué te digo yo?
+La bicicleta, una bicicleta que yo tengo. Y eso no, y eso no es parte de lo que ustedes hacen, quizás siento yo.
+Entonces, creo que de alguna manera, epa, esto no es lo que nosotros hacemos o esto no es lo que nosotros reparamos.
+Entonces, no se puede registrar. Entonces, creo, hay una validación previa antes de registrar los equipos.
+
+@12:45 - Martin Hendrik
+Sí. Entonces, le voy a dar un ejemplo de un cliente que nos escribió hoy. Normalmente, bueno, ¿cómo funciona la empresa?
+Nosotros tenemos una base de datos de clientes que está asignada a ciertas asesoras comerciales. Ellas visitan a esos clientes, les explican cuál es el servicio que nosotros prestamos, y a partir de eso el cliente empieza a enviarnos equipos.
+En esas visitas comerciales, ¿qué se le dice al cliente? Básicamente, lo que yo le respondí a este cliente acá por correo.
+Este es un cliente que nos contactó por medio de la página que tenemos actualmente, el internet, y él nos dio su correo, su nombre, un teléfono, y nos dijo, requerimos su ayuda para revisar y reparar una tarjeta urgente.
+Entonces, yo le mandé un correo diciéndole cuál es el proceso para el diagnóstico de los equipos. Entonces, se le dice al cliente dónde estamos ubicados, se le dice que debe llenarnos este formatico, que se llama formato de recepción de equipos, se le dice que el diagnóstico es sin costo y cuánto toma.
+Se le dice cómo funciona la garantía, el horario, y se le adjunta otro documento que se llama Condiciones Generales del Servicio, que también siempre se le muestra a los clientes.
+¿Se envía por correo o se les socializa cuando se hace la visita presencial en la planta de producción? Ah, y en esa visita yo tomo fotografía.
+
+@14:31 - Jorge Carrera (blasterinformation.com)
+La muchacha de comercial cuando hace la visita toma fotografía a los equipos, no.
+
+@14:37 - Martin Hendrik
+No, generalmente no, eso se hace cuando el equipo llega aquí al laboratorio. Ah, ok, está bien. Entonces, ¿cuáles son los filtros para que un equipo llegue aquí a ALFA?
+En este formato que nosotros le mandamos siempre a los clientes. De hecho, con estos datos o con el root es que los creamos en el sistema.
+El nombre, el NID, teléfono, dirección, ciudad, contacto, cargo, celular, correo. Acá. O el cliente nos pone la marca, tipo y la serie del equipo que nos quiere mandar y nos explica la Fathom.
+Este formatico, bueno, yo lo hice ya hace bastante tiempo. En la parte inferior tiene unas preguntas donde se le dice al cliente, por ejemplo, que para que sea viable repararle un equipo, debe nuevo costar al menos más de 2 millones de pesos y debe ser gama industrial.
+Este el criterio principal para nosotros recibir un equipo. ¿Es gama industrial? Sí. ¿Nuevo vale más de 2 millones? Sí.
+En ese caso es viable diagnosticarlo y repararlo. Entonces, generalmente cuando nos llega un equipo, el cliente ya tiene conocimiento de esta información y por lo general no hay como...
+El inconveniente de que no... Los manden a reparar algo que no aplica, ¿sí? Que nos lleguen con una tarjeta de un televisor, o de una impresora, o de una lavadora.
+Eso, pues, casi no pasa. A veces llama un cliente y nos pregunta que si reparamos esas cosas y se les dice que no.
+Pero la mayoría de clientes, como son empresas industriales que hemos visitado previamente, ya saben cuál es el servicio en específico que nosotros prestamos.
+Ok.
+
+@16:36 - Jorge Carrera (blasterinformation.com)
+Este formato, Maribel, espectacular, que tienen aquí, ¿en qué momento le llega al cliente? Ponte, yo estoy interesado, la muchacha llegó, me visitó, me dio a conocer los servicios de ustedes.
+Estoy interesado. Entonces, la muchacha me hace llegar el link de este formato.
+
+@16:59 - Martin Hendrik
+Normalmente, lo mandamos por correo electrónico, así como yo lo mandé por acá. Retiro el tinto. ¿Sí? Entonces. Entonces. Si es un cliente que hemos visitado en la planta de producción, se le manda el correo con el formato digital.
+Y se le informa que cada vez que quiera mandar un equipo, debe devolvernos ese formatico lleno con los datos del equipo que va a mandar.
+También puede pasar que nos contactan por WhatsApp. Nos dicen, ¡ay, fulanito me dio su número! Me dijeron que ustedes reparan tarjetas.
+Entonces, yo ya tengo unos mensajes redactados previamente. Y yo lo que hago es, ese mismo correo, básicamente lo paso, pero por WhatsApp.
+Ok. Y les digo lo mismo. El diagnóstico toma tantos días, les mando la dirección, les O el formato, y les digo que el formato lo deben enviar al correo principal de la empresa.
+Si es un cliente que viene directamente aquí a ALFA a traer un equipo, que nunca lo hemos visitado, sino que llegó por recomendación, entonces se le hace llenar el formato aquí en físico.
+Ok. Si es un cliente que nunca hemos visitado, pero mandó el equipo por transportadora, generalmente en la guía de la transportadora viene un teléfono, lo llamamos, le pedimos el correo y hacemos lo mismo.
+Bueno, le decimos, le confirmamos la recepción de su equipo tal, adjunto tal formato, por favor devuélvamelo diligenciado. Y en ese formato entonces el cliente nos llena todos estos datos que yo les estaba mostrando.
+
+@19:04 - Jorge Carrera (blasterinformation.com)
+Sí.
+
+@19:05 - Martin Hendrik
+Nos responde las preguntas. Que si sí vale más de los 2 millones, que si ya hicieron pruebas en planta con otro equipo igualito o no, para saber si la máquina tiene más fallas, aparte del modulito que nos están enviando.
+Se les pregunta que si está ganado hace más de 6 meses, que si ya alguien lo intentó reparar, que si le sacaron repuestos, si trae componentes quemados, si tienen siliconas gruesas que nos impidan repararlo.
+Se les pregunta que si ellos revisaron que el problema no fuera de software, porque nosotros no reparamos hoyos de software.
+Digamos que son una serie de preguntas que para nosotros son muy importantes al momento de ingresar un equipo. Sí.
+Ok.
+
+@20:03 - Jorge Carrera (blasterinformation.com)
+Y este formato, cuando un equipo llega...
+
+@20:07 - Martin Hendrik
+Se carga al sistema y el área técnica puede ver todo lo que el cliente llenó en ese formato. Si hay alguna duda, a través de la persona de la recepción, llaman al ingeniero para salir de cualquier inquietud adicional que tengamos sobre la facha.
+Pero digamos que cuando registramos un equipo, es importante para nosotros tener ese formato de diligencia. Ok, fíjate, Mario.
+
+@20:42 - Jorge Carrera (blasterinformation.com)
+Siento que hay un preregistro. Siento que hay un preregistro de la... Ah, he escuchado una voz ahí. Siento que hay un preregistro.
+Es decir, contacto al cliente, cliente lo contacté, conversamos. El cliente está interesado. En ese momento, el cliente dice que sí, se le llega el correo, el correo llega con ese formato.
+El equipo no puede llegar sin ese formato, asumo yo. O ningún equipo puede llegar sin ese formato, ya que para ustedes.
+
+@21:28 - Martin Hendrik
+Es lo ideal, pero a veces sí llegan sin ese formato. Sí, lo ideal es que llegue el equipo con un formato de sus diligenciados.
+Y lo ideal es que llegue con el formato.
+
+@21:39 - Jorge Carrera (blasterinformation.com)
+¿Y si no? ¿Qué sucede? Si no lo tienen, si el cliente no lo llenó. ¿Qué sucede?
+
+@21:47 - Martin Hendrik
+Yo de todas maneras, aquí de todas maneras, equipo que llega, equipo que se registra, porque no me puede quedar nada por ahí volando sin inventariar, que se me pierda.
+Entonces, yo ya sé con la guía de la transportadora o con otra remisión que el cliente manda, que es propia de ellos, ¿quién me lo mandó?
+Para que el registre. Para que el registre como nueva solicitud de diagnóstico y que él nos escriba empresa tal, ingeniero tal, les voy a enviar tal equipo, la falla es tal, no sé si eso se podría.
+Y que uno pueda tener en el software un desplegable que muestre cuáles clientes están diciendo que van a enviar algo.
+
+@26:34 - Jorge Carrera (blasterinformation.com)
+Sí, fíjate, podríamos, no sé qué opinas tú, que el cliente permita, permitirle registrarse al sistema, ¿verdad? Porque de repente la comercial perfectamente me contactó, estoy interesado en los servicios de ustedes, y me registro, me registro en el sistema, en ese momento que me registro a ustedes les llega un correo de solicitud, solicitándoles a ustedes, el registro, esperando la aprobación por ustedes, porque no cualquiera podría registrarse.
+Entonces, bueno, nada, ustedes ven la solicitud de la empresa que quiere registrarse, ustedes le dan el aceptar, en ese momento la empresa ya se registra y una vez allí ya puede diligenciar y mandar, pero ese formato, como muy bien tú me comentas, tienes que llenarlo cada vez que va a mandar un equipo.
+Entonces, ¿qué sucede? Que él no llenaría un Excel. Él llenaría, voy a mandar un equipo, llena, pa, pa, pa, pa, y manda.
+Y ustedes le dan recepción, le dan recepción contra ese formato que él previamente ya llenó. Si llega algo de un cliente ya registrado, con el cual el cliente no ha llenado formato, tú como perfectamente me dices, se le manda un link.
+En el cual, mira, lléname el formato de ese equipo que me acaba de llegar. Y tú, como tú muy bien también lo dices, tienes que igualito ingresarlo al sistema.
+Pero, por lo que me comentas, no avanzas en la reparación hasta que el cliente haga diligenciado toda la información.
+Bueno, actualmente sí lo hacemos.
+
+@28:34 - Martin Hendrik
+Entonces, si llega un equipo y no tiene información de falla, pero yo sé cuál empresa lo mandó, por lo menos saber cuál empresa lo mandó, se registra.
+Si el cliente está demorado en enviarnos la falla, de todas maneras, el equipo se le asigna a un técnico para que lo vaya revisando.
+De todas maneras, ellos lo desarman, lo diagnostican. Muchas veces la falla es evidente, entonces se cierra el diagnóstico. ¡Ey!
+Yo lo cotizo y le mando la cotización al cliente, aunque no nos haya mandado el formato, porque hay clientes duros para llenar formatos.
+El punto es que yo no dejo equipos volando porque llegan sin formato y tampoco me dejo colapsar en diagnósticos porque no responden el formato.
+
+@29:28 - Jorge Carrera (blasterinformation.com)
+Siempre avanzamos.
+
+@29:30 - Martin Hendrik
+Lo ideal es que la información esté completa porque si yo tengo la falla bien especificada por parte del cliente, el diagnóstico más certero, entonces las probabilidades de una garantía van a ser menores.
+Diferente, cuando un equipo llegó sin información, podemos diagnosticarlo, pero puede escaparse nos alguna cosita porque no tenemos la información completa.
+Y eso hace que la probabilidad de que ese equipo vuelva en garantía un mayor número de veces. Pero nada se queda esperando o estancado.
+Porque si no, nos vamos a colapsar. Y digamos que se puede perder algún equipo, nada se deja estancado, todo sigue fluyendo.
+
+@30:24 - Jorge Carrera (blasterinformation.com)
+Claro, el hecho de no haber mandado el formato no significa que se para el proceso, simplemente queda un warning ahí, queda una aceleración cuando el cliente no lo mandó.
+Lo pueda mandar. Ah, bueno, perfecto. Entonces, en la pantalla que me estabas mostrando, entonces, claro, ya tienes el equipo, tienes el formato, vas a registrarlo en el sistema.
+
+@30:47 - Martin Hendrik
+Sí, entonces, por ejemplo, acá yo pongo que este equipo lo mandó la empresa ALFA, que ya la tengo previamente creada en el sistema.
+Si es un cliente nuevo, yo primero creo la empresa en el sistema, para poder entrar el equipo. Ok. Pero en este caso vamos a decir que ya está creada la empresa.
+Entonces, por ejemplo, Por ejemplo, pongamos otro, pongamos Baniplas. Vamos a decir que este modulito me lo envió un cliente que se llama Baniplas y que me lo mandó, él me muestra acá en contactos, la lista de los contactos que yo ya tengo previamente registrados en el sistema.
+Me sale el nombre, normalmente acá aparece el cargo, digamos, compras, mantenimiento, facturación. Yo voy a decir que este equipo me lo mandó Jonathan Guzmán.
+El sistema de una vez me carga acá los datos de la empresa, en qué ciudad queda, la dirección, bueno, unos daticos de ellos.
+
+@31:55 - Jorge Carrera (blasterinformation.com)
+Y allá previamente está cargado. Sí.
+
+@31:59 - Martin Hendrik
+Acá donde dice BL cliente es donde registramos la remisión con la que llega el equipo. Esa o sea, es tu calidad.
+Por ejemplo, que se puede extraer. Ah, sí, claro. Sí, digamos que todo lo que nosotros tenemos cargado en el sistema se puede extraer y se les entrega para, y debemos hacerlo porque yo no puedo empezar un sistema de cero.
+Se puede entregar la base de datos de clientes que existen, de los contactos, todos los equipos que se han reparado cada año, porque sí sería bueno que el sistema nuevo ya tenga cargado ese historial antiguo.
+Claro. Que yo lo vaya a perder. Bueno, entonces, acá se registra si la remisión que llegó es del cliente y si llegó también la remisión de ALFA.
+O si solo llegó remisión del cliente, pues se deja solo la del cliente. O si solo hay la de ALFA y formato de ALFA, pero yo ahí pongo cuál remisión es la que tengo.
+Si no llegó ni remisión del cliente y no... Si tengo la de alfa, pues se ponen punticos, no se pone nada.
+Ok. Acá, a mi favor, déjame verla. Este sistema me permite seleccionar si lo que yo le voy a, el servicio que le voy a prestar a este cliente es una reparación.
+Tiene muchas opciones que nosotros no manejamos. En una reparación, un intercambio de equipos, una manufactura, que es por ejemplo cuando le vamos a fabricar algo.
+Ok. Un servicio en sitio, una venta, una venta nueva o una venta usada. Y las otras no las usamos.
+Entonces, realmente eso se reduce mucho. En tipo, yo cojo el equipito que me llegó y él ahí en los datos que trae dice cuáles...
+... ... ... Ese tipo. Entonces, eso era lo que decía el señor Ludwig. Algunos traen como un codiguito de barra, de barras o un cuere.
+En todos no funciona. O sea, hay equipos que se escanean y salen los datos, hay otros que se escanean y no sale nada.
+Nada. Nada. No tiene nada que ver. Sí. O sea, en algunos casos podrá facilitar que el registro sea más rápido, pero en otros casos no y toca hacerlo manual.
+Ok.
+
+@34:42 - Jorge Carrera (blasterinformation.com)
+Ese tipo, cuando lo escaneo, ¿qué información debería traerme? La marca del equipo, el tipo y la serie.
+
+@34:54 - Martin Hendrik
+Aunque cuando uno lo escanea, puede ser que salen muchos más datos. O unos números que no sabemos cuál es la serie o cuál es el tipo, por ejemplo.
+O él puede mostrar datos que no tienen nada que ver con la información. O
+
+@35:07 - Jorge Carrera (blasterinformation.com)
+Entonces, fíjate, me atrevería, me atrevería a decir que el sistema perfectamente podría escanear, ¿verdad? Si lo tienes, escanea. Pero el sistema debería permitir tú seleccionar qué dato pertenece a qué dato.
+Este número es la marca, dale clic y eso asignale marca. No, este número es el tipo, le das tipo.
+Exacto. El sistema te permite seleccionar qué dato pertenece a qué, a qué variable, ¿no? Dentro de la, Sería lo ideal.
+
+@35:46 - Martin Hendrik
+Porque si, si, si no, él va a llenar los campos con información que no es la correcta.
+
+@35:54 - Jorge Carrera (blasterinformation.com)
+Claro, claro. Entonces, así como usted dice, está perfecto.
+
+@35:57 - Martin Hendrik
+Digamos, yo me pago en marca y le digo de los datos que me escaneó cuál es la marca y me lo llena automáticamente.
+Ok.
+
+@36:06 - Jorge Carrera (blasterinformation.com)
+Ahora, sí.
+
+@36:09 - Martin Hendrik
+Voy y le digo de lo que me escaneo cuál es el tico y listo, lo llena. Así sí, claro.
+
+@36:15 - Jorge Carrera (blasterinformation.com)
+Así sí podríamos, claro, claro, perfecto.
+
+@36:19 - Martin Hendrik
+Y que se pueda corregir manualmente en caso que algún datico quede mal escaneado, bueno, no sé. Sí, mal cargado.
+
+@36:30 - Jorge Carrera (blasterinformation.com)
+Sí, perfectamente lo que tú dices. Yo escaneo, esa información me aparece allí, y yo selecciono de toda esa información que me está apareciendo, qué coincide con qué, qué es, qué cosa.
+Decirlo de cierta manera. Perfecto. Sí.
+
+@36:48 - Martin Hendrik
+Entonces, en este caso, como lo hacemos manual, yo, lo que hace el área de recepción es que coge el aparatico y lo llena manual.
+
+@36:58 - Jorge Carrera (blasterinformation.com)
+Ok. 6S7.
+
+@37:04 - Martin Hendrik
+Digamos, en este caso, lo estoy registrando. Este sistema tiene otra cosa y es que después de que yo registro por primera vez un equipo, si él me vuelve a llegar, no importa si es de otro cliente, el mismo tipo de equipo, como usted puede ver acá, él me muestra una lista desplegable.
+Como un autorrelleno. un autorrelleno. Entonces, este es el que termina en 0x a 0. El último. O KD22, el último.
+Este equipito es el último. Si yo le doy clic ahí, él ya me va a llenar automáticamente donde dice marca Siemens.
+Si ve, que salió acá Siemens de una vez. Y la familia en la que estaba. Y de una vez me clasifica el equipo.
+Esta es otra opción que tiene el software, donde nosotros clasificamos los equipos. Por, nosotros le decimos por familias.
+
+@38:17 - Jorge Carrera (blasterinformation.com)
+Fíjese, esa funcionalidad que tú me mostraste ahorita, Maribel, porque llegó un equipo, vi que no necesariamente era el mismo, ¿no?
+Quizá era uno parecido dentro de la familia. O se diferenciaba quizá en los últimos números.
+
+@38:33 - Martin Hendrik
+Sí, por ejemplo, hay muchos televisores, Samsung, LG, no sé, X marcas. Yo voy a entrar un televisor, vamos a ponerle Samsung, tipo tal.
+Él ya está clasificado en la familia de pantallas. No importa qué marca sea, el sistema ya lo había, antes ya habíamos reparado al menos una vez ese tipo de televisor y ya estaba clasificado como pantalla.
+Entonces, si a mí me... Va a llegar ese mismo tipo de televisor de ese tipo o de otro. Cuando yo registro el tipo, él ya me lo clasifica en la familia de las pantallas automáticamente.
+En este caso, este cosito, este modulito se llama automata programable. Por eso él me lo diligenció de una vez, porque en el sistema este tipo de equipo ya está clasificado como automata programable.
+Claro, ya existe.
+
+@39:36 - Jorge Carrera (blasterinformation.com)
+Tú lo seleccionaste y te trajo toda la información de una vez.
+
+@39:39 - Martin Hendrik
+Y ya me clasificó que este tipo es de la marca Siemens. Ok.
+
+@39:45 - Jorge Carrera (blasterinformation.com)
+Ajá, las es.
+
+@39:47 - Martin Hendrik
+¿Qué es lo que actualmente, lo que yo le decía que tiene que ser diferente en todos los equipos? La serie.
+Entonces, también viene acá. O sea, como le decía, nosotros lo hacemos manualmente. La Adiós. Chau. Yo la escribo. Listo.
+Esa es la serie. Debe ser exacta la que viene acá, porque puede pasar, y nos ha pasado, eso sucede muy poco, pero ha pasado, que en el mismo día llegan dos equipos iguales de clientes diferentes.
+Y yo tengo que clasificar y registrar muy bien cada equipo, porque si no se me pueden intercambiar, y la falla no siempre es la misma, y la funcionalidad en la máquina tampoco, entonces no se me pueden confundir.
+Al momento del despacho ha pasado lo mismo.
+
+@40:55 - Jorge Carrera (blasterinformation.com)
+Escribí, para vivir los primeros seis, ni los últimos seis, no escribí todo, toda la serie. Toda, completa.
+
+@41:04 - Martin Hendrik
+La serie se registra completa. ¿Por qué? ¡Gracias! Porque cuando yo finalizo el proceso de reparación y saco la remisión de despacho, el área de logística que los empaca tiene que verificar que coincida la marca, el tipo y la serie.
+Ya nos pasó una vez que justo el mismo día salieron reparados dos equipos iguales y se nos truncaron de cliente.
+¿Por qué? Porque no se revisó la serie. Se revisó el tipo y la marca, pero la serie no. ¿Y qué pasa?
+Los equipos, muchos de ellos, la gran mayoría, tienen cargada una programación, un software. Sí. Y si van y lo instalan en la máquina y tienen un software que no es el de ese cliente, pues no va a funcionar.
+Claro, vale. Puede dañar otras cosas en la máquina. Entonces, es muy importante que la serie... Yo bien registrada porque cuando se despacha el equipo se debe realizar que el equipo que yo estoy empacando es el de la serie correcta.
+
+@42:18 - Jorge Carrera (blasterinformation.com)
+Acuérdate que yo he visto tantos aparatos electrónicos. Esa serie generalmente son hasta de 10, 15 dígitos. Muy largas.
+
+@42:28 - Martin Hendrik
+Largas.
+
+@42:30 - Jorge Carrera (blasterinformation.com)
+Este, que por supuesto, uno es humano, entonces, secleándolo, tienes que verlo varias, aparte que son letricas chiquiticas. Entonces tienes que visualizarlo bien, escribirlo bien, y eso lo hace la recepción, ¿no?
+La muchacha de la recepción o cualquiera allí dentro del equipo.
+
+@42:48 - Martin Hendrik
+Hay algo importante para comentar, y es que hay equipos que no traen serie. Ajá. Oye, por ejemplo, son equipos muy viejitos y ya se les cayó la etiqueta.
+Ajá. Entonces, nosotros sabemos identificar que... Equipo es porque llega. Sabemos la marca, sabemos el tipo, un ejemplo, pero yo no le puedo poner serie porque no tengo, ¿sí?
+O a veces la etiqueta viene rota, viene borrosa, ¿sí? Entonces sí hay casos en los que se registran equipos que no traen datos completos.
+¿Qué se hace en esos casos? Pues si yo no tengo la serie, yo le pongo raguitas o puntos o signos.
+Nos le preguntan, yo ya sé que ese equipo no trae esos datos. ¿Qué hacemos siempre? No importa si el equipo trae datos completos o no los trae.
+Este sistema, acá hay una carpeta que se llama Juntos. A todos los equipos que llegan se les toman fotos de ingreso, ¿sí?
+Y nosotros los etiquetamos con un código. Entonces, se cargan fotos del equipo por todas las caras. Arriba, abajo, lado 1, lado 2, lado 3.
+Y las fotos se convierten en nuestra segunda herramienta para identificar el equipo de un cliente. ¿Sí? Eso nos ayuda muchísimo cuando hay alguna duda.
+Un ejemplo, un cliente dice que él mandó un equipo con este conector. Y que nosotros se lo devolvimos sin el conector.
+Entonces, yo voy y miro las fotos del ingreso y me doy cuenta que efectivamente tienen razón. Ellos lo mandaron con esto.
+Entonces, nosotros lo buscamos acá en el laboratorio, en la bodega. Y puede pasar que se haya quedado sueltico ahí en la cajita donde estaba guardado.
+Entonces, las fotos nos sirven para apoyarnos en muchas cosas. A todos los equipos que llegan se les cargan fotos.
+En esta carpeta también se registran el formato que yo le decía de ALFA, el que tiene al cliente, queda clicado acá.
+Yo creo que lo más fácil es que yo le muestre uno que ya esté acá hecho. Espérenme. A ver.
+Perfecto, sí. Por ejemplo, este equipo. Este equipo ya llegó hoy o el viernes. Hoy o el viernes. Lo mandó una empresa que se llama Familia.
+Acá se puso el nombre del ingeniero que lo mandó. Lo mandó con el formato ALFA. Acá ya están los datos del equipo.
+El tipo. La... La es un monitor, la marca, la serie, y acá está la falla. No da imagen, sin embargo el touch sí funciona.
+Y acá en la carpeta de los adjuntos, como usted puede ver, están las fotos que se le tomaron al equipo al momento, y el sistema muestra en qué fecha se cargaron las fotos y a qué hora.
+Ok. Y cada vez que yo cargo una foto, yo le pongo el nombre. La del frente, la de la placa, la de atrás, la del lado uno, la del lado dos, etc.
+Entonces, por ejemplo, yo le puedo dar click y él me muestra la foto de ese equipo. Ahí está. ¿Observa ahí la fotito?
+Sí.
+
+@47:04 - Jorge Carrera (blasterinformation.com)
+Entonces, esa es la del frente, la placa.
+
+@47:07 - Martin Hendrik
+Entonces vamos a... Vamos mirar cuál es la foto que se cargó de la placa. Mírenla. Este es el tipo, este de arriba es el tipo, este es el número de serie.
+Después vienen otros datos que yo no necesito registrar, ¿sí? La marca estaba en el frente, en la foto que yo abrí ahorita.
+Y yo también adjunto el formato.
+
+@47:41 - Jorge Carrera (blasterinformation.com)
+Ajá.
+
+@47:41 - Martin Hendrik
+Mírenlo, este es el formato, lo voy a abrir. O sea, en esta carpeta de adjuntos yo puedo adjuntar cualquier cosa.
+Fotos, PDFs, si el cliente me mandó un video con la falla yo cargo el video ahí. Ok. Si me mandó un Excel, yo cargo ese Excel.
+Si me mandó un manual. El del equipo yo cargo ese manual, lo que sea yo lo puedo cargar en esa carpeta de adjuntos.
+Entonces mire, por ejemplo, este cliente es muy juicioso, él siempre manda el formato lleno, ¿sí? Con los datos de ellos, los datos del equipo que nos mandó, la falla, y abajo él responde las preguntas que nosotros le pedimos.
+
+@48:38 - Jorge Carrera (blasterinformation.com)
+Sí, cuando pueda, María, me manda también ese formato, no sé si me mandaste ahorita con... Ok, listo.
+
+@48:45 - Martin Hendrik
+Entonces, el proceso de registro de un equipo es eso. Identificar qué empresa lo mandó, cuál ingeniero, escribir si llegó con formato o no.
+Si llegó la falla, se registra, y si no se pone que está en espera de falla. Registrarle todos los datos, tipo, marca, serie, y de qué familia es.
+todos es. datos, tipo, Gracias. Yo le puedo dar la lista de todo eso, cómo se clasifican los equipos, etc.
+Y yo le puedo llenar aquí también. Nosotros tenemos unas estanterías donde ponemos los equipos que llegan a diagnóstico. Esas estanterías se llaman interior 1, 2, 3, 4, 5.
+Si esta pantallita la voy a poner en el interior 1, acá le escribo interior 1. Si trae, un ejemplo, una USB, en accesorios yo escribo que trae USB.
+Si trae un CD, yo le escribo que también trae un CD. Si trae dos cables, yo le digo que trae dos cables.
+Si llegó con caja original, yo le escribo caja original. En accesorios se escribe cualquier cosa que traiga ese equipo y que...
+que se debe retornar cuando se despache. Claro, que es que sea relevante. Sí, entonces es este campo de accesorios lo usamos y lugar donde se almacena el equipo al momento del ingreso se llena.
+Acá hay una opción que se llama afectación. Yo puedo registrar ahí. ¿A cuál técnico le voy a cargar este diagnóstico?
+Eso lo hace la misma muchacha que está cargando. Entonces le quería comentar. Antes lo hacía yo. Yo registraba los equipos hace ya varios años.
+Yo misma asignaba los equipos. Pero a medida que hemos ido de pronto creciendo, las funciones o las tareas han crecido también.
+Entonces la persona de recepción ingresa a los equipos, pero no los asigna de una vez a alguna persona.
+
+@51:17 - Jorge Carrera (blasterinformation.com)
+Este campo queda vacío.
+
+@51:19 - Martin Hendrik
+Pero si yo quisiera, yo podría de una vez decir quién lo va a revisar. ¿Sí? Sí. Adicionalmente, él me permite, este sistema permite clasificar este equipo de qué zona viene.
+Entonces, por ejemplo, nosotros teníamos unas zonas clasificadas anteriormente que eran Barranquilla, Bogotá Norte, Bogotá Sur, Cali, Cundinamarca, Medellín. Y todo lo que decía CEO era el resto de los clientes.
+Esta configuración de zona, Maribel, eso está dentro de los parámetros.
+
+@52:07 - Jorge Carrera (blasterinformation.com)
+¿Qué Dice, B-O es zona Bogotá, B-A es zona Barranquilla. Más o menos a eso te refieres.
+
+@52:19 - Martin Hendrik
+Sí, o sea, este sistema me permite crear zonas de tal manera que cuando un equipo llega, yo le puedo asignar de una vez a qué zona pertenece o a qué asesora.
+Porque yo podría decir en vez de escribirle Barranquilla, yo le selecciono el nombre de la asesora.
+
+@52:44 - Jorge Carrera (blasterinformation.com)
+La muchacha que hizo contacto, la persona que hizo contacto con el cliente.
+
+@52:48 - Martin Hendrik
+Claro, porque este sistema permite sacar extracciones de cualquier cosa. Entonces, así como yo hago una extracción de la zona de Barranquilla, yo podría decirle, sáqueme una extracción de los equipos de la asesora Juliana.
+Juliana Y así ella puede hacerle seguimiento a esos clientes. Aunque actualmente como está organizada la parte comercial, yo tengo una comercial para toda Bogotá y otra comercial para el resto de ciudades del país.
+O sea, actualmente la extracción es muy fácil. Porque yo hago una extracción solo de Bogotá y el resto ya sé que son de la otra asesora.
+Entonces la extracción es muy fácil. Al principio cuando la empresa arrancó, la labor comercial era muy fuerte porque teníamos que conseguir clientes.
+Teníamos como cinco asesoras. Por eso las clasificábamos así. Barranquilla, Cali, Medellín, Bogotá Norte, Bogotá Sur. ¿Sí? O sea, el sistema me deja clasificar como yo quiera.
+Ok.
+
+@54:14 - Jorge Carrera (blasterinformation.com)
+Y a eso sirve esta funcióncita que está acá.
+
+@54:19 - Martin Hendrik
+Yo le digo cómo quiero que se llame la zona y él me hace la extracción. ¿Y cómo tú quisieras en el nuevo sistema aparecer allí?
+
+@54:27 - Jorge Carrera (blasterinformation.com)
+¿Que te aparezca la comercial, el nombre de la comercial, o que te aparezca la zona?
+
+@54:32 - Martin Hendrik
+Pues realmente para mí es más práctico hacer extracciones por ciudades, por departamentos. Porque independientemente de si una asesora se va o no, yo hago la extracción por ciudades.
+Excelente. No importa quién esté a cargo de esa ciudad.
+
+@54:51 - Jorge Carrera (blasterinformation.com)
+Sí, yo no me lo necesito. Tiene razón.
+
+@54:55 - Martin Hendrik
+Entonces cuando nosotros lo veamos, está el equipo, Stefania. Sí, digamos que eso podría ser como personalizable, que uno pudiera clasificarlo como con el nombre que uno...
+Sí, un maestro de zonas.
+
+@55:14 - Jorge Carrera (blasterinformation.com)
+Zona 1, zona 2, zona 3, y tú perfectamente tú sabes a qué corresponde la zona 1. La pones en la descripción.
+
+@55:22 - Martin Hendrik
+Sí. Yo hago el extracto por ciudades, no es grave. También. Ah, no, listo.
+
+@55:29 - Jorge Carrera (blasterinformation.com)
+Listo. Fíjate, veo algo hasta el momento en esta pantallita, en esta resección, que me llama la atención, que no tengo un código, un ID único, incrementable, automático, del bien o del registro que me está llegando.
+
+@55:54 - Martin Hendrik
+Entonces, sí, sí lo genera, pero cuando yo termino de llenar los datos. Entonces, cuando yo termino de llenar todos los datos, yo le digo validar,
+Y él me asigna un código, que en este caso, para este equipo, es el 260-02-169. Familia del Pacífico, mira, acá está la lista de códigos que se han asignado a los equipos que han llegado.
+¿Cómo funciona? CO significa Colombia, 26 es el año 2026, 02 significa que llegó en febrero, y después él va incrementando el consecutivo.
+Este es el equipo número 157, que llegó en febrero, este es el 158, ta, ta, ta, hasta que terminemos febrero, él sigue incrementando.
+Cuando pasemos a marzo, el código va a ser 26. Diceis. Cero, tres, cero, cero, uno, dos, tres, y empiezo otra vez.
+vuelve otra vez a incrementarse desde cero. Que siga. ¿Cómo me dice? Perdón, eh.
+
+@57:22 - Jorge Carrera (blasterinformation.com)
+No, perfectamente, como me estás comentando, cuando pasa de mes, vuelve otra vez a incrementarse desde cero.
+
+@57:29 - Martin Hendrik
+Sí, y cuando cambiamos de año, entonces también cambia de año. Los códigos que llegaron el año pasado decían veinticinco.
+
+@57:38 - Jorge Carrera (blasterinformation.com)
+Ok, el CEO de Colombia, claro, en el caso de Colombia, siempre va a ser Colombia, pero en el caso que venga de afuera, de otros países.
+
+@57:50 - Martin Hendrik
+Siempre CEO, porque... Siempre... Denme un momentito chiquito, perdónenme. Sí, sí, sí. Hola, Anastasia. no, no. No, No. Gracias. Bueno, y antes, estoy con el, los dos, cuando yo hago una de la mamá, es la de la mamá, es la de mamá, la de y lo segundo es que a mi pasado, digamos que era el de la mamá, pero por el tiempo, y mas enantee lugar, unž lraleje, un seriátor, salgrundaron � y Tabule takARA en ese lugar, Donguskare, sus Gracias.
+Fathom, verg tree, open, Now in all the Done, now we what I mean to do of your-, Gracias. Gracias.
+Salad Z Coyote Coyote Coyote Ergin, El Fahrecinio Scientific El Fahrecinio System Gracias. Gracias.
+
+@1:02:15 - Jorge Carrera (blasterinformation.com)
+Gracias por ver el video.
+
+@1:02:56 - Martin Hendrik
+Gracias. Un ejemplo, extracción base de datos clientes, extracción base de datos proveedores, histórico de todos los equipos que yo tengo en mi sistema, extracción de todo mi inventario.
+Así usted puede ver qué datos yo ya tengo creados en mi sistema y para qué.
+
+@1:04:32 - Jorge Carrera (blasterinformation.com)
+Sí, claro, y un print de pantalla, por lo menos en esta pantalla, un print de esta pantalla.
+
+@1:04:38 - Martin Hendrik
+Exacto, por ejemplo, si yo hago una grabación de pantalla mostrándole cómo ingresa un equipo.
+
+@1:04:44 - Jorge Carrera (blasterinformation.com)
+Espectacular.
+
+@1:04:45 - Martin Hendrik
+Para que usted, porque yo le puedo explicar, pero se me ocurre que yo le puedo grabar cómo ingresa un equipo y usted lo puede mirar cuando quiera.
+
+@1:04:55 - Jorge Carrera (blasterinformation.com)
+Sí.
+
+@1:04:56 - Martin Hendrik
+Para que se facilite ese proceso de, del diseño del nuevo, ¿sí? Sí, espectacular.
+
+@1:05:04 - Jorge Carrera (blasterinformation.com)
+Justamente ahorita también lo estaba pensando. poco. Y como tú perfectamente me has dicho anteriormente, no todos los campos ustedes lo llenan.
+
+@1:05:15 - Martin Hendrik
+Hay unos que son como obligatorios, pero si por X o Y razón yo no tengo la información, porque como yo le decía, equipos que llegan sin etiqueta, se las arrancan, están rotas, están borrosas.
+ACTION ITEM: Crear carpeta Drive y compartir con Maribel/Ludwig; subir flujo de sesiones - WATCH
+Pues yo lo lleno con signos de pregunta para poder avanzar, pero el equipo sí o sí se registra.
+
+@1:05:43 - Jorge Carrera (blasterinformation.com)
+Ok, fíjate algo, me interesaría un listado, claro, un print de pantalla, ahorita voy a crear una carpeta en Drive y te lo voy a compartir, pero sería bueno un print de pantalla de esto, que me está mostrando, y un listado de qué campo ustedes llenan.
+Ok.
+
+@1:06:06 - Martin Hendrik
+Y la... ¿Qué validación de ese campo?
+
+@1:06:09 - Jorge Carrera (blasterinformation.com)
+Mira, aquí llenamos, está el campo y validamos que ese campo, por lo menos ahorita que estamos conversando, referente a la ciudad, que es un campo, sea parametrizable, ¿verdad?
+Un maestro del campo en el cual me permita indicar a qué zona corresponde el bien, ¿no? O el componente.
+Entonces, la pequeña descripción del campo, ¿no? ¿Para qué sirve?
+
+@1:06:36 - Martin Hendrik
+Sí.
+
+@1:06:38 - Jorge Carrera (blasterinformation.com)
+Eso sería muy bueno porque eso nos acota mucho mejor el desarrollo del sistema. Claro que sí, eso se puede.
+
+@1:06:52 - Martin Hendrik
+Entonces, como yo le decía, cuando uno registra todos esos datos, el sistema sí asigna un código. Yo le explicaba al señor Ludwig que esos códigos nosotros los hacemos en un Excel y los imprimimos.
+Pero el médico no decían, De hecho, este sistema también lo permite, pero nosotros no lo hacemos. Mire que él acá tiene una opción que se llama etiqueta.
+Ok. Este sistema uno le puede configurar acá un ejemplo. Imprímame las etiquetas CO02, 0001 hasta la 500. En vez de ponerme a hacerlo en un Excel, que el sistema mismo me deje imprimir todos los stickers.
+O, ah, el señor Ludwig me decía también que se podría hacer un sistema etiquetado que tenga el código, pero que de pronto tenga un código de barras.
+Sí. O un QR, de tal manera que si ese equipo vuelve en garantía, escaneándolo, se me llenen los datos automáticamente.
+Bien. Gracias. Entonces, vamos a volver a encender todo.
+
+@1:08:43 - Ludwig Angarita
+Sí, sí, sí. Lograr identificar un equipo por cualquier medio, por el número de serie, por el modelo, por el nombre del cliente, identificarlo por nuestro ID o QR, o sea, que sin importar qué suceda, podamos identificar de quién es ese equipo, a quién perteneció y todo su histórico.
+
+@1:09:11 - Jorge Carrera (blasterinformation.com)
+Perfecto. Claro, te vas a tener la opción, Maribel, de imprimir ya sea el QR de ese equipo, o sea, te generas un QR, perfectamente lo dice Ludwig, para ser identificado más adelante.
+La pregunta que yo quizás me hago es el tamaño de este QR, porque hay equipos que son, unos que son bien grandes, que te permite perfectamente pegar el QR, otros son muy pequeños.
+Sí, correcto.
+
+@1:09:43 - Martin Hendrik
+Nosotros la etiqueta que manejamos es chiquita. Es como de uno de alto por tres centímetros de largo. Ok.
+
+@1:09:56 - Jorge Carrera (blasterinformation.com)
+Uno por tres centímetros. Sí.
+
+@1:09:59 - Martin Hendrik
+¿Qué finalidad tendría el QR? Pues, si el equipo te va a volver a ingresar en el sistema, que se pueda escanear, para que...
+rellene la información. Sí. ¿Sí? Y también, pues, me parece muy valioso que cualquiera de las comerciales quieras cambiar un equipo hasta a un cliente.
+También le votarás la información del equipo, ¿no?
+
+@1:10:29 - Jorge Carrera (blasterinformation.com)
+Claro, porque fíjate, eso es que eso inclusive te sirve internamente dentro del proceso de reparación. Porque ese equipo me imagino que pasa por ciertos cubículos, ciertas personas, y en el momento que me llega, yo no me voy a poner a teclear el serial, o sea, eso es muy largo.
+Simplemente escaneo el QR, acá está, o coloco, ese QR va a venir, siento que debe venir el QR, más el numerito chiquitico del código.
+Gracias. Gracias. ¿O lo escaneé o lo escaneé?
+
+@1:11:10 - Martin Hendrik
+escribí un centro de servicio redstock que nos llevó acá a reparación. Tenía pegado un QR, entonces yo cogí lo escaneé.
+¿Y te salieron los datos? Y lo mandaba uno a una página en donde decía, es el equipo tatatá de tal cliente, se le hizo tatatá, estas son las pruebas, informes, toda una cosa.
+Uy, no, pero ya no porque, así no porque entonces cualquiera tiene acceso a todo. pero, pero entonces digamos que si el cliente, entonces por ejemplo si el cliente tiene su equipo que ya sabe que lo nos reparamos nosotros.
+El equipo reparado tal fecha, se reparó en tal fecha, garantía hasta tal fecha. Bueno, digamos que una información que sea interesante para el cliente.
+Chiquita, porque tampoco todo lo que... No, chiquita, o sea, pero, pero por ejemplo, cliente le puedo hacer la SEO de que, por ejemplo, el reporte de intervención.
+El cliente no tiene ningún problema, pero... Toca mirar qué informaciones. Pero un reporte de intervención. ¿A qué informaciones se le puede dar acceso a través de un QR?
+Exacto, mira, ahí volviamos, espero que sea interesante para que escanearle ese elemento reparado en tal fecha, tiene garantía hasta tal fecha, no sé qué más.
+De pronto que salga reparado por ALFA ELECTRONIC, llego en tal fecha, por tal falla, y... ¿Y el historial?
+
+@1:12:41 - Jorge Carrera (blasterinformation.com)
+Hasta ahí, para el cliente.
+
+@1:12:43 - Martin Hendrik
+No, el historial, ellos me habían comentado, Jorge, que no es bueno que el usuario o que el cliente lo tenga, porque eso es muy interesante.
+
+@1:12:50 - Ludwig Angarita
+No, solo como lo básico, sí. El nombre de... Porque en el historial se lo llevan para otro lado y dicen, miren, le han hecho todo esto al equipo.
+Sí, no.
+
+@1:13:00 - Martin Hendrik
+O lo dejamos solo para nosotros, pero igual va a quedar pegado en el equipo. No, entonces por eso. No, igual con QR lo que pueden es tener un contador.
+
+@1:13:07 - Ludwig Angarita
+Se me ocurre a mí, si ustedes ofrecen un tiempo de garantía, podríamos hacer que cuando la persona lea el QR, si no está como usuario registrado, si lo lees de un externo, pues simplemente le mostramos la reparación de tu equipo, se revisó en tal fecha y te quedan menos 30, 19, 18, 17 días de garantía.
+Entonces, lo que hace es un contador en tiempo real, le va mostrando cuánto tiempo le queda de garantía desde el momento en que él revisa hasta que se le acabe.
+Y ya cuando se venza la garantía, le diga algo así como, este equipo ya no tiene garantía de reparación, desea solicitar un nuevo servicio y un botón para solicitar rápidamente, desde ahí mismo.
+Así lo que hacemos es hacer un upsell con el usuario, una recompra.
+
+@1:14:01 - Martin Hendrik
+Sí, podría hacer algo así.
+
+@1:14:03 - Ludwig Angarita
+Anota eso, Jorge, me parece que es una cosa interesante, eso no lo habíamos visto.
+
+@1:14:07 - Martin Hendrik
+Y al mismo tiempo, internamente, si el equipo llega en garantía, por ejemplo, ya le escanea completa toda la información del sistema para entrar.
+¿Sabes qué me preocupa? Que si es solo un QR, ¿cómo lo identificamos? ¿Cómo sería el manejo del QR si es un equipo que regresa en garantía?
+¿Cambia el QR? ¿O sobre ese?
+
+@1:14:39 - Ludwig Angarita
+Haz de cuenta que eso es como el número de cédula de nosotros.
+
+@1:14:43 - Martin Hendrik
+Pero, para el programa, por ejemplo, yo voy a encontrar un equipo que está en cierta estantería, donde yo, por ejemplo, puedo tener cinco equipos iguales.
+Pero si está solo el QR, ¿cómo lo identifico yo? lo identifico yo? lo identifico identifico yo? identifico yo? ¿Cómo identifico yo?
+No, sobre eso. eso. identifico go, go, go, go, go.
+
+@1:15:07 - Ludwig Angarita
+Gracias. Sí, cambiamos el SEO.
+
+@1:15:10 - Martin Hendrik
+Es que lo otro, sí, lo que dice Giovanni es que es lo siguiente. Les voy a mostrar. Ah, este está perfecto.
+¿Cómo se llama? Goteros y... Señor Jorge, le voy a mostrar lo siguiente. Esto no me quiere cargar ahora. En nuestra logística, el laboratorio, si solo le ponemos un cuadro, visualmente, como el técnico lo coge, como la comercial lo identifica, o tocaría siempre esta...
+Esto me quiere cargar ahora, espera. Por este sistema. Lo primero. y cargante, pero携adasti y y y y y Gracias.
+Y me muestra, si yo me voy a directamente donde el cliente, él me muestra cuál fue el código antiguo.
+Por ejemplo, este que le estoy mostrando acá, que dice posición 16. La revisión actual. Este equipo está actualmente en garantía.
+El código nuevo es el 26010173. Y él me dice que el antiguo fue el 26010128. Los mismos. Entonces yo puedo rastrear cada vez cuál fue el código anterior con el que ese equipo se revisó.
+¿Cómo haríamos en el nuevo sistema? ¿También que cada vez tenga un nuevo código?
+
+@1:18:03 - Ludwig Angarita
+No, no, porque es que no es necesario. Acuérdate que esto es como... Imagínate más. Sabemos que vamos a crear un sistema como el que tiene la registraduría.
+La registraduría dice, Maribel tiene el número de cédula 1, 0, lo que sea, 1, 2, 3, 4. Entonces, Maribel se va al médico, el médico es ALFA ELECTRONIC.
+No quiere decir que cada que tú vayas al médico te dan un nuevo número de cédula. Tú vas y tú presentas tu número de cédula.
+De cara al sistema, ese sería nuestro QR. Entonces, tú vas y presentas tu QR y ya con tu QR, el médico sabe que tú has ido varias veces, ya sea por exactamente lo mismo o por diferentes cosas.
+¿Qué es lo que va a pasar? Dentro de tu historial te va a registrar un ID nuevo de cada una de esas veces que tú has ido, pero se puede identificar por la tipología si es una reincidencia o si es una patología nueva.
+Pero el número de tu cédula nunca cambia. Entonces, lo que hacemos es que hay más... Imagínate una tabla, estando las cédulas de todos, y a esas tablas de cédulas relacionamos otra tabla que se llama Historia Médica.
+Y dentro de esa Historia Médica hay un montón de números. Entonces, el Historial Médico número 1. Entonces, el número 1 corresponde a la cédula 1, 2, 3, 4, que es la de Maribel.
+Ahora, a esa Historial 1 yo le puedo asociar, por ejemplo, medicamentos, que en este caso de ustedes son los repuestos.
+Para esa vez que tuviste la consulta, es, perdón, sí, es como que cada numerito que le vamos a dar es una consulta, pero ese número es interno.
+
+@1:19:43 - Martin Hendrik
+Es como si cada vez se le abre un expediente nuevo, pero al mismo número de cédula.
+
+@1:19:51 - Ludwig Angarita
+Exactamente, así es como lo vamos a hacer.
+
+@1:19:53 - Martin Hendrik
+El tema es que, digamos, ese es como cómo va a ser la interacción con ese, lo podemos llamar como ese número de expediente o con esa intervención, que digamos que es importante que se...
+Que eso tenga un consecutivo, que es como se maneja ahorita. Entonces, por ejemplo, con ese consecutivo, ¿qué es lo que pasa?
+Entonces, para el equipo que llegó, sea de quien sea, entonces se está haciendo un servicio. Entonces, ¿cómo denominamos o con qué consecutivo manejamos ese servicio?
+Entonces, ¿por qué? Con ese consecutivo de servicios tiene que ver información a clientes, las intervenciones que se están haciendo, los repuestos, inventario que se le pone a ese consecutivo, todo eso.
+Y al final, ese consecutivo de ese equipo es el que va a salir.
+
+@1:20:51 - Ludwig Angarita
+Claro, ahí no tendría que preocuparte por eso, porque de nuevo, solamente con la cédula, tú ya puedes tener todos los consecutivos que tiene Maribel.
+Ahora, al consecutivo. quería hacer como un ejemplo para ver bien cómo.
+
+@1:21:07 - Martin Hendrik
+Sí, es que. Para nosotros estos CEOs que se ven acá, que por ejemplo esta lista, son prácticamente como si fueran órdenes de servicios.
+Y entonces estamos más guiados, o sea, estamos más guiados hacia el número de orden de servicio que hacia la identificación del equipo, ¿me entiendes?
+Así es como lo manejamos actualmente. Entonces, de pronto no sé qué tan conveniente es, que es como de pronto ustedes nos lo están planteando, y es más guiados hacia la identificación del equipo que hacia la orden de servicio.
+
+@1:21:50 - Ludwig Angarita
+Lo que pasa es que sí o sí, cuando tú lo haces por identificación de servicio, tú tienes un problema, y es que un servicio es una vez, y cada vez que tú creas un servicio es uno nuevo, uno nuevo, uno nuevo, uno nuevo, nuevo.
+Este sistema se construyó de esa manera porque... Para cuando esto se tuvo que haber construido, según lo que ustedes me dicen, hace 20 años o más, el modelo de relación de datos no estaba tan avanzado como está hoy en día.
+Entonces, es lógico que lo hubieran hecho de esta manera. Hoy por hoy, la lógica de programación ya te dice que no necesitas hacerlo así.
+Entonces, optimización de datos, yo lo puedo hacer como ustedes quieren, pero sería una muy mala práctica a hoy 2026.
+Es muy, muy mala, porque no podemos, sea, o sea, puedo mostrarte a ti la información como tú quieras. Tú me dices, yo quiero encontrarlos por la orden de servicio.
+Yo te pongo un buscador de orden de servicio. No importa. Lo importante es que internamente el software sí o sí va a tener una llave única, una primaria.
+Esa llave primaria va a ser la identificación del equipo, porque yo al equipo le asocio todo. O sea, yo no le asocio a Maribel.
+O sea, yo no creo una nueva Maribel para cada vez que va al médico. Sino que una sola Maribel puede ir muchas veces a muchos médicos, o puede ir n veces al mismo médico y tener n diferentes historiales diferentes.
+Puede tener 5 patologías diferentes, cada patología puede tener su propio recetario, cada recetario puede tener sus propios medicamentos. Ese es el orden lógico.
+Ahora, lo que hace este sistema es que dice, tengo una nueva cita médica con un cliente y a esta cita le agrego otra cosa.
+Pero si llega el cliente de nuevo, entonces me toca crear un nuevo cliente porque este cliente yo no sé quién es.
+Simplemente lo creo nuevo y le asocio todo nuevo. Así funciona el tienen hoy. Y por debajo está haciendo una relación que no se debe hacer hoy por hoy.
+En su momento seguramente estaba bien hecho. Pero hoy todo se relaciona con la llave primaria que es la identificación del equipo.
+De ahí para allá nosotros correlacionamos toda la información. Esto está hablando de la capa lógica del sistema. Ok, ok.
+Digamos que visual, tú me dices, yo quiero buscarlos por orden de servicio. Ok. Ok.
+
+@1:26:07 - Martin Hendrik
+Sí, es que le quería mostrar cómo lo hace este sistema para te demostrarlo. Digamos, a este cliente en octubre del año pasado se le reparó este equipo, el 250-80-186.
+Yo voy acá a mi módulo de ingresos. Este sistema me da la opción de poner el código viejo. Acá, antiguo código.
+Y el vuelve y me llama los datos de la vez pasada, ¿sí lo ven? Sí. Yo, ¿qué hago? Le modifico la talla porque puede ser que ya no es la misma, entonces la cambio.
+Le pongo los datos de la remisión, como le decía. Gracias. Gracias. Y yo le digo que es un regreso en garantía.
+Entonces le oprimo este botón que dice regreso en garantía. Y automáticamente él me muestra cuál fue el técnico que lo revisó la vez pasada.
+Normalmente nosotros, cuando un equipo vuelve en garantía, se lo dejamos asignado a la misma persona que lo revisó la última vez para que sigue como la trazabilidad en vez de cambiar el técnico.
+
+@1:27:47 - Jorge Carrera (blasterinformation.com)
+Ok. ¿Sí? Lo mismo.
+
+@1:27:52 - Martin Hendrik
+Yo le lleno el resto de datos. ¿En qué lugar lo puse? En el interior 2. O estantería 2, como uno le quiera poner ahí.
+Si viene con accesorios le pongo USB. Este sistema trae acá un campo que se llama field de discusión, que lo vamos a ver más adelante en otras pestañas, por decirlo así.
+Es como una zona de comentarios libres. Ok. Nosotros ahí podemos escribir, por ejemplo, cliente solicitó diagnóstico en urgencia o ingeniero, para ser más específico.
+Ingeniero, Darío. Igual, yo le cargo en la carpeta de adjuntos las fotos, todo lo que yo le quiera cargar.
+Gracias. Yo le doy entonces transferir, acá con este, él me da el SEO nuevo, el código nuevo, ¿sí lo vio?
+Sí.
+
+@1:29:22 - Jorge Carrera (blasterinformation.com)
+Y listo, yo se lo pego.
+
+@1:29:24 - Martin Hendrik
+Este sistema, por ejemplo, la empresa que lo diseñó, ellos tienen el correo electrónico anclado como al software. Yo puedo mandarle un correo al ingeniero diciéndole que confirmo que su equipo llegó en garantía, que lo vamos a revisar prioritariamente.
+Uno puede personalizar este mensaje.
+
+@1:29:53 - Jorge Carrera (blasterinformation.com)
+O sea, en el momento que llega un correo en garantía, perdón, un equipo por garantía, y lo carga, el técnico que lo revisó le llega automáticamente un mensaje de que ese equipo que él revisó hace una semana volvió a llegar.
+Gracias. Gracias. Gracias. Gracias. Gracias. Gracias. Gracias. Gracias. Gracias.
+
+@1:30:09 - Martin Hendrik
+Eso es para el técnico, no, esto es para el cliente. Ok. O sea, este sistema tiene la opción de mandarle a este ingeniero.
+Este ingeniero fue el que nos mandó el equipo, Jonathan Nisman. Cuando yo registro el equipo en el sistema, el sistema me da la opción de mandarle un correo automático a ese ingeniero, a ese cliente.
+Un correo diciéndole que confirmamos que se le recibió el equipo y que procedemos a revisarlo y que cualquier cosa le avisamos.
+Uno le da OK y el correo se manda. Sin embargo, nosotros anulamos esto, no lo hacemos. Normalmente lo hacemos todo directamente desde este correo electrónico.
+Porque procuramos en vez de mandar mensajes individuales. ¿Cuál es manejar un solo histórico?
+
+@1:31:12 - Jorge Carrera (blasterinformation.com)
+¿Cómo es eso, María? No sé cómo...
+
+@1:31:16 - Martin Hendrik
+No, era solo para contarle que este sistema tiene esa opción, pero nosotros no la manejamos. ¿Y por qué? ¿Porque lo mandan?
+Porque para nosotros es muy importante que cualquier información, cualquier procedimiento relacionado con ese equipo se maneje en un solo historial.
+Si yo cada vez mando un correíto separado, pues me quedan muchos correos sueltos que hablan sobre el mismo equipo.
+¿Sí me explico?
+
+@1:31:55 - Jorge Carrera (blasterinformation.com)
+No, no, no, no, entendí bien. Porque el sistema perfectamente lo puede mandar, pero en vez de mandarlo por el sistema, tú lo que haces es que te metas por el Gmail, o por Outlook, y...
+Y desde allí lo mandas. Sí. Por ejemplo, miren.
+
+@1:32:15 - Martin Hendrik
+Actualmente, ¿cómo lo hacemos? Llega un equipo y mandamos un correo diciéndole buen día al cliente, confirmamos la recepción de sus equipos tales.
+
+@1:32:27 - Jorge Carrera (blasterinformation.com)
+Perfecto.
+
+@1:32:29 - Martin Hendrik
+Sobre ese mismo historial, yo después voy y mando la cotización. Yo busco el mismo historial y sobre eso mando la cotización.
+
+@1:32:40 - Jorge Carrera (blasterinformation.com)
+Ya.
+
+@1:32:42 - Martin Hendrik
+Sobre ese mismo correo, eso es un proceso que hemos hecho para educar a los clientes.
+
+@1:32:48 - Jorge Carrera (blasterinformation.com)
+O sea, ¿te tienes la trazabilidad de toda la información, todo el feedback que tenido con el cliente, la trazabilidad?
+
+@1:32:58 - Martin Hendrik
+Sobre un solo historial, sí. Ok. Por ejemplo, acá el cliente sobre el mismo historial dice que listo que va a mandar la orden de compra.
+Sobre ese mismo historial se le confirma la reparación cuando llega la orden de compra. Sobre ese mismo historial, el área de facturación busca el correo y sobre el mismo historial le informa que se le generó la factura.
+Entonces, y sobre ese mismo historial se les informa a su equipo, puede ser, pero nosotros lo hacemos todo manualmente en el correo, no tenemos actualmente como una función que nos permita vincular el software con el correo.
+¿Por qué? Porque lo que no me gusta es que el sistema actual genera mensajes separados. ¿Sí me explico?
+
+@1:34:03 - Jorge Carrera (blasterinformation.com)
+Y si, y si tenemos la opción, Maribel, de... De... Yo consultar, por lo menos yo quiero consultar todos los mensajes que el sistema le ha enviado al cliente.
+Y no solamente los mensajes, también las facturas, las órdenes de compra, todo. Si yo, referente a un equipo en particular, perfectamente lo podríamos hacer, donde yo me meto en la cédula del equipo y quiero consultar su historial de reparación, su historial de mensajes, su historial de facturación, su historial de órdenes de compra, y perfectamente me podría aparecer.
+Ah, sería muy bueno.
+
+@1:34:43 - Martin Hendrik
+Sí, por ejemplo, que cuando ingrese el equipo, automáticamente le envíe el correo al contacto que uno le habilite. Entonces, por ejemplo, ella no se tiene que poner a veces, recepcionó su equipo, ta, ta, ta, no, no, sino, lo entró al sistema, enviar correo de confirmación de entrada del equipo, actual contacto, chum.
+Sí, pero ¿cuál es el punto? Por ejemplo, el sistema me va a decir que va a mandar el mensaje automático solo a esta persona que yo registré acá, pero es que muchas veces el cliente nos dice, les voy a mandar un equipo fulanito y ponen en copia como a 10.
+Entonces, para mí es importante responder sobre ese mismo historial como acá, donde todas las personas que él puso en copia, yo les informo a todas otra vez, si su equipo se recibió.
+Sí, claro, claro. No solamente a la que quedó registrada aquí. A la que yo quiera poner. Y que se haya un correo predeterminado.
+Por eso es que yo lo hago directamente en el correo y no con el software. Claro, en el momento que tú también le puedes decir.
+
+@1:36:07 - Jorge Carrera (blasterinformation.com)
+Al sistema. Ya sea correos automáticos o correos que tú le das, en vez de darle a aceptar, ¿verdad? Mira, quiere usted mandar en este momento el correo de recepción al cliente, ¿Aceptar o modificar?
+Si le dicen aceptar, sale automáticamente. Si le dicen modificar, entras al correo que él va a enviar y allí puedes colocar el con copia que tú consideres.
+
+@1:36:34 - Martin Hendrik
+Pero entonces él lo va a hacer en un historial nuevo y no sobre el historial donde el cliente me informó que iba a llegar a un equipo.
+Claro, claro.
+
+@1:36:43 - Jorge Carrera (blasterinformation.com)
+O sea, tú lo quieres que aparezca entre el mismo Outlook o Gmail.
+
+@1:36:48 - Martin Hendrik
+Claro, a mí me interesa que el histórico siempre sea el mismo. Por ejemplo, mira este correo. El señor Sergio me dice cómo va el estado de esta revisión en garantía.
+Y me pone en copia como a ocho personas. Pues a mí me interesa resolver. Responderle sobre el mismo historial a todos.
+A todos, sí. No sobre un correo nuevo, solo a él.
+
+@1:37:17 - Jorge Carrera (blasterinformation.com)
+Claro, claro. A veces esto es la excepción, más no la regla. Por muy bueno que sea el sistema, siempre hay una comunicación externa del mismo, ya sea por WhatsApp o ya sea por Gmail.
+
+@1:37:30 - Martin Hendrik
+Yo creo que esto sí toca seguirlo manejando así.
+
+@1:37:33 - Jorge Carrera (blasterinformation.com)
+Lo que sí puedes enviar por correo es un link, un link de estatus, donde la persona se mete en el link y ver a través del sistema el estatus del equipo.
+No, no queremos eso.
+
+@1:37:47 - Martin Hendrik
+Esa opción no nos interesa.
+
+@1:37:52 - Jorge Carrera (blasterinformation.com)
+No, no, no.
+
+@1:37:58 - Martin Hendrik
+No, no, no. No, No, No, no, no. No, por ejemplo que sea el primero, el de recepción, definir si lo quieren ver automático.
+Bueno, y pues la chica que da la recepción del equipo, pues revisa si hay un historial y si no, un envío el automático y se ahorró cinco minutos.
+Pero en realidad no. Yo lo preguntaba por si se podía hacer, pero mejor no. de todos los que nos llegan, son poquitos los equipos que nos avisan que van a llegar.
+Un poquitos. Y al final le dice, enviar correo de confirmación de la recepción. Un, lo envía solo. Y ya no tiene que entrar al correo, escribir lo mismo, buscar los contactos, ahí se ahorra cinco minutos.
+Aunque eso es lo de menos porque nosotros tenemos muchas firmas redactadas. Sí, pero entonces, digamos, si son diez equipos que entran al día y en cabo uno se ahorra tres minutos, ahí se ahorra media hora.
+Sí, pero toca de todas maneras cada vez ir al correo y mirar si ese correo lo mandó solo una persona o si hay cinco en copy, cogerlos y ponerlos en el sistema para que...
+Bueno, y pues la chica que da la recepción del equipo, pues revisa si hay un historial y si no, un envío el automático y se ahorró cinco minutos.
+Pero en realidad no. Yo lo preguntaba por si se podía hacer, pero mejor no. de todos los que nos llegan, son poquitos los equipos que nos avisan que van a llegar.
+Un poquitos. Y al final le dice, enviar correo de confirmación de la recepción. Un, lo envía solo. Y ya no tiene que entrar al correo, escribir lo mismo, buscar los contactos, ahí se ahorra cinco minutos.
+Aunque eso es lo de menos porque nosotros tenemos muchas firmas redactadas. Sí, pero entonces, digamos, si son diez equipos que entran al día y en cabo uno se ahorra tres minutos, ahí se ahorra media hora.
+Sí, pero toca de todas maneras cada vez ir al correo y mirar si ese correo lo mandó solo una persona o si hay cinco en copy, cogerlos y ponerlos en el sistema para que...
+La confirmación de los videos le llega a los 5. Tocaría que salga una ventana adicional en donde chulee la lista de contactos del sistema, a quién se lo quiere enviar.
+Enviar correo de confirmación, Zoom, sale un pantallazo, chuleo a quiénes, enviar. Pero ese correo no va a llegar sobre el mismo historial que ya hay.
+Pero si es un equipo nuevo, o sea, solo el correo de llegada de un equipo nuevo. Sí, pero no, no, no, es que es muy bueno que sea sobre el mismo histórico, porque es que.
+Pues yo lo decía solo porque pienso que ese es el primer correo. Sí, pero en el caso de Keiser, que tú los conoces, ellos cuando mandan un equipo, muchas veces en ese correo inicial donde dicen, señores, Alfa, les voy a mandar tal equipo.
+Ellos dicen, ellos dicen, esta pantalla es el control, sigma control basic. ¡Gracias! ¡Gracias!
+
+@1:41:07 - Jorge Carrera (blasterinformation.com)
+Té, Coca-Cola, Barranquilla, cereal, tal, ta, ta, ta, y nos ponen informaciones muy importantes, que es importante, para mí es importante, y para ellos también, que sobre ese mismo historial se les dé respuesta, no uno nuevo.
+Es más, a veces en ese primer correo, ellos mandan, dicen, adjunto manual, adjunto falla, na, na, na, na.
+
+@1:41:35 - Martin Hendrik
+Si yo le hago un nuevo correo de confirmación, que omite el inicial, ya perdí información que me dieron. No, por ejemplo, eso pasó, ¿qué día?
+Que llegó una garantía, y había correo de que iban a enviar la garantía, y pues enviaron un correo nuevo, y yo nunca vi la información técnica.
+Y el cliente, ¿qué hace a veces? Nos manda un correo y nos dice, señores, Alfa, yo ya les había mandado esa información en el primer correo.
+
+@1:42:01 - Jorge Carrera (blasterinformation.com)
+Eso pasó, yo le pregunté, venga, ¿a qué pasó? ¿Cómo es esto? Ah, no, ya se los había enviado. Entonces, por eso es que es importante que el histórico...
+
+@1:44:07 - Martin Hendrik
+¿A quién? ¿A quién? Sí. Ajá. Listo. Entonces, como yo le decía, este sistema da la opción de asignar el equipo a un técnico en el mismo momento en que yo registro el equipo.
+Pero no es obligatorio. Los campos obligatorios son estos que nos salen en azul. Ok. Este campo que se llama afectación, que es donde sale la lista de los técnicos, está en blanco, o sea, lo puedo dejar en blanco.
+Sí. Actualmente se hace así. La chica de la recepción. O lo entra al equipo. Entra al equipo, lo registra, le asigna el código, se lo pega.
+Le monta fotos. Le monta las fotos y va y lo pone allá en la estantería de ingresos. Ajá. Hay otra parte que se llama.
+Afectación. Afectación. La maneja Giovanni, ¿sí? Este sistema tiene como un. Módulo de control, que es este. Yo acá puedo ver cuántos equipos han ingresado y que no se han afectado a nadie.
+Son estos, 11. Ok. Yo le doy clic y ahí me sale la lista de equipos que entraron en la recepción, en qué parte están almacenados, interior 1, o 4, en el garaje, bueno, ¿qué cliente lo mandó, la marca, el tipo, la serie, cuándo llegó?
+Y acá Giovanni, él tiene autorizado en el sistema ingresar a esta sección del sistema y él es el que le dice acá a quién le da el equipo.
+Como usted puede ver acá en la parte de arriba, salen unas tabulaciones, voy a decirle así. No sé si se llama así.
+Donde el tema me muestra cuántos equipos tiene cada persona. Entonces, Giovanni Vaquero, J. Vaquero, él tiene 35 equipos. Toscano tiene 23, Sabogal 16, Méndez 15, Díaz 13.
+Así, él me dice cuántos equipos tiene asignados cada persona. Adicionalmente, él me los, me dice de esos 35, él me los clasifica en unos colores.
+Porque hay equipos en diferentes etapas del proceso. Entonces, los equipos que están en diagnóstico, salen en, un ejemplo, en azul.
+Entonces, Giovanni tiene cuatro equipos en diagnóstico. Me muestra los equipos en verde. Son equipos que él ya le debe pedir repuesto.
+Porque ya fueron confirmados. Los posición 11, que son 22, significa que son 22 equipos que tienen repuestos en proceso de importación.
+Cuando llegan todos los repuestos, esos equipos de posición 11 cambian a una posición que se llama 1, que es amarilla.
+Entonces, acá yo puedo ver la totalidad de equipos que tiene cada persona, así como la cantidad de equipos que hay en cada etapa.
+Y basándose en esta información, Giovanni asigna los equipos que llegan. Entonces, por ejemplo, llega una pantalla, tenemos dos personas especializadas en pantallas, entonces él mira a cuál de esas dos le asigna el equipo, lo chulean.
+¿Sí? Digamos, este que dice que es de ALFA ELECTRONIC, se lo voy a asignar a Giovanni. Yo le digo actualizar y desaparece, porque yo ya se lo asigné a alguien, ¿sí?
+Ok. Entonces, actualmente, el que asigna los equipos es Giovanni a través de este módulo. Ok, módulo como de asignación de equipo a técnicos.
+
+@1:48:36 - Jorge Carrera (blasterinformation.com)
+Sí.
+
+@1:48:40 - Martin Hendrik
+Ok. Adicionalmente, yo le quería mostrar otra cosita. Cuando uno registra un equipo, nosotros tenemos dos métodos de diagnóstico. Uno que es gratuito, el cliente trae el equipo, y un ejemplo, en cinco días, se lo diagnosticamos y le generamos la cotización.
+Eso es gratis.
+
+@1:49:06 - Jorge Carrera (blasterinformation.com)
+Pero si
+
+@1:49:07 - Martin Hendrik
+El cliente tiene una urgencia. Su máquina está varada, él necesita saber rápido si le podemos ayudar o no. Nosotros ofrecemos un diagnóstico en urgencia o prioridad que se hace en un día.
+Y en ese caso, cuando el equipo se registra en el sistema, le marcamos acá esta opción que se llama prioridad.
+¿La ve aquí? Ok, sí, ahí la veo. Cuando yo le marco prioridad, le voy a mostrar acá. Me voy a adelantar un poquito para mostrarle.
+Ajá. Por ejemplo, acá yo veo todo lo que está en posición cero, que son diagnósticos. Todo lo que está en diagnóstico de cada persona.
+Cuando es un diagnóstico normal, queda en color verde. Si el equipo llegó a ser... Si dos días ya se pone amarillo.
+Si cumplió tres días y no me lo han diagnosticado se pone naranja. ¿Sí? Ya toca que le prestan atención rápido porque el diagnóstico gratis es en cinco días.
+¿Sí? Pero si es una urgencia, o sea, si el cliente está pagando por diagnosticar el equipo en un día, yo le di oprimir allá en prioridad, es color rojo, como este.
+Este es el único color que no se pone de manera automática.
+
+@1:50:46 - Jorge Carrera (blasterinformation.com)
+Solo se pone porque yo le di prioridad.
+
+@1:50:50 - Martin Hendrik
+Perfecto. ¿Sí? También hay otra cosa. Resulta que un cliente no quiere mandar un equipo a reparación. Él quiere es que yo le cotizo una venta.
+Entonces, el... El procedimiento es el mismo. Se llenan los datos del cliente. Yo lleno los datos del equipo que él quiere que yo le venda.
+Pero en vez de poner reparación, yo digo que él quiere una venta. Aquí. Venta. Las ventas no las cotiza un técnico, las cotizo yo.
+Entonces. En ese caso, la persona de la recepción me lo puede poner directamente a mí. Claro. O lo dejo en blanco y Giovanni ya sabe que si es una venta, me la pone a mí.
+Perfecto. Y en ese caso, se marca esta segunda opción que se llama cotización automática. Significa que ese equipo no va a pasar a ningún técnico, sino que va a pasar directamente a mí.
+Entonces, el mismo visual donde yo podía ver cuáles equipos han llegado y están pendientes por asignar. Esto es como un panel de control.
+Solo lo veo yo. De un momentico. ¿Que la activen? ¿Que la pongan a zonar? Me van a hacer mucho ruido, pero bueno, pues me imagino que necesita hacer pruebas.
+Sí, señora, que es que estoy viendo una videollamada y me va a hacer mucho ruido. Esto es como un panel de control donde yo, como administradora, puedo ver cuántos equipos han llegado y están pendientes de ser asignados al área técnica.
+Puedo ver cuántos equipos. Este otro son la cantidad de equipos que ya se despacharon y que la chica de facturación tiene pendiente por facturar.
+Entonces yo puedo mirar ahí esos 18 equipos de cuáles clientes son. Por ejemplo, está incapacitada, entonces estamos atrasados en facturación.
+También me muestra cuántos equipos tenemos en préstamo. Hay clientes que nos mandan equipos en préstamo para poder hacer pruebas a los equipos que están en reparación.
+Yo puedo mirar esos equipos en préstamo, cuáles son y de qué clientes son.
+
+@1:54:53 - Jorge Carrera (blasterinformation.com)
+¿Sí? Ok. Oye, este dashboard es bien completo. Sí, entonces este es como un panel de control donde yo puedo ver muchas cositas.
+Se pueden modificar.
+
+@1:55:07 - Martin Hendrik
+No es grave, pero me permite a tener una visual como muy completa de lo que yo tengo en este momento en proceso de cotización.
+Me necesitaría un print también de esa pantalla. Ok. Sí, entonces le quería mostrar eso, que cuando es una venta, automáticamente pasa a este módulo de cotización, no pasa al área técnica.
+Ok. A ellos solamente se les pasan los equipos que son para diagnóstico y reparación. ¿Por qué? Pues porque los tienen que desarmar, revisarlos.
+En el caso de una venta, no, yo la cotizo directamente. Perfecto. Fíjate, ya viendo los tiempos, Maribel, porque ya se nos fueron las dos horas, otra cosa tendríamos pendiente en la parte de recepción que tú consideres que tenemos que saber.
+Ah, bueno, sí, me falta una cosita. Cuando un equipo llega, yo le dije que en este módulo puedo ver los equipos en préstamos, ¿cierto?
+Sí. Esto. Entonces, por ejemplo, Simix, vamos a entrar. ¿Sí ve que este código tiene acá una cadenita? Sí. Significa que ese equipo está anclado a otro.
+Pertenece a parte de otro. Sí, el cliente lo mandó como, en este caso, como préstamo para probar otro. Ok.
+Este es el 22, entonces.
+
+@1:56:59 - Jorge Carrera (blasterinformation.com)
+250, 522.
+
+@1:57:03 - Martin Hendrik
+Vamos a buscarlo. Yo acá puedo buscar cualquier código en la zona de registro y cargo la información y la visualizo.
+Entonces, mire, este equipo al ser ingresado se le asignó el código 250522 y él trae en préstamo otro equipo que está etiquetado con el código 250383.
+Entonces, ¿qué hago yo? Cuando yo registro dos equipos y uno viene en préstamo, ese que viene en préstamo, yo vengo y lo escribo aquí.
+
+@1:57:53 - Ludwig Angarita
+Esto en español significa como anclado. Este código viene anclado a tal otro.
+
+@1:58:03 - Martin Hendrik
+¿Para qué me sirve eso? El día que yo le vaya a despedirme. Si despachar al cliente, el que está en reparación, el 250-522, él no me va a dejar sacarlo sin el que viene en préstamo.
+
+@1:58:18 - Jorge Carrera (blasterinformation.com)
+Él me va a lanzar, cuando yo estoy haciendo la remisión de despacho, él me va a lanzar un mensaje de alerta que me dice, importante, este equipo viene con este otro código en préstamo, desea despacharlo.
+Y un ejemplo, yo le digo, sí. Y él de una vez en la misma remisión, me incluye ese equipo prestado, de tal manera que no se nos queda aquí olvidado.
+Claro, claro. Eso me faltaba mostrarse. No, excelente. Muchachos, yo tengo que dejarlos, porque hace cinco me estaban esperando en otra reunión.
+Dale, Ludwig, gracias.
+
+@1:58:59 - Martin Hendrik
+Espérense mucho. Chau, Maribel, chau, Johnny. No, gracias, muy amable. Chau. Entonces, yo pensaría que la zona de... El proceso de registro de equipos es ese, no veo más como que tenga que mostrarle.
+
+@1:59:14 - Jorge Carrera (blasterinformation.com)
+Vale, de todas maneras, Maribel, esto no está escrito en piedra porque en cualquier momento echamos para atrás, retomamos algo que se nos haya quedado en recepción, lo volvemos a retomar, lo volvemos a conversar, y espero mantenemos el flujo.
+La idea es tratar de tener englobado todo el proceso, ¿no? Lo que me acabas de decir, lo que me acabas de explicar en todas las horas, bueno, más que detallado.
+Ahora, fíjate, Yanquín, mis anotaciones, creo que quizás puede venir ahora para conversar sobre el área comercial, ¿cuál es, qué es lo que hace en el área comercial?
+Y eso lo podemos conversar, no sé qué día de la semana tienes disponible para conversar sobre eso. pues, usted me dirá, ¿cómo manejamos las reuniones?
+Yo podría, a partir de hoy, si usted está disponible, un ejemplo, reunirnos. Dos horas, mañana, cada día, y yo le voy explicando el paso a paso de cada módulo, de cada proceso, no sé cómo llamarlo.
+ACTION ITEM: Agendar sesión Comercial con Maribel/Giovanni para Feb 25 10:00–12:00 - WATCH
+Ok.
+
+@2:00:18 - Martin Hendrik
+¿Qué te parece, Maribel, día miércoles a la misma hora de 10 a...
+
+@2:00:25 - Jorge Carrera (blasterinformation.com)
+¿A 12? El 10 a 12. Sí. ¿Verdad? Para tener un día intercalado para yo organizar la información. Ah, perfecto, sí.
+¿Verdad? Entonces, nada, vamos a hacer eso. Entonces, dejan agendar para el próximo miércoles, a la misma hora, para conversar al área comercial.
+Todo lo que es el área comercial, qué es lo que hace, qué no hace, y con su afectación en el sistema.
+¿Listo? Dale, excelente. Bueno, nada, ahorita voy a crear una carpeta en Drive, para que me subas allí toda la información que tú consideres pertinente.
+Y ahí tenemos un feedback de De todo ese detalle que quizás nos haga falta. Listo, sí señor. Chava Maribel, gracias, muy amable.
+Bueno, pues muy amable. Tiene mi correo, ¿cierto? Sí. Sí, sí, el número, sí, perfecto. Muchas gracias, buen día. Esté bien.
+

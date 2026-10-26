@@ -85,10 +85,18 @@ type invoiceSnapshot struct {
 }
 
 // enforceOverbalanceGuard (F1): si el código resuelve a una factura real no cancelada,
-// el monto del pago no puede superar su saldo pendiente. En updates, el tope incluye
-// el monto actual del propio pago cuando este ya cuenta en el acumulado (se puede
-// subir hasta agotar el saldo, no más). Códigos libres / facturas canceladas →
-// sin guardrail (compatibilidad legacy).
+// el monto del pago no puede superar lo pendiente por pagar EN EFECTIVO, o sea
+// total − Σ(amount) de los pagos contables de la misma factura. En updates, el
+// tope incluye el monto actual del propio pago cuando este ya cuenta en el
+// acumulado (se puede subir hasta agotar el cupo, no más). Códigos libres /
+// facturas canceladas → sin guardrail (compatibilidad legacy).
+//
+// Decisión de diseño (t14): el tope se mide sobre los MONTOS y no sobre el
+// saldo sincronizado, porque el saldo ya descuenta las retenciones valorizadas:
+// tras un pago de total−4% con retefuente declarada el saldo es 0, y el pago
+// complementario del 4% retenido (que la práctica colombiana registra aparte)
+// quedaría bloqueado si el guard mirara el saldo. Las retenciones créditan la
+// factura hasta agotarla y el sync las acota al total.
 func (s *Service) enforceOverbalanceGuard(ctx context.Context, qe queryExecutor, companyID string, code string, amount float64, includeCurrentAmount bool, currentAmount float64) error {
 	code = strings.TrimSpace(code)
 	prefix, sequence, ok := parseInvoiceCode(code)
@@ -97,7 +105,7 @@ func (s *Service) enforceOverbalanceGuard(ctx context.Context, qe queryExecutor,
 	}
 
 	row := qe.QueryRowContext(ctx, `
-SELECT total, balance_amount, status, COALESCE(document_type, 'factura')
+SELECT total, status, COALESCE(document_type, 'factura')
 FROM finance_invoices
 WHERE company_id = $1
   AND soft_delete = false
@@ -107,20 +115,34 @@ ORDER BY id
 LIMIT 1;
 `, companyID, seriesKey(prefix), sequence)
 
-	var total, balance float64
+	var total float64
 	var status InvoiceStatus
 	var docType string
-	if err := row.Scan(&total, &balance, &status, &docType); err != nil {
+	if err := row.Scan(&total, &status, &docType); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil // número libre: sin factura real detrás
 		}
-		return fmt.Errorf("consultar el saldo de la factura para %q: %w", code, err)
+		return fmt.Errorf("consultar la factura para %q: %w", code, err)
 	}
 	if status == InvoiceStatusCancelled || docType == "nota_credito" {
 		return nil
 	}
 
-	maxAllowed := balance
+	var counted float64
+	err := qe.QueryRowContext(ctx, `
+SELECT COALESCE(SUM(amount), 0)
+FROM finance_payments
+WHERE company_id = $1
+  AND soft_delete = false
+  AND status IN ('Completado', 'Parcial')
+  AND btrim(upper(regexp_replace(trim(invoice_number), '[0-9]+$', '')), '-') = $2
+  AND substring(upper(trim(invoice_number)) FROM '([0-9]+)$')::bigint = $3;
+`, companyID, seriesKey(prefix), sequence).Scan(&counted)
+	if err != nil {
+		return fmt.Errorf("sumar los montos pagados de la factura para %q: %w", code, err)
+	}
+
+	maxAllowed := total - counted
 	if includeCurrentAmount && currentAmount > 0 {
 		maxAllowed += currentAmount
 	}
@@ -193,21 +215,50 @@ func (s *Service) syncInvoicesFromPayments(ctx context.Context, qe queryExecutor
 		// dos series distintas con el mismo número NUNCA se mezclan. La serie puede
 		// contener dígitos ("FAC-2026"), así que la secuencia es SIEMPRE el grupo
 		// final de dígitos y la serie lo anterior (tolerante a padding).
+		//
+		// El acumulado suma, además del monto, las retenciones valorizadas: en la
+		// práctica contable colombiana la retención practicada por el cliente
+		// (reteFuente/reteIVA/reteICA) es parte del pago de la factura — ignorarla
+		// dejaba saldo fantasma y obligaba a un segundo pago. Semántica del valor
+		// guardado (decisión de diseño): si es <= 100 se interpreta como
+		// PORCENTAJE sobre el total de la factura (así lo envía la UI, ej. 4 = 4%)
+		// y si es mayor se interpreta como valor ABSOLUTO en COP (formato legacy).
+		// La base del porcentaje es el TOTAL de la factura (con IVA), no el
+		// subtotal: es la convención que cierra el caso real (total 1.190.000,
+		// pago 1.142.400 + 4% = 47.600 → saldo 0) y la más simple de auditar.
 		var paid float64
 		err = qe.QueryRowContext(ctx, `
-SELECT COALESCE(SUM(amount), 0)
+SELECT COALESCE(SUM(
+	amount
+	+ CASE WHEN COALESCE(rete_fuente, 0) <= 100
+		THEN COALESCE(rete_fuente, 0) / 100.0 * $4
+		ELSE COALESCE(rete_fuente, 0) END
+	+ CASE WHEN COALESCE(rete_iva, 0) <= 100
+		THEN COALESCE(rete_iva, 0) / 100.0 * $4
+		ELSE COALESCE(rete_iva, 0) END
+	+ CASE WHEN COALESCE(rete_ica, 0) <= 100
+		THEN COALESCE(rete_ica, 0) / 100.0 * $4
+		ELSE COALESCE(rete_ica, 0) END
+), 0)
 FROM finance_payments
 WHERE company_id = $1
   AND soft_delete = false
   AND status IN ('Completado', 'Parcial')
   AND btrim(upper(regexp_replace(trim(invoice_number), '[0-9]+$', '')), '-') = $2
   AND substring(upper(trim(invoice_number)) FROM '([0-9]+)$')::bigint = $3;
-`, companyID, seriesKey(snap.SeriesPrefix), snap.SequenceNumber).Scan(&paid)
+`, companyID, seriesKey(snap.SeriesPrefix), snap.SequenceNumber, snap.Total).Scan(&paid)
 		if err != nil {
 			return fmt.Errorf("sumar pagos contables para la factura %d: %w", snap.ID, err)
 		}
 
-		balance := snap.Total - paid
+		// paid_amount nunca se reporta por encima del total: un pago
+		// complementario sobre una factura ya saldada (ej. el valor retenido que
+		// llega después) no debe inflar el cobrado, sólo el estado ya quedó Pagado.
+		storedPaid := paid
+		if storedPaid > snap.Total {
+			storedPaid = snap.Total
+		}
+		balance := snap.Total - storedPaid
 		if balance < 0 {
 			balance = 0
 		}
@@ -222,7 +273,7 @@ SET paid_amount = $1,
     updated_at = NOW()
 WHERE company_id = $5
   AND id = $6;
-`, paid, balance, status, paid, companyID, snap.ID)
+`, storedPaid, balance, status, paid, companyID, snap.ID)
 		if err != nil {
 			return fmt.Errorf("actualizar la factura %d: %w", snap.ID, err)
 		}

@@ -33,7 +33,7 @@ const SLA_GREEN_MAX_DAYS = 2;
 const SLA_YELLOW_MAX_DAYS = 5;
 
 const WORK_DIRECT_PROSPECT: ProspectRecord = {
-    id: -9000,
+    id: "recepcion-directa",
     backendId: "",
     nombre: "Recepción directa",
     correo: "",
@@ -970,15 +970,15 @@ export class WorkTeamsComponent implements AfterViewInit, OnDestroy {
     }
 
     private resolveProspect(record: ProspectEquipmentRecord): ProspectRecord {
-        const parsedProspectId = Number.parseInt(String(record.prospectId ?? ""), 10);
-        const existingProspect = Number.isFinite(parsedProspectId) ? getProspectById(parsedProspectId) : undefined;
+        const prospectKey = String(record.prospectId ?? "").trim();
+        const existingProspect = prospectKey ? getProspectById(prospectKey) : undefined;
         if (existingProspect) {
             return existingProspect;
         }
 
         return {
             ...WORK_DIRECT_PROSPECT,
-            id: Number.isFinite(parsedProspectId) && parsedProspectId !== 0 ? parsedProspectId : WORK_DIRECT_PROSPECT.id,
+            id: prospectKey || WORK_DIRECT_PROSPECT.id,
             nombre: record.prospectName || WORK_DIRECT_PROSPECT.nombre,
             correo: record.email,
             movil: record.cellphone,

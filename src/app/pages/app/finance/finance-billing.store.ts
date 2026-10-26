@@ -189,15 +189,18 @@ function buildInvoiceSeriesPrefix(dateValue?: string): string {
 }
 
 function padSequenceNumber(sequenceNumber: number): string {
-    return String(Math.max(1, Math.trunc(sequenceNumber || 1))).padStart(3, "0");
+    // 6 dígitos para coincidir con el consecutivo oficial del backend
+    // (lpad(sequence_number, 6, '0')): el número visible es el mismo con el
+    // que la sincronización de pagos resuelve la factura.
+    return String(Math.max(1, Math.trunc(sequenceNumber || 1))).padStart(6, "0");
 }
 
 function buildCrmClientId(clientId: number): string {
     return `crm-client-${clientId}`;
 }
 
-function buildProspectClientId(prospectId: number): string {
-    return `crm-prospect-${prospectId}`;
+function buildProspectClientId(prospectId: string | number): string {
+    return `crm-prospect-${String(prospectId)}`;
 }
 
 function buildBillingClientFromCrmClient(client: CrmClientRecord): BillingClient {

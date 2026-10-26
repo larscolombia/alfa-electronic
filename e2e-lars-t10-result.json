@@ -1,0 +1,51 @@
+{
+  "test": "e2e-lars-t10-reparacion-cierre",
+  "role": "Tecnico",
+  "baseUrl": "https://alfa.software.net.co",
+  "identifier": "PW-T10-1792908378889",
+  "shortCode": "CO-T10-1792908378889",
+  "projectId": "t10-proj-1792908378889",
+  "checks": {
+    "adminLoggedIn": true,
+    "tecnicoUserReady": true,
+    "casoCreatedInReparacion": true,
+    "tecnicoLoggedIn": true,
+    "boardVisibleAsTecnico": true,
+    "casoVisibleInBoard": true,
+    "projectsBoardRouteDead": true,
+    "detailOpened": true,
+    "memoReparacionEntered": true,
+    "horasRegistradas": true,
+    "pruebaDeCierreSeleccionada": true,
+    "cambiosPersistidos": true,
+    "cierreValidated": true,
+    "casoEnListoEntregaApi": true,
+    "casoEnColumnaListoEntrega": true,
+    "reportButtonVisibleAfterCierre": true,
+    "reporteGeneradoConMemo": true,
+    "reporteIncluyeHorasYPrueba": true,
+    "reporteImprimible": true
+  },
+  "screenshots": {
+    "00-projects-board-shell-vacio": "/var/www/alfa.software.net.co/playwright-artifacts/e2e-lars-t10-00-projects-board-shell-vacio-1792908384961.png",
+    "01-board-tecnico": "/var/www/alfa.software.net.co/playwright-artifacts/e2e-lars-t10-01-board-tecnico-1792908387289.png",
+    "02-ficha-caso-abierta": "/var/www/alfa.software.net.co/playwright-artifacts/e2e-lars-t10-02-ficha-caso-abierta-1792908390422.png",
+    "03-campos-reparacion-llenos": "/var/www/alfa.software.net.co/playwright-artifacts/e2e-lars-t10-03-campos-reparacion-llenos-1792908391631.png",
+    "04-cambios-guardados": "/var/www/alfa.software.net.co/playwright-artifacts/e2e-lars-t10-04-cambios-guardados-1792908395436.png",
+    "05-cierre-validado": "/var/www/alfa.software.net.co/playwright-artifacts/e2e-lars-t10-05-cierre-validado-1792908429757.png",
+    "06-reporte-intervencion": "/var/www/alfa.software.net.co/playwright-artifacts/e2e-lars-t10-06-reporte-intervencion-1792908432939.png",
+    "07-board-listo-entrega": "/var/www/alfa.software.net.co/playwright-artifacts/e2e-lars-t10-07-board-listo-entrega-1792908438930.png"
+  },
+  "observations": [
+    "Usuario Tecnico ya existia (409): pw-tecnico-t10@alfa.local",
+    "Ruta muerta confirmada: /app/projects-board responde 200 pero renderiza shell vacio sin tablero (columnas=0, kanban-board=0); la ruta operativa del Tecnico es /app/work-projects.",
+    "INFO: al guardar, el punto de sesion del tablero sumo tiempo al contador (actualHours API=4 vs digitado=3.5). Comportamiento 'Pointage de sesion'.",
+    "INFO: el mensaje 'Cierre validado' no fue detectable en pantalla, pero el caso paso a listo-entrega (verificado por API)."
+  ],
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 403 ()"
+  ],
+  "pageErrors": [],
+  "error": "",
+  "summary": "ALL_CHECKS_PASSED"
+}

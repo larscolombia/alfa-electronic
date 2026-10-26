@@ -248,3 +248,45 @@ func TestReceiveValidationErrors(t *testing.T) {
 		t.Fatalf("recibo sobre cerrada = %v, queria errInvalidStatus", err)
 	}
 }
+
+// Recibir contra una referencia que NO existe en el catalogo debe rechazarse
+// (no marcar received_quantity ni tocar stock): antes respondía 200 con un
+// mensaje engañoso y el material se perdia en silencio (hallazgo t08).
+func TestReceiveRejectsGhostReference(t *testing.T) {
+	db := openInventoryTestDB(t)
+	svc := NewService(db)
+
+	const companyID = "qa-recibos-ghost"
+	t.Cleanup(func() { cleanupReceiveTest(t, db, companyID) })
+
+	ghostRef := "REC-QA-FANTASMA"
+	lineID := "linea-q-ghost"
+	// La linea de compra apunta a una referencia que jamás se creó en catalogo.
+	seedPurchaseLine(t, db, companyID, lineID, ghostRef, 3, "pendiente")
+
+	res, err := svc.ReceivePurchaseLine(companyID, lineID, 2, "qa")
+	if !errors.Is(err, errReferenceNotFound) {
+		t.Fatalf("recibo con referencia fantasma = %v, queria errReferenceNotFound", err)
+	}
+	if res.OK {
+		t.Error("OK=true para un recibo rechazado")
+	}
+	if !strings.Contains(res.Message, ghostRef) {
+		t.Errorf("el mensaje no nombra la referencia: %q", res.Message)
+	}
+
+	if got := receivedFor(t, db, companyID, lineID); got != 0 {
+		t.Errorf("received_quantity = %d, queria 0 (no se marca lo no recibido)", got)
+	}
+
+	var stockCount, movements int
+	if err := db.QueryRow(`SELECT COUNT(*) FROM inventory_references WHERE company_id=$1 AND reference=$2`, companyID, ghostRef).Scan(&stockCount); err != nil {
+		t.Fatalf("contar referencias: %v", err)
+	}
+	if err := db.QueryRow(`SELECT COUNT(*) FROM inventory_movements WHERE company_id=$1 AND reference=$2`, companyID, ghostRef).Scan(&movements); err != nil {
+		t.Fatalf("contar movimientos: %v", err)
+	}
+	if stockCount != 0 || movements != 0 {
+		t.Errorf("referencia fantasma tocada: stockCount=%d movements=%d, queria 0/0", stockCount, movements)
+	}
+}

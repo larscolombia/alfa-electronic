@@ -48,9 +48,10 @@ type Remission struct {
 	// para mostrar "retenida por pago" con el estado real de la factura en vez
 	// de recalcular la regla en el navegador, que es justo lo que permitía
 	// despachar sin pagar.
-	InvoiceStatus     string `json:"invoiceStatus"`
-	InvoiceReference  string `json:"invoiceReference"`
-	CreditClient      bool   `json:"creditClient"`
+	InvoiceStatus        string `json:"invoiceStatus"`
+	InvoiceReference     string `json:"invoiceReference"`
+	InvoiceReferenceCode string `json:"invoiceReferenceCode"`
+	CreditClient         bool   `json:"creditClient"`
 	PaymentGate       bool   `json:"paymentGate"`
 	PaymentHeld       bool   `json:"paymentHeld"`
 	PaymentHeldReason string `json:"paymentHeldReason"`

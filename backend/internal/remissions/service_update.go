@@ -116,12 +116,12 @@ func (s *Service) UpdateDeliveryStatus(companyID, id string, req DeliveryStatusR
 		}
 		current.InvoiceStatus = invoiceStatus
 		if linked && current.InvoiceID != nil {
-			var reference sql.NullString
+			var reference string
 			if refErr := tx.QueryRow(
-				`SELECT reference_code FROM finance_invoices WHERE company_id = $1 AND id = $2`,
+				`SELECT `+invoiceDisplayCodeSQL+` FROM finance_invoices fi WHERE company_id = $1 AND id = $2`,
 				companyID, *current.InvoiceID,
-			).Scan(&reference); refErr == nil && reference.Valid {
-				current.InvoiceReference = reference.String
+			).Scan(&reference); refErr == nil {
+				current.InvoiceReference = reference
 			}
 		}
 

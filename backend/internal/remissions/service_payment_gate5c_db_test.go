@@ -414,3 +414,44 @@ func TestRequiresPaymentGateByModality(t *testing.T) {
 		})
 	}
 }
+
+// El modal "Vincular factura" (t15) se alimenta de InvoiceOptions. Las facturas
+// nacidas de cotización guardan client_id = 'crm-client-' || crm_clients.id
+// (service_billing_from_quote.go), mientras que las creadas a mano pueden
+// guardar el id puro. El JOIN debe aceptar AMBAS formas: con sólo el match
+// exacto el selector quedaba vacío para las facturas de cotización.
+func TestInvoiceOptionsMatchPrefixedAndPlainClientID(t *testing.T) {
+	db := openTestDB(t)
+	s := NewService(db)
+	companyID := testCompany(t, db, "gate-options-prefix")
+
+	clientID := seedClient(t, db, companyID, "900123456", "Cliente Demo", false)
+
+	// Factura "nacida de cotización": client_id con prefijo (caso del bug t15).
+	fromQuote := seedInvoice(t, db, companyID, "crm-client-"+clientID, InvoiceStatusPaid, 1190000)
+	// Factura manual: client_id puro (debe seguir funcionando).
+	manual := seedInvoice(t, db, companyID, clientID, "Pendiente", 300000)
+
+	r := createRemission(t, s, companyID, contraEntrega)
+
+	options, err := s.InvoiceOptions(companyID, r.ID)
+	if err != nil {
+		t.Fatalf("InvoiceOptions: %v", err)
+	}
+	if len(options) != 2 {
+		t.Fatalf("InvoiceOptions devolvio %d facturas, esperaba 2 (prefijo + id puro)", len(options))
+	}
+
+	byID := make(map[int64]InvoiceOption, len(options))
+	for _, o := range options {
+		byID[o.ID] = o
+	}
+	if got, ok := byID[fromQuote]; !ok {
+		t.Error("la factura de cotización (client_id con prefijo) NO aparece en el selector")
+	} else if !got.Paid {
+		t.Error("paid=false para la factura de cotización en estado Pagado")
+	}
+	if _, ok := byID[manual]; !ok {
+		t.Error("la factura manual (client_id puro) dejó de aparecer en el selector")
+	}
+}

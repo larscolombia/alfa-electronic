@@ -1,0 +1,1152 @@
+Reunion de Trabajo Alfa (Cotizaciones y Facturas) - March 05
+ VIEW RECORDING - 108 mins (No highlights) 
+@0:00 - Martin Hendrik (ALFA ELECTRONIC)
+Hola, señor Jorge, buenos días, ¿qué tal todo? ¿Cómo estás, Vale?
+
+@0:04 - Jorge Carrera (blasterinformation.com)
+¿Cómo te sientes? Bien, sí, señor. Ajá, veo ahí con el tapabocas y digo, ¿qué pasó?
+
+@0:11 - Martin Hendrik (ALFA ELECTRONIC)
+Ah, sí, es que me estaba cubriendo de un olor de un químico.
+
+@0:16 - Jorge Carrera (blasterinformation.com)
+No, cuidado, no, Sabe que primero, primero, primero tú y tranquila, que a ti esto sale con calma.
+
+@0:24 - Martin Hendrik (ALFA ELECTRONIC)
+Bueno, perfecto. ¿Cómo le fue con la parte técnica? Mira, espectacular, espectacular.
+
+@0:35 - Jorge Carrera (blasterinformation.com)
+Tenemos que arrancar de lo que ya hay. A partir de lo que ya hay, mejorar lo que existe. Los procesos son bien completos.
+Claro, hay ciertos detalles que perfectamente Giovanni me comentó. Detalles de control. todas maneras, Giovanni también me dijo de que iba a hablar con los muchachos internamente.
+En el equipo, para ver qué otras cosas, considera el equipo que se puede mejorar. Sí, correcto. Porque el que usa el sistema día a día, generalmente, termina sabiendo más que hasta el mismo que lo desarrolló.
+Sí, claro.
+
+@1:15 - Martin Hendrik (ALFA ELECTRONIC)
+Uno nota cosas que podrían ser más prácticas, que podrían de pronto simplificar el día a día, bueno, etc.
+
+@1:25 - Jorge Carrera (blasterinformation.com)
+Esos son los que usan el sistema día a día y son los que básicamente te dan la información como debe ser, ¿no?
+Entonces, bueno, perfecto. Entonces, estamos pendientes también para cuando Giovanni lo considere, me entregue esa información.
+
+@1:40 - Martin Hendrik (ALFA ELECTRONIC)
+Listo, perfecto.
+
+@1:42 - Jorge Carrera (blasterinformation.com)
+Yo tenía anotado, no sé qué dices tú, Maribel, hablar sobre las cotizaciones y facturación.
+
+@1:51 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, es el proceso que sigue después de la parte técnica. Perfecto.
+
+@1:58 - Jorge Carrera (blasterinformation.com)
+Sí. Perfecto. Perfecto. Perfecto. Perfecto. Perfecto. Bueno, vamos entonces, porque sé que hay una parte en la cual el técnico revisa, hace el diagnóstico, después de ese diagnóstico, se le desaparece, en cierta manera, su portafolio, esperando la aprobación del cliente.
+Una vez que el cliente aprueba, allí creo que va a la fase de cotización, ¿verdad?
+
+@2:32 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, correcto. Entonces, bueno, en esa parte de técnica que él le tuvo que haber explicado, entonces los equipos llegan, se asignan a un técnico, ellos lo diagnostican, cierran el diagnóstico y se les desaparece ese equipo del sistema.
+¿Cierto? Sí. Bueno, cierran un diagnóstico cuando lo finalizan, esos equipos. Equipos diagnosticados me salen a mí en el panel de control del que yo le he hablado antes.
+
+@3:07 - Jorge Carrera (blasterinformation.com)
+En esta columna que se llama cotizaciones por hacer.
+
+@3:12 - Martin Hendrik (ALFA ELECTRONIC)
+Acá me salen todos los equipos que ellos ya diagnosticaron y me salen por empresas. Entonces, los de tal empresa y la lista de cuáles equipos están diagnosticados.
+Entonces, por ejemplo, yo estaba haciendo cotizaciones hoy, ¿sí? Entonces, vamos a mirar. Por ejemplo, a ver, con la empresa, miremos.
+Vamos a mirar esta que solo tiene un equipo, ¿sí? Este es un equipo que fue diagnosticado, entonces... Ah, no, miento.
+No, este no. Este es un caso... ¿Quién es este cliente?
+
+@4:21 - Jorge Carrera (blasterinformation.com)
+Vamos a mirar este cliente.
+
+@4:29 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces, este equipo a mí me sale acá como un resumen del equipo, cuando yo me paro encima del código, cuando llegó, en qué estantería está guardado, qué equipo es, la marca, la falla, unos daticos del cliente, y cuál técnico lo diagnosticó, en este caso Andrés Ramírez.
+Y yo, acá me salen abajo unos botoncitos, bueno. Siempre me sale la opción del chat donde cada persona escribe lo que quiera sobre ese equipo.
+Y unos botoncitos que este que dice de mí es para hacer la cotización. Esta expedición es cuando yo voy a despachar el equipo.
+Por ahora no voy a usar ese botón. Este botón que se llama retornar al técnico. Si yo por alguna razón siento que al diagnóstico le falta más información, yo se lo devuelvo al técnico con este botón.
+Retorno al técnico. Y vuelve y le sale a ellos en su panel de equipos para diagnosticar. Ok, ok. Si por alguna razón, ah, no quiero cotizar este todavía, le digo salir con este botón.
+Y voy y cotizo otro. Ah, bueno, ah, bueno. Pero entonces, bueno, si lo voy a cotizar, le doy clic al botón que dice cotizar.
+Gracias. En este caso es este. Listo. Este es el pantallazo donde yo cotizo los equipos. Entonces, arriba dice cotización en francés.
+Entonces, salen los datos del cliente, el nombre del ingeniero que lo mandó. Bueno, acá hay una serie de botones que la mayoría no los usamos.
+
+@6:45 - Jorge Carrera (blasterinformation.com)
+Ok.
+
+@6:47 - Martin Hendrik (ALFA ELECTRONIC)
+Acá sale el código del equipo que voy a cotizar. Los daticos del equipo, que son los datos de cuando se registra.
+Marca tipo serie y si tiene remisión o no. Acá al lado hay una bolita azul. En esa bolita yo le doy clic y yo encuentro un memo donde el técnico me puso como sus conclusiones del diagnóstico, ¿sí?
+¿Qué pruebas hizo? ¿Qué panel se encontró? ¿Qué componentes ve dañados? ¿Una estimación en repuestos? Bueno, con esa información yo hago un estimado de la reparación, ¿sí?
+
+@7:34 - Jorge Carrera (blasterinformation.com)
+Ese es el reporte que él llena donde hace un resumen o un detalle del diagnóstico.
+
+@7:39 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, señor, yo lo veo con ese botoncito azul, como de información.
+
+@7:45 - Jorge Carrera (blasterinformation.com)
+Perfecto. ¿Sí?
+
+@7:53 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces, acá al lado izquierdo hay una carpetica, en esa carpetica. Yo puedo dar clic y veo los adjuntos que se cargan cuando el equipo se ingresa al sistema.
+No sé si recuerdo esa parte. Sí, claro, sí. Entonces yo siempre reviso las fotos para saber qué es lo que estoy cotizando, qué equipo es.
+Yo abro las fotos. Si quiero más información, pues ahí está el reporte del cliente que él llenó cuando nos mandó el equipo a diagnóstico.
+Yo puedo abrir toda la documentación de ese equipo que estoy cotizando. Ok, el formulario que él llenó. Entonces acá se me muestra cuál equipo es el que el cliente mandó con las fotos.
+Es un componente pequeño.
+
+@9:03 - Jorge Carrera (blasterinformation.com)
+Ok. Listo, yo siempre lo miro.
+
+@9:07 - Martin Hendrik (ALFA ELECTRONIC)
+Si yo tengo dudas de algo, yo busco información técnica en Internet. Digamos que yo qué busco en Internet. Yo me reseño de los precios de venta del nuevo.
+A veces logro conseguir precios en Internet de empresas en otros países que reparan también. Información que para mí sirve de referencia para dar mi precio.
+
+@9:37 - Jorge Carrera (blasterinformation.com)
+Espectacular. Listo. Acá le digo cerrar.
+
+@9:51 - Martin Hendrik (ALFA ELECTRONIC)
+Acá se me abrió el formato que el cliente llenó cuando nos trajo el equipo. Yo puedo ver nuevamente cuál es la...
+Falla que él reportó. Recuerda que la recomendación es que cueste más de dos millones para que sea viable y repararlo.
+El marco que sí vale más de dos millones. Entonces, yo miro todas esas informaciones cuando voy a cotizar. Listo.
+Cuando yo ya reviso el memo del técnico, su diagnóstico, cuando yo reviso las fotos, yo procedo en estos espacios a poner unos comentarios.
+Nosotros ya tenemos cargados en el sistema una serie de comentarios y según el equipo, yo puedo usar cualquiera. Es decir, no siempre tengo que escribir, sino que ya yo solo selecciono lo que está guardado.
+Gracias. Gracias. Gracias. Gracias. Ok.
+
+@11:01 - Jorge Carrera (blasterinformation.com)
+Pueden escribir o seleccionar un texto ya preestablecido. Exacto.
+
+@11:06 - Martin Hendrik (ALFA ELECTRONIC)
+Algo que me gustaría en el sistema nuevo agregar es que de manera fácil yo pueda, por ejemplo, que acá al final de la lista hay una opción que se diga agregar y que yo pueda cada vez agregar más descripciones.
+Estas están previamente cargadas desde hace muchos años porque como el software es de una empresa francesa, eso estaba en francés.
+Lo que hicimos fue como coger cada concepto y traducirlo al español, pero no tengo manera de agregar más descripciones que a mí a veces me gustaría.
+Entonces hay casos donde las que tengo ahí no se me acomodan tanto y sí me toca escribir.
+
+@11:54 - Jorge Carrera (blasterinformation.com)
+O tampoco te permiten modificar. No.
+
+@11:58 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, yo las puedo. Yo las. Selecciono, se agregan, y estando aquí yo las complemento, las modifico. Pero sí me gustaría que tuviera una opción arriba, al principio o al final de la lista, agregar más descripciones, y que yo pueda agregar cada vez más cositas.
+
+@12:22 - Jorge Carrera (blasterinformation.com)
+Perfecto, perfecto. Solo por ti, eso solamente lo podrías hacer tú.
+
+@12:29 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, solo la persona que cotiza. Por ejemplo, acá en seis meses de garantía, yo siempre escribo manualmente que la garantía es solo ser hardware, para explicarle al cliente que no hay garantía por software.
+Pero sería chévere que yo lo pudiera editar, sí, y que ya me quedara guardado este comentario con el paréntesis que dice...
+Tien meses de garantía, hardware. Claro, claro.
+
+@13:03 - Jorge Carrera (blasterinformation.com)
+Pero no, siempre lo hago manual.
+
+@13:05 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces, es una cosa muy simple, pero me quita tiempo cada vez escribirlo otra vez. Claro, si tienes que hacer 20 cotizaciones, imagínate.
+Pues, sí, a todas. Claro.
+
+@13:19 - Jorge Carrera (blasterinformation.com)
+Exacto.
+
+@13:21 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces, yo lleno en estos reglones lo que le voy a hacer al equipo, ¿sí? Acá dice plazo. Entonces, yo, según el proveedor con el que vamos a hacer la importación de repuestos, yo ya conozco los plazos de importación.
+Entonces, yo doy un tiempo. Pongo 14. Y él agrega de manera automática un comentario que dice días hábiles desde la recepción de su pedido.
+¿Sí? Eso también quiere que se pueda modificar.
+
+@14:00 - Jorge Carrera (blasterinformation.com)
+La frase, no.
+
+@14:03 - Martin Hendrik (ALFA ELECTRONIC)
+No, eso sí, no hay problema. Lo único que hago acá es agregar cuántos días. Toma la reparación. Se podría de pronto, es como modificar.
+Sí, modificar la frase, porque ahí dice 14 días desde la recepción de su pedido. Podría ser que la nueva frase dijera, un ejemplo, 14 días para importación, para importación de repuestos desde la recepción de su pedido.
+¿Qué? Cuando es una reparación o que me diera la opción de escribir 14 días hábiles para importar su equipo, porque a veces son ventas, no son ventas de equipos y no repuestos, lo que yo voy a importar.
+Que te permita por lo menos escribir, ¿no? Sí, modificar de pronto esa frasecita. Sí, perfecto. Si yo quiero que la cotización tenga alguna explicación adicional a estos comentarios que ya puse aquí, yo lo oprimo acá en comentario y acá doy una explicación más global del proceso de reparación.
+Y eso me sale después en la cotización. Perfecto. Sí, entonces, no sé, se hicieron pruebas con tal voltaje, el equipo reaccionó de tal manera, se concluyó esto.
+Acá es como para dar algo más detallado. Se puede poner en negrita, en cursiva, en subrayado, le puedo cambiar el color de la letra, etc.
+El tiempo de la cotización es parametrizable.
+
+@16:00 - Jorge Carrera (blasterinformation.com)
+¿Qué tiempo que me va a durar esa cotización? Porque los precios pueden variar.
+
+@16:06 - Martin Hendrik (ALFA ELECTRONIC)
+Ah, eso no me sale acá en este panel, el sistema ya lo tiene como configurado en otro lugar.
+
+@16:13 - Jorge Carrera (blasterinformation.com)
+Ah, ok, perfecto.
+
+@16:14 - Martin Hendrik (ALFA ELECTRONIC)
+Ahorita que salga el PDF, se lo voy a mostrar, todas las cotizaciones dicen que tienen vigencia creo que un mes.
+Entonces, muchas veces cuando ha pasado un tiempo importante y que el cliente no ha confirmado la reparación, ellos nos piden actualizarla y efectivamente lo que hacemos es validar si los precios pueden seguir siendo los mismos o si se deben aumentar.
+
+@16:41 - Jorge Carrera (blasterinformation.com)
+¿Y ese tiempo de un mes es parametrizable? ¿Tú vas a poner dos meses, tres meses, quince días?
+
+@16:46 - Martin Hendrik (ALFA ELECTRONIC)
+Sería ideal que se pudiera, que saliera aquí y yo lo pudiera modificar, porque en este momento no me sale aquí.
+Ya sale de manera automática ese comentario en todas las cotizaciones.
+
+@17:01 - Jorge Carrera (blasterinformation.com)
+Perfecto. Listo.
+
+@17:08 - Martin Hendrik (ALFA ELECTRONIC)
+Acá a la derecha yo pongo un precio. Entonces, un ejemplo. Yo voy a decir que esta reparación me vale 100 mil.
+¿Sí? Ok. En Francia manejan unas opciones que yo no manejo, que es, por ejemplo, nosotros despachamos gratis. En Francia sí ponen acá el peso, y según el peso del artículo, vota cuánto se le va a cobrar al cliente por el despacho, y eso sale en la cotización.
+
+@17:41 - Jorge Carrera (blasterinformation.com)
+Nosotros no lo manejamos. No lo manejan. No.
+
+@17:46 - Martin Hendrik (ALFA ELECTRONIC)
+Acá bajito hay otro cuadrito, como usted lo puede ver. Esta opción se llama tiempo. Este dos son dos horas.
+Este sistema sistema tiene. Ya parametrizado, ¿cuánto vale una hora técnica?
+
+@18:05 - Jorge Carrera (blasterinformation.com)
+Entonces, estos son datos de Francia.
+
+@18:09 - Martin Hendrik (ALFA ELECTRONIC)
+Yo normalmente no los uso, pero sí me parece chévere. ¿Por qué? Cuando el técnico hace un diagnóstico, Giovanni le tuvo que haber comentado que ellos ponen una estimación de cuántas horas se van a gastar en la reparación.
+Sí, exacto. ¿Cuántas horas me salen a mí acá? Entonces, muchas veces yo también miro eso para calcular el valor de la reparación.
+Si ellos me ponen acá que van a gastarse ocho horas y la hora es, no sé, a 30 mil pesos, pues entonces acá me sale el total de lo que vale ese tiempo, solo el tiempo del técnico reparando.
+¿Tú quieres tener la opción de modificar ese?
+
+@19:00 - Jorge Carrera (blasterinformation.com)
+¿Cuál que coloca el técnico?
+
+@19:05 - Martin Hendrik (ALFA ELECTRONIC)
+Con el tiempo que pone el técnico ya es suficiente. Ok, perfecto. Eso me da una guía, pero sí me sirve que salga ese tiempo que ellos pusieron y que yo pueda parametrizar qué vale cada hora, que él me, en el sistema, de tal manera que acá él me calcule cuánto valen esas dos horas, esas ocho horas que él me puso.
+Perfecto. Acá hay otro campo que dice materia prima. Generalmente, cuando ellos hacen el nóstico, acá en el memo me ponen un estimado de repuestos.
+Digamos, acá me pusieron 30 dólares. Sería chévere que así como lo escriben en el memo estén obligados a ponérmelo en una serie.
+¿Verdad?
+
+@20:00 - Jorge Carrera (blasterinformation.com)
+Como esta que diga treinta. ¿Ves?
+
+@20:06 - Martin Hendrik (ALFA ELECTRONIC)
+Y él me hace una conversión en dólares, de dólares a pesos, ¿cuántos son esos treinta dólares? Y me han estimado de materia PULS.
+O sea, que sería ideal que los componentes que hacen falta para la reparación, ellos coloquen el precio. El diagnóstico, así como en el memo pueden escribir cualquier cosa, haya como una celdita que diga, estimado en componentes, tanto.
+
+@20:38 - Jorge Carrera (blasterinformation.com)
+Perfecto. Tantos dólares.
+
+@20:41 - Martin Hendrik (ALFA ELECTRONIC)
+Estimado en tiempo, tantas horas. ¿Sí? Perfecto. Porque mire que él me calcula acá cuánto valen esas dos horas y cuánto valen los treinta dólares en respuesta.
+Y yo ya le dije que voy a cobrar cien mil, él de una vez me está diciendo... Está teniendo una pérdida del menos 61.23%.
+O sea, yo no puedo cobrar 100.000 por esta reparación. ¿Sí? Claro. Si yo le pongo 300.000, él ya me dice, ah, bueno, voy a tener un margen del 46%.
+
+@21:19 - Jorge Carrera (blasterinformation.com)
+¿Sí?
+
+@21:27 - Martin Hendrik (ALFA ELECTRONIC)
+Eso es, pues, muy chévere, sí. muy práctico, muy útil. Claro, porque ahí ya tú más o tienes una guía.
+
+@21:35 - Jorge Carrera (blasterinformation.com)
+Claro, sí. De cuánto va a ser tu porcentaje de ganancia, cuánto va a ser tus costos, cuánto me vale el equipo, según lo que indica el técnico.
+Y eso te da una idea global de cuánto vas a cobrar por esa reparación. Sí.
+
+@21:53 - Martin Hendrik (ALFA ELECTRONIC)
+Perfecto. Entonces, este software además tiene... Este botoncito que se llama referencial. ¿Lo ves acá en rojito?
+
+@22:04 - Jorge Carrera (blasterinformation.com)
+Sí.
+
+@22:05 - Martin Hendrik (ALFA ELECTRONIC)
+Yo lo oprimo y él me saca esta ventana. Cuando es un equipo que yo ya he reparado antes, él me muestra acá como una estadística.
+En este caso, este equipo tal vez nunca lo hemos reparado, este tipo de equipos. Entonces, no sale nada. Pero si fuese un equipo que yo ya he reparado antes, él me muestra un histórico de cuáles códigos he reparado, a qué precios y si ha sido una venta o una reparación.
+Y eso también me sirve a mí para guiarme y dar el precio de esta reparación. ¿Eso será como un historial?
+
+@22:53 - Jorge Carrera (blasterinformation.com)
+Exacto, sí, señor.
+
+@22:55 - Martin Hendrik (ALFA ELECTRONIC)
+¿Historial del equipo?
+
+@22:56 - Jorge Carrera (blasterinformation.com)
+Sí. Gracias.
+
+@23:01 - Martin Hendrik (ALFA ELECTRONIC)
+Él tiene más opciones, digamos, en muestra acá estadísticas de cuántos equipos en cada año de esa referencia coticé, los precios, incluso yo puedo ver fotos de equipos anteriores, documentación de ese tipo de equipo.
+Pero como le digo, este equipo tal vez nunca hemos reparado este tipo de equipos y no me sale nada, sale vacío.
+Pero sí sería chévere que cuando yo oprime ese botón referencial o histórico, no sé qué nombre le podríamos poner, que efectivamente me salga una ventanita y me muestre un historial en caso de que ya hayamos reparado ese tipo de equipos y me muestre por qué precios.
+
+@23:53 - Jorge Carrera (blasterinformation.com)
+Sí, todo y la facturación, la orden de compra, los comentarios. se pueda, sí, no, no habría problema.
+
+@24:00 - Martin Hendrik (ALFA ELECTRONIC)
+Todo el equipo. Ok. Oye, mira, se puede buscar algo acá. Bueno, este equipo no tiene histórico, pero a eso sirve este botoncito.
+Cuando yo ya he llenado la descripción de cuál es el proceso que yo voy a hacer, cuántos días, el valor de mi reparación, y en dado caso una descripción más amplia del proceso, yo le digo transferir.
+Acá está este botoncito. ¿Sí? Si yo le digo transferir. Bueno, este sistema cada vez que yo hago un proceso el mes saco unas alertas.
+¿Estás seguro de continuar, por ejemplo? Está bien, porque le pudiste dar un clic, no, no. Eso es lo que él me está preguntando ahí.
+Atención, ¿estás seguro de continuar? Entonces, ¿sí o no?
+
+@25:37 - Jorge Carrera (blasterinformation.com)
+Si yo le digo no, me devuelvo.
+
+@25:41 - Martin Hendrik (ALFA ELECTRONIC)
+Y puedo corregir lo que me había quedado mal.
+
+@25:44 - Jorge Carrera (blasterinformation.com)
+O si yo le digo sí. Él está haciendo la cotización. le dice que sí, ¿ya le genera la cotización?
+
+@25:51 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, sí, señor. Fíjate que tengo una duda allí, en un paso.
+
+@25:58 - Jorge Carrera (blasterinformation.com)
+Ajá. Porque fíjate. Yo ayer conversando con Giovanni, hay equipos que pueden tener hasta cuatro o cinco repuestos, tres repuestos, y evidentemente, y no se tienen en el stock, hay que mandarlos a comprar.
+Sí. Esos tres, cuatro equipos que se necesitan comprar.
+
+@26:25 - Martin Hendrik (ALFA ELECTRONIC)
+¿Dónde salen?
+
+@26:26 - Jorge Carrera (blasterinformation.com)
+¿Dónde salen? ¿Aquí?
+
+@26:29 - Martin Hendrik (ALFA ELECTRONIC)
+Salen acá arriba, acá donde tengo el... En este caso, no me crearon ninguna línea. Muchas veces en el diagnóstico, ellos de una vez crean esas líneas de repuestos que necesitan.
+¿Sí? En este caso, no me crearon ninguna línea, no pasa nada, pero si las agregaron, salen aquí. Voy a buscar otro código que sí tenga líneas para mostrarles.
+En este momento.
+
+@26:59 - Jorge Carrera (blasterinformation.com)
+Ajá.
+
+@27:03 - Martin Hendrik (ALFA ELECTRONIC)
+¿Aló?
+
+@27:35 - Jorge Carrera (blasterinformation.com)
+Gracias. Sí, claro. Pero lo que quita tiempo, sabe que es el hueco. Ay, Tremendo. Ay, este me sirve, este ejemplo.
+
+@28:20 - Martin Hendrik (ALFA ELECTRONIC)
+Siento, es el que está. Entonces, por ejemplo, si yo voy a cotizar este equipo de la empresa en Colombia.
+Yo le digo cotizar. Y yo cotizar. Yo me paro en la bolita de información, que es donde yo le decía que puedo ver lo que ellos hicieron en el diagnóstico.
+
+@29:06 - Jorge Carrera (blasterinformation.com)
+Sí.
+
+@29:08 - Martin Hendrik (ALFA ELECTRONIC)
+Y se me amplía acá esta ventana. Entonces, mira, sale el memo con los comentarios. Acá arribita sale la lista de esos componentes.
+¿Sí ve que acá sí está lleno? Ahí sí está, sí.
+
+@29:27 - Jorge Carrera (blasterinformation.com)
+Dice, necesito para esta reparación una pantalla TAC.
+
+@29:30 - Martin Hendrik (ALFA ELECTRONIC)
+TAC, un protector film, dos cositas. El tipo, la referencia, cuántos necesitan. Uno, el precio, el proveedor. Y mira que él ya me puso el precio del proveedor.
+56, 25 y 18, 98. Dos ítems.
+
+@29:50 - Jorge Carrera (blasterinformation.com)
+Sí.
+
+@29:51 - Martin Hendrik (ALFA ELECTRONIC)
+Sí. sistema me suma esos dos valores y me los pone acá en materia primaria. Ahí están, perfecto.
+
+@30:00 - Jorge Carrera (blasterinformation.com)
+Ajá.
+
+@30:01 - Martin Hendrik (ALFA ELECTRONIC)
+Sino que cuando ellos no me hacen lista, no, me salen ceros esa materia prima. Entonces podría ser dos opciones.
+Que el sistema me muestre la suma de los repuestos que ya agregaron. Ajá. O que en caso de que ellos no me agreguen nada, me salga otra celtita que se llame materia prima estimada.
+Y esa sí la pongan de manera manual.
+
+@30:35 - Jorge Carrera (blasterinformation.com)
+Materia prima estimada. Sí.
+
+@30:38 - Martin Hendrik (ALFA ELECTRONIC)
+O sea, esa no va a ser la suma de los repuestos de acá, sino un estimado que ellos hacen.
+Claro, por ejemplo, el estaño. Porque se ha visto que ellos no siempre me agregan lista de repuestos de una vez en el diagnóstico.
+A veces quedan blancos.
+
+@31:00 - Jorge Carrera (blasterinformation.com)
+Ok, y esa estimada es de repente, ¿creen que podrían gastar? Esa estimada depende de qué.
+
+@31:15 - Martin Hendrik (ALFA ELECTRONIC)
+De lo que ellos calculan que van a necesitar en repuestos. Entonces, por ejemplo, ellos no me hacen lista de repuestos de una vez, pero creen que esa reparación, para esa reparación necesitan 300 dólares.
+
+@31:31 - Jorge Carrera (blasterinformation.com)
+Claro. Ellos normalmente lo escriben acá en el memo, mire.
+
+@31:36 - Martin Hendrik (ALFA ELECTRONIC)
+Ok.
+
+@31:38 - Jorge Carrera (blasterinformation.com)
+Pero debería ser un campo. Debería ser un campo, sí.
+
+@31:50 - Martin Hendrik (ALFA ELECTRONIC)
+Y en el diagnóstico ellos pusieron acá tiempo estimado para la reparación 3.5 horas. Entonces, esas son las 3.5 horas que viene...
+Y me calcula cuánto valen.
+
+@32:04 - Jorge Carrera (blasterinformation.com)
+Perfecto.
+
+@32:09 - Martin Hendrik (ALFA ELECTRONIC)
+Y según el valor que yo le dé de reparación, él me va a decir un estimado de porcentaje de, digamos, de utilidad, vamos a decirlo así.
+
+@32:24 - Jorge Carrera (blasterinformation.com)
+Ok.
+
+@32:26 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces es muy útil porque yo puedo ver que no, que no me esté equivocando en el precio que le voy a dar al cliente.
+Permítame, voy a conectar el computador. Ajá.
+
+@32:44 - Jorge Carrera (blasterinformation.com)
+Ok. Gracias. Gracias. ¿Qué pasaría, Maribel, si yo, una vez que yo cotizo, el cliente me acepta la cotización y durante la reparación del equipo me doy cuenta que me hace falta otro repuesto?
+Es decir, cotización le faltó, estuvo incompleta. ¿Le haces otra cotización?
+
+@33:30 - Martin Hendrik (ALFA ELECTRONIC)
+¿Le modifica la que ya tienes? Entonces, bueno, normalmente, normalmente nosotros procuramos mantener el precio hasta el final. Incluso si por alguna razón nos hemos equivocado en el valor que dimos.
+Porque yo prefiero recuperar más adelante lo que estoy perdiendo. Que de pronto pasar por un enojo con el cliente.
+No, ya no vale eso, que vale tanto. ¿Sí? Al cliente no le gusta eso. Sobre todo cuando son empresas, pues, grandes, que el proceso de compra de pronto es extenso o pesado y corregir una orden de compra o agregarle más gastos a ese servicio es complejo, requiere autorización que del jefe, que de no sé quién.
+Entonces, nosotros procuramos no, en lo posible, no modificamos precios. Tiene que ser algo muy, muy costoso para que yo diga, no, definitivamente me toca hablar con el cliente para que él asuma esa edición.
+¿Sí?
+
+@34:43 - Jorge Carrera (blasterinformation.com)
+Y en esos casos, ¿se le hace otra cotización o lo modifica este? Se hace otra, sí. Otra, otra contra el mismo equipo.
+Sí. ¿Anula gesta? Sí.
+
+@35:00 - Martin Hendrik (ALFA ELECTRONIC)
+Si esta ya tiene orden de compra, pues esta se factura por el valor que quedó con orden de compra y se hace una segunda con otra orden de compra.
+
+@35:09 - Jorge Carrera (blasterinformation.com)
+Por la diferencia. Sí. Sí, claro, no es el deber ser, pero como todos somos humanos, es posible que haya habido algo que se les pasa en el momento del diagnóstico y es demasiado costoso para asumirlo.
+
+@35:25 - Martin Hendrik (ALFA ELECTRONIC)
+Eso sí ya tiene orden de compra. Si todavía no tiene orden de compra, el sistema deja modificar precios.
+
+@35:32 - Jorge Carrera (blasterinformation.com)
+Ok.
+
+@35:33 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces, por ejemplo, voy a hacer este ejemplo, ¿sí? Sí. Esto es una pantalla táctil. Entonces dice que requiere cambio de táctil.
+Yo voy a poner el comentario que dice plazo táctil. Más membrana protectora.
+
+@36:01 - Jorge Carrera (blasterinformation.com)
+Ambas son de importación.
+
+@36:17 - Martin Hendrik (ALFA ELECTRONIC)
+Yo ya sé más o menos ese proveedor cuánto se demora, entonces yo le pongo acá los días, en este caso serían 15 días hábiles.
+
+@36:26 - Jorge Carrera (blasterinformation.com)
+Sí.
+
+@36:30 - Martin Hendrik (ALFA ELECTRONIC)
+Como yo le decía hace un ratito, yo miro las fotos de qué equipos estoy cotizando para darme una idea, etc.
+Según los costos de los repuestos, yo doy un precio. Entonces, por ejemplo, mire una cosa. Acá el sistema me dice que vale 75 dólares los repuestos.
+Pero ese, de todas maneras, Yo siempre reviso todo porque es ese no es el precio real. 75 dólares me vale el repuesto sin el valor que el proveedor cobra por despacho.
+Y ese proveedor cobra un despacho por artículo, no por pedido.
+
+@37:18 - Jorge Carrera (blasterinformation.com)
+O que hay unos costos adicionales allí. Claro.
+
+@37:21 - Martin Hendrik (ALFA ELECTRONIC)
+Yo ya los, más o menos los conozco. Yo no siempre me voy a basar de lo que dice acá.
+Entonces acá es 75 dólares, se le suman 69 más 48. O sea, el valor de comprar eso en realidad son 125 más 66.
+¿Sí? Ahí ya voy en 190 dólares. Entonces, a eso yo le tengo que sumar 30% de impuestos para que ingrese la mercancía a Colombia.
+eso tengo sumar muchas gracias. Gracias. Gracias. Gracias. Adicionalmente le tengo que sumar lo que me vale el envío de DHL, ¿sí?
+
+@38:12 - Jorge Carrera (blasterinformation.com)
+Interno, el envío interno. Ajá, claro.
+
+@38:17 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces, bueno, yo tengo ya más o menos identificados esos valores y según esos valores yo doy un precio. Sí.
+Listo. Si yo le vuelvo a dar clic a la bolita de información, a la del diagnóstico, todo esto se me quita.
+
+@38:44 - Jorge Carrera (blasterinformation.com)
+Se oculta y vuelven a salir los datos del cliente.
+
+@38:48 - Martin Hendrik (ALFA ELECTRONIC)
+Bueno, listo, ya tengo mi cotización. Entonces yo le digo transferir.
+
+@38:54 - Jorge Carrera (blasterinformation.com)
+¿Está segura de continuar?
+
+@38:56 - Martin Hendrik (ALFA ELECTRONIC)
+Le digo sí. Este sistema, como yo le he comentado en alguna oportunidad, da la opción de mandar directamente la cotización desde el sistema, pero nosotros no lo hacemos.
+Yo le digo, el DACA un visual, yo le digo cerrar, el PCR es el visual. Y lo que yo hago es irme aquí a la derecha, acá a la derecha hay como un panel, donde él me dice cuál fue la última cotización.
+Último número de cotización, la DCO 260321. Él me dice acá, si yo quiero buscar una cotización por cliente, por código de equipo, o si simplemente quiero buscar la última cotización que hice.
+Dile que él me En este, en esta lista desplegable me saca las últimas cotizaciones que yo hice y en qué fecha.
+La última que acabé de hacer es la veintiuno, entonces yo le digo muéstrame la veintiuno, le digo ok, y él vuelve y me la carga.
+
+@40:17 - Jorge Carrera (blasterinformation.com)
+Veo que el correlativo de la cotización, esto lo hace por año, mes, y el correlativo del mes. Sí, año, mes, año, mes y un consecutivo.
+Ok.
+
+@40:29 - Martin Hendrik (ALFA ELECTRONIC)
+Digamos, esta cotización es la número veintiuno de marzo del dos mil veintiséis.
+
+@40:34 - Jorge Carrera (blasterinformation.com)
+Perfecto. Está bueno.
+
+@40:36 - Martin Hendrik (ALFA ELECTRONIC)
+Mire que acá ya me sale la cotización que yo acabé de hacer. Sí. Yo le puedo decir acá, imprimir.
+ACTION ITEM: Email Martin session recording link - WATCH
+Una consulta, usted grava esto. ¿Cuántas sesiones para después revisarlas, cierto? Sí, totalmente.
+
+@41:03 - Jorge Carrera (blasterinformation.com)
+Perfecto. Sí, sí, sí. De ellos, si la quieres, te la puedo facilitar. Ah, bueno, sí, sería muy bueno. Sí, sí.
+Listo.
+
+@41:11 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces, mire, acá ya él me mostró la cotización en el formato que yo se la manda al cliente. Sale el logo de la empresa, sale quien la hizo, en este caso yo, los teléfonos de nosotros, el correo de la empresa, el número de la cotización, en qué fecha se hizo.
+Cada cliente tiene un código cliente, entonces acá sale ese código del cliente, dice cotización. Acá están los datos del cliente, el nombre, la personita que me envió ese equipo, la dirección, el correo electrónico de ellos, la ciudad, el código postal, el teléfono.
+Y acá viene entonces un cuadrito donde dice código del equipo. Gracias. Gracias. El código que le dimos al equipo del cliente.
+Descripción. Entonces, salen los datos de cuando uno registra el equipo en el sistema. Si es una pantalla, un módulo, un variador, lo que sea, la marca, tipo, la serie y el número de remisión.
+El número o el nombre de la remisión con la que el equipo llegó. En este caso, llegó con la remisión de ALFA.
+Me acasó la descripción que yo le puse ahorita, que hice la cotización. Y mire que acá me sale el plazo.
+Yo puse 15 y me agrega la frase, días hábiles desde la recepción de su acuerdo o de su pedido, su orden de compra.
+Y a la derecha sale el valor que yo voy a cobrar. Acá se especifica que este valor es sin IVA.
+Y en envío sale precio cero porque, como yo le decía, nosotros por los envíos los asumimos. No le cobramos al cliente por los envíos.
+Y en la parte inferior. ¿Cuándo salen estos comentarios que realmente, bueno, envío y embalaje? Eso no se usa, la verdad, yo nunca le presto atención a eso.
+En Francia sí lo usan. ¿Cuándo es el pago? Cuando creamos un cliente en el sistema, le decimos al sistema si es contra entrega, si es a 30 días o a 45 días, entonces acá me sale.
+¿Cuál es el plazo de pago de ese cliente? ¿Sabe qué me gustaría? Que este plazo de pago no salga aquí arriba, acá abajo, sino que salga arriba, donde están los datos de la empresa.
+Claro, claro, que sea visible. Más visible, porque es que está muy abajo. Y acá dice, esta oferta es válida por un mes.
+Acá dice, garantía de seis meses en piezas y mano de obra.
+
+@43:54 - Jorge Carrera (blasterinformation.com)
+Todo eso está para me interesar, ¿no? La garantía yo vi que por allí... Ok, lo, lo, lo, ¿Es algo que está parametrizable?
+
+@44:02 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, uno lo puede modificar.
+
+@44:05 - Jorge Carrera (blasterinformation.com)
+Ok.
+
+@44:07 - Martin Hendrik (ALFA ELECTRONIC)
+Y acá abajito salen los datos de nosotros, la razón social, el teléfono, la dirección, la ciudad, nuestro número de registro en cámara de comercio, el NIT, el capital social.
+El capital social es algo que se maneja mucho en Francia, pero la verdad, aquí no es necesario. Esto de poner acá, ¿cuál es mi capital social?
+Lo podríamos quitar. Claro, se puede olvidar ahí. Solo dejar el NIT, dirección, teléfono, ciudad y el nombre de la empresa.
+
+@44:42 - Jorge Carrera (blasterinformation.com)
+Perfecto. Listo.
+
+@44:43 - Martin Hendrik (ALFA ELECTRONIC)
+Acá el sistema me da opción de imprimirla, si yo necesito imprimir la cotización, enviarla por fax, pero nunca enviamos nada por fax.
+Entonces, enviarla por correo, pero yo nunca mando por correo desde acá.
+
+@44:58 - Jorge Carrera (blasterinformation.com)
+Ok. Yo lo que... que...
+
+@45:00 - Martin Hendrik (ALFA ELECTRONIC)
+Lo es. La descargas.
+
+@45:02 - Jorge Carrera (blasterinformation.com)
+La descargo.
+
+@45:03 - Martin Hendrik (ALFA ELECTRONIC)
+Él me deja descargarla en PDF, Word o en Excel. Siempre la descargo en PDF. Yo tengo una carpeta que se llama cotización, entonces yo la guardo.
+¿Yo qué hago? Yo le digo quitar. Cuando le digo quitar, yo me salgo de acá. Y vuelvo a la ventana donde yo hice la cotización.
+
+@45:28 - Jorge Carrera (blasterinformation.com)
+Tú misma eres la encargada de descargarla. Haces la cotización, descargas la cotización. Y la envío. Y la envías. Yo qué hago?
+Voy a mi correo electrónico. Ajá.
+
+@45:43 - Martin Hendrik (ALFA ELECTRONIC)
+Principal de ALFA. Y yo busco el correo donde se le confirmó al cliente el recibido de ese equipo. Gracias.
+Entonces, mire, acá el cliente nos dijo, la pantalla se envía con tal día a hacer mi entrega, acá se le confirmó el recibido de esa pantalla, él nos mandó el formato de falla diligenciado, se le confirmó el recibido del formato, y sobre este mismo correo, yo vengo y le mando mi cotización.
+Yo ya tengo una firma de diligencia, entonces yo pongo el número de la cotización, le voy a decir que lo que estoy cotizando es una pantalla, yo cargo la cotización, le cargo mis condiciones del servicio.
+Sabe que sí me gustaría, señor Jorge, cuando yo hago cotizaciones en el sistema, él me saca solo esto. ...
+... Yo en un PDF por separado cargo las condiciones del servicio o el alcance de mi servicio. Es otro PDF, miren.
+Ese PDF, ¿eso es fijo?
+
+@47:13 - Jorge Carrera (blasterinformation.com)
+Esa información es... Es fija.
+
+@47:16 - Martin Hendrik (ALFA ELECTRONIC)
+Yo la modifico si hay alguna cosa que cambia de un año a otro, pero a mí me gustaría que esto saliera como en este mismo PDF, como una segunda página, digamos.
+Ok, claro.
+
+@47:31 - Jorge Carrera (blasterinformation.com)
+Perfecto.
+
+@47:32 - Martin Hendrik (ALFA ELECTRONIC)
+Para que yo no tenga que cada vez estar adjuntando otro PDF, sino que sea parte de este mismo documento.
+ACTION ITEM: Upload 'Condiciones generales del servicio' PDF to Drive for Jorge - WATCH
+¿Cómo se llama ese documento?
+
+@47:42 - Jorge Carrera (blasterinformation.com)
+¿Contrato? Condiciones generales del servicio.
+
+@47:46 - Martin Hendrik (ALFA ELECTRONIC)
+Ok. Yo se lo puedo cargar ahí al Drive para que usted lo pueda... Perfecto. Unificar en el sistema de tal manera que cada vez que yo hago una cotización...
+¿No? Pues, este, esa página salga de una vez. Claro, claro.
+
+@48:08 - Jorge Carrera (blasterinformation.com)
+¿Sí?
+
+@48:09 - Martin Hendrik (ALFA ELECTRONIC)
+Listo. Entonces, yo cargo mi cotización en el correo, le digo enviar y la mando al cliente, la cotización. ¿Sí?
+Le quería mostrar algo. Si por alguna razón yo hice la cotización y yo veo que algo me quedó mal, en esta fase en la que el cliente todavía no me ha mandado orden de compra, el sistema me deja, yo le digo acá, modificar, yo me devuelvo, ¿sí ves?
+Y yo me digo modificar y él me deja modificar los comentarios.
+
+@48:49 - Jorge Carrera (blasterinformation.com)
+Solo los comentarios.
+
+@48:52 - Martin Hendrik (ALFA ELECTRONIC)
+Yo te quiero proponer una idea.
+
+@48:55 - Jorge Carrera (blasterinformation.com)
+Ajá.
+
+@48:56 - Martin Hendrik (ALFA ELECTRONIC)
+A ver qué te parece.
+
+@48:58 - Jorge Carrera (blasterinformation.com)
+Fíjate, en el caso de nosotros, Nosotros no, nuestras cotizaciones generalmente, a menos que sean muy puntuales, pero mandamos PDFs, generalmente nos mandamos PDFs, pero cuando son pequeñas, cotizaciones muy pequeñas, nosotros tenemos un sistema en el cual se arma la cotización y yo te mando un link, un link, un link.
+Para que tú la visualices y la descargues y hagas lo que tú quieras con esa cotización. Me ha sucedido, me ha sucedido, que mando el link y me acuerdo que me faltó algo, o me acuerdo de que hay algo que no estuvo bien.
+Como es un link que el cliente abre, yo puedo modificar dentro del sistema. Modifico rápidamente antes de que el cliente lo abra.
+Y así todo, el cliente lo puede abrir y me dice, mira Jorge, yo quiero que a esa cotización le agregues tal cosa.
+Yo no le vuelvo a mandar otro PDF, sino que yo me meto en el mismo link, agrego, y es lo que hace es abrir el mismo link y ahí está la modificación que me mandó a pedir.
+Pero no le mando, te lo voy a mostrar. Bueno, yo tengo una observación.
+
+@50:29 - Martin Hendrik (ALFA ELECTRONIC)
+Yo sí necesito enviarlas en PDF. Ok. Porque muchos clientes tienen bloqueados recepción de correos con links.
+
+@50:42 - Jorge Carrera (blasterinformation.com)
+Ah, por seguridad. Sí, señor.
+
+@50:45 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces, sí o sí los mando en PDF. Yo, ¿qué hacemos cuando un cliente nos pide, por ejemplo, si nos pide modificar algo?
+Si el cliente quiere más detalle de qué se le va a hacer en La reparación, yo le digo modificar y él me deja modificar el detalle.
+¿Qué me gustaría del nuevo software? Pues que me dejes modificar no solo el detalle, sino el plazo y el precio.
+Porque es que en este software, para poder modificar el tiempo y el precio, yo no le puedo dar solo modificar.
+Me toca darle este otro botoncito que se llama anular. ¡Wow!
+
+@51:31 - Jorge Carrera (blasterinformation.com)
+Tiene que anularla.
+
+@51:33 - Martin Hendrik (ALFA ELECTRONIC)
+Y ahí sí, mire que ahí sí él me habilitó otra vez la celda de los días y la celda del precio.
+Y cuando yo corrijo lo que quiera corregir, le digo transferir, pero él no me modifica la que yo hice, sino que me hace una nueva.
+
+@51:55 - Jorge Carrera (blasterinformation.com)
+Oye, o sea que para prácticamente estamos hablando que una vez que tú le hiciste... Este guardar, imprimir, eso es definitivo.
+Sí.
+
+@52:04 - Martin Hendrik (ALFA ELECTRONIC)
+Y mire que acá arribita me sale un comentario, anula y reemplaza la cotización tal.
+
+@52:12 - Jorge Carrera (blasterinformation.com)
+Claro.
+
+@52:14 - Martin Hendrik (ALFA ELECTRONIC)
+¿A qué me sirve esta manera como lo hace este software? Pues que yo puedo tener la trazabilidad de que yo digo, ah, yo ya anulé una cotización, voy a ir a mirar en el sistema esa cotización anterior que tenía de diferente.
+Entonces yo me doy cuenta que resulta que le hice un descuento al cliente. Ahí tenemos dos opciones, Maribel.
+
+@52:41 - Jorge Carrera (blasterinformation.com)
+Podemos hacer, tal como hace este sistema, que para modificar o eliminar algo, tienes que anular y volverla a crear.
+O, perfectamente, se te permite modificar sobre la que está, pero eso queda en un lock. En un lock de registro.
+Un log de movimientos de esa cotización. ¿Qué se le ha hecho esa cotización? Ah, sí, sería muy bueno.
+
+@53:05 - Martin Hendrik (ALFA ELECTRONIC)
+Así yo sé, aunque no la anules, sino que sea solo modificarla, que yo puedo saber qué fue lo que se modificó.
+
+@53:11 - Jorge Carrera (blasterinformation.com)
+Sí, yo llego, modifico y aparece un log que te dice, claro, no te va a decir exactamente qué le hiciste.
+Claro, si eliminas algo, yo lo puedo detectar, pero si agregas una palabra, yo no lo sé, yo no sé qué agregaste, sé qué modificaste, y es lo que te puedo decir, sí, modificaste, pero no te puedo decir qué fue lo que agregaste.
+Ok.
+
+@53:46 - Martin Hendrik (ALFA ELECTRONIC)
+Si lo hacemos via log. Sería muy interesante hacerlo así, sí. Porque a veces, muchas veces, ni siquiera es para cambiar el valor ni el plazo, sino que...
+Es una cotización vieja, y el cliente me dice, Maribel, para poderla confirmar, necesito que tenga la fecha de hoy.
+Entonces me toca hacer una nueva.
+
+@54:11 - Jorge Carrera (blasterinformation.com)
+Pero entonces modifica los registros de ellos, del cliente, se ve afectado, porque ellos de repente están procesando con ese número.
+Me llega una cotización número 15, y yo la registro en mi sistema como número 15, pero hay algo que no me gusta de esa cotización, que es la fecha.
+Si tú me la modificas por un número 16, entonces yo en mi sistema, tengo que quitar la 15, modificar la 15, eliminar la 15, para poder meter la 16.
+para mí es un retrabajo, yo como cliente. En cambio, si tú me modificas la misma 16, donde cambia la fecha, para mí, yo sigo feliz, yo sigo feliz, y tú me mandas el PDF nuevamente.
+
+@54:57 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, es el mismo PDF, pero... Gracias. Gracias. Gracias. Con fecha de hoy. Con fecha de hoy.
+
+@55:02 - Jorge Carrera (blasterinformation.com)
+Pero claro, tiene que haber un registro de que a esa cotización algo se le hizo.
+
+@55:08 - Martin Hendrik (ALFA ELECTRONIC)
+Ya había sido generada en la fecha tal y que se volvió a descargar, pero con la fecha tal.
+
+@55:17 - Jorge Carrera (blasterinformation.com)
+Sí, tendría, fíjate lo que se tendría que hacer, se tendría que hacer. Te permito modificarlo, el mismo registro. Entonces, guardo, guardo el hecho de que lo modificaste, pero me tendrías que indicar, me tendrías que indicar qué le hiciste, aparte.
+Sí. O escribirme ahí, se le modificó la fecha, se le, se le, se le, se, se disminuyó la cantidad de componentes, o sea, de manera tal que cuando tú la consultes, el historial, tú, mira, sí, sí la modifiqué y le hice fue esto.
+Sí.
+
+@55:58 - Martin Hendrik (ALFA ELECTRONIC)
+Podría ser. No sé, que acá en el sistema, así como sale esta tablita acá, con las horas, el tiempo, no sé, salga otro cuadrito que diga histórico de modificación.
+Ok. Y que diga, por ejemplo, plazo modificado, sí, antiguo 15, nuevo 14 días, fecha antigua, tal, la nueva, tal, algo, no sé, se me ocurre algo así, no sé si eso se puede, o si hay otra manera más fácil, más.
+
+@56:37 - Jorge Carrera (blasterinformation.com)
+No, yo te puedo detectar automáticamente la fecha, automático, yo veo que la fecha es distinta, automáticamente te digo, mira, esa fecha está distinta, y la guardo en el log, porque eso es un campo.
+A mí se me dificulta un poco en el texto, claro, yo puedo comparar textos, puedo comparar si el texto de la, de la modificación.
+La es igualito al nuevo texto. Y te puedo decir, inclusive, si lo puedo hacer, lo podría hacer, compararlo y decirte, mira, ese texto nuevo tiene tales modificaciones.
+Y te lo guardo en el blog. Si lo puedo hacer, en una comparación de texto. Sí, sí, sí. Y se puede hacer, Maribel.
+Ok. Entonces, lo haríamos así. Quitamos este proceso de estar anulando para hacer una nueva y permitimos que se modifique la misma cotización, pero debe haber un log de modificaciones.
+
+@57:42 - Martin Hendrik (ALFA ELECTRONIC)
+Ok. aparezca allí.
+
+@57:43 - Jorge Carrera (blasterinformation.com)
+O al momento que tú entras, te va aparecer un botón de que hubo modificaciones sobre eso. Ya, bueno, déjame ver qué fue que pasó.
+Le das click, ahí ves. Ajá.
+
+@57:53 - Martin Hendrik (ALFA ELECTRONIC)
+Listo. Bueno, una vez que yo genero la cotización. Bueno, pues, vamos Por ejemplo, yo le puedo dar a este botón que dice blanco, acá blanco, y se me pone en blanco todo el menú de cotizaciones.
+Yo puedo manualmente escribir el código que quiero cotizar, ¿sí ven? Que acá él me empieza a mostrar los códigos que tengo listos para cotizar.
+Sí. O sea, desde aquí yo puedo llamar el código que yo quiero cotizar. Y él me va a cargar todos, datos de la empresa y datos del equipo.
+Y yo cotizo.
+
+@58:32 - Jorge Carrera (blasterinformation.com)
+Claro, no tienes que estar escribiendo en un papel que vas a cotizar. Simplemente en este mismo campito te aparece lo que tienes pendiente por cotizar y ahí lo seleccionas.
+Sí.
+
+@58:47 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces yo puedo llamar el código ahí cotizarlo o yo me devuelvo a mi menú, a mi panel de control, donde me sale todo lo que tengo que cotizar.
+
+@58:58 - Jorge Carrera (blasterinformation.com)
+Gracias.
+
+@59:00 - Martin Hendrik (ALFA ELECTRONIC)
+Y vuelvo y me paro en el código de un equipo y le digo cotizar y cotizo. Pum, cotizar y vuelvo e inicio a cotizar.
+Entonces, bueno, ya hice la cotización, ¿cierto?
+
+@59:16 - Jorge Carrera (blasterinformation.com)
+¿Y la comercial, Maribel, cómo se entera? Yo la pongo en copia del correo.
+
+@59:21 - Martin Hendrik (ALFA ELECTRONIC)
+¿Pero dentro del sistema? Dentro del sistema ella tiene que hacer una extracción y mirar qué cosas yo he cotizado.
+Pero sí sería chévere que ella pueda tener como una opción en el sistema que diga, muéstrame el día de hoy qué cosas, qué equipos se cotizaron de Bucaramanga.
+Y que le saque la listica de qué cliente y qué equipo se le cotizó hoy. O en el mes, no sé.
+Como para que ya todos los días vea a qué le puede hacerse.
+
+@1:00:02 - Jorge Carrera (blasterinformation.com)
+Claro, lo vea cotizado en un rango de fechas y así mismo si consulto un equipo en específico, de un cliente en específico, me diga si ya está cotizado o no.
+
+@1:00:17 - Martin Hendrik (ALFA ELECTRONIC)
+De momento la única forma es porque ella lo tiene muy presente y se da cuenta que yo no lo he cotizado.
+Ah, ok.
+
+@1:00:26 - Jorge Carrera (blasterinformation.com)
+Me están tocando la puerta. Un momentico, ese es mi hijo que llega a esta hora de la escuela y lo tengo que abrir.
+Tranquilo.
+
+@1:00:34 - Martin Hendrik (ALFA ELECTRONIC)
+Es que yo la había calentado para echarse a la cuares. Ese me olvidó. Ya le eché agua, es que dices.
+¿Para los que la dejo o la dejo? Sí, la puedes botar. Ah, ok. Mili, puedes hacer un phone? Ahí va, me puedes regalar otra botellita, va, y ahí era negra.
+Bueno. Gracias. Gracias. De la otra puértica, ahí abajito. Listo, Maribel, disculpa. No, tranquilo. Entonces, bueno, actualmente, ella lo tiene muy presente y está mirando todos los días a ver si ya lo cotice o no.
+O simplemente es porque ella ve que yo ya mandé el correo, como en este caso. Yo mandé acá esta cotización, hoy a las 10 y 57.
+Y yo pongo en copia el correo de comercial. Perdón, solo tengo arriba arándano. Ahí al lado, ¿qué es eso?
+¿Pero al lado? Sí, o abajo hay un boxeo, en donde está la Uyama. Cualquiera de los dos meses. Sí, está en la Uyama.
+Este, bueno. Entonces, por ejemplo, acá yo mandé este correo con esta cotización y yo puse en copia a la comercial.
+Entonces, la cotización le llega al cliente y a la comercial. Así ella ya sabe que esa cotización se mandó y debe llamar al cliente y decirle, hola, ingeniero, ¿cómo está?
+Le confirmo que ya mandamos la cotización, quería validar si ya recibió el correo, si ya le pudo revisar la cotización.
+Bueno, esa es como el, la manera más rápida. Después la manera como magenta es sacar una extracción del sistema de todo lo que está cotizado y filtrar por ciudades y ella filtra solo las ciudades a las que ella le hace seguimiento.
+Y ahí le salen todos los clientes de esas ciudades. Eso, eso ahorita no, el sistema no lo permite. Sí, eso se puede hacer, pero como le digo, pues es un poco.
+Por ejemplo, si la comercial quiere hacer una extracción hoy, le voy a mostrar cómo la hace. Acá en esta pantalla principal del software, hay una opción que se llama Extracciones.
+Yo le doy clic ahí. Está un poco lento además. Listo. Este software me permite a mí crear extracciones y dejarlas ya guardadas.
+Es decir, después ya solo le doy extraer. No tengo que volver a cargar datos. Ok.
+
+@1:03:57 - Jorge Carrera (blasterinformation.com)
+Entonces, por ejemplo.
+
+@1:04:05 - Martin Hendrik (ALFA ELECTRONIC)
+Yo le digo nueva extracción, ¿sí? Si es una extracción de información que yo nunca he hecho. Yo me paro acá donde dice Centro de Servicios, que somos nosotros, Bogotá.
+Le doy al más y él me dice de qué quiero la extracción. De compras, de acciones comerciales, de equipos, una extracción de clientes, una extracción de datos de los proveedores, una extracción de históricos de actividad por año.
+Una extracción por el stock. Si yo quiero saber cosas del stock, acá yo puedo encontrar. Yo me paro en stock y yo puedo sacar una extracción de todos los condensadores que tengo en inventario.
+O todas las resistencias. ¿Y cómo se hace? Entonces, por ejemplo, yo voy a hacer una extracción de clientes. Entonces, cuando yo le doy a clientes, él me muestra todos los datos que yo tengo creado en el sistema relacionados con clientes.
+Entonces, nombre, ciudad, departamento, teléfono, contactos, todo lo que tenga que ver con el cliente, él me lo bota acá.
+¿Y yo qué hago? Entonces, yo digo, bueno, de los clientes yo quiero saber nombre del cliente y lo arrastro aquí a este ladito.
+Lo que voy a hacer es arrastrar los datos de lo que yo quiero que él me dé. Nombre del cliente.
+Yo quiero saber en qué ciudad está ese cliente. Entonces, arrastro el nombre, ciudad. ¡Vámonos! ¡Vámonos! ¡Vámonos! ¡Vámonos! Gracias. Quiero saber la condición de pago de ese cliente.
+¿Qué es eso? ¿Qué tipo de pago? De ese cliente yo quiero saber en qué país está, entonces, país. De ese cliente yo quiero saber...
+Esperenme, yo busco una cosita. Si yo quisiera saber de ese cliente datos de los ingenieros o de los contactos, entonces yo le digo de ese cliente, muéstrame el nombre de cuáles contactos tengo.
+Muéstrame el número del celular. Muéstrame el correo. Muéstrame el cargo. Digamos, esto es una extracción para yo conocer contactos que tengo registrados en el sistema de X cliente.
+Yo acá le puedo decir arriba extrae y él me saca una extracción de todos los clientes del sistema y los contactos de cada uno de esos clientes.
+O sea, eso es una cosa larguísima, que de hecho me toca dársela para cargarla al sistema nuevo, ¿cierto?
+
+@1:07:32 - Jorge Carrera (blasterinformation.com)
+Y él no te filtra, si por lo menos yo lo quiero filtrar por rango de fecha. Sí.
+
+@1:07:39 - Martin Hendrik (ALFA ELECTRONIC)
+Ahora, si yo no quiero la listota grande, sino que yo quiero saber los datos específicos de una empresa, para no sacar todo.
+Entonces, yo dejo estas columnas aquí abajo, porque eso es todo lo que yo quiero. Pero entonces yo vuelvo a coger el campo nombre cliente.
+¿Dónde está? Se me perdió. Nombre cliente y yo lo pongo pero aquí arriba, mire. Esta parte de arriba yo la uso para decirle de manera más específica qué datos quiero, que me muestre aquí abajo.
+Entonces yo le digo, quiero estos datos de un cliente en específico y él me dice, hay una serie de condiciones.
+Él me dice, un cliente que se llame exactamente cómo. Yo le voy a decir, vamos a ver si él me saca solo con una palabra.
+Ahora, es que no me acuerdo si toca poner el nombre completo. Le voy a decir. ¿Qué, Alfa?
+
+@1:09:01 - Jorge Carrera (blasterinformation.com)
+Ajá.
+
+@1:09:04 - Martin Hendrik (ALFA ELECTRONIC)
+No, pongámosle... No, Ternio.
+
+@1:09:12 - Jorge Carrera (blasterinformation.com)
+Le voy a decir extraer.
+
+@1:09:15 - Martin Hendrik (ALFA ELECTRONIC)
+A ver. No me lo saca porque ese cliente no se llama solo Ternio, se llama Ternio de Colombia, no sé qué.
+Entonces yo le puedo decir...
+
+@1:09:28 - Jorge Carrera (blasterinformation.com)
+Ah, parecido.
+
+@1:09:30 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, yo le puedo decir... Creo que es en la lista. Que contenga tal palabra. Exactamente. Creo que... Es que como está francés, bueno.
+Creo que es esa la opción. Sí. Vamos a ver. Sí, sí o sí, ¿no? Creo que también. No, pero ya...
+
+@1:09:54 - Jorge Carrera (blasterinformation.com)
+Ya, ya, ya lo entiendo. Lo entiendes, listo, bueno. Perfectamente. Pero... Gracias.
+
+@1:10:00 - Martin Hendrik (ALFA ELECTRONIC)
+De misma manera yo puedo extraer cualquier cosa. Por primera vez. Cuando yo ya tengo creada la extracción, con qué datos la quiero, yo le puedo decir salvaguardar aquí.
+Y un ejemplo, yo le pongo un nombre a esa extracción. Yo le digo extracción clientes. Y le digo OK.
+Entonces, mire, después yo me voy a esta lista desplegable y ya me quedó guardada esa extracción. Yo ya no tengo que volverme a poner a arrastrar columnas, sino que yo le puedo decir acá blanco.
+Nueva extracción. Mire que él me quitó todos los datos. Pero yo le di, yo quiero buscar la que yo hice ahorita.
+Extracción clientes prueba. Y él ya me cargó los datos de las columnas que yo quiero, ¿sí?
+
+@1:11:09 - Jorge Carrera (blasterinformation.com)
+Se me ocurre, fíjate, no, porque yo he manejado este tipo de herramientas.
+
+@1:11:15 - Martin Hendrik (ALFA ELECTRONIC)
+Ajá, entonces, por ejemplo, yo ya tengo varias extracciones previamente guardadas.
+
+@1:11:20 - Jorge Carrera (blasterinformation.com)
+Por ejemplo, tendrás la de cotizaciones. Yo quisiera saber qué cotizaciones se han facturado.
+
+@1:11:28 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces, ¿qué cotizaciones se han facturado? Listo, entonces, yo le digo. No sé si ya la tienes hecha. Voy a ver si es esta, porque no recuerdo.
+Lista de códigos Colombia. Entonces, yo le voy a decir.
+
+@1:11:47 - Jorge Carrera (blasterinformation.com)
+Quiero, sí, le voy a decir que quiero esta.
+
+@1:11:56 - Martin Hendrik (ALFA ELECTRONIC)
+Creo que ya le distrae. Gracias. Bueno, creo que cargué todo el histórico y ahora se me va a poner súper lento.
+No, pero espectacular esta herramienta.
+
+@1:12:19 - Jorge Carrera (blasterinformation.com)
+No la había contado, ahí está, mírala. Mírala.
+
+@1:12:23 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces él me dice, nombre de la empresa, departamento, ciudad, cotización, código del equipo. Posición, valor, familia, marca, tipo. Él me muestra todo.
+Bueno, de aquí para allá. Serie. Él me muestra qué técnico hizo la reparación. Me muestra los datos del ingeniero que me mandó ese equipo, el cargo, el teléfono.
+Acá él me sacó 22,549 líneas, o sea, todo. Y lo hizo. Rápido, rápido. Sí, mira, desde el año 2014, que es desde cuando nosotros estamos funcionando.
+Sí. 2014, septiembre. Sí, y él me muestra todo, absolutamente todo, pero si yo quiero en este momento saber lo que yo facturé en febrero, entonces mire que acá arriba ya hay unos campos, como yo le decía, se me permite reducir el filtro.
+Entonces, esta condición es la posición del código. Entonces, él me dice, ¿de qué año? Le voy a decir que del año 2026.
+Y le voy a decir que me muestre todos los facturados en febrero, o sea, febrero y... 20, que 20 significa facturado.
+Normalmente me debería mostrar solo lo que se facturó en febrero del 2026. Vamos a ver si funciona. Sí, mire.
+Entonces, yo acá puedo, si yo miro. Ver el histórico de los equipos que se facturaron en, no, esto tiene un error, pero, hace un momentico.
+La condición me quedó mal porque yo le puse inferior o igual y tiene que ser igual a 220. Extracción.
+Ya.
+
+@1:14:52 - Jorge Carrera (blasterinformation.com)
+Entonces, listo.
+
+@1:14:53 - Martin Hendrik (ALFA ELECTRONIC)
+Él me está mostrando la lista de todos los equipos que yo facturé en febrero de este año. Y él me saca lo mismo, de qué empresa, de qué ciudad, con qué número de cotización, el código, qué valor tenía, si era una tarjeta, una pantalla, un variador, marca, tipo, serie, qué técnico hizo la reparación, el número de orden de compra del cliente, la fecha de la orden de compra del cliente, los días que me demoraba reparando.
+Acá sale la fecha en que yo saqué del sistema ese equipo, en febrero del dos mil veintiséis, miren, sale el número de factura que se hizo en el sistema, y sale qué ingeniero me mandó ese equipo.
+
+@1:15:45 - Jorge Carrera (blasterinformation.com)
+Fíjate, Maribel, siento que no hay un módulo de reportes dentro del sistema, asumo que no hay un módulo, porque a partir de aquí tú puedes hacer los reportes que tú desees, y que has guardado.
+
+@1:16:00 - Martin Hendrik (ALFA ELECTRONIC)
+Lo que pasa es que actualmente este sistema, ¿cómo decir? Permite parametrizar a quién yo dejo sacar reportes del sistema.
+Por ejemplo, el área técnica no tiene acceso a todas estas extracciones. Ellos solamente tienen acceso a extracciones de inventario de repuestos.
+Y creo que pueden ver historial de equipos, si ya se repara un equipo del mismo tipo que lo están mirando, mirarlo en qué año y qué se le hizo.
+Pero la idea es que el área técnica no tenga acceso. Entonces, pueden en el diagnóstico dar un estimado de cuánto cuestan los repuestos.
+Y decirla, y dar la lista de con qué proveedor comprar cada cosita. Pero, ellos no... ¿Tienen acceso a por cuánto yo vendo esa reparación?
+
+@1:17:04 - Jorge Carrera (blasterinformation.com)
+Claro, yo podría, Maribel, yo soy un técnico, somos un grupo de técnicos, necesitamos un reporte en específico que vamos a sacar todos los días, constantemente.
+Tú podrías crearme, a partir de la extracción, ese reporte, me lo guardas, y de alguna manera asignarme el permiso.
+Para que yo pueda visualizar y ejecutar ese reporte, yo como técnico. O no entrar aquí, simplemente me diste acceso a que yo pueda ejecutar ese reporte que tú me creaste.
+
+@1:17:46 - Martin Hendrik (ALFA ELECTRONIC)
+No. Actualmente, ¿cómo se hace? Yo voy al panel principal de Edith Software. Y acá donde dice menú principal, aquí en la parte izquierda superior.
+Yo digo parametraje, si no me equivoco es acá en la opción de empleados, de hecho yo lo puse en esos documentos que yo le cargué a Excel, como que permisos quiero que, quiero un panel de control con los datos de cada empleado donde yo puedo decir a que tienen acceso y a que no.
+
+@1:18:25 - Jorge Carrera (blasterinformation.com)
+Ok.
+
+@1:18:28 - Martin Hendrik (ALFA ELECTRONIC)
+Por ejemplo acá, yo me voy a parar en M. Márquez, que soy yo, aquí estoy. M. Márquez, mi nombre, mi apellido.
+Acá dice si yo puedo editar o solo visualizar o hacer qué. Sí, Betty, yo tengo los tres chulitos. Sí.
+Hay personas que no, por ejemplo, esta persona solo tiene chulito en visualizar cosas, ciertas cosas. En mi caso yo tengo acceso a editar, visualizar y hacer de todo en el sistema.
+Y acá en la parte derecha sale como una ficha del empleado, entonces salen nombres, apellido, el usuario con el que yo me logueo en el sistema, mi cargo.
+Acá hay una carga horaria, pero esta carga horaria es la de Francia. Y acá sale yo qué cosas puedo hacer, entonces yo le digo modificar.
+Y yo le doy chulito a todo lo que yo quiero hacer, a lo que quiero tener acceso.
+
+@1:19:45 - Jorge Carrera (blasterinformation.com)
+Y lo valíe.
+
+@1:19:48 - Martin Hendrik (ALFA ELECTRONIC)
+Por ejemplo, una persona del área técnica. Por ejemplo, vamos a ver dónde está. Por ejemplo, mire este técnico, Juan Manuel Mendes.
+Entonces, él puede editar, visualizar, y esta opción no me acuerdo qué es, pero solamente estas opciones, validar horas, validar esta de repuestos, o sea, ¿sí crees que él no tiene chulito en todas?
+¿Como yo?
+
+@1:20:22 - Jorge Carrera (blasterinformation.com)
+Sí, exacto.
+
+@1:20:26 - Martin Hendrik (ALFA ELECTRONIC)
+Diferente a Giovanni, vamos a buscar a Giovanni, él tiene más chulitos, que es otro técnico, ¿sí lo ve? Sí, ahí está.
+Ajá, entonces, es desde este panel que yo decido, en este sistema, a qué cosas tiene acceso cada persona.
+
+@1:20:45 - Jorge Carrera (blasterinformation.com)
+Perfecto. Puedes editar, pero ¿qué puedes editar? Se lo dice aquí a la parte derecha. Ajá, sí señor.
+
+@1:20:53 - Martin Hendrik (ALFA ELECTRONIC)
+Digamos, acá hay una cosa que se llama extracciones, solo dice extracciones. Giovanni, en este caso, puede hacer... Extracciones de todo, pero él no las sabe usar, todas.
+Él hace como las cositas básicas, pero él no saca todas las extracciones que yo hago, aunque tiene acceso. Sería bueno que, por ejemplo, si el nuevo software permitiera especificar más, ¿qué tipo de extracción?
+Extracción de stock, extracción de equipos en reparación, extracción de equipos cotizados, no sé, algo así. Se me ocurre. Porque acá está Global, él puede hacer extracciones de todo.
+
+@1:21:44 - Jorge Carrera (blasterinformation.com)
+No, claro, yo, o nosotros generalmente, ¿qué hacemos? Las pantallas tienen muchas funciones, y no todas las funciones las tienen todas las pantallas.
+Entonces, yo, a cada pantalla en particular, yo te daría. ¿Qué permiso? Una pantalla que solamente sea de consulta, no tengo por qué darte permiso de modificar porque es una pantalla solo consulta.
+Una pantalla en la cual yo vea que haces modificaciones, eliminaciones y consultas, yo te puedo dar opción de consultar y modificar, más no te doy opción de eliminar.
+O yo puedo jugar con todo eso dependiendo de la pantalla. Ok. Por ejemplo, yo te puedo dar opciones a los reportes que he creado, los reportes que tú perfectamente me mostraste en la exportación.
+Yo te puedo dar opción a que lo visualices. Es decir, yo me meto en mi menú de reportes. Si tú me das opción de visualizarlo, yo lo voy a poder ver y lo voy a poder ejecutar.
+Ok.
+
+@1:22:55 - Martin Hendrik (ALFA ELECTRONIC)
+Yo como usuario técnico.
+
+@1:22:57 - Jorge Carrera (blasterinformation.com)
+Es decir, todos esos reportes. que tú has creado en exportación, tú me das permiso, yo lo voy a poder ver en el módulo de reportes.
+Porque veo que es muy dinámico y muy poderoso. Y claro, no debería quedarse solo allí, sino debería quedarse de manera tal que pueda ser usado por todas aquellas personas que tú determines.
+Pues yo por lo menos, yo como técnico, yo Giovanni, yo quiero un reporte específico. Y no hace falta meterme en el módulo de exportaciones.
+Me meto en mi módulo de reportes y ahí lo tengo. Que tú previamente me lo creaste y me autorizaste a usarlo.
+¿Podríamos hacer algo así? Sí.
+
+@1:23:50 - Martin Hendrik (ALFA ELECTRONIC)
+Sí. Entonces sí, o sea, en este módulo de extracciones yo puedo sacar del sistema todo lo que usted me pide.
+Bien. Básicamente. Yo puedo sacar el histórico de lo que me ha facturado cada cliente por año. Pero entonces sale así en Excel.
+No es que me arroje una tablita. Si yo quiero más dinámico, más gráficos, ya tengo que ir directamente a la ficha cliente, por ejemplo.
+Voy a mirar Bavaria. Sí, miremos Bavaria. creo que con eso se puede mirar. Acá en Bavaria, yo ya le he hablado de las pestañas que salen de cada cliente.
+No.
+
+@1:24:52 - Jorge Carrera (blasterinformation.com)
+El maestro de clientes.
+
+@1:24:55 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, bueno. Hay una pestaña que se llama... ¡Gracias! Identidad, que es donde uno pone como, ahí sale en qué fecha yo creé ese cliente en el sistema.
+Ahí sale en qué fecha me llegó el primer equipo. Y hay una serie de campos que se pueden modificar y volver a editar.
+Por ejemplo, esto se llama observaciones y lo usamos para escribir hasta qué fecha nos reciben facturas, qué requisitos. Como, como anotaciones de ese cliente.
+Eso se hace en esta pestaña identidad. La segunda pestaña es direcciones. Ahí nos sale la dirección del cliente, el correo de facturación electrónica, ciudad, departamento.
+Acá a la derecha él da opción de manejar varias direcciones. La principal, si hay una dirección de facturación, si hay otra dirección de envío de factura.
+Si hay otra dirección para envíos de equipos, y abajo me salen, me salen todos los contactos que yo tengo de ese cliente, nombre, teléfono, cargo, correo.
+Yo puedo agregar más contactos, modificar los que ya hay. Eso me sale acá en direcciones. La otra pestaña es acciones comerciales, que esa sí yo le hablé la vez pasada.
+Sí, sí, sí. Esta de parque material, no la llenamos. Básicamente en Francia la usan para que cuando un comercial visita a un cliente, ella pueda registrar acá, con esta opción de agregar.
+¿Qué marcas, qué tipos de equipos tienen? Ese cliente allá en planta.
+
+@1:27:03 - Jorge Carrera (blasterinformation.com)
+¿Eso lo usamos ustedes? No, actualmente no lo usamos.
+
+@1:27:07 - Martin Hendrik (ALFA ELECTRONIC)
+Ok. Todos los clientes no dan esa información, entonces la verdad no lo usamos.
+
+@1:27:12 - Jorge Carrera (blasterinformation.com)
+Sí, claro. Muy delicado.
+
+@1:27:15 - Martin Hendrik (ALFA ELECTRONIC)
+Esta pestaña que se llama Situación, me muestra unos gráficos que la verdad nunca los uso, nunca los miro.
+
+@1:27:50 - Jorge Carrera (blasterinformation.com)
+Sí, claro. Sí, exacto.
+
+@1:27:55 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces, ¿cuánto cotizé y cuánto reparado? ¿Cuántos equipos? Entonces acá me dice tres equipos, dos equipos, él me da el precio, el precio promedio de los equipos y lo va llenando mes a mes.
+Y acá abajito me sale el, mire que me sale el histórico por año, ¿sí lo ve? 2026, 2025, 2024.
+Sí. Y me va mostrando arriba los gráficos. Esto sí es muy chévere.
+
+@1:28:34 - Jorge Carrera (blasterinformation.com)
+Y yo quiero eso por rango de fecha, pero no de solo cliente, sino todos los clientes de un mes.
+
+@1:28:45 - Martin Hendrik (ALFA ELECTRONIC)
+Ya no sé, acá en este momento yo lo veo por clientes, directamente va a variar.
+
+@1:28:52 - Jorge Carrera (blasterinformation.com)
+Ok.
+
+@1:28:52 - Martin Hendrik (ALFA ELECTRONIC)
+Si yo lo quiero todo lo de febrero del 2026, ya me toca por el módulo de extracciones que... Se lo estaba mostrando ahorita.
+
+@1:29:03 - Jorge Carrera (blasterinformation.com)
+Sí, porque usted diría, sería espectacular.
+
+@1:29:06 - Martin Hendrik (ALFA ELECTRONIC)
+Y no me salen gráficos como acá, que sí sería bonito que me saliera gráficos.
+
+@1:29:11 - Jorge Carrera (blasterinformation.com)
+Claro, que yo pudiera tener esto mismo, que es espectacular, pero por todos los clientes en un rango de fecha.
+
+@1:29:19 - Martin Hendrik (ALFA ELECTRONIC)
+Por ejemplo, sería chévere que yo pudiera sacar, en cualquier día del mes, yo pudiera entrar a una opción en el sistema que me muestre.
+A fecha de hoy, ¿cuántos equipos me han llegado en Madrid? ¿Cuántos he cotizado? ¿Qué me valen todas esas cotizaciones?
+Digamos, si son 100 millones, 20 son de Bucaramanga, 10 son de Bogotá, como por ciudades. Porque esto me permite darme una idea de la gestión comercial.
+sea, yo digo a la comercial de Bogotá, le toca activarse porque hay muy poquito en la zona. Y sería chévere que saliera así como en esta pantalla, con gráfico.
+Muy espectacular. salga, por ejemplo, en febrero ya se ha facturado tanto. Que me dé un informe del mes de febrero en tabla, así como acá lo hace, y en gráfico.
+Pero entonces no de un solo cliente, sino de lo del mes.
+
+@1:30:28 - Jorge Carrera (blasterinformation.com)
+Claro, claro, porque yo necesito saber cuánto tengo acumulado, porque puede suceder, la situación país a veces no está muy buena, y me cotizan mucho.
+Pero todavía no, entonces tengo todo retenido. Y es más, tienes el almacén full de equipos pendientes por facturar y que no te han validado la cotización.
+Ajá, sí. Yo estoy diciendo, wow, estoy full. O sea, vamos a hacer ese trabajo para cuando facturamos a esta gente, que me acepten las cotizaciones.
+Sí.
+
+@1:31:07 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, sí, no, espectacular. Sí, entonces mire que acá es muy chévere porque él sí lo hace por cliente, pero él no me lo muestra así de bonito si yo quiero por mes.
+Ok.
+
+@1:31:20 - Jorge Carrera (blasterinformation.com)
+Ahora fíjate, nos fuimos por otro lado, pero... Nos fuimos por otro lado, sí. Sí, pero espectacular.
+
+@1:31:26 - Martin Hendrik (ALFA ELECTRONIC)
+Porque, bueno, necesitaba mostrarle después de la cotización como el proceso de recepción del pedido y de la factura, ¿cierto?
+Entonces, bueno, vamos a retomar la cotización que yo hice ahorita, que fue del cliente Ternium. Ternium Manizales, si no me equivoco.
+Ternium Manizales, no equivoco. Acá está la cotización que yo hice ahorita, ¿sí la recuerda? Entonces, yo ya mandé el correo con la cotización.
+El próximo paso es que el cliente me conteste ese correo y me dice, le voy a mostrar.
+
+@1:32:37 - Jorge Carrera (blasterinformation.com)
+Por ejemplo, este.
+
+@1:32:39 - Martin Hendrik (ALFA ELECTRONIC)
+Vamos a imaginar que este correo es de ese cliente de término. Entonces, ellos responden el correo de la cotización y nos dicen, adjuntamos orden de compra tal, teniendo en cuenta tales cotizaciones, y me adjuntan la orden de compra.
+¿Yo qué hago? Yo guardo las órdenes de compra. ¿Compran una carpeta en mi computador? Por ejemplo. No sé si se puede cargar.
+Bueno, yo le voy a mostrar cómo lo hago y usted me dice si hay alguna idea. Sí. Yo tengo un drive actualmente con una carpeta que se llama órdenes de compra y yo ahí cargo.
+Espérenme. La orden de compra. Listo. Entonces, ¿yo qué hago? Yo voy y busco el cliente en el sistema. Este cliente se llama envases.
+¿Esto qué es?
+
+@1:33:46 - Jorge Carrera (blasterinformation.com)
+Ahí está donde compra.
+
+@1:33:47 - Martin Hendrik (ALFA ELECTRONIC)
+Yo ya la cargué, pero bueno. Entonces, ¿yo qué hago? Yo busco el cliente. Mire que cuando un equipo se cotiza pasa a posición 5.
+¿Sí ve que acá dice posición 5? No. Sí.
+
+@1:34:00 - Jorge Carrera (blasterinformation.com)
+Sí, ahí está, perfecto.
+
+@1:34:01 - Martin Hendrik (ALFA ELECTRONIC)
+Cuando están diagnosticados dice cero. Vale. Listo. Entonces yo entro al equipo con un clic.
+
+@1:34:22 - Jorge Carrera (blasterinformation.com)
+Listo.
+
+@1:34:25 - Martin Hendrik (ALFA ELECTRONIC)
+Equipo confirmado lo cambio manualmente a cero cinco. Fecha de orden de compra. Entonces yo voy a decir, yo la doy acá y me saca el calendario.
+Yo me puedo mover para adelante o para atrás cuando yo quiero. Yo le digo en qué fecha me llegó la orden de compra.
+Y pongo el número de orden de compra del cliente. Sí. Ok. Listo. Como el técnico ya me había dejado una lista de dos cosas que yo tengo que comprar para esa reparación, mire, acá me sale una, acá abajito, yo las valido con un chulito, chum y chum.
+Ya con darle ese chulito a esas dos líneas, estos puestos se me van a agregar a mí a un formulario donde yo cada semana saco la lista de todo lo que toca comprar.
+¿Vale?
+
+@1:35:28 - Jorge Carrera (blasterinformation.com)
+Sí.
+
+@1:35:30 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces, 05, la fecha en que me llegó la orden de compra, el número de orden de compra, cierre puestos por comprarlos, les doy chulito.
+Y acá donde dice Features, esta carpeta es la misma que se creó al principio cuando llegó el equipo, con las fotos.
+Y yo le digo agregar y yo voy a mi drive y busco la carpeta órdenes de compra. Y cargo la la orden orden
+¿Qué de compra que el cliente me mandó? ¿Sí? Le digo abrir. Vamos a decir qué es esta. Le digo, él me dice qué está cargando, porque él ya tiene acá unos nombres registrados.
+¿Una orden de compra? ¿Una remisión? ¿O otro? Entonces yo le digo una orden de compra. Y él me la va a cargar.
+¿Qué es de compra? Listo. Listo, mire, él me entonces acá abajito, él lleva el registro, el histórico de las cosas que se han cargado en esa carpeta, las fotos, las remisiones.
+Entonces, él dice que hoy 5 de marzo a las 12 y 46 se cargó la orden de compra. Él por defecto le da un consecutivo, pero yo puedo acá decirle con este lápiz editar y yo le digo orden de compra.
+Orden de compra. Y le digo, listo, validar, y él me guarda ese archivo con el nuevo nombre. Mire que acá, en esta última pestaña que se llama Logbook, él me muestra el histórico de lo que ha hecho cada persona.
+Con este código, con este equipo. ¿Quién lo...
+
+@1:38:02 - Jorge Carrera (blasterinformation.com)
+¿Quién lo registró? ¿Quién lo revisó?
+
+@1:38:07 - Martin Hendrik (ALFA ELECTRONIC)
+¿Quién ingresó la orden de compra? Yo, M. Márquez. ¿Quién validó la lista de repuestos? Yo, M. Márquez. O sea, él me tiene una lista de absolutamente cualquier cosita que se haga en el sistema sobre este código.
+Perfecto.
+
+@1:38:22 - Jorge Carrera (blasterinformation.com)
+¿Listo?
+
+@1:38:24 - Martin Hendrik (ALFA ELECTRONIC)
+Cuando ya cargué la orden de compra, ya validé los repuestos, puse el número, la orden de compra, la fecha.
+Ah, mire que cuando uno pone la fecha en que llegó la orden de compra y el número, la orden de compra.
+Ajá. ¿Se acuerda que en la cotización yo puse 15 días? Sí. ¿Sí? Él de una vez me los pone aquí, mirelo.
+Él los saca de la cotización, los trae. Y según la fecha en que llegó la orden de compra, él me da la fecha en la que se tiene que despachar el equipo.
+Entonces, si llegó la El 5 de marzo, él me calcula, según el calendario colombiano, 15 días hábiles y me dice que es para el 27 de marzo.
+
+@1:39:10 - Jorge Carrera (blasterinformation.com)
+Que debe salir el equipo. Ajá, entonces, ¿qué se hace?
+
+@1:39:14 - Martin Hendrik (ALFA ELECTRONIC)
+Cuando llega este correo con las órdenes de compra, yo les mando una respuesta, o Angie, que es la persona que contesta las órdenes de compra.
+Vamos a buscar unas que ya nos he hecho. Claro, en esta pantalla Gracias.
+
+@1:40:00 - Jorge Carrera (blasterinformation.com)
+El 5 de marzo, él me calcula, según el calendario colombiano, 15 días hábiles y me dice que es para el 27 de marzo.
+Que debe salir el equipo.
+
+@1:40:12 - Martin Hendrik (ALFA ELECTRONIC)
+Ajá, entonces, ¿qué se hace? Cuando llega este correo con las órdenes de compra, yo les mando una respuesta, o Angie, que es la persona que contesta las órdenes de compra.
+Vamos a buscar unas que ya nos he hecho.
+
+@1:40:53 - Jorge Carrera (blasterinformation.com)
+Claro, en esta pantalla Gracias. Estás dándole el aceptado a esa cotización y contra la orden de compra.
+
+@1:41:10 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces, bueno, yo le mando un correo al cliente diciéndole, bueno, recibí su orden de compra, son 15 días y la fecha de despacho es tal.
+Y acá en el sistema yo le digo transferir, acá, con este botoncito. En ese momento le aparece otra vez al técnico dentro de su controle.
+El equipo va a volver a salirle en la pantalla, pero ya en la posición 05 de equipos confirmados. Ok.
+Claro, a él le va a aparecer en los equipos confirmados, mas todavía no lo puede reparar hasta que... Que compren los refuerzos.
+Ajá, entonces, por ejemplo. Que pasa de la posición 11, creo que me dijo él. Sí, entonces mire que estaba en posición 5, ¿cierto?
+
+@1:42:14 - Jorge Carrera (blasterinformation.com)
+Sí.
+
+@1:42:15 - Martin Hendrik (ALFA ELECTRONIC)
+Yo voy a cambiar de año y me devuelvo y pasa, ya se actualizó a 05. A 05. Listo. Este equipo es de Gabriel Díaz.
+Sí, yo voy y miro la pantalla de Gabriel. Mírenlo. Posición 05, el 170. Aquí está. Ahí está. ¿Qué va a hacer Gabriel?
+Es sencillo.
+
+@1:42:57 - Jorge Carrera (blasterinformation.com)
+Él dice, ay, me aprobaron este equipo. Sí.
+
+@1:43:00 - Martin Hendrik (ALFA ELECTRONIC)
+Él va a entrar, le dice seguimiento del equipo con este botón. Bueno, la pantalla de él es un poco diferente a la mía, pero básicamente si él dice que no tiene que pedir más repuestos aparte de estas dos líneas que él ya creó aquí.
+Él le da como un cierre otra vez. Claro, si por ejemplo los componentes están en el inventario de ALFA, él perfectamente pues va, los busca y cierra.
+Y entonces, ¿qué pasa? Cuando es algo que toca importar, cuando él le da ese cierre, ese código se quita de 05 y pasa a 11.
+Pendiente a que lo compren. ¡Gracias! ¡Gracias! ¡Gracias! Sí, es porque requiere repuestos de importación. Y cuando los repuestos llegan de importación, pasa a uno.
+Todo lo que está en uno ya tiene repuestos completos para reparar. Ok. Sí. Cuando ellos terminan de instalar repuestos, le dan un cierre ya definitivo.
+O sea, no es para que el equipo viaje de posición en posición, sino que lo cierran definitivo, se les desaparece.
+
+@1:44:32 - Jorge Carrera (blasterinformation.com)
+Y en el panel de control que yo le hablo siempre, ese código va a aparecer ahora. En esta otra, está la columna de cotizar.
+Esta columna es la de equipos para despachar. Como él ya le dio cierre definitivo en el sistema porque ya le instaló repuestos, ya finalizó la intervención, esos códigos que ya finalizaron intervención técnica salen ahora en esta columna que son equipos para despachar.
+Entonces ya la persona de logística sabe que tiene que sacar la remisión para el despacho y paso seguido facturar.
+
+@1:45:31 - Martin Hendrik (ALFA ELECTRONIC)
+Ok. Fíjate algo, Maribel, ya por la hora.
+
+@1:45:38 - Jorge Carrera (blasterinformation.com)
+No sé qué dices tú. Para que no me quede nada en el aire, hasta aquí estoy claro. Pero ahora viene la parte de despacho y facturación.
+Se nos fue en cotización solamente.
+
+@1:45:53 - Martin Hendrik (ALFA ELECTRONIC)
+Yo pensaba que, wow.
+
+@1:45:58 - Jorge Carrera (blasterinformation.com)
+Pero no sé qué dices tú. Bueno, deja. Carlos está aquí. Y mañana no, ya perfectamente me dijiste que mañana, este, los viernes son un poquito complicados.
+ACTION ITEM: Schedule follow-up w/ Jorge for Mar 10 re: Dispatch & Invoicing - WATCH
+No sé si ya conversamos el lunes. Bueno, el lunes yo tengo cita médica. No, bueno, tranquila. Y de venida, en estos días tengo que ir el lunes a donde, mi doctora.
+Y cuidado, y cuidado si te dejan. O sea, lo más pronto que yo puedo conectarme otra vez sería el martes.
+
+@1:46:34 - Martin Hendrik (ALFA ELECTRONIC)
+Claro, vale. Yo voy a, yo voy a agendar para el martes. De todas maneras, yo tengo, yo tengo dos, yo tengo dos hijos, yo tengo dos hijos.
+
+@1:46:42 - Jorge Carrera (blasterinformation.com)
+Y, y mi esposa cada vez que íbamos, hacía la última consulta. Nos íbamos con las maletas ya. Porque no sabíamos si nos íbamos a dejar.
+Sí.
+
+@1:46:54 - Martin Hendrik (ALFA ELECTRONIC)
+O sea, vete, vete, el lunes, Maribel, ya con las instrucciones, ya, ya pres...
+
+@1:47:03 - Jorge Carrera (blasterinformation.com)
+Con este muchacho, Giovanni, Giovanni, dale. Ay, bueno, Dios mediante. Mira, no te he preguntado, o sea, que no fuera fuera de trabajo.
+Hembra, niño, niña, ya sabes. Sí, es un niño. Es un niño. Guau, guau. Dicen que los niños patean más.
+Un niño es juiciosito.
+
+@1:47:29 - Martin Hendrik (ALFA ELECTRONIC)
+Ah, no, tranquilo. No, ese va a ser tranquilo. Me he dejado trabajar bastante. No, no, no, tranquilo. Último momento.
+Por lo menos el mío varón nació, pero nació con el calendario de Japón. ¿Cómo así? Oye, en el día dormía y la noche lloraba, o en la noche era que estaba despierto.
+
+@1:47:53 - Jorge Carrera (blasterinformation.com)
+¡No, no, no, no, no! ¿Naciste a dónde? Tú no sé. Es como de mudarse de país. Tú naciste en otro calendario.
+Entonces, no, pero eso es un caso excepcional. No, yo tranquilo, se ve que ya va a ser tranquilito. Ok, sí.
+Bueno, nada, de todas maneras, estoy pendiente. De todas maneras, bueno, voy a estar pendiente el lunes. Voy a pendiente, no sé que te vayan a dejar.
+Y bueno, listo, estoy pendiente para felicitar. Sí, porque es que el lunes yo podría conectarme, pero muy temprano, porque en realidad mi cita es creo que a la una de la tarde.
+Espéreme, yo miro. Espéreme, yo miro de un segundito. A ver. ¡Gracias! Gracias. Fathom, Fathom, Fathom, Fathom.
+

@@ -19,7 +19,7 @@ export interface CrmProspectContact {
 }
 
 export interface CrmProspectRecord {
-    id: number;
+    id: string;
     backendId: string;
     salutation: string;
     nombre: string;
@@ -138,7 +138,7 @@ export class CrmProspectsApiService {
         return from(this.request<{ items: CrmProspectApiRecord[] }>("/api/v1/crm/prospects", { method: "GET" })).pipe(
             map((response) => {
                 const items = response.items ?? [];
-                return items.map((item, index) => this.mapProspect(item, index));
+                return items.map((item) => this.mapProspect(item));
             })
         );
     }
@@ -170,7 +170,7 @@ export class CrmProspectsApiService {
                 method: "POST",
                 body: JSON.stringify(payload),
             })
-        ).pipe(map((item) => this.mapProspect(item, 0)));
+        ).pipe(map((item) => this.mapProspect(item)));
     }
 
     updateProspect(prospectId: string, payload: CrmUpsertProspectPayload): Observable<CrmProspectRecord> {
@@ -179,7 +179,7 @@ export class CrmProspectsApiService {
                 method: "PUT",
                 body: JSON.stringify(payload),
             })
-        ).pipe(map((item) => this.mapProspect(item, 0)));
+        ).pipe(map((item) => this.mapProspect(item)));
     }
 
     deleteProspect(prospectId: string): Observable<void> {
@@ -231,12 +231,14 @@ export class CrmProspectsApiService {
         ).pipe(map(() => void 0));
     }
 
-    private mapProspect(item: CrmProspectApiRecord, index: number): CrmProspectRecord {
-        const parsedID = Number.parseInt(String(item.id), 10);
+    private mapProspect(item: CrmProspectApiRecord): CrmProspectRecord {
+        // Identidad real = uuid del backend. Antes se usaba (index + 1), un id
+        // sintético por posición que colisionaba entre recargas y ocultaba filas.
+        const backendId = String(item.id ?? "").trim();
 
         return {
-            id: Number.isFinite(parsedID) && parsedID > 0 ? parsedID : index + 1,
-            backendId: String(item.id ?? "").trim(),
+            id: backendId,
+            backendId,
             salutation: String(item.salutation ?? "").trim() || "--",
             nombre: String(item.name ?? "").trim(),
             correo: String(item.email ?? "").trim(),

@@ -1,0 +1,606 @@
+Reunion de Trabajo Alfa(Comercial) - February 25
+ VIEW RECORDING - 96 mins (No highlights) 
+@0:00 - Jorge Carrera (blasterinformation.com)
+Hola, Maribel, buenos días. Hola, señor Junge, buenos días. Corriendo, vale. Discúlseme, por favor, sí, corriendo. No, no, tranquila, tú me dices, no, nos conectamos media hora más tarde, 40 minutos más tarde, no hay problema, yo espero.
+
+@0:17 - Martin Hendrik (ALFA ELECTRONIC)
+Bueno.
+
+@0:18 - Jorge Carrera (blasterinformation.com)
+O rodamos también a reunión. Es importante que estés cómoda. De acuerdo, bueno.
+
+@0:27 - Martin Hendrik (ALFA ELECTRONIC)
+Fíjate, Maribel, bueno, perfectamente recibí los documentos.
+
+@0:32 - Jorge Carrera (blasterinformation.com)
+Me di cuenta que, fíjate, con lo que ayer tratamos de compartir la carpeta, me di cuenta que Drive no permite compartir con correos que no sean de Gmail.
+Sí. Sí, entonces después fue que me di cuenta, ¿no? Que ellos no, pero fíjate, no lo sabía, no lo recordaba.
+Ok. Entonces, bueno, espectacular, ya tienen, ya la información está allí. Ya la. Estoy revisando. Y estoy adelantando la reunión que tuvimos el día lunes.
+Ya estoy haciendo los resúmenes. Y bueno, poco a poco vamos adelantando. Entonces tengo en mis anotaciones para hablar sobre la parte comercial de la empresa.
+Y quise preparar una serie de preguntas. De acuerdo. Bueno, a, yo las tengo por aquí. Más que todo, bueno, tengo varias, ¿no?
+Vamos a empezar aquí con la primera que es referente a la, durante las visitas presenciales a las plantas. Asumo yo que las muchachas en algunos momentos hacen las visitas presenciales o también telefónicas.
+Y qué información específica ellas recolectan de manera obligatoria para su proceso comercial a esa, a la, a la empresa.
+Ajá, ok.
+
+@1:55 - Martin Hendrik (ALFA ELECTRONIC)
+Sería lo que es para acá.
+
+@1:58 - Jorge Carrera (blasterinformation.com)
+Listo.
+
+@1:59 - Martin Hendrik (ALFA ELECTRONIC)
+Bueno. Pues, cuando se hace una visita planta, normalmente se comparte, ¿qué se hace? Se comparte el brochure de la empresa, que es donde está como la relación de los servicios que prestamos, ¿sí?
+El alcance, qué hacemos, los tiempos de reparación que ofrecemos, las garantías. Entonces, eso se socializa con el cliente. Yo le comentaba en alguna oportunidad al señor Ludwin, y creo que fue en la primera reunión, me parece que se estaba, que este software que tenemos actualmente, él tiene una versión como simplificada, lo voy a decir de esa manera, que se usa en tabletas, en tablets.
+Entonces, la comercial tiene una tablet, con esta vez. Es una simplificada del software donde ella lo único que hace básicamente es consultar.
+O sea, tiene acceso a la base de datos de los clientes, puede consultar qué equipos tiene cada cliente en el sistema y ver en qué proceso están.
+Pero ella no puede, desde la tableta no puede acceder a nada más, a ningún otro módulo o modificar nada, ¿sí?
+Es como un, como de consulta. Sí tiene, sin embargo, algo que le, que le quiero mostrar. Permítanme, le voy a compartir la pantalla.
+Está viendo mi pantalla, ¿sí? Sí, perfecto.
+
+@4:00 - Jorge Carrera (blasterinformation.com)
+Listo.
+
+@4:02 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces, por ejemplo, yo voy a ir al menú de clientes. Por ejemplo, este cliente que tengo ahí. Este software tiene una pestaña o no sé cómo, o un módulo, no sé cómo decirle, que se llama acciones comerciales.
+Es este de acá. Normalmente, esto es lo que se llena por parte de las comerciales. Entonces, acá, estoy pues en el año 2026, la comercial selecciona qué tipo de acción comercial es la que va a registrar.
+Si fue un mail, una recolección, un reenvío de cotización, una llamada telefónica o una visita. Entonces, digamos que yo estoy haciendo una visita a este cliente.
+Entonces, yo le digo aquí agregar y yo selecciono, bueno, nuevamente visita, quién está haciendo la visita, en este caso la comercial, digamos, sería yo, Maribel Márquez.
+Y acá me salen los contactos que yo tengo registrados de ese cliente. Entonces, yo escribo con cuál ingeniero estoy haciendo esa visita.
+Lo selecciono. Y acá lo que hago es en comentarios generales escribir o dejar consignado lo que yo hablo con el cliente durante la visita.
+Entonces, un ejemplo. Se socializa con el ingeniero, el brochure de ALFA, se explica... Los servicios que prestamos, se revisa qué equipos tienen en falla, y se recogen dos variadores para reparación.
+Un ejemplo, ¿sí? Ok.
+
+@6:24 - Jorge Carrera (blasterinformation.com)
+Maribel, disculpa, antes de llegar a este punto. Sí. Estoy tratando de, la comercial, supongamos que la comercial necesita ubicar clientes, necesita captar leads.
+Sí. Ella, de alguna manera, ella hace un trabajo, no sé, buscará por internet, buscará por las redes sociales, qué empresas ella podrá visitar.
+Sí. Esa búsqueda, ella la registra dentro del sistema, es decir, ella coloca en el sistema posible cliente a visitar.
+¿O cliente que voy a contactar? ¿Eso posible es lead? ¿Ella de alguna manera? ¿Cómo es ese proceso? Desde el cero, desde el punto cero que ella está ubicando, supongamos que hay una empresa que se llama Motores X.
+Ella ve, ay mira, Motores X. Entonces, ella registra en el sistema que va a visitar Motores X, que la va a contactar.
+¿Cómo haría eso? Sí.
+
+@7:26 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces, bueno, ¿cómo se arrancó con este sistema? Este sistema tiene acá, en este panel de clientes, tiene un panel que se llama Cliente Prospecto.
+Ok. Sí. Cuando nosotros arrancamos la empresa, hace unos años atrás, nosotros primero hicimos un estudio de mercado, contactando telefónicamente a las empresas.
+Industriales de Colombia, dice, base de datos se obtuvo a través de la Cámara de Edex. Comercio de aquí, ¿sí?
+Entonces, bueno, esa base de datos pues que le da uno a la Cámara de Comercio solo trae como el nombre de la empresa, dirección, ciudad y a qué se dedican y el teléfono, ¿sí?
+Entonces ya empezó un trabajo comercial donde se le asignó a cada comercial de cada ciudad la lista de empresas de esa ciudad y empezó primero el contacto telefónico donde se buscó obtener el contacto del ingeniero de mantenimiento.
+El contacto que a nosotros nos interesa inicialmente es el jefe de mantenimiento. Entonces, una vez que se logra obtener el nombre, el teléfono y el correo del jefe de mantenimiento, se programa una visita, ¿sí?
+Entonces, ¿qué se hizo? Nosotros le hemos cargado con un archivo... Excel, a este software, la base de datos de esos prospectos, que la cargamos a través de esta primera opción que tengo acá, base de referencia a prospectos.
+Entonces, mira, esto tiene creado ahí ya como las columnas, ¿sí? Entonces, muestra, yo miro a ver si me queda.
+Entonces, digamos, en Bavaria yo tenía registradas las plantas de Bavaria de varias ciudades del país, con unos datos básicos.
+¿Qué? Cada vez que se visitaba una de estas plantas industriales, entonces, yo la seleccionaba, o yo la selecciono, y le digo transferir.
+¡Gracias! ¡Gracias! Transferir de la base de datos, transferirla a prospecto. Ok. Y así de toda esta lista de prospectos se iba chiquitando, se iba volviendo chiquita.
+Y yo podía ver quiénes me faltaba visitar y quiénes ya estaban como prospectos. Entonces quiero explicarle lo siguiente. Nosotros en el sistema tenemos los clientes clasificados de esa manera.
+Le voy a mostrar aquí. Acá en esta pestaña dice cliente y acá dice prospecto. Sí. Un prospecto para mí, ¿qué es?
+Es una empresa que yo ya visité. Puede ser que me haya mandado o no un equipo, al menos un equipo alguna vez en la vida, a revisión.
+Pero no fue confirmada la reparación o el equipo es no reparable o alguna cosa. No se la ha facturado.
+Exacto. Ese prospecto se convierte en cliente y lo voy a encontrar después en la pestaña cliente. Sí y solo sí me ha confirmado al menos una reparación.
+Este sistema lo hace así. Entonces, digamos que Abecolor me manda un equipo este año y me lo confirma. Él desaparece de la base de prospectos y ya sale ese en la base de datos de clientes.
+Perfecto. Así lo maneja este software. Ahora, si a mí me llega un cliente, digamos lo que usted me decía, la comercial, un ejemplo.
+Lo está haciendo una visita y en esa visita vio que ahí cerca hay otra empresa que yo no la tengo en mi base de datos.
+Y es un cliente... Bueno, Entonces, ella saca los datos de internet o de donde sea, y la visita, y en ese caso se crea esa empresa en el sistema para registrar que fue visitada.
+Como prospecto. Como prospecto. Sí. Entonces, acá en este menú de ficha cliente, yo le digo agregar. Y acá yo le digo si lo que voy a crear es un cliente o un prospecto.
+Le doy el nombre, entonces, el nombre de la empresa, le digo siguiente. A él me bota como un mensaje que dice, por favor verifique que está en.
+La no está creada ya en el sistema para evitar como que esté creada doble. Y ya yo puedo decirle siguiente o anular.
+Pero bueno, es un mensajito que sale ahí. Yo le digo siguiente. Acá termino de escribir los datos. Dónde queda la empresa, en qué país.
+
+@13:22 - Jorge Carrera (blasterinformation.com)
+Persona de contacto principal, persona de contacto comercial.
+
+@13:25 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, que la ciudad, el fax. Siguiente. Y acá registro los datos de esa persona con la que me encontré en la visita que hice.
+Nombre, apellido, el cargo, el teléfono, el correo, etcétera. Siguiente. Acá me sale, me pide si quiero llenar desde ya datos para la facturación.
+Entonces, si tiene. Clasificar las empresas por tamaños. Ok. Y se lo de registrar.
+
+@18:08 - Jorge Carrera (blasterinformation.com)
+Por ahí también llenaste la zona de la empresa. No, no, ahí no la llené.
+
+@18:15 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces, mire, ya ejemplos, ¿sabes? Me salió en la pestaña Prospectos. ¿Sí? Ok. Si yo lo busco en la pestaña Clientes, no me sale, porque esa empresa nunca me ha mandado un equipo a reparar.
+Entonces, mientras él no me confirme una reparación, siempre va a ser un prospecto.
+
+@18:40 - Jorge Carrera (blasterinformation.com)
+Claro, él puede llenar el formato, llena el formato, te puede mandar el equipo, ¿Recibiste el equipo? ¿Estás reparando el equipo?
+¿Y en qué punto pasa cliente cuando ya le cobras? ¿Cuándo Eh...
+
+@18:59 - Martin Hendrik (ALFA ELECTRONIC)
+¿Una ¿Aquí? Cuando, entonces, llega un equipo y yo lo cotizo. Ok.
+
+@19:04 - Jorge Carrera (blasterinformation.com)
+Y el cliente me manda la orden de compra.
+
+@19:08 - Martin Hendrik (ALFA ELECTRONIC)
+Le voy a mostrar. Entonces, voy a registrar rapidito un equipo acá. Voy a decir que es una reparación. Decimos.
+Ah, bueno, que tendría que cotizarlo primero para hacer eso. Ok.
+
+@19:50 - Jorge Carrera (blasterinformation.com)
+Pero ahí estamos claros. Haces la cotización, se la manda. Bueno, ahí viene una pregunta referente a la cotización. Bueno.
+Porque hasta el momento la comercial, entiendo que la comercial es la que está ingresando el cliente al sistema.
+
+@20:08 - Martin Hendrik (ALFA ELECTRONIC)
+Ella lo registra, sí, lo puede, en realidad lo puede registrar cualquier persona del área administrativa y comercial, pero si la que lo visitó fue ella, ella lo registra.
+Ok.
+
+@20:19 - Jorge Carrera (blasterinformation.com)
+Y ella, no, la pregunta sería, claro, hasta ahí todo bien, viene el cliente, llena el formato, manda el, el formato con el, con el equipo.
+Eh, internamente es, bueno, eso lo vamos a estudiar después, se genera la cotización. Pero esa cotización, ¿qué relación tiene la comercial en ese punto?
+Esa cotización le llega a la comercial, la comercial se entera de la cotización, ella tiene que hacerle seguimiento.
+
+@20:52 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, entonces, ella visita la empresa y una vez que la empresa está creada en el sistema, si no está creada la...
+Entonces, yo podría rastrear qué tipo de acción comercial ha hecho ella con ese cliente este año o los años anteriores, si yo me cambio de año acá.
+Sí, porque uno puede cambiar acá de año.
+
+@22:13 - Jorge Carrera (blasterinformation.com)
+O qué acción comercial en general ha hecho la persona.
+
+@22:17 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, o si no hay ninguna acción comercial registrada y en ese caso, ¿por qué? Ok. Sí, entonces, listo, ahí se registran las acciones comerciales.
+Imaginemos que llegó un equipo, se diagnosticó y yo lo cotizo. Esa cotización yo la descargo en PDF. El software deja descargar todos los archivos, cualquiera, cotizaciones, remisiones, reportes, entre formatos PDF, Excel y Word.
+Entonces, yo los descargo en PDF. Yo busco el historial. Entonces, lo ideal es que la comercial registre esas acciones comerciales en el sistema.
+
+@24:11 - Jorge Carrera (blasterinformation.com)
+Y el sistema no me permite, pienso, si yo necesito visitar el cliente entre cinco días, crear esa tarea allí, donde ella pueda colocar.
+
+@24:21 - Martin Hendrik (ALFA ELECTRONIC)
+No, y eso sí sería muy bueno, que tenga como un recordatorio. Ok. Sí, porque actualmente, justamente como este sistema no tiene eso, lo que hacemos mensualmente o semanalmente, como uno quiera, porque ellas lo pueden hacer directamente, es que hacen una extracción del sistema, de los clientes de su zona, y esta extracción les muestra cuáles cotizaciones están pendientes de confirmación.
+Y, pero entonces lo hacemos con un Excel, porque el sistema no deja hacer ese. No tiene ese recordatorio. Claro.
+Entonces, con ese Excel que ella descarga del sistema, ella ve la lista de cotizaciones de la zona que están pendientes y los vuelve a llamar o les vuelve a mandar un correo, ¿sí?
+Para, como para que no se le pierda del radar que tiene pendiente por, por conseguir pedidos.
+
+@25:25 - Jorge Carrera (blasterinformation.com)
+Para hacer el seguimiento.
+
+@25:29 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, bueno que el nuevo sistema pudiera tener como una sección de, no sé cómo llamarlo, de consulta, sí, donde ya puede haber, un ejemplo, tal cotización, seguimiento en cinco días y que el sistema le bote una alerta o algo.
+Ok.
+
+@25:56 - Jorge Carrera (blasterinformation.com)
+Ahora, fíjate, siento que el cliente... cliente tiene contacto directo con la comercial o el cliente tiene contacto con Maribel o con el técnico o solo la comercial?
+Lo ideal es que sea con la comercial.
+
+@26:16 - Martin Hendrik (ALFA ELECTRONIC)
+Digamos que nosotros procuramos que todo lo que es confirmación de pedidos, envío de documentos, cotizaciones, órdenes de compra, facturas, todo es por escrito.
+El seguimiento que se hace por teléfono es más como informal o por WhatsApp, como para un recorderis, una llamada.
+No nos gusta que el cliente tenga contacto directo con el área técnica porque eso entorpece el proceso. Adicionalmente, muchas veces el cliente cuando tiene contacto directo con el técnico, él quiere obtener informaciones.
+Gracias. Y es básicamente porque nosotros trabajamos es por resultado. Nosotros cobramos si la reparación funciona. Si no funciona, no cobramos.
+Si un cliente quiere tener acceso a la lista de partes que se le cambian a un equipo, en ese caso yo no voy a cobrar por resultado.
+Yo voy a cobrar, pues, por la inversión que le estoy haciendo al equipo si no funciona. Pero no es nuestro objetivo trabajar de esa manera.
+Claro.
+
+@28:30 - Jorge Carrera (blasterinformation.com)
+Ahora, fíjate, perfectamente. La comercial es como la cara de ustedes ante el cliente. Y eso es bien saludable. Ahora, supongamos que el cliente mandó el equipo, la reparación, se le cotizó, él hace preguntas sobre la cotización a la comercial.
+Asumo yo que la comercial hay ciertas cosas. Y ella, esa pregunta, ella se la hace directamente, te la hace a ti o a la parte técnica y ella después transmite eso al cliente.
+Entonces está ese feedback, ¿no? De información que va, viene, va y viene. Y quizás haya momentos en que ella pregunta algo a la parte técnica y no recibe respuestas, porque los muchachos están ocupados, porque están saturados, porque están full, no tienen la información completa.
+Y ella de alguna manera tiene que registrar de que el proceso de cotización y de reparación está parado a la espera de un resultado, de una respuesta del equipo de ALFA.
+Sí, eso pasa. ¿Y eso ella lo registra en algún lado?
+
+@29:49 - Martin Hendrik (ALFA ELECTRONIC)
+Generalmente en este Excel, pero sí pasa que a veces se queda mucho tiempo, como ahí sin dar. Esa respuesta rápida.
+Se procura, digamos que nosotros hemos procurado todos estos años, que en lo posible el cliente siempre que tenga una duda, una pregunta, la haga sobre el mismo correo donde se le envió la cotización.
+¿Por qué? Porque ese correo nosotros lo respondemos todos los días. Y se puede garantizar más, con más seguridad que se va a responder rápido si la pregunta llega por el correo.
+Sin embargo, sí, muchos clientes consultan cosas a la comercial, por ejemplo, por WhatsApp. Entonces, muchas veces la información se pierde, ¿sí?
+Se sale del radar, no se responde o se responde tarde. O, bueno, entonces, sí hay casos donde no es...
+Eficiente la forma en que se gestionan esas consultas de los clientes.
+
+@31:06 - Jorge Carrera (blasterinformation.com)
+Tú consideras, digo yo, si buscamos la manera de sistematizar esto, es decir, que la comercial recibe la pregunta, ella se lo transmite a una persona específica de la era técnica o a la era técnica como tal, y ella registra en el sistema pendiente de respuesta.
+Ella registra allí, estoy pendiente de respuesta sobre tal cotización. De manera tal, ajá, que tú como encargada, por supuesto, la empresa, dueña de la empresa, te metes y ves que hay cosas pendientes por responder por la parte técnica al área comercial.
+Porque la área comercial es la que vende, la área comercial es que nos da el pan, ¿verdad? Y hay que procurar responderles rápido a la área comercial porque ahí sale.
+Y tú visualizas allí cuánto tiempo ha tardado la persona en la respuesta. Si la persona responde, la persona debe meterse en el sistema y colocar respondidos.
+O ya fue respondida la pregunta. De manera tal que tú no tienes que andar por todos los correos, sino simplemente con un check del sistema.
+Tú ves quién respondió o no. Está claro, la persona responde por correo, responde todo lo que quiera, pero en el sistema tiene que registrar que respondió.
+Y la comercial, ve, ah, mira, ya me respondieron. Perfecto, es verdad, sí, ya me respondieron. Y ahí tienes un control, ella tiene un control de qué cosa me han respondido y qué no.
+
+@32:48 - Martin Hendrik (ALFA ELECTRONIC)
+Bueno, estaba pensando en algo, espérenme un momentico, yo le muestro. Gracias. Gracias. Y un ejemplo, si ese comentario se hizo en este equipo que está en rojo, un ejemplo.
+Sería bueno que a este equipo le saliera acá un signo de admiración o alguna cosita que le indique al técnico que tiene una pregunta por responder.
+Sí. Se me ocurre.
+
+@35:24 - Jorge Carrera (blasterinformation.com)
+Claro, lo otro es, me imagino que los técnicos tienen acceso al sistema. Sí, sí, sí.
+
+@35:29 - Martin Hendrik (ALFA ELECTRONIC)
+¿Verdad?
+
+@35:30 - Jorge Carrera (blasterinformation.com)
+Porque lo otro es, yo entro con mi usuario, pues yo entro con mi usuario, y todas esas cosas pendientes, urgentes, yo las puedo ver en un pantallazo, un momento que entro, epa, que me diga, no has respondido la pregunta urgente de este equipo.
+Uy, el momento que entro, me parece eso ahí, uy, yo mira, no he respondido esto.
+
+@35:54 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, sí, sí, o sea, yo estoy en... En, abierta todas las opciones que se puedan manejar y, y la que sea más práctica, con esa nos vamos.
+Sí, porque fíjate algo, Maribel, al cliente hay que responderle rápido, porque eso es venta.
+
+@36:14 - Jorge Carrera (blasterinformation.com)
+O yo que estoy ahorita en la parte comercial, hay que responder rápido porque eso es venta. Sí. Y si no se responde rápido, la persona se le olvida y se va con otro, se va con otra empresa.
+Entonces, se me ocurre, como tú perfectamente me estás comentando, que ellos sigan colocando allí en su chat, la muchacha se mete, este, acabo, el cliente quiere que por favor se le indique, papá, papá, papá, y, y le, y cambia el estatus, es decir, ella va a poder cambiar el estatus, papá, y ella cambia el estatus pendiente por respuesta.
+El técnico, inmediatamente, en el momento que ingresa al sistema, o allí mismo, entre el sistema, le aparece, papá, papá.
+Gracias. La pantalla, Epa, hay una pregunta que necesitan de tu intervención. Sí. Entonces él en el mismo chat respondería, responde y cambia el estatus, respondido.
+Y a la comercial le va a aparecer, mira ya te respondieron, ya te respondieron del cliente tal y la respuesta es tal.
+Ah mira ya me respondieron, me están respondiendo tal cosa. Y si ella no está conforme, vuelve a escribir y vuelve a colocar pendiente.
+Para que el cliente se entienda, ese feedback entre ellos no, entre ellos no se matan ahí a preguntas y respuestas hasta que por fin logran la respuesta que prefieren y da.
+Ya le informan al cliente, ¿no? Sí, claro, sería muy bueno. Y tú te enteras porque el momento que tú te metas a ver el historial del producto, de la máquina, tú es
+
+@39:00 - Martin Hendrik (ALFA ELECTRONIC)
+No hace eso.
+
+@39:01 - Jorge Carrera (blasterinformation.com)
+Porque ahí tú puedes manejar la eficiencia de un técnico, porque un técnico perfectamente, y los hay, y eso es normal, un técnico perfectamente puede ser muy bueno reparando, pero no muy bueno respondiendo.
+
+@39:13 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, y pasa.
+
+@39:15 - Jorge Carrera (blasterinformation.com)
+Eso no es así, eso es normal, son muy buenos reparando, pero a la hora de interactuar con otros no es tan fácil.
+Entonces un pantallazo ahí cada vez que entra el sistema.
+
+@39:29 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, sí, sería bueno que le salga a cada técnico una listica de las notas que tiene pendiente por responder de todos tales equipos.
+De tales equipos.
+
+@39:43 - Jorge Carrera (blasterinformation.com)
+E igual, e igual a la comercial, perfectamente, la comercial va a tener, por supuesto, sus clientes allí, y va a tener tareas pendientes, ella debería tener allí tareas pendientes por realizar para la semana, para el día, para el mes, que tengo pendiente.
+por hacer, porque tú misma también le puedes asignar tareas a la comercial, yo quiero que Luisa, por ejemplo, como se llama Luisa, me visite este cliente tal día, para que se lo colocas allí como una tarea, de manera práctica cuando vea, tienes, ay mira, tengo esta tarea pendiente.
+
+@40:18 - Martin Hendrik (ALFA ELECTRONIC)
+Normalmente yo lo hago actualmente verbal o con un mensaje, bueno, sí, no es práctico, no es.
+
+@40:26 - Jorge Carrera (blasterinformation.com)
+Sí, pero a ti se te olvida, porque uno tiene tantas cosas en la mente, de que se me olvidó que yo le dije a Luisa que el jueves tenía que ir a donde ese cliente, y se te va el seguimiento, y Luisa lo hace, no lo hace, y tú no sé, uno, tantas cosas que uno tiene en la mente que no lo ve.
+
+@40:44 - Martin Hendrik (ALFA ELECTRONIC)
+Por ejemplo, a mí me gustaría, que ahorita es muy, es muy poco práctico la manera como lo hacemos, porque lo hacemos con un Excel, ¿cierto?
+Sí. O mejor. mejor. ¿Antes?
+
+@42:00 - Jorge Carrera (blasterinformation.com)
+¿Qué acciones telefónicas hizo? Porque ella tiene que registrarlo de alguna manera. Y de alguna manera ir colocando las tareas que tiene pendiente durante la semana o durante el mes.
+¿Y qué clientes le respondieron de manera satisfactoria?
+
+@42:16 - Martin Hendrik (ALFA ELECTRONIC)
+Sí. Ok.
+
+@42:18 - Jorge Carrera (blasterinformation.com)
+Ahora continúo, fíjate, con la comercial, continúo con la parte de cotización, ese feedback que él tiene con este cliente y con el equipo.
+¿El cliente acepta que le reparen? De alguna manera creo que se lo notifica a la comercial, sí, si quiero que me lo repares.
+
+@42:41 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, generalmente ellos siempre mandan el pedido por correo electrónico, se lo mandan a la comercial o lo mandan al correo principal de ALFA.
+
+@42:51 - Jorge Carrera (blasterinformation.com)
+Ok. ¿Cómo se entera el técnico?
+
+@42:54 - Martin Hendrik (ALFA ELECTRONIC)
+¿Cómo se entera el técnico? ¿De que debe repararlo?
+
+@42:58 - Jorge Carrera (blasterinformation.com)
+Sí. se técnico? técnico? técnico?
+
+@43:00 - Martin Hendrik (ALFA ELECTRONIC)
+Entonces, bueno, yo tengo pendiente pasarle a usted una tablita, donde yo le explico, creo que en el Excel que le compartí también la tengo resumida, pero, espéreme, yo miro.
+Bueno, en realidad esto ya lo cargué. Entonces. ¿Qué no está acá? Ah, sí. En ese archivo que yo le cargué a usted allá en el Drive, cuando nosotros registramos...
+Diagnóstico, ese código desaparece de este menú del técnico, desaparece. Y me sale a mí, en mi panel administrativo, digamos, vamos a decirlo así.
+Ese código se me pasa a esta columna que se llama cotizaciones por hacer. Todo lo que me sale acá significa que ya está diagnosticado, yo tengo que hacer la cotización.
+¿Sí? Entonces, yo entro a cada código, que cada código es un equipo, yo miro qué escribió el técnico en el diagnóstico, un ejemplo, con qué proveedor se pueden comprar los repuestos, cuál es la falla, etcétera, etcétera.
+Yo cotizo. Y cuando yo genero la cotización, el sistema pone este equipo, este código. En posición 5. Acá creo que me faltó escribirla.
+Sí. La posición 5 se llama equipo cotizado. Sí. Entonces, por ejemplo, yo voy a mirar un cliente. Vamos a mirar este cliente.
+Sí. Si ve que acá tengo una lista de varios códigos, cada código es un equipo. Sí. Y acá esta columna se llama posición.
+Los que están en posición 5 son equipos que yo ya coticé. Entonces, cuando el cliente manda la orden de código, compro.
+¿Verdad? Que siempre es por correo. Nosotros no procesamos pedidos por WhatsApp ni por llamada. Tiene que ser por correo.
+Ok. Cuando el equipo tiene orden de correo, pasa a una posición que se llama 05. ¿Sí? Cuando ese equipo pasa a posición 05, vuelve y le sale al técnico.
+¿Para qué? Entonces, el técnico ya hizo un diagnóstico inicial, ¿cierto? Pero es un diagnóstico rápido. Cuando el equipo ya está confirmado, el código vuelve y le sale al técnico.
+Y él termina de revisar si aparte de lo que ya vio en el diagnóstico inicial, le tiene que pedir algún otro repuesto.
+Esos 15 días se cumplen pasado mañana, un ejemplo. Lo que ella hace es verificar cada vez que está próximo a vencerse una fecha de entrega, verificar cómo va esa reparación.
+¿Con qué finalidad? Pues ver que no nos atrasemos. O si hay un atraso, porque puede pasar que la importación de repuestos está atrasada, o puede ser que los repuestos llegaron rápido, se instalaron, pero el equipo persiste en falla.
+A veces hay que comprar más repuestos. Entonces, lo que la comercial hace es notificarle o informarle al cliente que hay una novedad de atraso y se le explica al cliente cuál es esa novedad.
+¿Sí? Pero digamos que la idea es que la comercial esté siempre en contacto con el cliente. Cuando el equipo sale de reparación, ella es la que está pendiente de que el cliente reciba a su equipo, de que le realice las pruebas en la máquina, debería...
+Identificar si el equipo funcionó o no. Por ejemplo, hubo un tiempo en el que cuando un equipo se despachaba, un ejemplo, la semana llamábamos al cliente, digamos, esta semana llamábamos a todos los clientes a los que le despachamos la semana pasada y le preguntábamos, ingeniero, para confirmar si ya llegó el equipo y si ya lo probó en la máquina.
+Y él decía un ejemplo, sí o no. Y si decía sí, entonces le preguntábamos si el equipo funcionó o no funcionó.
+Y nos gustaba registrar en el sistema, en una columna, que no es para eso, pero nosotros la cogimos para eso.
+Un ejemplo, esta columna. Entonces yo entro a un equipo y ahí escribíamos funcionó o no funcionó.
+
+@52:00 - Jorge Carrera (blasterinformation.com)
+Enviado, retardado, porque yo como comercial, Ponte, yo tengo a mi cargo 50 kits, y se me hace muy cuesta arriba, está viendo uno por uno, el estatus de cada uno.
+Me gustaría, me gustaría tener un reporte de los estados, en el cual yo diga, yo quiero ver los que están pendientes por entrega, y que están pronto a cumplirse la fecha, y no se han entregado.
+Y entonces, me meto y veo los que están próximos a dos, tres días por entregar, o solamente me interesa saber los cotizados, veo solamente los cotizados, o me interesa solamente los que fueron entregados y ya validados, lo que tú me estás comentando ahorita, que ya se probó de que funcionó, es un estatus que diga validado, o un estatus que diga entregado, más no validado.
+Lo veo. O un estatus que diga que fue validación no satisfactoria, es decir, no le funcionó. Entonces yo sé cuáles son los que estoy pendiente a que me sean devueltos.
+Entonces, siento que deberíamos, en el nuevo sistema, manejar estatus de los equipos. No sé qué dices tú.
+
+@53:30 - Martin Hendrik (ALFA ELECTRONIC)
+Pues, actualmente, este software muestra estas posiciones que yo tengo acá, en esta columna.
+
+@53:38 - Jorge Carrera (blasterinformation.com)
+Pero son posiciones como internas.
+
+@53:41 - Martin Hendrik (ALFA ELECTRONIC)
+Es decir, solamente es para decir si el equipo está en diagnóstico, si está en reparación, si está cotizado. Por ejemplo, un equipo que aparece en posición 16 es que está en revisión por garantía.
+¿Sí? Eh... ¿Sí? Uno sesenta. Hay un equipo con el sesenta significa que es una garantía que ya se despachó.
+Y el uno es porque salió, se despachó en enero. El sesenta y uno es un equipo que salió, se cotizó no reparable y está acompañado del uno, uno seis uno, porque salió no reparable en enero.
+O sea, yo tengo una tabla de varios códigos y su significado, pero es interno. Más no. Y yo puedo hacer una extracción de todos los equipos que tengo cotizados o todos los que tengo en garantía o todos los que tengo en proceso de importación de repuestos, pero es a través de un módulo que se llama extracción, que lo tengo por acá.
+Y se saca en Excel. O sea, es muy. No, no es de nada, Miquel. No, es de Exacto. Sería chévere que sea más, no sé cómo decirlo.
+
+@55:09 - Jorge Carrera (blasterinformation.com)
+Sí, que sea, por ejemplo, la comercial no tenga que estar buscando a Maribel, ni que ella tenga que estar haciendo extracciones.
+Están extracciones. Yo me meto en el sistema y diga, bueno, el cliente está, ¿en qué estatus está ahorita el equipo?
+Ah, está en el estatus pendiente por, de un repuesto, pues mandaron a pedir respuesta y que aparezca allí pendiente por llegada del repuesto.
+Y automáticamente yo le puedo decir al cliente, mira, no, está pendiente por enviar. O sea, todos tengan, de alguna manera, acceso, tanto los técnicos como la comercial, como tú, todos dentro de la compañía, a saber el, qué pasó y qué está pasando con un equipo común.
+
+@58:00 - Martin Hendrik (ALFA ELECTRONIC)
+Para después informarle al cliente, mira, tu equipo está atrasado por tal y tal razón. Pero es muy manual y toma tiempo bastante.
+
+@58:09 - Jorge Carrera (blasterinformation.com)
+Ok, eso, fíjate, porque seguimos con la comercial allí, la comercial es tu puerta. Tú le notificas a la comercial, me imagino por chat, el equipo está retrasado por esto, por esto, de manera tal que cuando ella ingresa al sistema, ve por qué está retrasado el equipo.
+
+@58:33 - Martin Hendrik (ALFA ELECTRONIC)
+Es buscando hacer el trabajo más fácil a comerciar, ¿no? Sí, claro.
+
+@58:38 - Jorge Carrera (blasterinformation.com)
+Ella no tiene que estar saltando de un lado a otro, buscando la información, porque son muchos equipos, veo que hay muchos técnicos.
+
+@58:46 - Martin Hendrik (ALFA ELECTRONIC)
+Sí.
+
+@58:47 - Jorge Carrera (blasterinformation.com)
+Y de alguna manera ella necesita tener la información lo más rápida posible para dar la respuesta al cliente.
+
+@58:53 - Martin Hendrik (ALFA ELECTRONIC)
+Claro. Sí.
+
+@58:58 - Jorge Carrera (blasterinformation.com)
+Cualquier cosa que ella vea. Ella debe poder, o ahorita ella solamente consulta, pero ella debe poder también teclear las preguntas que el cliente puede hacer.
+Y poner el estatus pendiente por respuesta, para que el técnico sepa que tiene que responder esa pregunta. Sí. Ahora, ¿cuándo se factura?
+Eh, se hace la factura, se emite la factura, eso me imagino que de alguna manera la comercial se entera de que se facturó.
+
+@59:40 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, entonces, bueno, llega la orden de compra, el equipo pasa a reparación, bueno, llegan los repuestos de importación, se repara.
+Y, eh, se hace la remisión de despacho del cliente. Sí, entonces, Acá se lo muestro. Ahí estamos, la parte administrativa, contable y comercial, en ese grupo.
+La que confirma pago soy yo. Entonces, cada vez que un cliente paga, yo les informo por este WhatsApp qué cliente pagó, cuál equipo, y les confirmo un ejemplo.
+Lo pueden despachar, o si es un cliente que recoge, pues yo les digo cliente recoge. Pero se hace por este grupo de WhatsApp que se llama Pagos.
+
+@1:01:36 - Jorge Carrera (blasterinformation.com)
+En ese grupo, Maribel, cuando facturan, cuando facturan, la comercial se entera por allí que facturaron.
+
+@1:01:44 - Martin Hendrik (ALFA ELECTRONIC)
+No, la facturación sí, ¿cómo funciona? Un ejemplo. ¿Cómo se entera la cliente?
+
+@1:01:54 - Jorge Carrera (blasterinformation.com)
+¿Cómo se entera la comercial de que al cliente tal? ¿Cómo facturaron?
+
+@1:02:02 - Martin Hendrik (ALFA ELECTRONIC)
+Porque básicamente a ella se le paga comisión sobre facturado. Entonces, a final de mes, yo le genero un listado con todos los equipos que se facturaron de su zona, para que ella conoce cuánto sumó, por lo tanto, cuál fue su comisión.
+Es a final de mes que sabe la lista de qué cosas se facturaron. Ok. Fíjate, ahí volvemos a caer en el estatus.
+
+@1:02:34 - Jorge Carrera (blasterinformation.com)
+Necesitamos manejar un estatus del equipo. El equipo facturado, cambió a estatus facturado. De manera tal de que ella ya en su control interno, sabe que para final de mes, eso tiene que aparecer dentro de su relación.
+
+@1:02:49 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, digamos, ella lo puede mirar en el sistema, pero es torpe, es una manera torpe. Tienes de ponerse a buscar 200 clientes a ver cuál fue facturado.
+O la otra opción más rápida, es la más rápida que tenemos, es hacer una extracción en Excel y uno le dice al sistema, muéstrame todos los equipos que salieron en 220, o sea, todo lo que se facturó en febrero.
+Y ahí se clasifica en un ejemplo, por ciudad. Entonces la asesora de Bogotá busca todo lo de Bogotá y ahí mira qué fue todo lo que se facturó de su zona.
+Pero no es algo rápido. Claro, claro.
+
+@1:04:35 - Jorge Carrera (blasterinformation.com)
+Ahora fíjate, ya vimos que se genera la orden de compra por parte del cliente, se paga la factura, el cliente paga la factura.
+¿Cómo se entera la comercial de que el cliente pagó la factura? De una factura que ella todavía no sabe.
+
+@1:04:58 - Martin Hendrik (ALFA ELECTRONIC)
+Pues generalmente... Realmente, a la comercial no la responsabilizamos del pago de las facturas. Ok. Esa función se la dejamos al área contable, a la persona de contabilidad.
+Ella es la que hace seguimiento mes a mes de las facturas que están pendientes de pago y la que las gestiona.
+Para que la comercial se dedique exclusivamente a traer equipos, a traer equipos y a que confirmen pedidos. Ok.
+
+@1:05:29 - Jorge Carrera (blasterinformation.com)
+Entonces, el trabajo de la comercial llegaría hasta el punto, hasta qué punto llegaría el trabajo de la comercial dentro del sistema, cuando se hace la orden de compra.
+
+@1:05:42 - Martin Hendrik (ALFA ELECTRONIC)
+Despacho del equipo y verificar si funcionó o si va a regresar en garantía. Ok.
+
+@1:05:47 - Jorge Carrera (blasterinformation.com)
+Sí. Hasta el despacho del equipo. Sí.
+
+@1:05:51 - Martin Hendrik (ALFA ELECTRONIC)
+Por ejemplo, a mí me gustaría, un ejemplo, esta línea que yo le tengo acá resaltada en azul. Ok. A mí me gustaría que, entonces, este sistema, por ejemplo, él me muestra acá la lista de todos los equipos que tiene ese cliente, cuáles están en reparación, en garantía, cotizados.
+Me muestra la marca, el tipo, la serie. Es como una ventana de Excel con todos los datos de cada equipo, ¿sí ve?
+Sí. Él muestra en cuánto se cotizó, la fecha de la cotización, la fecha en que llegó el equipo, el número de la cotización, la fecha en que llegó la orden de compra, si fue confirmada con un correo o si ese cliente maneja orden de compra, pues acá se pone el número de la orden de compra.
+Me muestra en qué fecha se hizo la expedición de ese equipo, con qué número de orden de envío, y los que están facturados, él me muestra el número de factura que se le asignó a ese equipo.
+
+@1:08:00 - Jorge Carrera (blasterinformation.com)
+Anotadita. Sí.
+
+@1:08:02 - Martin Hendrik (ALFA ELECTRONIC)
+Ok. Porque son cosas que actualmente hacemos, pero como el sistema no lo tiene, yo lo hago con Excel, pero la idea sería que dejara más de usar cosas por allí y por allá y que todo se pudiera hacer en el sistema.
+No, no, espectacular.
+
+@1:08:17 - Jorge Carrera (blasterinformation.com)
+Ahora fíjate. Ok, perfecto. Ahora déjame ver que tengo aquí el histórico. Bueno, la cliente debe manejar el histórico. histórico.
+Recompras. Ella no maneja recompra, es decir, seguimiento. Bueno, eso es parte de lo que me explicaste al principio de hacer seguimientos.
+El trabajo comercial que ella debe hacer todos los días, todos los meses. A los clientes inclusive que ya se le, bueno, está próximo al vencimiento de la garantía.
+Porque lo importante es que ella sepa qué equipo tiene próximo a vencimiento. Mantenimiento de garantía de manera tal de que ella haga visitas o haga contactos para que se haga una recompra porque es posible que un equipo haya que hacerle mantenimiento constante y bueno y uno con esa garantía, mira ojo, se te avance la garantía, te llamo, tú quieres que se te devuelva ese mantenimiento, o ese trabajo de ella es importante, no sé qué opinas tú de que ella tenga acceso a ver qué garantía estar pendiente de hacerse.
+
+@1:09:30 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, normalmente debe hacer ese seguimiento, pero no es tan fácil, porque el sistema no lo muestra, o sea, ¿cómo decir?
+Es lo mismo, tocaría hacer una extracción de lo que se despacha cada mes y según la fecha de despacho Ver...
+Ver... Ver... Ver... Ver... Cuando se cumplen los seis meses y hacer seguimiento al cliente. Pero el sistema aquí no tiene una columna que me muestre cada equipo despachado.
+Si se despachó hace cinco meses, acá no hay una columna que me diga queda un mes de garantía, por ejemplo.
+Eso no sale, no está. Ok.
+
+@1:10:22 - Jorge Carrera (blasterinformation.com)
+Esa es parte de la mejora entre tantas cosas que estamos viendo que hay que hacer, ¿no? Esa parte del seguimiento, de la garantía.
+Voy a anotarlo por aquí, aunque ya yo lo tengo por aquí grabado, pero igualito voy a anotarlo. Te tengo también otra pregunta y es referente a los KPIs, a los indicadores.
+Tú como dueña, encargada, ¿qué KPI, qué marcadores crees tú que te hacen falta? Gràcies.
+
+@1:13:00 - Martin Hendrik (ALFA ELECTRONIC)
+Y así yo puedo ver cómo está esa zona de manera rápida, pero actualmente me toca es con extracciones de Excel y ponerme uno a uno a agrupar los datos.
+
+@1:13:11 - Jorge Carrera (blasterinformation.com)
+Claro, y ver la eficiencia de cada comercial, porque de repente tú ves que una comercial ha hecho tantas visitas y de esa visita un 90% han sido satisfactorias, donde el cliente ha mandado equipo.
+Pero hay otro comercial de que tantas visitas, solamente un 10% son los que lo han concretado. Entonces tú empiezas a ver que algo está pasando, inclusive las zonas.
+Hay una zona que de los 90% de las cotizaciones, esa zona, ese 90% se ha reparado. Y hay otras zonas en las cuales de tantas cotizaciones, solamente el 10% son las que se han...
+O sea, sabes qué zona hay que darle más fuerza, porque se cotizan... Isa, pero no se termina de concluir.
+
+@1:14:03 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, actualmente es casi que por percepción, yo lo siento, no es porque lo saque directo del sistema, yo me doy cuenta.
+Cuando cotizamos cuando ingresamos pedidos, yo me doy cuenta que los pedidos, la mayoría de pedidos o la mayoría de equipos llegan desde X zona, la otra zona está quieta.
+Entonces, sí influye, la mayoría de veces influye muchísimo la comercial, porque pueden haber clientes muy buenos, pero si la comercial no gestiona en debida manera, la zona se queda quieta.
+
+@1:14:40 - Jorge Carrera (blasterinformation.com)
+Sí, fíjate, me ha pasado particularmente que el cliente puede ser muy bueno, como dices tú, pero si tú no das respuestas a sus inquietudes de manera rápida y eficiente, el cliente se te va.
+Sí. serio? Porque no siente que hay un buen feedback. O si... Uno le da la respuesta que la persona perfectamente está preguntando, porque también sucede, porque la persona de repente te pregunta, yo quiero saber de qué color es el equipo, de qué color es el equipo, y yo nunca le digo el color, simplemente le hablo del tamaño, le hablo del peso, pero nunca le digo el color.
+Entonces la respuesta es ineficiente, aunque aquí, claro, depende también del técnico, porque la comerciante simplemente transmite lo que le dice el técnico.
+
+@1:15:29 - Martin Hendrik (ALFA ELECTRONIC)
+Por ejemplo, a mí me gustaría que el sistema me muestre, un ejemplo, la lista de clientes que han sido, que no han sido visitados en seis meses.
+O la lista de clientes que no me han enviado ni un solo equipo, al menos en seis meses. Algo así.
+Yo actualmente lo puedo hacer con este software, pero todo es manual, todo toca hacer la extracción. En Excel, todo eso.
+Sería más fácil si con los datos que ya tiene registrados me pudiera decir. Tales empresas no registran ningún equipo recibido en seis meses.
+Algo así. Ok.
+
+@1:16:18 - Jorge Carrera (blasterinformation.com)
+Ok.
+
+@1:16:19 - Martin Hendrik (ALFA ELECTRONIC)
+Se puede hacer muchas cosas, ¿no? En particular.
+
+@1:16:23 - Jorge Carrera (blasterinformation.com)
+¿Qué otra cosita, Maribel, referente a la parte comercial, consideras tú que nos podría hacer falta o que podríamos mejorar?
+
+@1:16:37 - Martin Hendrik (ALFA ELECTRONIC)
+Pues me gustaría de pronto esta pestaña de acciones comerciales que tiene este software. En el software nuevo que fuera mucho más dinámica, más en, por ejemplo, actualmente yo le, como le decía, lo hacemos es en, lo hacemos, lo hacemos más en Excel que aquí, porque esta, esta pestaña.
+Entonces, en el Excel, ¿cómo lo hacemos? Cada asesora tiene una base de datos. Espérenme, miro un momentico acá rápido si yo puedo acceder a una carpeta de una asesora.
+Gracias. Yo les pido a ellas hacer un seguimiento trimestral, ¿sí? De tal manera que yo pueda ver acá en cada trimestre qué tipo de seguimiento le hicieron a ese cliente.
+Si lo llamaron, lo visitaron, en qué fecha, si el cliente contestó o no contestó, ¿sí? Pero a mí me gustaría que como que este tipo de seguimiento así, por trimestre o no sé cómo es, fuera directamente acá en el software, en la pestaña de acciones comerciales, en un módulo que se llama acciones comerciales.
+En vez de tenerlo por fuera en un Excel.
+
+@1:19:49 - Jorge Carrera (blasterinformation.com)
+Claro, que ella registre, todo lo que ella registre en acciones comerciales, si llamó, si contestó, todo se registra y tú lo puedas llevar a un report.
+
+@1:20:00 - Martin Hendrik (ALFA ELECTRONIC)
+Porque es que actualmente para hacer esa acción comercial en el sistema toca hacerla cliente por cliente, ¿sí? Buscar Bavaria, TAN, la busco, pestaña acción comercial y registro.
+Busco otra empresa, acción comercial, pestaña y registro. Si hubiese un panel donde que se llame acciones comerciales y me vote así como a este excel.
+te resumen? La lista de todas las empresas que ya tiene asignadas y me parece más rápido, ¿sí? Que le salga ahí de qué ciudades el teléfono y que por trimestres ella me ponga ahí en qué fecha lo llamó, qué dijeron, en qué fecha lo visitó y qué pasó en esa visita.
+Algo así.
+
+@1:20:52 - Jorge Carrera (blasterinformation.com)
+¿Por rango de fecha? Ah, bueno, primero trimestre, segundo trimestre, perfecto. Sí. ¿Por qué?
+
+@1:21:02 - Martin Hendrik (ALFA ELECTRONIC)
+¿Para hacerlo empresa por empresa en el software como está actualmente? ¿Eso toma un montón de tiempo?
+
+@1:21:08 - Jorge Carrera (blasterinformation.com)
+No, no, no, no, impráctico. No, imposible. Ah, no, listo. Es espectacular. ¿Qué otra que tengo por aquí pendiente, Maribel?
+Yo creo que no, yo tengo aquí como tenía varias preguntas, pero en la conversión que hemos tenido, todas han sido respondidas.
+Claro, tenía una aquí referente a la viabilidad comercial de un equipo. Claro, tú me hablaste de que debería ser mayor de dos millones de pesos y que tenga, pues, que esté dentro de la gama industrial.
+Ese es el único criterio que manejamos, ¿verdad? Para la aceptación de un equipo.
+
+@1:21:59 - Martin Hendrik (ALFA ELECTRONIC)
+Sí. Que sea electrónico, no reparamos mecánica, o sea, partes mecánicas, no reparamos parte mecánica, no reparamos equipos que son solo de óptica, no reparamos óptica, y que sean gama industrial, ¿no?
+Que valgan más de dos millones y que sean de gama industrial, y que la falla sea electrónica.
+
+@1:22:25 - Jorge Carrera (blasterinformation.com)
+Ese precio de dos millones, ¿quién lo establece? O sea, no es que ¿quién lo establece? ¿Cómo sé yo que un equipo me vale más de dos millones?
+¿Quién lo dice?
+
+@1:22:35 - Martin Hendrik (ALFA ELECTRONIC)
+Es simplemente una frase, digamos, pero muchas veces llegan equipos que no los valen, ¿sí? Ok. A veces el mismo ingeniero no sabe que eso es barato, porque él no es el que compra, el que compra es compras, pero puede pasar...
+Un ejemplo, que es un equipo que es obsoleto, muy viejo y ya no se consigue. Entonces, igual a él le interesa repararlo.
+Así lo hayan comprado hace 10 años por poquito. Porque si no se logra reparar ese aparatico chiquito, después les toca cambiar una máquina completa que vale muchísimo.
+¿Sí? Esa observación de mandar a reparar equipos de más de 2 millones de pesos la hacemos más que todo es ¿por qué?
+Porque, y pasa más que todo es con clientes pequeños, con empresas grandes no hay problemas. Medianos grandes hay cero problemas.
+Las empresas pequeñas, muchas veces, ellos quieren agotar todas las opciones. Entonces, lo mandan así. Y cueste menos, pero cuando les llega la condición, se enojan, dicen, no, pero eso vale más que el, la reparación vale más que el nuevo, no sé qué.
+Entonces, lo chistoso es que en el formato de Excel que uno les pide llenar, ellos escribieron que sí valía más de dos millones.
+Y ahí dice, a fin que la reparación pueda ser viable para ambas partes, ¿sí? Entonces, cuando eso suele pasar, que nos responden, la reparación es más cara que el equipo.
+Y un ejemplo, lo cotizamos en 700 mil pesos, pues uno le dice al cliente, pues disculpe ingeniero, pero ¿por qué razón mandó el equipo si se le advirtió de manera inicial que no es viable mandar a reparar cosas que valen menos de dos millones, ¿sí?
+Porque... Nos hace perder tiempo a nosotros, pierde tiempo usted, usted se enfada, queda molesto, pero para eso justamente se hace ese filtro inicial.
+Entonces es importante que desde el inicio nos diga la verdad y sea sincero y nos diga si es un equipo costoso o no, porque no siempre, como nosotros reparamos equipos de todas las marcas y para cualquier industria, no siempre podemos lograr encontrar cuál es el precio de ese equipo que nos llegó al laboratorio, ¿sí?
+
+@1:25:39 - Jorge Carrera (blasterinformation.com)
+Fíjate, Maribel, aquí me estoy consiguiendo con cuello botella, porque de alguna manera, no sé si, ¿cómo se llama el muchacho?
+Giovanni? Giovanni, no sé si Giovanni o tú, de alguna manera, tienen que autorizar... Utilizar todos los equipos que llegan a la empresa.
+Porque la comercial, claro, ella sabe vender, pero ella no sabe muy bien el costo de un equipo. El técnico lo que necesita es reparar.
+Y él no sabe muy bien cuánto cuesta un equipo. Y eso lo maneja Maribel o lo maneja Giovanni. Entonces.
+
+@1:26:28 - Martin Hendrik (ALFA ELECTRONIC)
+Le voy a comentar cómo se hace. Bueno, la comercial trae todo lo que le den. Ella lo que quiere es facturar.
+Claro. Muchísimo, ¿cierto? Aunque no, la mayoría de veces ellas saben cómo exigirle al cliente, ingeniero, está seguro que ese equipo es costoso, no sé qué.
+Pero sí tal que cual vez nos llega algo barato. El equipo llega, se registra en el sistema y se le pasa a un técnico.
+Entonces. Gracias. Gracias. Gracias. Y si definitivamente al cliente le parece muy costosa la cotización, pues lo sacamos como cotización de negada.
+Pasa muy poquito, pero sí pasó.
+
+@1:28:11 - Jorge Carrera (blasterinformation.com)
+Perfecto. Fíjate que ahí ya hay otro estatus. Entre todo lo que hemos hablado, fíjate, esta última, ya hay otro estatus.
+Porque el estatus en el cual el técnico ve que el equipo, su reparación es más caro que comprar lo nuevo.
+Y eso pasa un estatus en el cual Maribel tiene que observar que debe hacer una cotización para un equipo nuevo.
+
+@1:28:35 - Martin Hendrik (ALFA ELECTRONIC)
+Porque esta información... Me permite un momentito, se pega. De un momentito. Sí. De un un momentito. Sí.
+
+@1:28:58 - Jorge Carrera (blasterinformation.com)
+De un momentito. Sí. De Gracias. Estábamos conversando en los dos millones. Sí.
+
+@1:29:16 - Martin Hendrik (ALFA ELECTRONIC)
+Pero bueno, digamos que yo a eso no le veo tanta gravedad. Sí, sí. Pero pues sí me gustaría, todas las ideas que usted tenga para que mi seguimiento comercial sea más eficiente, bienvenidas.
+
+@1:29:32 - Jorge Carrera (blasterinformation.com)
+Bueno, espectacular, y eso es lo que vamos a hacer. Tengo temas para conversar. La próxima reunión era conversar o referente a la parte técnica.
+No sé cuándo crees tú que podríamos conversar referente a la parte técnica, no sé si el viernes o el próximo lunes.
+
+@1:29:57 - Martin Hendrik (ALFA ELECTRONIC)
+Bueno, los viernes para nosotros son bien críticos porque es el día que se confirman pedidos y se piden repuestos, entonces no.
+Dale, perfecto. Sería más bien el lunes. Ok. Y más bien, si gusta, nos reunimos otra vez el viernes nosotros dos.
+Pero cuando nazca el bebé sí voy a estar ausente como unos cinco días.
+
+@1:31:16 - Jorge Carrera (blasterinformation.com)
+No, pero tú me dices, si ya hablamos el viernes, aunque el lunes podemos hablar sobre la parte técnica, cotización y facturación el lunes.
+
+@1:31:34 - Martin Hendrik (ALFA ELECTRONIC)
+Pues es que la parte técnica es bien larguita, yo creo que para eso sería más bien una sola sesión, sí.
+
+@1:31:42 - Jorge Carrera (blasterinformation.com)
+Bueno, pues, claro, estoy tratando de ir como el proceso como tal, ¿no? Si quieres, el lunes hablamos sobre la parte de cotizaciones, facturación y administrativo.
+ACTION ITEM: Upload process videos to Drive for Jorge: diagnosis, quoting, parts, repair, dispatch, invoicing - WATCH
+Y la parte técnica, porque yo creo que yo el miércoles no voy a poder estar. Pero si quieres, el martes hablamos de la parte técnica.
+Ok.
+
+@1:32:14 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, no hay problema. De hecho, yo voy a mirar si le puedo seguir cargando al Drive. Como yo le cargué un video del proceso de registro de equipos.
+Sí, espectacular, espectacular.
+
+@1:32:30 - Jorge Carrera (blasterinformation.com)
+Me sirvió muchísimo. Ah, bueno.
+
+@1:32:33 - Martin Hendrik (ALFA ELECTRONIC)
+Gracias. Porque yo lo que puedo hacer es basada en, permítame. Digamos que el proceso normal de, el paso a paso de un equipo es el que yo le compartí.
+¿Sí está viendo mi pantalla o no? Tengo la duda. Sí, sí. Ah, bueno. El proceso normal de un equipo es el que yo le muestro acá, en esta pestaña de mapa de proceso.
+El equipo llega, se registra, se diagnostica, después se cotiza. Después de que se cotiza es que llega el pedido del cliente.
+Después se... Se hace la lista de repuestos que toca comprarle, se compran, se reparan, después de que se repara se despacha y después llega toda la parte de facturación, ¿cierto?
+Yo creería que yo le puedo empezar a subir como esos videitos, este paso a paso que le estoy dando acá.
+Sí. Para que usted vea como esa línea de tiempo que sigue cada equipo. Perfecto. Yo creo que yo le puedo seguir cargando esas informaciones, aunque todavía nos falte hacer las reuniones donde socialicemos.
+
+@1:33:53 - Jorge Carrera (blasterinformation.com)
+Sí, aunque también podríamos, no, perfecto, excelente, podríamos hacer las reuniones también basado en esa línea de tiempo.
+
+@1:34:03 - Martin Hendrik (ALFA ELECTRONIC)
+Yo creería que sería más fácil de explicarle cómo funciona el sistema si lo hacemos así. Así.
+
+@1:34:10 - Jorge Carrera (blasterinformation.com)
+Sí. fíjate, bueno, ya la parte... Sí. Concepción, ya lo hicimos, la parte comercial ya la acabamos de terminar. Entonces, creería yo.
+
+@1:34:20 - Martin Hendrik (ALFA ELECTRONIC)
+Sí, seguiría la parte técnica con Giovanni, digamos, para explicarle cómo se hace el diagnóstico.
+
+@1:34:29 - Jorge Carrera (blasterinformation.com)
+Bueno, pero entonces vamos a hacer el lunes la parte técnica. Bueno, sí. Sí, tranquilo, sin apuro. Y si Dios mediante, claro que sí, bueno, nada, llegas a feliz término, porque es así.
+Entonces, no, bueno, esperamos lo que tengamos que esperar. O no, no, sin apuro, Maribel, igualito esto se va a hacer.
+Sí.
+
+@1:34:52 - Martin Hendrik (ALFA ELECTRONIC)
+No, digamos que tampoco mi interés no es atrasar el proceso porque, pues, para mí es importante que fluye, sí.
+Claro, claro.
+
+@1:35:04 - Jorge Carrera (blasterinformation.com)
+Pero nada, vamos a hacer dos a la parte técnica el lunes, según el flujo.
+
+@1:35:09 - Martin Hendrik (ALFA ELECTRONIC)
+Sí.
+
+@1:35:10 - Jorge Carrera (blasterinformation.com)
+Y después continuamos el...
+

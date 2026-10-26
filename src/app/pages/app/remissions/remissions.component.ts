@@ -62,6 +62,7 @@ interface Remission {
     invoiceId: number | null;
     invoiceStatus: string;
     invoiceReference: string;
+    invoiceReferenceCode: string;
     creditClient: boolean;
     /** true cuando la modalidad exige pago antes de despachar. */
     paymentGate: boolean;
@@ -103,7 +104,7 @@ const REMISSIONS_TEMPLATE = `
             <h4 class="mb-0"><i class="bi bi-truck me-2"></i>Remisiones</h4>
         </div>
         <button class="btn btn-theme" (click)="openCreate()" data-testid="create-remission-btn">
-            <i class="bi bi-plus-lg me-1"></i>Nueva remision
+            <i class="bi bi-plus-lg me-1"></i>Nueva remisión
         </button>
     </div>
 
@@ -161,7 +162,7 @@ const REMISSIONS_TEMPLATE = `
                             <div class="text-warning small" *ngIf="anchoredAlert(eq)">{{ anchoredAlert(eq) }}</div>
                         </div>
                         <button class="btn btn-sm btn-outline-primary" (click)="addEquipmentToRemission(group, eq)" data-testid="add-equipment-to-remission">
-                            <i class="bi bi-plus-lg me-1"></i>Agregar a remision
+                            <i class="bi bi-plus-lg me-1"></i>Agregar a remisión
                         </button>
                     </div>
                 </div>
@@ -182,7 +183,7 @@ const REMISSIONS_TEMPLATE = `
 
     <div class="card mb-3" *ngIf="showForm">
         <div class="card-body">
-            <h5 class="card-title">{{ editingId ? 'Editar' : 'Nueva' }} Remision</h5>
+            <h5 class="card-title">{{ editingId ? 'Editar' : 'Nueva' }} Remisión</h5>
             <div class="alert alert-warning" *ngIf="anchoredAlertMessage" data-testid="anchored-alert">
                 <i class="bi bi-exclamation-triangle me-2"></i>{{ anchoredAlertMessage }}
                 <!-- El requerimiento de despacho exige aceptacion EXPLICITA de los
@@ -192,7 +193,7 @@ const REMISSIONS_TEMPLATE = `
                     <input class="form-check-input" type="checkbox" id="anchoredAcceptedCheck"
                            [(ngModel)]="form.anchoredAccepted" data-testid="anchored-accepted-check" />
                     <label class="form-check-label fw-semibold" for="anchoredAcceptedCheck">
-                        Confirmo la inclusion de los equipos anclados en esta remision
+                        Confirmo la inclusión de los equipos anclados en esta remisión
                     </label>
                 </div>
             </div>
@@ -227,13 +228,13 @@ const REMISSIONS_TEMPLATE = `
                     <input class="form-control" [(ngModel)]="form.carrierName" data-testid="carrier-name-input" />
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Numero de guia</label>
+                    <label class="form-label">Número de guía</label>
                     <input class="form-control" [(ngModel)]="form.guideNumber" data-testid="guide-number-input" />
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Garantia (meses)</label>
+                    <label class="form-label">Garantía (meses)</label>
                     <select class="form-select" [(ngModel)]="form.warrantyMonths" data-testid="warranty-select">
-                        <option [ngValue]="0">Sin garantia</option>
+                        <option [ngValue]="0">Sin garantía</option>
                         <option [ngValue]="3">3 meses</option>
                         <option [ngValue]="6">6 meses</option>
                         <option [ngValue]="12">12 meses</option>
@@ -246,7 +247,7 @@ const REMISSIONS_TEMPLATE = `
                 <div class="col-md-3">
                     <div class="form-check mt-4">
                         <input class="form-check-input" type="checkbox" [(ngModel)]="form.valued" id="valuedCheck" data-testid="valued-remission-check" />
-                        <label class="form-check-label" for="valuedCheck">Remision valorizada (Zona Franca)</label>
+                        <label class="form-check-label" for="valuedCheck">Remisión valorizada (Zona Franca)</label>
                     </div>
                 </div>
                 <div class="col-md-4">
@@ -263,14 +264,19 @@ const REMISSIONS_TEMPLATE = `
                         </div>
                     </div>
                 </div>
+                <div class="col-md-7">
+                    <label class="form-label" for="remissionNotes">Notas / Comentarios</label>
+                    <textarea id="remissionNotes" class="form-control" rows="3" [(ngModel)]="form.notes" placeholder="Ej: Equipo con garantía de 6 meses por cambio de tarjeta principal; entregar solo al contacto autorizado." data-testid="remission-notes-input"></textarea>
+                    <div class="form-text text-secondary">Opcional. El comentario queda guardado en la remisión y se muestra en la previsualización del PDF.</div>
+                </div>
             </div>
 
             <div class="d-flex justify-content-between align-items-center mt-3">
                 <!-- Contador visible contra el limite duro de 4 (regla del requerimiento,
                      validada tambien en el servidor). -->
-                <h6 class="mb-0">Equipos en la remision <span class="text-secondary" data-testid="items-count">({{ form.items.length }}/{{ MAX_ITEMS_PER_REMISSION }})</span></h6>
+                <h6 class="mb-0">Equipos en la remisión <span class="text-secondary" data-testid="items-count">({{ form.items.length }}/{{ MAX_ITEMS_PER_REMISSION }})</span></h6>
                 <button class="btn btn-sm btn-outline-secondary" (click)="loadQuotePrices()" data-testid="load-quote-prices-btn">
-                    <i class="bi bi-cash-coin me-1"></i>Traer precios de cotizacion
+                    <i class="bi bi-cash-coin me-1"></i>Traer precios de cotización
                 </button>
             </div>
             <div class="alert alert-info py-2 mt-2" *ngIf="quotePricesMessage" data-testid="quote-prices-message">{{ quotePricesMessage }}</div>
@@ -280,7 +286,7 @@ const REMISSIONS_TEMPLATE = `
                 <div class="col-md-2"><input class="form-control form-control-sm" [(ngModel)]="item.accessories" placeholder="Accesorios" data-testid="item-accessories" /></div>
                 <div class="col-md-2">
                     <select class="form-select form-select-sm" [(ngModel)]="item.warrantyMonths">
-                        <option [ngValue]="0">Sin garantia</option>
+                        <option [ngValue]="0">Sin garantía</option>
                         <option [ngValue]="3">3 meses</option>
                         <option [ngValue]="6">6 meses</option>
                         <option [ngValue]="12">12 meses</option>
@@ -356,7 +362,7 @@ const REMISSIONS_TEMPLATE = `
                                 <div class="small text-danger mt-1" data-testid="payment-held-reason">{{ r.paymentHeldReason }}</div>
                             </div>
                             <div *ngIf="r.invoiceStatus && !r.paymentHeld" class="small text-success mt-1" data-testid="payment-cleared">
-                                <i class="bi bi-check-circle me-1"></i>Factura {{ r.invoiceReference || r.invoiceId }}: {{ r.invoiceStatus }}
+                                <i class="bi bi-check-circle me-1"></i>Factura {{ r.invoiceReference || r.invoiceId }}<span *ngIf="r.invoiceReferenceCode && r.invoiceReferenceCode !== r.invoiceReference"> ({{ r.invoiceReferenceCode }})</span>: {{ r.invoiceStatus }}
                             </div>
                             <div *ngIf="r.paymentOverride" class="small text-warning mt-1" data-testid="payment-override-trail">
                                 <i class="bi bi-exclamation-triangle me-1"></i>Despacho autorizado sin pago confirmado por {{ r.paymentOverrideBy }}
@@ -389,7 +395,7 @@ const REMISSIONS_TEMPLATE = `
                 <button class="btn btn-sm btn-outline-secondary" (click)="cancelDeliveryConfirm()" data-testid="cancel-delivery-confirm-btn"><i class="bi bi-x-lg"></i> Cerrar</button>
             </div>
             <div class="card-body">
-                <p>La remision <strong>{{ deliveryConfirmRemission?.consecutive }}</strong> incluye accesorios o equipos anclados que deben entregarse con el despacho:</p>
+                <p>La remisión <strong>{{ deliveryConfirmRemission?.consecutive }}</strong> incluye accesorios o equipos anclados que deben entregarse con el despacho:</p>
                 <ul class="list-group mb-3">
                     <li class="list-group-item" *ngFor="let item of accessoriesPendingItems()" data-testid="delivery-accessory-item">
                         <strong>{{ item.identifier || item.description }}</strong>
@@ -420,12 +426,12 @@ const REMISSIONS_TEMPLATE = `
             </div>
             <div class="card-body">
                 <p class="mb-2">
-                    Remision <strong>{{ invoiceLinkerRemission?.consecutive }}</strong> ·
+                    Remisión <strong>{{ invoiceLinkerRemission?.consecutive }}</strong> ·
                     {{ invoiceLinkerRemission?.clientName }} ·
                     <span class="badge bg-info">{{ dispatchTypeLabel(invoiceLinkerRemission?.dispatchType || '') }}</span>
                 </p>
                 <p class="text-secondary small">
-                    Esta remision se despacha solo cuando la factura vinculada este en estado <strong>Pagado</strong>.
+                    Esta remisión se despacha solo cuando la factura vinculada este en estado <strong>Pagado</strong>.
                     <span *ngIf="invoiceLinkerRemission?.creditClient">El cliente es de credito, pero la modalidad contra-entrega exige el pago primero.</span>
                 </p>
 
@@ -475,12 +481,12 @@ const REMISSIONS_TEMPLATE = `
             <div class="card-body">
                 <div class="alert alert-danger" data-testid="override-block-reason">{{ overrideBlockReason }}</div>
                 <p class="mb-2">
-                    La remision <strong>{{ overrideRemission?.consecutive }}</strong> de
+                    La remisión <strong>{{ overrideRemission?.consecutive }}</strong> de
                     <strong>{{ overrideRemission?.clientName }}</strong> esta retenida por pago.
                 </p>
                 <p class="text-secondary small mb-3">
                     Como administrador puede autorizar el despacho de todos modos. Quedara registrado
-                    <strong>quien</strong> lo autorizo y <strong>cuando</strong>, y sera visible en el listado de remisiones.
+                    <strong>quien</strong> lo autorizo y <strong>cuando</strong>, y será visible en el listado de remisiones.
                 </p>
                 <div class="form-check mb-3">
                     <input class="form-check-input" type="checkbox" id="overrideConfirmedCheck" [(ngModel)]="overrideConfirmed" data-testid="override-confirm-check" />
@@ -535,9 +541,9 @@ const REMISSIONS_TEMPLATE = `
                     <thead class="table-light">
                         <tr>
                             <th>Identificador</th>
-                            <th>Descripcion</th>
+                            <th>Descripción</th>
                             <th>Accesorios</th>
-                            <th>Garantia</th>
+                            <th>Garantía</th>
                             <th>Cant</th>
                             <th *ngIf="previewModel?.totalValue !== null">Precio unitario</th>
                         </tr>
@@ -547,7 +553,7 @@ const REMISSIONS_TEMPLATE = `
                             <td>{{ item.identifier }}</td>
                             <td>{{ item.description }}</td>
                             <td>{{ item.accessories || '-' }}</td>
-                            <td>{{ item.warrantyMonths ? item.warrantyMonths + ' meses' : 'Sin garantia' }}</td>
+                            <td>{{ item.warrantyMonths ? item.warrantyMonths + ' meses' : 'Sin garantía' }}</td>
                             <td>{{ item.quantity }}</td>
                             <td *ngIf="previewModel?.totalValue !== null">{{ getCurrencySymbol() }}{{ item.unitPrice | number:'1.0-0' }}</td>
                         </tr>
@@ -650,7 +656,7 @@ export class RemissionsComponent implements OnInit {
     anchoredAlertMessage = "";
     quotePricesMessage = "";
     showPreview = false;
-    previewTitle = "Remision";
+    previewTitle = "Remisión";
     previewModel: any = null;
     showDeliveryConfirm = false;
     deliveryConfirmRemission: Remission | null = null;
@@ -747,7 +753,7 @@ export class RemissionsComponent implements OnInit {
         const ok = await this.linkInvoice(this.invoiceLinkerRemission, this.selectedInvoiceId);
         if (ok) {
             this.setDispatchMessage(
-                "Factura vinculada a la remision " + (this.invoiceLinkerRemission.consecutive || "") +
+                "Factura vinculada a la remisión " + (this.invoiceLinkerRemission.consecutive || "") +
                 ". El despacho se libera cuando quede en estado Pagado.",
                 false,
             );
@@ -1002,7 +1008,7 @@ export class RemissionsComponent implements OnInit {
         // Limite duro de 4 equipos (requerimiento + regla server-side). Se bloquea
         // con mensaje visible, no en silencio: el usuario debe saber POR que.
         if (this.form.items.length >= MAX_ITEMS_PER_REMISSION) {
-            this.itemAddBlocked = `maximo ${MAX_ITEMS_PER_REMISSION} equipos por remision: divida el despacho en varias remisiones independientes`;
+            this.itemAddBlocked = `máximo ${MAX_ITEMS_PER_REMISSION} equipos por remisión: divida el despacho en varias remisiones independientes`;
             return;
         }
         if (!this.showForm || this.editingId) {
@@ -1052,7 +1058,7 @@ export class RemissionsComponent implements OnInit {
         if (this.form.items.length >= MAX_ITEMS_PER_REMISSION) {
             // El boton ya esta deshabilitado; esto es defensa en profundidad
             // (el mismo limite lo valida el servidor con 400).
-            this.itemAddBlocked = `maximo ${MAX_ITEMS_PER_REMISSION} equipos por remision: divida el despacho en varias remisiones independientes`;
+            this.itemAddBlocked = `máximo ${MAX_ITEMS_PER_REMISSION} equipos por remisión: divida el despacho en varias remisiones independientes`;
             return;
         }
         this.form.items.push({ equipmentId: "", identifier: "", description: "", accessories: "", anchoredNote: "", warrantyMonths: 0, unitPrice: 0, quantity: 1 });
@@ -1088,7 +1094,7 @@ export class RemissionsComponent implements OnInit {
             consecutive: existing?.consecutive || "",
             deliveryStatus: existing?.deliveryStatus || "pendiente",
         });
-        this.previewTitle = "Remision";
+        this.previewTitle = "Remisión";
         this.showPreview = true;
     }
 
@@ -1126,7 +1132,7 @@ export class RemissionsComponent implements OnInit {
 
     viewDeliveredDetail(remission: Remission) {
         this.previewModel = buildRemissionPrintModel(remission);
-        this.previewTitle = "Detalle de entrega - Remision " + (remission.consecutive || "");
+        this.previewTitle = "Detalle de entrega - Remisión " + (remission.consecutive || "");
         this.showPreview = true;
     }
 
@@ -1159,7 +1165,7 @@ export class RemissionsComponent implements OnInit {
         this.quotePricesMessage = "";
         const quote = await this.findLatestClientQuote();
         if (!quote) {
-            this.quotePricesMessage = "No se encontro cotizacion para este cliente.";
+            this.quotePricesMessage = "No se encontró cotización para este cliente.";
             this.cdr.detectChanges();
             return;
         }
@@ -1172,8 +1178,8 @@ export class RemissionsComponent implements OnInit {
             }
         }
         this.quotePricesMessage = updated > 0
-            ? "Se actualizaron " + updated + " precio(s) desde la cotizacion " + (quote.codigo || "") + "."
-            : "La cotizacion " + (quote.codigo || "") + " no tiene lineas que coincidan con los equipos.";
+            ? "Se actualizaron " + updated + " precio(s) desde la cotización " + (quote.codigo || "") + "."
+            : "La cotización " + (quote.codigo || "") + " no tiene líneas que coincidan con los equipos.";
         this.cdr.detectChanges();
     }
 
@@ -1232,14 +1238,14 @@ export class RemissionsComponent implements OnInit {
                 this.setDispatchMessage(
                     paymentOverride
                         ? "Despacho autorizado SIN pago confirmado por un administrador. Quedo registrado quien y cuando."
-                        : "Remision " + (remission.consecutive || "") + " marcada como entregada.",
+                        : "Remisión " + (remission.consecutive || "") + " marcada como entregada.",
                     !paymentOverride ? false : true,
                 );
                 await this.loadRemissions();
                 return;
             }
 
-            const message = await this.readErrorMessage(res, "No se pudo marcar la remision como entregada.");
+            const message = await this.readErrorMessage(res, "No se pudo marcar la remisión como entregada.");
 
             // 409 = puerta de pago. Se ofrece el override sólo a un admin y sólo
             // cuando no se venía ya de un override (si con override también
@@ -1258,7 +1264,7 @@ export class RemissionsComponent implements OnInit {
             await this.loadRemissions();
         } catch {
             this.setDispatchMessage(
-                "No se pudo contactar al servidor para marcar la entrega. La remision NO fue despachada.",
+                "No se pudo contactar al servidor para marcar la entrega. La remisión NO fue despachada.",
                 true,
             );
         }
@@ -1308,7 +1314,7 @@ export class RemissionsComponent implements OnInit {
                 const body = await res.json();
                 detail = String((body && body.error) || "");
             } catch { /* cuerpo no JSON */ }
-            this.formSaveBlock = detail !== "" ? detail : `No se pudo guardar la remision (HTTP ${res.status})`;
+            this.formSaveBlock = detail !== "" ? detail : `No se pudo guardar la remisión (HTTP ${res.status})`;
         } catch { /* red: el fetch ya lanzo; el formulario queda abierto y sin perder datos */ }
     }
 }

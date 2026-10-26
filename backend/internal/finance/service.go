@@ -81,7 +81,7 @@ var (
 	errRecurringItemsRequired       = errors.New("la factura recurrente debe tener al menos un item")
 	errRecurringItemAmountInvalid   = errors.New("los items de la factura recurrente deben tener cantidad y precio mayores que cero")
 	errPaymentRetentionInvalid      = errors.New("las retenciones del pago son invalidas")
-	errPaymentExceedsBalance        = errors.New("el monto del pago supera el saldo pendiente de la factura asociada; verifica el total y los pagos ya registrados")
+	errPaymentExceedsBalance        = errors.New("el monto del pago supera lo pendiente por pagar en efectivo de la factura asociada; verifica el total y los pagos ya registrados")
 	errOasisDateInvalid             = errors.New("el rango de fechas del export es invalido (use YYYY-MM-DD)")
 	errExpenseIDRequired            = errors.New("el id del gasto es obligatorio")
 	errExpenseNotFound              = errors.New("gasto no encontrado")
@@ -144,7 +144,7 @@ SELECT ci.series_prefix, ci.sequence_number, ci.issue_date, ci.due_date,
 FROM finance_invoices ci
 LEFT JOIN crm_clients cc
 	ON cc.company_id = ci.company_id
-	AND ci.client_id = 'crm-client-' || cc.id
+	AND (ci.client_id = 'crm-client-' || cc.id OR ci.client_id = cc.id)
 WHERE ci.company_id = $1
 	AND ci.soft_delete = false
 	AND ci.status != 'Cancelado'

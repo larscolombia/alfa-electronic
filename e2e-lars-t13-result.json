@@ -1,0 +1,55 @@
+{
+  "test": "e2e-lars-t13-factura",
+  "baseUrl": "https://alfa.software.net.co",
+  "checks": {
+    "loggedIn": true,
+    "prospectCreated": true,
+    "prospectConvertedToClient": true,
+    "plazoActualizado": true,
+    "quoteCreated": true,
+    "quoteApproved": true,
+    "facturarBtnVisible": true,
+    "invoiceCreatedViaUi": true,
+    "invoiceConsecutiveCaptured": true,
+    "invoiceFoundInApi": true,
+    "sourceQuoteIdLinked": true,
+    "clientLinkedToMaster": true,
+    "plazoInherited": true,
+    "invoiceInFinanceList": true,
+    "noDuplicateOnUiRefacturar": true,
+    "noDuplicateInApi": true,
+    "apiRefacturarReturns409": true
+  },
+  "codes": {
+    "prospectId": "a2440bbf-dbca-43b4-a2a6-e5ee99029958",
+    "clientId": "c5bba7bd-7522-4d4a-965e-34e8b58249e3",
+    "quoteId": "60ade7dd-6ed0-4d76-9a67-783ddb6276c4",
+    "quoteCodigo": "PW-T13-1792912355351",
+    "quoteToken": "76a15b89946c2e76c56e31c74f42ce07",
+    "invoiceId": 255,
+    "invoiceCode": "FAC-2026-000068",
+    "invoiceSeriesPrefix": "FAC-2026-",
+    "invoiceSequenceNumber": 68
+  },
+  "observations": [
+    "DATO: conversión prospecto→cliente (nuevo), clientId=c5bba7bd-7522-4d4a-965e-34e8b58249e3.",
+    "DATO: GET /finance/invoices en la vista de finanzas: disparado.",
+    "OBSERVACION: tras facturar, el botón 'Convertir en factura' ya no aparece (la UI oculta la acción). Se verifica idempotencia por API.",
+    "DATO: factura FAC-2026-000068 (id=255) source='quote' cliente='PW T13 Fact Company 1792912355351' issue=2026-10-25 due=2026-12-09 (45d) total=1508000 estado='Borrador'."
+  ],
+  "consoleErrors": [],
+  "pageErrors": [],
+  "screenshots": [
+    "/var/www/alfa.software.net.co/playwright-artifacts/e2e-lars-t13-01-cotizacion-aprobada-lista-1792912360596.png",
+    "/var/www/alfa.software.net.co/playwright-artifacts/e2e-lars-t13-02-factura-creada-mensaje-1792912361279.png",
+    "/var/www/alfa.software.net.co/playwright-artifacts/e2e-lars-t13-03-factura-en-modulo-finanzas-1792912364195.png",
+    "/var/www/alfa.software.net.co/playwright-artifacts/e2e-lars-t13-04-refacturar-boton-oculto-1792912368744.png"
+  ],
+  "cleanupLog": [
+    "factura 255 → HTTP 204",
+    "cotización 60ade7dd-6ed0-4d76-9a67-783ddb6276c4 → HTTP 204",
+    "cliente c5bba7bd-7522-4d4a-965e-34e8b58249e3 → HTTP 204",
+    "prospecto a2440bbf-dbca-43b4-a2a6-e5ee99029958 → HTTP 204"
+  ],
+  "error": ""
+}

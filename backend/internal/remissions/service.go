@@ -47,7 +47,8 @@ const remissionColumns = `r.id, r.consecutive, r.company_id, r.client_name, r.cl
 	r.status, r.delivery_status, r.created_by, r.created_at, r.updated_at,
 	r.invoice_id, r.payment_override, r.payment_override_by, r.payment_override_at,
 	COALESCE(fi.status, '') AS invoice_status,
-	COALESCE(fi.reference_code, '') AS invoice_reference,
+	` + invoiceDisplayCodeSQL + ` AS invoice_reference,
+	COALESCE(fi.reference_code, '') AS invoice_reference_code,
 	COALESCE(cc.credit_enabled, false) AS client_credit_enabled`
 
 const remissionJoins = `
@@ -78,7 +79,7 @@ func scanRemission(row interface{ Scan(...any) error }) (*Remission, error) {
 		&photosJSON, &itemsJSON, &r.Valued, &r.TotalValue, &r.WarrantyMonths, &r.Notes,
 		&r.Status, &r.DeliveryStatus, &r.CreatedBy, &createdAt, &updatedAt,
 		&r.InvoiceID, &r.PaymentOverride, &r.PaymentOverrideBy, &overrideAt,
-		&r.InvoiceStatus, &r.InvoiceReference, &r.CreditClient,
+		&r.InvoiceStatus, &r.InvoiceReference, &r.InvoiceReferenceCode, &r.CreditClient,
 	)
 	if err != nil {
 		return nil, err

@@ -461,7 +461,8 @@ func (h *Handler) receivePurchaseLine(c echo.Context) error {
 	result, err := h.service.ReceivePurchaseLine(companyID, id, req.Quantity, actorFromRequest(c))
 	if err != nil {
 		switch {
-		case errors.Is(err, errPurchaseLineNotFound), errors.Is(err, errInvalidStatus), errors.Is(err, errReceiveQuantity):
+		case errors.Is(err, errPurchaseLineNotFound), errors.Is(err, errInvalidStatus),
+			errors.Is(err, errReceiveQuantity), errors.Is(err, errReferenceNotFound):
 			return c.JSON(http.StatusBadRequest, map[string]any{"error": result.Message, "ok": false})
 		default:
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "no se pudo registrar el recibo"})

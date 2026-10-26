@@ -1,15 +1,15 @@
 /**
  * Lógica pura para vincular equipos CRM con el prospecto real.
  *
- * El id numérico del prospecto (ProspectRecord.id) es sintético: se deriva con
- * parseInt del UUID y colisiona. La vinculación estable es el UUID real
- * (backendId). Además del match por UUID, la consulta de equipos incluye el
- * NIT y el nombre de la empresa para capturar las recepciones directas
- * (prospect_id = "-9000") registradas desde el módulo Trabajo.
+ * El id del prospecto (ProspectRecord.id) YA es el UUID real del backend
+ * (antes era un entero sintético por posición de lista que colisionaba entre
+ * recargas). La vinculación estable sigue siendo ese UUID. Además del match
+ * por UUID, la consulta de equipos incluye el NIT y el nombre de la empresa
+ * para capturar las recepciones directas registradas desde el módulo Trabajo.
  */
 
 export interface EquipmentProspectLike {
-    id?: number;
+    id?: string | number;
     backendId?: string;
     nit?: string;
     compania?: string;
@@ -28,8 +28,8 @@ export function resolveEquipmentProspectId(prospect: EquipmentProspectLike | nul
         return backendId;
     }
 
-    const numericId = Number(prospect?.id);
-    return Number.isFinite(numericId) ? String(Math.trunc(numericId)) : "0";
+    const idText = String(prospect?.id ?? "").trim();
+    return idText ? idText : "0";
 }
 
 /** Construye el criterio de consulta de equipos para un prospecto (UUID + datos del cliente). */

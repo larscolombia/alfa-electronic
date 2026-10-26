@@ -1217,6 +1217,19 @@ func (s *Service) ReceivePurchaseLine(companyID, lineID string, qty int, actor s
 		capped = fmt.Sprintf(" (se limito a %d porque solo faltaban %d)", remaining, remaining)
 	}
 
+	// La referencia DEBE existir en el catalogo antes de tocar nada: recibir
+	// contra una referencia fantasma marcaba received_quantity pero el material
+	// se perdia en silencio (200 OK sin acreditar stock ni dejar movimiento).
+	// Se valida antes del UPDATE para que el rechazo no deje efectos parciales.
+	if _, refErr := s.GetReference(companyID, reference); refErr != nil {
+		if errors.Is(refErr, errReferenceNotFound) {
+			return OperationResult{OK: false, Message: fmt.Sprintf(
+				"La referencia '%s' no existe en el catalogo de inventario. Cree la ficha primero o corrija la linea de compra.",
+				reference)}, errReferenceNotFound
+		}
+		return OperationResult{}, refErr
+	}
+
 	now := time.Now().UTC()
 	if _, err := s.db.Exec(`UPDATE inventory_purchase_lines SET received_quantity = $1 WHERE company_id = $2 AND id = $3`,
 		received+qty, companyID, lineID); err != nil {
@@ -1224,6 +1237,8 @@ func (s *Service) ReceivePurchaseLine(companyID, lineID string, qty int, actor s
 	}
 
 	stockNote := ""
+	// La referencia ya se validó arriba: aquí siempre existe y el recibo
+	// acredita stock + deja la traza en inventory_movements.
 	if existing, refErr := s.GetReference(companyID, reference); refErr == nil {
 		newStock := existing.CurrentStock + qty
 		movID := buildID("mov")

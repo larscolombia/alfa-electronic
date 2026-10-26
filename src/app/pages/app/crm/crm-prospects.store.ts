@@ -14,7 +14,7 @@ export interface ProspectBranchRecord {
 }
 
 export interface ProspectRecord {
-    id: number;
+    id: string;
     backendId: string;
     salutation?: string;
     nombre: string;
@@ -86,7 +86,7 @@ function normalizeBranches(value: unknown): ProspectBranchRecord[] {
 
 function normalizeProspect(record: Partial<ProspectRecord>, index: number): ProspectRecord {
     return {
-        id: Number.isFinite(Number(record.id)) && Number(record.id) > 0 ? Number(record.id) : index + 1,
+        id: normalizeText(record.id) || normalizeText(record.backendId) || String(index + 1),
         backendId: normalizeText(record.backendId),
         salutation: normalizeText(record.salutation) || "--",
         nombre: normalizeText(record.nombre),
@@ -122,8 +122,9 @@ export function replaceProspects(records: ProspectRecord[]): void {
     prospectsCache = Array.isArray(records) ? records.map((record, index) => normalizeProspect(record, index)) : [];
 }
 
-export function getProspectById(id: number): ProspectRecord | undefined {
-    return getProspects().find((prospect) => prospect.id === id);
+export function getProspectById(id: string): ProspectRecord | undefined {
+    const normalized = String(id ?? "").trim();
+    return getProspects().find((prospect) => prospect.id === normalized || prospect.backendId === normalized);
 }
 
 export function getProspectByName(name: string): ProspectRecord | undefined {
