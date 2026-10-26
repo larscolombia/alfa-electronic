@@ -80,7 +80,7 @@ acción de interfaz nunca es una autorización de negocio por sí sola.
 | COMPR-02 | Equipo solo requiere stock | Pasar a Reparación cuando la reserva esté disponible; no enviarlo a espera de importación | Reserva activa/consumible |
 | COMPR-03 | Equipo requiere al menos una compra externa | Pasar a Esperando proveedor, no a Reparación al crear/enviar la solicitud | Líneas externas y estado en tránsito |
 | COMPR-04 | Compra parcial o una línea pendiente | Mantener Posición 11; no liberar reparación hasta recibir todas las líneas requeridas | Cantidad solicitada/recibida por línea |
-| ~~COMPR-05~~ ✅ | Compra cerrada | Cambiar líneas a Comprado/En tránsito y asociar pedido, proveedor y fecha | Validado por `test:e2e-ui-compr-05` |
+| COMPR-05 | Compra cerrada | Cambiar líneas a Comprado/En tránsito y asociar pedido, proveedor y fecha | Pedido, proveedor, fecha y estado Comprado/En tránsito |
 | COMPR-06 | Proveedor sin stock | Registrar agotado, resaltar el ítem y solicitar sustitución técnica; no sustituir referencia sin aprobación | Resultado proveedor y aprobación técnica |
 | COMPR-07 | Referencias repetidas en BOM | Consolidar cantidades antes de ordenar y conservar la trazabilidad por equipo | BOM consolidada y distribución por códigos |
 | ~~COMPR-08~~ ✅ | Archivo para carga masiva | Exportar únicamente número de parte del proveedor y cantidad; validar mapeo antes de subir | Validado por `test:e2e-ui-compr-08` |
