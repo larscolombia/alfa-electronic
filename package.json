@@ -65,7 +65,8 @@
     "test:prospect-equipment-logic": "node scripts/test-prospect-equipment-logic.mjs",
     "test:auto-transitions-logic": "node scripts/test-auto-transitions-logic.mjs",
     "test:inventory-rbac-logic": "node scripts/test-inventory-rbac-logic.mjs",
-    "test:e2e-flujo-local": "node scripts/e2e-lars-flujo-completo-local-playwright.mjs"
+    "test:e2e-flujo-local": "node scripts/e2e-lars-flujo-completo-local-playwright.mjs",
+    "test:e2e-ui-com-06": "node scripts/e2e-ui-com-06-followup-playwright.mjs"
   },
   "dependencies": {
     "@angular/animations": "^21.2.6",

@@ -414,7 +414,7 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
                 </div>
                 <div class="card-footer">
                     <div class="alert alert-danger border mb-3" *ngIf="prospectSaveErrorMessage">{{ prospectSaveErrorMessage }}</div>
-                    <button class="btn btn-theme me-2" type="button" [disabled]="isSavingProspect" (click)="saveProspect()"><i class="bi bi-check2 me-1"></i> {{ isSavingProspect ? 'Guardando...' : 'Guardar' }}</button>
+                    <button class="btn btn-theme me-2" type="button" data-testid="prospect-save-btn" [disabled]="isSavingProspect" (click)="saveProspect()"><i class="bi bi-check2 me-1"></i> {{ isSavingProspect ? 'Guardando...' : 'Guardar' }}</button>
                     <button class="btn btn-outline-secondary me-2" type="button" [disabled]="isSavingProspect" (click)="saveProspectAndAddMore()">Guardar Y Agregar Mas</button>
                     <button class="btn btn-link" type="button" (click)="closeProspectForm()">Cancelar</button>
                 </div>

@@ -940,7 +940,7 @@ type EditableProfileFieldConfig = {
 
                         <div class="modal-footer">
                             <button type="button" class="btn btn-link" [disabled]="isSavingCommercialAction" (click)="closeCommercialActionModal()">Cerrar</button>
-                            <button type="button" class="btn btn-danger" [disabled]="isSavingCommercialAction" (click)="saveCommercialAction(false)"><i class="bi bi-check-lg me-1"></i>{{ isSavingCommercialAction ? "Guardando..." : "Guardar" }}</button>
+                            <button type="button" class="btn btn-danger" data-testid="commercial-action-save-btn" [disabled]="isSavingCommercialAction" (click)="saveCommercialAction(false)"><i class="bi bi-check-lg me-1"></i>{{ isSavingCommercialAction ? "Guardando..." : "Guardar" }}</button>
                         </div>
                     </div>
                 </div>
