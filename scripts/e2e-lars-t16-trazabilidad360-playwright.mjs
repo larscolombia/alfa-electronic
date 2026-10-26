@@ -14,17 +14,20 @@
  * repuestos usados). Además se verifica si la cotización muestra badge/enlace
  * de "facturada" y si la remisión enlaza la factura.
  *
- * Uso:
- *   xvfb-run -a env PW_BASE_URL=https://alfa.software.net.co PW_HEADLESS=false \
- *     node scripts/e2e-lars-t16-trazabilidad360-playwright.mjs
+ * Uso local visible:
+ *   npm run test:e2e-flujo-local
+ *
+ * Credenciales: PW_USER_EMAIL y PW_USER_PASSWORD. El runner falla de forma
+ * explícita si no puede autenticarse; nunca reporta una cadena completa tras
+ * un setup interrumpido.
  */
 
 import path from "node:path";
 import { chromium } from "playwright";
 
-const baseUrl = (process.env.PW_BASE_URL || "https://alfa.software.net.co").replace(/\/+$/, "");
+const baseUrl = (process.env.PW_BASE_URL || "http://127.0.0.1:4200").replace(/\/+$/, "");
 const timeoutMs = Number(process.env.PW_TIMEOUT_MS || "150000");
-const headless = !["false", "0", "no"].includes((process.env.PW_HEADLESS || "true").toLowerCase());
+const headless = !["false", "0", "no"].includes((process.env.PW_HEADLESS || "false").toLowerCase());
 const userEmail = process.env.PW_USER_EMAIL || "admin@alfa.com";
 const userPassword = process.env.PW_USER_PASSWORD || "1234";
 const companyId = process.env.PW_COMPANY_ID || "demo-company";
@@ -585,7 +588,11 @@ for (const [step, { ok, detalle }] of Object.entries(chain)) {
     console.log(`${step.padEnd(46).slice(0, 46)} | ${ok ? "OK " : "FAIL"} | ${detalle}`.slice(0, 220));
 }
 const fails = Object.entries(chain).filter(([, v]) => !v.ok);
-console.log(`\n${fails.length === 0 ? "✅ CADENA 360 COMPLETA" : `❌ ${fails.length} ESLABÓN(ES) EN ROJO: ${fails.map(([k]) => k).join(", ")}`}`);
+const runFailed = fails.length > 0 || Boolean(summary.error);
+if (summary.error) {
+    console.log("\n❌ EJECUCIÓN INTERRUMPIDA: no se puede declarar la cadena completa.");
+}
+console.log(`\n${runFailed ? `❌ ${fails.length} ESLABÓN(ES) EN ROJO${summary.error ? " + error de ejecución" : ""}` : "✅ CADENA 360 COMPLETA"}`);
 if (findings.length) {
     console.log("\n── Hallazgos ──");
     findings.forEach((f) => console.log(`⚠️ ${f}`));
@@ -596,4 +603,4 @@ const fs = await import("node:fs/promises");
 await fs.mkdir(artifactsDir, { recursive: true });
 await fs.writeFile(path.resolve(artifactsDir, "e2e-lars-t16-results.json"), JSON.stringify(summary, null, 2), "utf8");
 console.log(`\nResultados: ${path.resolve(artifactsDir, "e2e-lars-t16-results.json")}`);
-process.exit(fails.length > 0 || summary.error ? 1 : 0);
+process.exit(runFailed ? 1 : 0);
