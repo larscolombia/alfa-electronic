@@ -1688,11 +1688,20 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
               <button
                 type="button"
                 class="btn btn-success"
-                *ngIf="canQuickDispatch()"
-                [attr.title]="getDispatchActionTitle()"
-                [disabled]="saving || dispatching || !canCompleteDispatch()"
-                (click)="completeDispatch()">
-                {{ dispatching ? 'Despachando...' : 'Despachar y cerrar' }}
+                *ngIf="detailProject.status === 'listo-entrega'"
+                [disabled]="saving"
+                title="Abre la remisión con el equipo, cliente, OC y accesorios ya cargados. La entrega se cierra allí tras sus controles."
+                (click)="prepareDelivery()">
+                Preparar remisión y entrega
+              </button>
+              <button
+                type="button"
+                class="btn btn-outline-theme"
+                *ngIf="detailProject.status === 'listo-entrega' && isDispatchBlockedByPayment()"
+                [disabled]="saving"
+                title="Registra y valida el pago antes de liberar una entrega contra-entrega."
+                (click)="goToPayments()">
+                Registrar y validar pago
               </button>
               <button
                 type="button"
@@ -1709,6 +1718,15 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
                 [disabled]="saving"
                 (click)="continueToPurchases()">
                 Continuar a compras
+              </button>
+              <button
+                type="button"
+                class="btn btn-outline-theme"
+                *ngIf="detailProject.status === 'esperando-proveedor'"
+                [disabled]="saving"
+                title="Registra la recepción de los componentes antes de devolver el equipo a reparación."
+                (click)="registerPartsArrival()">
+                Registrar llegada de componentes
               </button>
               <button
                 type="button"
@@ -4018,6 +4036,32 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
       equipmentItemIds: [String(properties['equipmentItemId'] ?? '')],
     });
     void this.router.navigate(['/app/inventory-orders']);
+  }
+
+  /**
+   * La remisión carga el proyecto listo-entrega desde el servidor y arma su
+   * borrador con cliente, equipo, OC y equipos anclados. Centralizar el cierre
+   * allí evita que una ficha técnica salte la puerta de factura/pago.
+   */
+  prepareDelivery(): void {
+    if (!this.detailProject || this.detailProject.status !== 'listo-entrega') {
+      return;
+    }
+    void this.router.navigate(['/app/remissions']);
+  }
+
+  goToPayments(): void {
+    if (!this.detailProject) {
+      return;
+    }
+    void this.router.navigate(['/app/finance-pagos']);
+  }
+
+  registerPartsArrival(): void {
+    if (!this.detailProject || this.detailProject.status !== 'esperando-proveedor') {
+      return;
+    }
+    void this.router.navigate(['/app/inventory-movements']);
   }
 
   /**
