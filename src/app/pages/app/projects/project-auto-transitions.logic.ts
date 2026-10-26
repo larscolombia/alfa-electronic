@@ -1,28 +1,38 @@
 /**
  * Pure business logic for automatic board transitions in the technical
  * repair workflow:
- *  - A successful parts request (material reservation, purchase line or
- *    purchase request) auto-advances a project from diagnostico/por-cotizar
- *    to reparacion.
+ *  - A stock reservation, after the customer approved the work, moves a
+ *    project to reparacion. An external purchase moves it to
+ *    esperando-proveedor; creating it must never imply that parts arrived.
  *  - A project in pruebas can only be marked listo-entrega when it has a
  *    real closing test type registered or an equivalent completed checklist
  *    (mirrors the flow-pruebas-listo rule of work-test-batch.service.ts).
  * No Angular imports: this file must be importable from a Node .mjs test script.
  */
 
-export const PARTS_REQUEST_SOURCE_STATUS_IDS = ["diagnostico", "por-cotizar"] as const;
-export const PARTS_REQUEST_TARGET_STATUS_ID = "reparacion";
+export type PartsAvailabilitySource = "stock" | "compra-externa";
+
+export const PARTS_APPROVED_STATUS_ID = "pedir-repuestos";
+export const PARTS_STOCK_TARGET_STATUS_ID = "reparacion";
+export const PARTS_PURCHASE_TARGET_STATUS_ID = "esperando-proveedor";
 
 /**
- * Returns the board status the project must move to after a successful parts
- * request, or null when the project must stay where it is (already in
- * reparacion or further ahead, or in recibido/garantia flows).
+ * Returns the next status only for an OC-approved team. Stock is immediately
+ * usable; an external purchase must wait for the supplier receipt. This mirrors
+ * TranscriptCompras: position 11 until every imported line is received.
  */
-export function resolveStatusAfterPartsRequest(currentStatus: string): string | null {
+export function resolveStatusAfterPartsRequest(
+    currentStatus: string,
+    source: PartsAvailabilitySource,
+): string | null {
     const status = String(currentStatus ?? "").trim();
-    return (PARTS_REQUEST_SOURCE_STATUS_IDS as readonly string[]).includes(status)
-        ? PARTS_REQUEST_TARGET_STATUS_ID
-        : null;
+    if (status !== PARTS_APPROVED_STATUS_ID) {
+        return null;
+    }
+    if (source === "stock") {
+        return PARTS_STOCK_TARGET_STATUS_ID;
+    }
+    return source === "compra-externa" ? PARTS_PURCHASE_TARGET_STATUS_ID : null;
 }
 
 export interface ReadyForDeliveryValidation {

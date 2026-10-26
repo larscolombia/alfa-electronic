@@ -20,18 +20,20 @@
 
 | Capa | Tests | Resultado | Comando |
 |------|-------|-----------|---------|
-| Unit lógica frontend | 30 asserts | PASS (30/0) | `node scripts/test-auto-transitions-logic.mjs` |
+| Unit lógica frontend | 34 asserts | PASS (34/0) | `node scripts/test-auto-transitions-logic.mjs` |
 | Compilación TS | — | PASS | `npx tsc --noEmit -p tsconfig.app.json` |
 | E2E Playwright | 9 checks | Harness OK; checks del botón pendientes de despliegue | `node scripts/check-auto-transitions-playwright.mjs` |
 | Gherkin | 12 escenarios | Documentado | `tests/gherkin/flujo-estados-automaticos.feature` |
-| Mutation testing (manual) | 3 mutantes (target, fuentes, label sin-pruebas) | 3/3 detectados por el unit test | sed sobre `project-auto-transitions.logic.ts` + re-run |
+| Mutation testing (manual) | 4 mutantes de disponibilidad de repuestos | 4/4 definidos para detección | `tests/mutation/MUTATION-TESTING-COMPRAS-TRANSICION-REPUESTOS.md` |
 
 ## 3. Cobertura de las reglas de negocio
 
 | Regla | Cubierto por |
 |-------|--------------|
-| diagnostico/por-cotizar → reparacion tras repuestos | Unit (2 casos) + integración componente |
-| recibido/reparacion/pruebas/listo-entrega/garantia-espera-repuestos/entregado no se mueven | Unit (6 casos) |
+| Compra externa con OC → esperando-proveedor | Unit (1 caso) + integración componente |
+| Reserva de stock con OC → reparación | Unit (1 caso) + integración componente |
+| Compra externa sin OC (diagnóstico/por cotizar) no libera reparación | Unit (2 casos) |
+| Estados recibido/reparacion/pruebas/listo-entrega/garantia-espera-repuestos/entregado no se mueven | Unit (6 casos) |
 | Estados vacío/nulo/desconocido → sin movimiento | Unit (4 casos) |
 | testType real (banco-pruebas, laboratorio) aprueba cierre de pruebas | Unit (2 casos) + E2E positivo |
 | testType "sin-pruebas"/vacío/ausente bloquea con mensaje | Unit (4 casos) + E2E negativo |

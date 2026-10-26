@@ -4229,12 +4229,15 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
     });
   }
 
-  private autoAdvanceAfterPartsRequest(sourceLabel: string): void {
+  private autoAdvanceAfterPartsRequest(
+    sourceLabel: string,
+    source: 'stock' | 'compra-externa',
+  ): void {
     if (!this.detailProject || this.saving) {
       return;
     }
 
-    const nextStatusId = resolveStatusAfterPartsRequest(this.detailProject.status);
+    const nextStatusId = resolveStatusAfterPartsRequest(this.detailProject.status, source);
     if (!nextStatusId) {
       return;
     }
@@ -4242,7 +4245,9 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
     const nextProject = this.applyProjectStatusChange(this.detailProject, nextStatusId);
     this.persistProjectDetail(nextProject, {
       closeOnSuccess: false,
-      successMessage: `${sourceLabel}. El caso avanzo automaticamente a Reparacion.`,
+      successMessage: source === 'stock'
+        ? `${sourceLabel}. El material está disponible y el caso avanzó a Reparación.`
+        : `${sourceLabel}. El caso avanzó a Esperando proveedor hasta recibir todos los componentes.`,
     });
   }
 
@@ -4785,7 +4790,7 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
     this.materialRequestDraft.reference = '';
     this.selectedMaterialReference = null;
     this.purchaseLineDraft = { reference: '', component: '', type: '', brand: '', description: '', supplier: '', quantity: 1, unitPrice: 0, neededBy: '1' };
-    this.autoAdvanceAfterPartsRequest('Linea de compra creada');
+    this.autoAdvanceAfterPartsRequest('Linea de compra creada', 'compra-externa');
   }
 
   dismissMaterialNotFound(): void {
@@ -4830,7 +4835,7 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
     this.loadProjectPurchaseLines();
     this.showManualPurchaseLineForm = false;
     this.purchaseLineDraft = { reference: '', component: '', type: '', brand: '', description: '', supplier: '', quantity: 1, unitPrice: 0, neededBy: '1' };
-    this.autoAdvanceAfterPartsRequest('Linea de compra manual creada');
+    this.autoAdvanceAfterPartsRequest('Linea de compra manual creada', 'compra-externa');
   }
 
   loadProjectPurchaseLines(): void {
@@ -4940,7 +4945,7 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
     this.syncMaterialReservations(this.inventoryWorkflowService.getSnapshot().reservations);
     this.materialRequestMessage = result.message;
     this.resetMaterialRequestDraft();
-    this.autoAdvanceAfterPartsRequest('Reserva de material creada');
+    this.autoAdvanceAfterPartsRequest('Reserva de material creada', 'stock');
   }
 
   async releaseMaterialReservation(reservationId: string): Promise<void> {
@@ -5004,7 +5009,7 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
         this.purchaseRequestMessage = response?.result?.message || 'Solicitud de compra enviada.';
         this.purchaseRequestDraft = { reference: '', description: '', quantity: 1, supplier: '', estimatedCost: 0, leadTimeDays: 1, urgency: 'normal', memo: '' };
         this.loadPurchaseRequests();
-        this.autoAdvanceAfterPartsRequest('Solicitud de compra enviada');
+        this.autoAdvanceAfterPartsRequest('Solicitud de compra enviada', 'compra-externa');
       },
       error: (err) => {
         this.purchaseRequestError = err?.message || 'Error al enviar la solicitud.';

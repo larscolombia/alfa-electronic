@@ -4,8 +4,8 @@
  * (pure TS with no Angular imports; Node >= 22.6 strips the type annotations).
  *
  * Tests:
- *  - resolveStatusAfterPartsRequest: diagnostico/por-cotizar -> reparacion; every other
- *    board status (and unknown/empty values) -> null (no movement)
+ *  - resolveStatusAfterPartsRequest: stock reservado tras OC -> reparacion;
+ *    compra externa tras OC -> esperando-proveedor; otros estados no avanzan.
  *  - validateReadyForDelivery: testType distinto de "sin-pruebas" aprueba; checklist
  *    (transitionTestRuns) con respuesta inf-pruebas-realizadas real aprueba; respuestas
  *    "sin pruebas" (id o label), vacias o ausentes rechazan con mensaje accionable
@@ -22,7 +22,8 @@ const logicUrl = pathToFileURL(
 const {
     resolveStatusAfterPartsRequest,
     validateReadyForDelivery,
-    PARTS_REQUEST_TARGET_STATUS_ID,
+    PARTS_PURCHASE_TARGET_STATUS_ID,
+    PARTS_STOCK_TARGET_STATUS_ID,
 } = await import(logicUrl);
 
 // ─── Test runner ─────────────────────────────────────────────────────────────
@@ -52,14 +53,17 @@ function assertEqual(actual, expected, description) {
 
 console.log("\n=== Unit Tests: Auto Transitions Logic ===\n");
 
-console.log("── resolveStatusAfterPartsRequest: estados que avanzan ──");
-assertEqual(resolveStatusAfterPartsRequest("diagnostico"), "reparacion", "diagnostico -> reparacion");
-assertEqual(resolveStatusAfterPartsRequest("por-cotizar"), "reparacion", "por-cotizar -> reparacion");
-assertEqual(PARTS_REQUEST_TARGET_STATUS_ID, "reparacion", "Target constant is reparacion");
+console.log("── resolveStatusAfterPartsRequest: disponibilidad real ──");
+assertEqual(resolveStatusAfterPartsRequest("pedir-repuestos", "compra-externa"), "esperando-proveedor", "compra externa -> esperando proveedor");
+assertEqual(resolveStatusAfterPartsRequest("pedir-repuestos", "stock"), "reparacion", "stock reservado -> reparacion");
+assertEqual(PARTS_PURCHASE_TARGET_STATUS_ID, "esperando-proveedor", "Compra externa espera proveedor");
+assertEqual(PARTS_STOCK_TARGET_STATUS_ID, "reparacion", "Stock permite reparacion");
 
-console.log("\n── resolveStatusAfterPartsRequest: estados que NO se mueven ──");
+console.log("\n── resolveStatusAfterPartsRequest: bloqueos ──");
 const boardStatuses = [
     "recibido",
+    "diagnostico",
+    "por-cotizar",
     "reparacion",
     "pruebas",
     "listo-entrega",
@@ -67,13 +71,14 @@ const boardStatuses = [
     "entregado",
 ];
 for (const status of boardStatuses) {
-    assertEqual(resolveStatusAfterPartsRequest(status), null, `${status} -> null (no se mueve)`);
+    assertEqual(resolveStatusAfterPartsRequest(status, "compra-externa"), null, `${status} compra externa -> null (no se mueve)`);
 }
-assertEqual(resolveStatusAfterPartsRequest(""), null, "Estado vacio -> null");
-assertEqual(resolveStatusAfterPartsRequest(null), null, "null -> null");
-assertEqual(resolveStatusAfterPartsRequest(undefined), null, "undefined -> null");
-assertEqual(resolveStatusAfterPartsRequest("inventado"), null, "Estado desconocido -> null");
-assertEqual(resolveStatusAfterPartsRequest("  diagnostico  "), "reparacion", "Estado con espacios se normaliza");
+assertEqual(resolveStatusAfterPartsRequest("", "stock"), null, "Estado vacio -> null");
+assertEqual(resolveStatusAfterPartsRequest(null, "stock"), null, "null -> null");
+assertEqual(resolveStatusAfterPartsRequest(undefined, "stock"), null, "undefined -> null");
+assertEqual(resolveStatusAfterPartsRequest("inventado", "stock"), null, "Estado desconocido -> null");
+assertEqual(resolveStatusAfterPartsRequest("  pedir-repuestos  ", "stock"), "reparacion", "Estado con espacios se normaliza");
+assertEqual(resolveStatusAfterPartsRequest("pedir-repuestos", "origen-invalido"), null, "Origen invalido -> null");
 
 console.log("\n── validateReadyForDelivery: testType en properties ──");
 const okBanco = validateReadyForDelivery({ properties: { testType: "banco-pruebas" } });
