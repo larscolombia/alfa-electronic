@@ -1,5 +1,5 @@
 import { CommonModule } from "@angular/common";
-import { ChangeDetectorRef, Component, OnDestroy, OnInit } from "@angular/core";
+import { ChangeDetectorRef, Component, Input, OnDestroy, OnInit } from "@angular/core";
 import { Subscription } from "rxjs";
 import { PurchaseRequestRecord } from "../../../services/inventory-domain.models";
 import { InventoryApiService } from "../../../services/inventory-api.service";
@@ -17,7 +17,7 @@ import { projectOriginLabel } from "./project-origin-label.util";
     standalone: true,
     imports: [CommonModule],
     template: `
-        <div class="card adminuiux-card mt-3" data-testid="purchase-requests-panel">
+        <div class="card adminuiux-card mt-3" id="purchase-requests" data-testid="purchase-requests-panel">
             <div class="card-header d-flex align-items-center justify-content-between">
                 <h6 class="mb-0">Solicitudes de compra de repuestos</h6>
                 <button class="btn btn-sm btn-outline-secondary" type="button" (click)="loadRequests()" [disabled]="loading">
@@ -41,11 +41,14 @@ import { projectOriginLabel } from "./project-origin-label.util";
                             </tr>
                         </thead>
                         <tbody>
-                            <tr *ngFor="let request of requests" data-testid="purchase-request-row">
+                            <tr *ngFor="let request of requests" [class.table-success]="isFocusedRequest(request)" data-testid="purchase-request-row">
                                 <td><strong>{{ request.reference }}</strong></td>
                                 <td>{{ request.description || '--' }}</td>
                                 <td>{{ request.quantity }}</td>
-                                <td>{{ projectLabel(request.projectId) }}</td>
+                                <td>
+                                    {{ projectLabel(request.projectId) }}
+                                    <span *ngIf="isFocusedRequest(request)" class="badge text-bg-success ms-1">Flujo actual</span>
+                                </td>
                                 <td>{{ request.requestedBy || '--' }}</td>
                                 <td>
                                     <span class="badge" [ngClass]="statusClass(request.status)" data-testid="purchase-request-status">{{ request.status }}</span>
@@ -90,6 +93,7 @@ import { projectOriginLabel } from "./project-origin-label.util";
     `,
 })
 export class PurchaseRequestsPanelComponent implements OnInit, OnDestroy {
+    @Input() focusEquipmentItemIds: string[] = [];
     requests: PurchaseRequestRecord[] = [];
     projects: Project[] = [];
     loading = false;
@@ -165,6 +169,15 @@ export class PurchaseRequestsPanelComponent implements OnInit, OnDestroy {
 
     projectLabel(projectId: string): string {
         return projectOriginLabel(this.projects, projectId);
+    }
+
+    isFocusedRequest(request: PurchaseRequestRecord): boolean {
+        if (this.focusEquipmentItemIds.length === 0) {
+            return false;
+        }
+        const project = this.projects.find((item) => item.id === request.projectId);
+        const equipmentItemId = String(project?.properties?.['equipmentItemId'] ?? '').trim();
+        return this.focusEquipmentItemIds.includes(equipmentItemId);
     }
 
     statusClass(status: string): string {

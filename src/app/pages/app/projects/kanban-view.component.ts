@@ -29,6 +29,7 @@ import { ProjectCardComponent } from './components/project-card/project-card.com
 import { ProjectTransitionCheckModalComponent } from './components/project-transition-check-modal.component';
 import { WorkTestBatchRun, WorkTestTransitionPrompt } from '../work/work-test-batch.models';
 import { WorkTestBatchService } from '../work/work-test-batch.service';
+import { setPurchaseWorkflowHandoff } from '../inventory/purchase-workflow-handoff.store';
 
 declare const dragula: any;
 
@@ -1699,7 +1700,15 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
                 *ngIf="detailProject.status === 'diagnostico'"
                 [disabled]="saving"
                 (click)="closeDiagnosis()">
-                Cerrar diagnostico
+                Cerrar diagnóstico y pasar a cotización
+              </button>
+              <button
+                type="button"
+                class="btn btn-success"
+                *ngIf="detailProject.status === 'pedir-repuestos'"
+                [disabled]="saving"
+                (click)="continueToPurchases()">
+                Continuar a compras
               </button>
               <button
                 type="button"
@@ -1722,7 +1731,7 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
                   data-testid="save-and-quote-btn"
                   attr.title="Guarda el caso y abre la cotización con los datos del proyecto precargados"
                   (click)="saveAndGoToQuote()">
-                  {{ saving ? 'Guardando...' : 'Guardar y cotizar' }}
+                  {{ saving ? 'Guardando...' : 'Crear cotización con diagnóstico' }}
                 </button>
               }
               <button
@@ -3995,6 +4004,20 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
         void this.router.navigate(['/app/crm-cotizaciones']);
       },
     });
+  }
+
+  /** Lleva Compras al backlog correcto sin exponer OC ni cliente en la URL. */
+  continueToPurchases(): void {
+    if (!this.detailProject) {
+      return;
+    }
+    const properties = this.detailProject.properties ?? {};
+    setPurchaseWorkflowHandoff({
+      purchaseOrderNumber: String(properties['purchaseOrderNumber'] ?? ''),
+      quoteCode: String(properties['quoteCode'] ?? ''),
+      equipmentItemIds: [String(properties['equipmentItemId'] ?? '')],
+    });
+    void this.router.navigate(['/app/inventory-orders']);
   }
 
   /**

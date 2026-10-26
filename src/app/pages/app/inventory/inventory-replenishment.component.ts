@@ -21,6 +21,7 @@ import { Project } from "../projects/models";
 import { ProjectService } from "../projects/services";
 import { PurchaseRequestsPanelComponent } from "./purchase-requests-panel.component";
 import { projectOriginLabel } from "./project-origin-label.util";
+import { consumePurchaseWorkflowHandoff, PurchaseWorkflowHandoff } from "./purchase-workflow-handoff.store";
 
 @Component({
     selector: "app-inventory-replenishment",
@@ -77,6 +78,14 @@ import { projectOriginLabel } from "./project-origin-label.util";
 
             <div *ngIf="feedback" class="alert mb-3" [ngClass]="feedbackClass">
                 {{ feedback }}
+            </div>
+
+            <div *ngIf="workflowHandoff" class="alert alert-success border d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3" role="status">
+                <div>
+                    <strong>Siguiente paso: revisar solicitudes de compra.</strong>
+                    <span class="d-block small mt-1">OC {{ workflowHandoff.purchaseOrderNumber || 'registrada' }}{{ workflowHandoff.quoteCode ? ' · ' + workflowHandoff.quoteCode : '' }}. El contexto se conservó desde la cotización.</span>
+                </div>
+                <a class="btn btn-sm btn-success" href="#purchase-requests">Ver solicitudes</a>
             </div>
 
             <div class="row gx-3 gx-lg-4 mb-3">
@@ -249,7 +258,7 @@ import { projectOriginLabel } from "./project-origin-label.util";
                 </div>
             </div>
 
-            <app-purchase-requests-panel></app-purchase-requests-panel>
+            <app-purchase-requests-panel [focusEquipmentItemIds]="workflowHandoff?.equipmentItemIds ?? []"></app-purchase-requests-panel>
 
             <div class="card adminuiux-card mt-3">
                 <div class="card-header">
@@ -375,6 +384,7 @@ import { projectOriginLabel } from "./project-origin-label.util";
     `,
 })
 export class InventoryReplenishmentComponent implements OnInit, OnDestroy {
+    workflowHandoff: PurchaseWorkflowHandoff | null = null;
     sortMode: "antiguedad" | "intentos" | "criticidad" = "antiguedad";
     statusFilter: "" | ReplenishmentStatus = "";
 
@@ -425,6 +435,7 @@ export class InventoryReplenishmentComponent implements OnInit, OnDestroy {
     }
 
     ngOnInit(): void {
+        this.workflowHandoff = consumePurchaseWorkflowHandoff();
         // Fase 6: el comprador responsable sale de RRHH.
         // Sin contexto a propósito: "comprador/compras" no pertenece ni al set
         // técnico ni al comercial; filtrar por rol ocultaría al comprador real.

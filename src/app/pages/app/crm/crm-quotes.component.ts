@@ -1,7 +1,7 @@
 import { DecimalPipe, NgFor, NgIf } from "@angular/common";
 import { ChangeDetectorRef, Component, OnInit } from "@angular/core";
 import { FormsModule } from "@angular/forms";
-import { RouterLink } from "@angular/router";
+import { Router, RouterLink } from "@angular/router";
 
 import { consumeQuotePrefill, QuotePrefillFromProject } from "./quote-prefill.store";
 import { take } from "rxjs/operators";
@@ -18,6 +18,7 @@ import { CrmQuoteRecord, CrmQuotesApiService } from "../../../services/crm-quote
 import { EmailsApiService } from "../../../services/emails-api.service";
 import { FinanceBillingApiService } from "../../../services/finance-billing-api.service";
 import { FormDraftService } from "../../../services/form-draft.service";
+import { setPurchaseWorkflowHandoff } from "../inventory/purchase-workflow-handoff.store";
 
 const CRM_QUOTES_FORM_DRAFT_KEY = "app.crm.quotes.form";
 
@@ -89,6 +90,12 @@ type QuoteLine = {
                     <div class="alert alert-danger border mb-3" *ngIf="quotesLoadErrorMessage">{{ quotesLoadErrorMessage }}</div>
                     <div class="alert alert-danger border mb-3" *ngIf="quoteDeleteErrorMessage">{{ quoteDeleteErrorMessage }}</div>
                     <div class="alert alert-success border mb-3" *ngIf="quotePurchaseOrderSuccessMessage">{{ quotePurchaseOrderSuccessMessage }}</div>
+                    <div class="mb-3" *ngIf="lastPurchaseOrderHandoff">
+                        <button class="btn btn-success" type="button" (click)="continueToPurchases()">
+                            <i class="bi bi-arrow-right-circle me-1"></i>Continuar a compras
+                        </button>
+                        <small class="d-block text-secondary mt-1">Revisa o registra las solicitudes de los equipos aprobados; la OC y los equipos quedan identificados.</small>
+                    </div>
                     <div class="alert alert-danger border mb-3" *ngIf="quotePurchaseOrderErrorMessage">{{ quotePurchaseOrderErrorMessage }}</div>
                     <div class="alert alert-success border mb-3" *ngIf="quoteConversionMessage" data-testid="quote-conversion-success">{{ quoteConversionMessage }}</div>
                     <div class="alert alert-danger border mb-3" *ngIf="quoteConversionError" data-testid="quote-conversion-error">{{ quoteConversionError }}</div>
@@ -537,6 +544,7 @@ export class CrmQuotesComponent implements OnInit {
     quoteDeleteErrorMessage = "";
     quotePurchaseOrderSuccessMessage = "";
     quotePurchaseOrderErrorMessage = "";
+    lastPurchaseOrderHandoff: { purchaseOrderNumber: string; quoteCode: string; equipmentItemIds: string[] } | null = null;
 
     showPurchaseOrderModal = false;
     pendingPurchaseOrderRow: QuoteRow | null = null;
@@ -614,6 +622,7 @@ export class CrmQuotesComponent implements OnInit {
         private readonly crmEquipmentApi: CrmEquipmentApiService,
         private readonly financeBillingApi: FinanceBillingApiService,
         private readonly projectService: ProjectService,
+        private readonly router: Router,
         private readonly cdr: ChangeDetectorRef,
         private readonly formDraftService: FormDraftService,
         // Fase 5c: correo transaccional de la cotización.
@@ -993,6 +1002,11 @@ export class CrmQuotesComponent implements OnInit {
                 this.isSavingPurchaseOrder = false;
                 this.quotePurchaseOrderErrorMessage = "";
                 this.quotePurchaseOrderSuccessMessage = `OC ${purchaseOrderNumber} registrada en ${savedQuote.codigo}.`;
+                this.lastPurchaseOrderHandoff = {
+                    purchaseOrderNumber,
+                    quoteCode: savedQuote.codigo,
+                    equipmentItemIds: savedQuote.selectedEquipmentIds ?? [],
+                };
                 this.closePurchaseOrderModal();
                 this.cdr.detectChanges();
             },
@@ -1002,6 +1016,14 @@ export class CrmQuotesComponent implements OnInit {
                 this.cdr.detectChanges();
             },
         });
+    }
+
+    continueToPurchases(): void {
+        if (!this.lastPurchaseOrderHandoff) {
+            return;
+        }
+        setPurchaseWorkflowHandoff(this.lastPurchaseOrderHandoff);
+        void this.router.navigate(["/app/inventory-orders"]);
     }
 
     private syncPurchaseOrderToProjects(quote: CrmQuoteRecord): void {
@@ -1025,6 +1047,7 @@ export class CrmQuotesComponent implements OnInit {
                         ...project.properties,
                         purchaseOrderNumber,
                         purchaseOrderDate,
+                        quoteCode: quote.codigo,
                         purchaseOrderFileName: String(quote.purchaseOrderFileName ?? "").trim(),
                         purchaseOrderLinkedAt: quote.purchaseOrderUploadedAt || new Date().toISOString(),
                         equipmentRepairStatus: "pedir-repuestos",
