@@ -29,6 +29,7 @@ interface RemissionItem {
     warrantyMonths: number;
     unitPrice: number;
     quantity: number;
+    sourceSeries?: string;
 }
 
 interface DispatchPhoto {
@@ -282,6 +283,7 @@ const REMISSIONS_TEMPLATE = `
             <div class="alert alert-info py-2 mt-2" *ngIf="quotePricesMessage" data-testid="quote-prices-message">{{ quotePricesMessage }}</div>
             <div *ngFor="let item of form.items; let i = index" class="row g-2 mb-2 align-items-end border-bottom pb-2">
                 <div class="col-md-2"><input class="form-control form-control-sm" [(ngModel)]="item.identifier" placeholder="Identificador" /></div>
+                <div class="col-md-2"><input class="form-control form-control-sm" [(ngModel)]="item.sourceSeries" placeholder="Serie origen" data-testid="source-series-input" /></div>
                 <div class="col-md-2"><input class="form-control form-control-sm" [(ngModel)]="item.description" placeholder="Descripcion" /></div>
                 <div class="col-md-2"><input class="form-control form-control-sm" [(ngModel)]="item.accessories" placeholder="Accesorios" data-testid="item-accessories" /></div>
                 <div class="col-md-2">
@@ -1028,6 +1030,7 @@ export class RemissionsComponent implements OnInit {
             warrantyMonths: 0,
             unitPrice: 0,
             quantity: 1,
+            sourceSeries: String(eq.serie || eq.receivedIdentifier || ""),
         };
         this.form.items.push(item);
         this.itemAddBlocked = "";

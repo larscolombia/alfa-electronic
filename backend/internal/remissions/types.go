@@ -52,9 +52,9 @@ type Remission struct {
 	InvoiceReference     string `json:"invoiceReference"`
 	InvoiceReferenceCode string `json:"invoiceReferenceCode"`
 	CreditClient         bool   `json:"creditClient"`
-	PaymentGate       bool   `json:"paymentGate"`
-	PaymentHeld       bool   `json:"paymentHeld"`
-	PaymentHeldReason string `json:"paymentHeldReason"`
+	PaymentGate          bool   `json:"paymentGate"`
+	PaymentHeld          bool   `json:"paymentHeld"`
+	PaymentHeldReason    string `json:"paymentHeldReason"`
 }
 
 type RemissionItem struct {
@@ -66,6 +66,7 @@ type RemissionItem struct {
 	Quantity       int     `json:"quantity"`
 	Accessories    string  `json:"accessories"`
 	AnchoredNote   string  `json:"anchoredNote"`
+	SourceSeries   string  `json:"sourceSeries"`
 }
 
 type UpsertRemissionRequest struct {

@@ -12,8 +12,9 @@ import (
 
 func validRuleRequest() UpsertRemissionRequest {
 	return UpsertRemissionRequest{
-		ClientName:  "Cliente Demo",
-		ContactName: "Juan Contacto",
+		ClientName:     "Cliente Demo",
+		ContactName:    "Juan Contacto",
+		WarrantyMonths: 6,
 		Items: []RemissionItem{{
 			EquipmentID: "eq-1", Identifier: "MTR-01", Description: "Motor", Quantity: 1,
 		}},
