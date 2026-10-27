@@ -214,13 +214,47 @@ type EditableProfileFieldConfig = {
 
                                                 @if (editingProfileField === field.key) {
                                                     <div class="input-group input-group-sm">
-                                                        <input
-                                                            class="form-control"
-                                                            [type]="field.inputType || 'text'"
-                                                            [(ngModel)]="editingProfileFieldValue"
-                                                            [ngModelOptions]="{ standalone: true }"
-                                                            [disabled]="isSavingProfileField"
-                                                            [attr.placeholder]="'Editar ' + field.label" />
+                                                        @if (field.key === "empleado") {
+                                                            <select
+                                                                class="form-select"
+                                                                [(ngModel)]="editingProfileFieldValue"
+                                                                [ngModelOptions]="{ standalone: true }"
+                                                                [disabled]="isSavingProfileField">
+                                                                <option value="">Sin asignar</option>
+                                                                @if (editingProfileFieldValue && !noteEmployeeOptions.includes(editingProfileFieldValue)) {
+                                                                    <option [value]="editingProfileFieldValue" disabled>
+                                                                        {{ editingProfileFieldValue }} (asignación anterior)
+                                                                    </option>
+                                                                }
+                                                                @for (name of noteEmployeeOptions; track name) {
+                                                                    <option [value]="name">{{ name }}</option>
+                                                                }
+                                                            </select>
+                                                        } @else if (field.key === "fuente") {
+                                                            <select
+                                                                class="form-select"
+                                                                [(ngModel)]="editingProfileFieldValue"
+                                                                [ngModelOptions]="{ standalone: true }"
+                                                                [disabled]="isSavingProfileField">
+                                                                <option value="">--</option>
+                                                                @if (editingProfileFieldValue && !sourceOptions.includes(editingProfileFieldValue)) {
+                                                                    <option [value]="editingProfileFieldValue" disabled>
+                                                                        {{ editingProfileFieldValue }} (fuente anterior)
+                                                                    </option>
+                                                                }
+                                                                @for (source of sourceOptions; track source) {
+                                                                    <option [value]="source">{{ source }}</option>
+                                                                }
+                                                            </select>
+                                                        } @else {
+                                                            <input
+                                                                class="form-control"
+                                                                [type]="field.inputType || 'text'"
+                                                                [(ngModel)]="editingProfileFieldValue"
+                                                                [ngModelOptions]="{ standalone: true }"
+                                                                [disabled]="isSavingProfileField"
+                                                                [attr.placeholder]="'Editar ' + field.label" />
+                                                        }
                                                         <button class="btn btn-theme" type="button" [disabled]="isSavingProfileField" (click)="saveProfileFieldEdit(field.key)">
                                                             <i class="bi bi-check-lg"></i>
                                                         </button>
@@ -989,7 +1023,7 @@ export class CrmProspectDetailComponent {
         { key: "zona", label: "Zona" },
         { key: "direccion", label: "Direccion" },
         { key: "empleado", label: "Empleado asignado" },
-        { key: "fuente", label: "Fuente" },
+        { key: "fuente", label: "Fuente del Prospecto" },
     ];
 
     noteTitle = "";
@@ -998,6 +1032,7 @@ export class CrmProspectDetailComponent {
     // El valor histórico guardado se pinta siempre desde la plantilla, incluso si
     // esa persona hoy está inactiva o cambió de rol.
     noteEmployeeOptions: string[] = [];
+    sourceOptions: string[] = [];
     noteEmployee = "";
     noteDetail = "";
     notePersistSuccessMessage = "";
@@ -1083,6 +1118,16 @@ export class CrmProspectDetailComponent {
         private readonly router: Router,
         private readonly equipmentHistoryContextService: WorkEquipmentHistoryContextService,
     ) {
+        this.crmProspectsApi.catalogs().subscribe({
+            next: (catalogs) => {
+                this.sourceOptions = [...catalogs.sources];
+                this.cdr.detectChanges();
+            },
+            error: () => {
+                this.sourceOptions = [];
+            },
+        });
+
         this.routeSub = this.route.paramMap.subscribe((params) => {
             const rawId = params.get("id") ?? "";
             this.resolveProspect(rawId);
