@@ -88,6 +88,9 @@ export function validateRemissionDraft(form: any): string {
             return "la guia es obligatoria para una entrega por transportadora: complete la casilla Numero de guia";
         }
     }
+    if (Number(form?.warrantyMonths || 0) <= 0 && String(form?.notes || "").trim() === "") {
+        return "la remision debe incluir una garantia o una excepcion aprobada en Notas / Comentarios";
+    }
     if (hasAnchoredEquipment(items) && !form?.anchoredAccepted) {
         return "la remision incluye equipos con prestamos anclados: confirme su inclusion antes de guardar";
     }

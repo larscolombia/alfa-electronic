@@ -21,6 +21,7 @@ var (
 	errAnchoredNotAccepted = errors.New("la remision incluye equipos con prestamos anclados: confirme su inclusion antes de guardar")
 	errCarrierRequired     = errors.New("la transportadora es obligatoria para una entrega por transportadora: complete la casilla Transportadora")
 	errGuideRequired       = errors.New("la guia es obligatoria para una entrega por transportadora: complete la casilla Numero de guia")
+	errWarrantyRequired    = errors.New("la remision debe incluir una garantia o una excepcion aprobada en Notas / Comentarios")
 )
 
 // hasAnchoredEquipment reporta si algún item lleva préstamos anclados. Es la
@@ -56,6 +57,9 @@ func validateUpsert(req UpsertRemissionRequest) error {
 			return errGuideRequired
 		}
 	}
+	if req.WarrantyMonths <= 0 && strings.TrimSpace(req.Notes) == "" {
+		return errWarrantyRequired
+	}
 	if hasAnchoredEquipment(req.Items) && !req.AnchoredAccepted {
 		return errAnchoredNotAccepted
 	}
@@ -71,6 +75,7 @@ func isUpsertRuleError(err error) bool {
 		errors.Is(err, errContactRequired),
 		errors.Is(err, errCarrierRequired),
 		errors.Is(err, errGuideRequired),
+		errors.Is(err, errWarrantyRequired),
 		errors.Is(err, errAnchoredNotAccepted):
 		return true
 	default:
