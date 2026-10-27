@@ -125,7 +125,7 @@ acción de interfaz nunca es una autorización de negocio por sí sola.
 | ~~LOG-01~~ ✅ | Código no está Listo para entrega | No permitir crear remisión de equipo sin cierre técnico | Validado con `scripts/e2e-ui-log-01-not-ready-playwright.mjs`: Guardar queda bloqueado sin equipo listo para entrega |
 | LOG-02 | Marca, tipo o serie no coinciden | Bloquear despacho; no aceptar coincidencia parcial | Comparación de origen vs remisión |
 | LOG-03 | Equipo principal tiene préstamo anclado | Bloquear despacho hasta incluir/devolver el préstamo en la misma remisión | Relación anclada y confirmación |
-| LOG-04 | Accesorios de recepción no están confirmados | Pedir confirmación explícita antes de cerrar entrega | Lista de accesorios y operador |
+| ~~LOG-04~~ ✅ | Accesorios de recepción no están confirmados | Pedir confirmación explícita antes de cerrar entrega | Validado con `scripts/e2e-ui-log-04-accessories-confirmation-playwright.mjs`; el botón de confirmar queda deshabilitado hasta aceptar accesorios |
 | LOG-05 | Falta ubicación física | No presentar como listo para retiro; resolver ubicación antes de empaque | Ubicación y responsable |
 | ~~LOG-06~~ ✅ | Entrega por transportadora | Exigir transportadora, guía, fotos de empaque y notificación al cliente | Validado con `scripts/e2e-ui-log-06-carrier-guide-required-playwright.mjs`; UI y servidor bloquean transportadora/guía ausentes |
 | LOG-07 | Recoge el cliente | Exigir nombre/identificación de quien recibe y remisión firmada | Recibido por y firma |
