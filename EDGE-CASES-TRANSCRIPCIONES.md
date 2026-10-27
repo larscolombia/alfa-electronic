@@ -16,7 +16,7 @@ acción de interfaz nunca es una autorización de negocio por sí sola.
 | ID | Condición límite | Regla requerida | Evidencia / siguiente paso |
 |---|---|---|---|
 | ~~COM-01~~ ✅ | Empresa ya existe con variación de nombre | Advertir posible duplicado antes de crear; permitir continuar solo de forma explícita y auditable | Validado por `e2e-ui-com-01-duplicate-playwright` |
-| COM-02 | Lead sin contacto de mantenimiento/compras | Puede existir como base por depurar, pero no debe marcarse como visita efectiva ni recibir seguimiento comercial asignado | Fuente del lead y tarea para completar contacto |
+| ~~COM-02~~ ✅ | Lead sin contacto de mantenimiento/compras | Puede existir como base por depurar, pero no debe marcarse como visita efectiva ni recibir seguimiento comercial asignado | Validado por `e2e-ui-com-02-no-contact-playwright` |
 | COM-03 | Prospecto contacta por web, WhatsApp o recomendación | Debe conservarse el origen y enviarse el formato de recepción + condiciones por canal trazable | Canal, fecha, responsable y copia/enlace enviado |
 | COM-04 | Prospecto aún no aprueba reparación | Conserva estado Prospecto aunque haya enviado equipos, recibido diagnóstico o cotización | Historial comercial y estado de cotización |
 | COM-05 | Primera OC/aprobación escrita válida | Convertir a Cliente definitivo una sola vez, sin duplicar empresa, contactos ni historial | OC/aprobación, fecha de conversión y usuario |

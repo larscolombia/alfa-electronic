@@ -1826,35 +1826,6 @@ export class CrmProspectDetailComponent {
         });
 
         return contacts;
-
-        if (false) {
-            getProspects().forEach((prospect) => {
-                if (this.normalizeCompanyName(prospect.compania) !== normalizedCompany) {
-                    return;
-                }
-
-                registerContact({
-                    key: `prospect-${prospect.id}`,
-                    nombre: prospect.nombre,
-                    correo: prospect.correo,
-                    telefono: prospect.movil,
-                    empresa: prospect.compania,
-                    tipo: "Prospecto",
-                    estado: prospect.estado,
-                    esPrincipal: prospect.id === this.prospect?.id,
-                });
-            });
-
-            getCrmClients().forEach((client) => {
-                if (this.normalizeCompanyName(client.empresa) !== normalizedCompany) {
-                    return;
-                }
-
-                registerContact(this.mapClientToRelatedContact(client));
-            });
-        }
-
-        return contacts;
     }
 
     formatEquipmentReception(record: ProspectEquipmentRecord): string {
