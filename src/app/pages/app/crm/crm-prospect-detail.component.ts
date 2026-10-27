@@ -356,6 +356,7 @@ type EditableProfileFieldConfig = {
                         <div class="card adminuiux-card">
                             <div class="card-body border-bottom d-flex gap-2 flex-wrap">
                                 <button class="btn btn-theme" type="button" (click)="openCommercialActionModal()"><i class="bi bi-plus-lg me-1"></i> Nueva accion comercial</button>
+                                <button class="btn btn-outline-theme" type="button" data-testid="send-intake-documents-btn" (click)="openIntakeDocumentsModal()"><i class="bi bi-send me-1"></i> Enviar documentos de ingreso</button>
                                 <button class="btn btn-outline-secondary" type="button"><i class="bi bi-download me-1"></i> Exportar</button>
                             </div>
                             @if (commercialActionLoadErrorMessage) {
@@ -935,6 +936,11 @@ type EditableProfileFieldConfig = {
                                     <label class="form-label">Observacion</label>
                                     <textarea class="form-control" rows="3" [(ngModel)]="commercialActionDraft.observation" [ngModelOptions]="{ standalone: true }"></textarea>
                                 </div>
+                                @if (commercialActionDraft.actionType === "Envío documentos de ingreso") {
+                                    <div class="col-12 col-lg-4"><label class="form-label">Canal</label><select class="form-select" data-testid="intake-channel" [(ngModel)]="intakeChannel" [ngModelOptions]="{ standalone: true }"><option>Web</option><option>WhatsApp</option><option>Correo</option></select></div>
+                                    <div class="col-12 col-lg-4"><label class="form-label">Destinatario</label><input class="form-control" data-testid="intake-recipient" [(ngModel)]="intakeRecipient" [ngModelOptions]="{ standalone: true }" /></div>
+                                    <div class="col-12 col-lg-4"><label class="form-label">Documentos</label><input class="form-control" data-testid="intake-documents" value="Formato de Recepción; Condiciones Generales del Servicio" readonly /></div>
+                                }
                             </div>
                         </div>
 
@@ -998,6 +1004,8 @@ export class CrmProspectDetailComponent {
     contactModalErrorMessage = "";
     editingContact: CrmProspectContact | null = null;
     contactDraft = { name: "", email: "", phone: "", role: "", notes: "" };
+    intakeChannel = "Web";
+    intakeRecipient = "";
 
     // ── Attachments ───────────────────────────────────────────────────────────
     attachments: ProspectAttachment[] = [];
@@ -1642,6 +1650,13 @@ export class CrmProspectDetailComponent {
         this.isCommercialActionModalOpen = true;
     }
 
+    openIntakeDocumentsModal(): void {
+        this.openCommercialActionModal();
+        this.commercialActionDraft.actionType = "Envío documentos de ingreso";
+        this.commercialActionDraft.observation = "Formato de Recepción; Condiciones Generales del Servicio";
+        this.intakeRecipient = this.prospectContacts[0]?.email || this.prospect?.correo || "";
+    }
+
     closeCommercialActionModal(): void {
         if (!this.isCommercialActionModalOpen || this.isSavingCommercialAction) {
             return;
@@ -1686,7 +1701,9 @@ export class CrmProspectDetailComponent {
 
         const actionType = this.commercialActionDraft.actionType.trim();
         const companyName = this.commercialActionDraft.companyName.trim();
-        const observation = this.commercialActionDraft.observation.trim();
+        const observation = this.commercialActionDraft.actionType === "Envío documentos de ingreso"
+            ? JSON.stringify({ documents: ["Formato de Recepción", "Condiciones Generales del Servicio"], channel: this.intakeChannel, recipient: this.intakeRecipient.trim(), sentAt: new Date().toISOString(), responsible: this.authService.getCurrentUserName() })
+            : this.commercialActionDraft.observation.trim();
         const reminderValue = Number(this.commercialActionDraft.remindBeforeValue);
         const relatedContact = this.relatedContacts.find((contact) => contact.key === this.commercialActionDraft.relatedContactKey);
 
@@ -1697,6 +1714,11 @@ export class CrmProspectDetailComponent {
 
         if (!companyName) {
             this.commercialActionValidationMessage = "El cliente potencial debe tener empresa para crear la accion comercial.";
+            return;
+        }
+
+        if (this.commercialActionDraft.actionType === "Envío documentos de ingreso" && !this.intakeRecipient.trim()) {
+            this.commercialActionValidationMessage = "Indica el destinatario de los documentos de ingreso.";
             return;
         }
 
