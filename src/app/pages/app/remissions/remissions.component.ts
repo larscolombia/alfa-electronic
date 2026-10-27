@@ -419,7 +419,10 @@ const REMISSIONS_TEMPLATE = `
                     <input class="form-control mb-2" [(ngModel)]="pickupRecipient" data-testid="pickup-recipient-input" placeholder="Nombre - identificación" />
                     <div class="form-check"><input class="form-check-input" type="checkbox" [(ngModel)]="pickupSigned" data-testid="pickup-signed-check" id="pickupSigned" /><label class="form-check-label" for="pickupSigned">Remisión firmada cargada</label></div>
                 </div>
-                <button class="btn btn-success" [disabled]="!accessoriesDeliveredConfirmed || (deliveryConfirmRemission?.dispatchType === 'recoge-cliente' && (!pickupRecipient.trim() || !pickupSigned))" (click)="confirmMarkDelivered()" data-testid="confirm-delivered-btn">
+                <div class="alert alert-warning py-2" *ngIf="!deliveryConfirmRemission?.dispatchPhotos?.length" data-testid="delivery-proof-required">
+                    Falta cargar la remisión firmada como evidencia antes de cerrar la trazabilidad.
+                </div>
+                <button class="btn btn-success" [disabled]="!accessoriesDeliveredConfirmed || !deliveryConfirmRemission?.dispatchPhotos?.length || (deliveryConfirmRemission?.dispatchType === 'recoge-cliente' && (!pickupRecipient.trim() || !pickupSigned))" (click)="confirmMarkDelivered()" data-testid="confirm-delivered-btn">
                     <i class="bi bi-check-lg me-1"></i>Confirmar entrega
                 </button>
             </div>
@@ -1203,21 +1206,11 @@ export class RemissionsComponent implements OnInit {
         if (!canTransitionDeliveryStatus(from, "entregado")) {
             return;
         }
-        if (requiresAccessoriesConfirmation(remission.items)) {
-            this.deliveryConfirmRemission = remission;
-            this.accessoriesDeliveredConfirmed = false;
-            this.showDeliveryConfirm = true;
-            return;
-        }
-        if (remission.dispatchType === "recoge-cliente") {
-            this.deliveryConfirmRemission = remission;
-            this.accessoriesDeliveredConfirmed = true;
-            this.pickupRecipient = "";
-            this.pickupSigned = false;
-            this.showDeliveryConfirm = true;
-            return;
-        }
-        await this.patchDelivered(remission, false);
+        this.deliveryConfirmRemission = remission;
+        this.accessoriesDeliveredConfirmed = !requiresAccessoriesConfirmation(remission.items);
+        this.pickupRecipient = "";
+        this.pickupSigned = false;
+        this.showDeliveryConfirm = true;
     }
 
     accessoriesPendingItems(): RemissionItem[] {
