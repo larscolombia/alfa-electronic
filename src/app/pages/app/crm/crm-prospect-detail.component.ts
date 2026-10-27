@@ -357,6 +357,7 @@ type EditableProfileFieldConfig = {
                             <div class="card-body border-bottom d-flex gap-2 flex-wrap">
                                 <button class="btn btn-theme" type="button" (click)="openCommercialActionModal()"><i class="bi bi-plus-lg me-1"></i> Nueva accion comercial</button>
                                 <button class="btn btn-outline-theme" type="button" data-testid="send-intake-documents-btn" (click)="openIntakeDocumentsModal()"><i class="bi bi-send me-1"></i> Enviar documentos de ingreso</button>
+                                <button class="btn btn-outline-theme" type="button" data-testid="technical-question-btn" (click)="openTechnicalQuestionModal()"><i class="bi bi-question-circle me-1"></i> Registrar consulta técnica</button>
                                 <button class="btn btn-outline-secondary" type="button"><i class="bi bi-download me-1"></i> Exportar</button>
                             </div>
                             @if (commercialActionLoadErrorMessage) {
@@ -941,6 +942,12 @@ type EditableProfileFieldConfig = {
                                     <div class="col-12 col-lg-4"><label class="form-label">Destinatario</label><input class="form-control" data-testid="intake-recipient" [(ngModel)]="intakeRecipient" [ngModelOptions]="{ standalone: true }" /></div>
                                     <div class="col-12 col-lg-4"><label class="form-label">Documentos</label><input class="form-control" data-testid="intake-documents" value="Formato de Recepción; Condiciones Generales del Servicio" readonly /></div>
                                 }
+                                @if (commercialActionDraft.actionType === "Consulta técnica del cliente") {
+                                    <div class="col-12 col-lg-4"><label class="form-label">Técnico asignado</label><input class="form-control" data-testid="technical-assignee" [(ngModel)]="technicalAssignee" [ngModelOptions]="{ standalone: true }" /></div>
+                                    <div class="col-12 col-lg-4"><label class="form-label">SLA</label><input class="form-control" type="datetime-local" data-testid="technical-sla" [(ngModel)]="technicalSla" [ngModelOptions]="{ standalone: true }" /></div>
+                                    <div class="col-12 col-lg-4"><label class="form-label">Estado</label><select class="form-select" data-testid="technical-status" [(ngModel)]="technicalStatus" [ngModelOptions]="{ standalone: true }"><option>Pendiente</option><option>Respondida</option><option>Cerrada</option></select></div>
+                                    <div class="col-12"><label class="form-label">Respuesta técnica centralizada por Comercial</label><textarea class="form-control" data-testid="technical-response" [(ngModel)]="technicalResponse" [ngModelOptions]="{ standalone: true }"></textarea></div>
+                                }
                             </div>
                         </div>
 
@@ -956,6 +963,10 @@ type EditableProfileFieldConfig = {
     `,
 })
 export class CrmProspectDetailComponent {
+    technicalAssignee = "";
+    technicalSla = "";
+    technicalStatus = "Pendiente";
+    technicalResponse = "";
     prospect: ProspectRecord | undefined;
     activeTab: DetailTab = "perfil";
     profilePanel: "descripcion" | "actividades" = "descripcion";
@@ -1657,6 +1668,15 @@ export class CrmProspectDetailComponent {
         this.intakeRecipient = this.prospectContacts[0]?.email || this.prospect?.correo || "";
     }
 
+    openTechnicalQuestionModal(): void {
+        this.openCommercialActionModal();
+        this.commercialActionDraft.actionType = "Consulta técnica del cliente";
+        this.technicalAssignee = "";
+        this.technicalSla = "";
+        this.technicalStatus = "Pendiente";
+        this.technicalResponse = "";
+    }
+
     closeCommercialActionModal(): void {
         if (!this.isCommercialActionModalOpen || this.isSavingCommercialAction) {
             return;
@@ -1703,6 +1723,8 @@ export class CrmProspectDetailComponent {
         const companyName = this.commercialActionDraft.companyName.trim();
         const observation = this.commercialActionDraft.actionType === "Envío documentos de ingreso"
             ? JSON.stringify({ documents: ["Formato de Recepción", "Condiciones Generales del Servicio"], channel: this.intakeChannel, recipient: this.intakeRecipient.trim(), sentAt: new Date().toISOString(), responsible: this.authService.getCurrentUserName() })
+            : this.commercialActionDraft.actionType === "Consulta técnica del cliente"
+                ? JSON.stringify({ question: this.commercialActionDraft.observation.trim(), assignedTo: this.technicalAssignee.trim(), sla: this.technicalSla, response: this.technicalResponse.trim(), status: this.technicalStatus, centralizedBy: this.authService.getCurrentUserName() })
             : this.commercialActionDraft.observation.trim();
         const reminderValue = Number(this.commercialActionDraft.remindBeforeValue);
         const relatedContact = this.relatedContacts.find((contact) => contact.key === this.commercialActionDraft.relatedContactKey);
@@ -1719,6 +1741,10 @@ export class CrmProspectDetailComponent {
 
         if (this.commercialActionDraft.actionType === "Envío documentos de ingreso" && !this.intakeRecipient.trim()) {
             this.commercialActionValidationMessage = "Indica el destinatario de los documentos de ingreso.";
+            return;
+        }
+        if (this.commercialActionDraft.actionType === "Consulta técnica del cliente" && (!this.technicalAssignee.trim() || !this.technicalSla || !this.commercialActionDraft.observation.trim())) {
+            this.commercialActionValidationMessage = "Completa pregunta, técnico asignado y SLA de la consulta.";
             return;
         }
 

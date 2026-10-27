@@ -21,7 +21,7 @@ acción de interfaz nunca es una autorización de negocio por sí sola.
 | ~~COM-04~~ ✅ | Prospecto aún no aprueba reparación | Conserva estado Prospecto aunque haya enviado equipos, recibido diagnóstico o cotización | Historial comercial y estado de cotización; validado con `scripts/e2e-ui-com-04-prospect-status-playwright.mjs` (UI-only, login real) |
 | ~~COM-05~~ ✅ | Primera OC/aprobación escrita válida | Convertir a Cliente definitivo una sola vez, sin duplicar empresa, contactos ni historial | Validado con `scripts/e2e-ui-com-05-conversion-idempotente-playwright.mjs`: conversión UI y acción deshabilitada al repetir |
 | ~~COM-06~~ ✅ | Cotización sin respuesta | Crear seguimiento con responsable y vencimiento; no depender de Excel o memoria personal | Validado por `test:e2e-ui-com-06` |
-| COM-07 | Pregunta del cliente llega a técnico por canal informal | Comercial centraliza la respuesta; el técnico recibe tarea y la respuesta queda en el caso | Pregunta, asignado, SLA, respuesta y cierre |
+| ~~COM-07~~ ✅ | Pregunta del cliente llega a técnico por canal informal | Comercial centraliza la respuesta; el técnico recibe tarea y la respuesta queda en el caso | Validado con `scripts/e2e-ui-com-07-technical-question-playwright.mjs`; persiste pregunta, técnico, SLA, respuesta y cierre |
 | COM-08 | Cliente pide lista de partes o explicación interna | No exponer costos/lista de partes salvo que se cambie explícitamente el modelo comercial | Aprobación comercial y versión pública del documento |
 
 ## 2. Recepción y pre-registro
