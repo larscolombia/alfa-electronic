@@ -41,6 +41,7 @@ const result = {
         twoLinesSameRefDifferentProjects: false,
         supplierFilterApplied: false,
         bothRowsVisibleWithTraceability: false,
+        linesApprovedViaUi: false,
         bomDownloaded: false,
         bomExactlyTwoColumns: false,
         bomConsolidatedOneRowQty5: false,
@@ -94,6 +95,26 @@ try {
 
     const lineProjs = (await listPurchaseLines(session)).filter((l) => String(l.reference) === sharedRef).map((l) => l.projectId || l.project_id);
     result.observations.push(`Trazabilidad por API — proyectos de las líneas: ${JSON.stringify(lineProjs)}.`);
+
+    // ── Paso 2.5: Validación de la OC línea por línea (gate COMPR-01) ───────
+    // Las líneas nacen 'pendiente'; solo las APROBADAS pueden salir al BOM del
+    // proveedor. Se aprueba con el botón real de la tabla, como lo haría la
+    // administradora al validar la OC del cliente antes de exportar.
+    for (let i = 0; i < visibleCount; i++) {
+        const approveBtn = rowsRef.nth(i).getByTestId("approve-purchase-line");
+        if (!(await approveBtn.isVisible({ timeout: 4000 }).catch(() => false))) continue; // ya aprobada
+        await approveBtn.click(); await pause(page);
+    }
+    let allApproved = false;
+    for (let i = 0; i < 24 && !allApproved; i++) {
+        const items = await listPurchaseLines(session);
+        const mine = items.filter((l) => String(l.reference) === sharedRef);
+        allApproved = mine.length >= 2 && mine.every((l) => l.approvalStatus === "aprobada");
+        if (!allApproved) await page.waitForTimeout(500);
+    }
+    result.checks.linesApprovedViaUi = allApproved;
+    if (!allApproved) throw new Error("Las líneas del fixture no quedaron 'aprobadas' tras el clic en Aprobar (OC no validada).");
+    await step(page, CASE, stamp, "2.5-lineas-aprobadas-oc-validada");
 
     // ── Paso 3: Descargar BOM (Fase 1 §5.2) y validar estructura ────────────
     const bomBtn = page.getByTestId("download-purchase-lines-bom");

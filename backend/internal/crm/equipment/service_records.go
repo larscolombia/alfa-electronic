@@ -114,8 +114,16 @@ func (s *Service) UpsertRecord(companyID string, record Record) (Record, error) 
 		return Record{}, errRecordIDRequired
 	}
 
+	if err := validateIntakeTransportadora(record); err != nil {
+		return Record{}, err
+	}
+
 	normalizedRecord := normalizeRecord(record)
 	normalizedRecord.ID = normalizedID
+
+	if err := s.checkDuplicateIdentifiers(companyID, normalizedRecord); err != nil {
+		return Record{}, err
+	}
 
 	itemsRaw, err := json.Marshal(normalizedRecord.Items)
 	if err != nil {

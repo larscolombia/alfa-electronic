@@ -9,7 +9,7 @@ backend, frontend y Playwright.
 
 Cada caso debe tener: validación de servidor, CTA visible o bloqueo explicable en
 la interfaz, evidencia persistida y escenario Playwright de éxito o rechazo. Una
-acción de interfaz nunca es una autorización de negocio por sí sola.
+acción de interfaz nunca es una autorización de negocio por sí sola. se debe si o si probar como usuario, no desde api
 
 ## 1. Comercial y prospectos
 
@@ -30,18 +30,18 @@ acción de interfaz nunca es una autorización de negocio por sí sola.
 |---|---|---|---|
 | ~~REC-01~~ ✅ | Equipo no es industrial o cuesta nuevo ≤ COP 2M | Bloquear reparación normal; requerir rechazo o override de jefe con motivo | Validado con `scripts/e2e-ui-rec-01-industrial-gate-playwright.mjs`; la UI exige autorización de jefe y motivo |
 | ~~REC-02~~ ✅ | Llega equipo sin formato de recepción | Siempre registrar e inventariar para no perder custodia; solicitar formato después sin bloquear el registro físico | Validado con `scripts/e2e-ui-rec-02-missing-format-playwright.mjs`; advierte soporte pendiente y permite continuar la custodia |
-| REC-03 | No se identifica remitente | Registrar incidencia de custodia, no asignar a técnico ni cotizar hasta identificar empresa/contacto | Fotos, transportadora, guía y responsable de resolver |
-| REC-04 | Cliente nuevo entrega personalmente | Capturar formato físico y crear prospecto/empresa sin duplicarlo | Formato, contacto, identificación y firma |
-| REC-05 | Transportadora entrega paquete | Transportadora, guía y hora de recibo son obligatorias; no reemplazarlas por texto libre sin trazabilidad | Guía, transportadora y recepción física |
-| REC-06 | Serie incompleta o ilegible | No permitir despacho futuro sin serie verificada; registrar lectura parcial y fotos de placa | Serie, foto de placa y motivo de excepción |
-| REC-07 | Equipo llega con accesorios | Inventariar cada accesorio antes de diagnóstico y mostrarlo en despacho | Lista de accesorios y fotos |
-| REC-08 | Equipo auxiliar o préstamo acompaña al principal | Crear identidad propia, anclaje bidireccional y alerta de devolución; no usar solo texto libre | Códigos de ambos equipos y relación |
-| REC-09 | Faltan fotos de caras obligatorias | No finalizar recepción sin las caras mínimas; permitir guardar borrador con estado incompleto | Checklist de evidencia y autor |
-| REC-10 | Daño visible, sello roto o componente faltante | Exigir foto, nota y confirmación antes de aceptar custodia | Evidencia con fecha/hash y observación |
-| REC-11 | Falla declarada no llega o es insuficiente | El equipo puede diagnosticarse si se identifica remitente; marcar “falla pendiente” y no inventar la declaración cliente | Solicitud al cliente y memo técnico separado |
-| REC-12 | Sospecha de falla de software | Señalar que no se repara software antes de prometer servicio; técnico puede confirmar alcance | Respuesta del formulario y decisión técnica |
-| REC-13 | Equipo fue intervenido previamente, faltan piezas o tiene silicona | Mostrar advertencia técnica/comercial y conservar declaración del cliente | Respuestas de ingreso y fotos |
-| REC-14 | QR/código ya existe | Rechazar reutilización silenciosa; pedir confirmación de reingreso/garantía o crear nuevo evento vinculado | Código previo, motivo y relación |
+| ~~REC-03~~ ✅ | No se identifica remitente | Registrar incidencia de custodia, no asignar a técnico ni cotizar hasta identificar empresa/contacto | Validado con `scripts/e2e-ui-rec-03-unknown-sender-playwright.mjs`; backend rechaza la asignación (`service_assignment.go`) y la UI deshabilita el técnico con hint explicable |
+| ~~REC-04~~ ✅ | Cliente nuevo entrega personalmente | Capturar formato físico y crear prospecto/empresa sin duplicarlo | Validado con `scripts/e2e-ui-rec-04-intake-format-playwright.mjs`; el adjunto del formato acepta PDF (`application/pdf` en `service_attachments.go`) y persiste |
+| ~~REC-05~~ ✅ | Transportadora entrega paquete | Transportadora, guía y hora de recibo son obligatorias; no reemplazarlas por texto libre sin trazabilidad | Validado con `scripts/e2e-ui-rec-05-transportadora-received-at-playwright.mjs`; UI y backend exigen `intakeReceivedAt` además de transportadora y guía |
+| ~~REC-06~~ ✅ | Serie incompleta o ilegible | No permitir despacho futuro sin serie verificada; registrar lectura parcial y fotos de placa | Validado con `scripts/e2e-ui-rec-06-serie-exception-playwright.mjs`; motivo de excepción obligatorio en UI y foto `serial-plate` exigida en finalize |
+| ~~REC-07~~ ✅ | Equipo llega con accesorios | Inventariar cada accesorio antes de diagnóstico y mostrarlo en despacho | Validado con `scripts/e2e-ui-rec-07-accessories-evidence-playwright.mjs`; accesorios reportados exigen evidencia fotográfica tipo `accessories` |
+| ~~REC-08~~ ✅ | Equipo auxiliar o préstamo acompaña al principal | Crear identidad propia, anclaje bidireccional y alerta de devolución; no usar solo texto libre | Validado con `scripts/e2e-ui-rec-08-borrowed-return-alert-playwright.mjs`; código `BLD-XXXXXXXX` propio y badge de devolución en cierre, persistido estructurado |
+| ~~REC-09~~ ✅ | Faltan fotos de caras obligatorias | No finalizar recepción sin las caras mínimas; permitir guardar borrador con estado incompleto | Validado con `scripts/e2e-ui-rec-09-save-draft-playwright.mjs`; `equipment-modal-save-draft` persiste sin finalize y el guardado completo sigue exigiendo las 4 caras |
+| ~~REC-10~~ ✅ | Daño visible, sello roto o componente faltante | Exigir foto, nota y confirmación antes de aceptar custodia | Validado con `scripts/e2e-ui-rec-10-visible-damage-playwright.mjs`; evidencia `visible-damage` con nota + confirmación del cliente exigidas en finalize (el borrador sigue permitido) |
+| ~~REC-11~~ ✅ | Falla declarada no llega o es insuficiente | El equipo puede diagnosticarse si se identifica remitente; marcar “falla pendiente” y no inventar la declaración cliente | Validado con `scripts/e2e-ui-rec-11-failure-pending-playwright.mjs`; badge `failure-pending-badge` visible y `failurePending` persistido por el backend |
+| ~~REC-12~~ ✅ | Sospecha de falla de software | Señalar que no se repara software antes de prometer servicio; técnico puede confirmar alcance | Validado con `scripts/e2e-ui-rec-12-software-suspicion-playwright.mjs`; warning + confirmación “cliente informado” requerida para continuar |
+| ~~REC-13~~ ✅ | Equipo fue intervenido previamente, faltan piezas o tiene silicona | Mostrar advertencia técnica/comercial y conservar declaración del cliente | Validado con `scripts/e2e-ui-rec-13-previous-intervention-playwright.mjs`; banner en preguntas y cierre, respuestas del cliente conservadas |
+| ~~REC-14~~ ✅ | QR/código ya existe | Rechazar reutilización silenciosa; pedir confirmación de reingreso/garantía o crear nuevo evento vinculado | Validado con `scripts/e2e-ui-rec-14-duplicate-identifier-playwright.mjs`; 409 `DUPLICATE_IDENTIFIER` con diálogo de confirmación (reingreso/garantía/evento nuevo) y `duplicateConfirm` persistido |
 
 ## 3. Diagnóstico técnico
 
@@ -93,16 +93,16 @@ acción de interfaz nunca es una autorización de negocio por sí sola.
 
 | ID | Condición límite | Regla requerida | Evidencia / siguiente paso |
 |---|---|---|---|
-| INV-01 | Técnico intenta crear ficha o ajustar stock | Backend debe rechazarlo por rol; un selector visual no es autorización | Usuario, rol y evento de rechazo |
-| INV-02 | Salida excede stock disponible | Bloquear salida/reserva y mostrar cantidad disponible | Stock antes/después y solicitud alternativa |
-| INV-03 | Reserva vencida | No debe seguir bloqueando disponibilidad; exigir renovación o liberación auditable | Estado vencida, fecha y actor |
-| INV-04 | Reserva se libera o se suprime línea | Devolver disponibilidad correctamente, sin doble entrada/salida | Movimiento y saldo resultante |
-| INV-05 | Stock cae bajo mínimo | Crear o alertar reposición automáticamente según política; no depender solo de botón manual | Umbral, fecha y línea sugerida |
-| INV-06 | Referencia duplicada o muy similar | Alertar antes de crear; revisar referencia/código interno y proveedor | Candidatos y decisión |
-| INV-07 | Componente usado/ocasión | Diferenciarlo de nuevo y exigir prueba antes de instalar cuando aplique | Condición, prueba y responsable |
-| INV-08 | Bolsa recibida para técnico | No sumarla a stock general si está asignada al técnico; solo sobrante retorna a stock | Destino, técnico, código y saldo |
-| INV-09 | Conteo físico anual difiere | Crear discrepancia, requerir aprobación y conservar acta; no ajustar silenciosamente | Conteo, diferencia, aprobador y acta |
-| INV-10 | Tercer intento de compra fallido | Escalar/cambiar proveedor o marcar obsoleto según decisión registrada | Intentos, proveedores y resolución |
+| ~~INV-01~~ ✅ | Técnico intenta crear ficha o ajustar stock | Backend debe rechazarlo por rol; un selector visual no es autorización | Validado con `scripts/e2e-ui-inv-INV-01-role-gate-playwright.mjs`; gate por rol (`middleware_role_gate.go`) + audit `REJECT_ROLE` con usuario/rol |
+| ~~INV-02~~ ✅ | Salida excede stock disponible | Bloquear salida/reserva y mostrar cantidad disponible | Validado con `scripts/e2e-ui-inv-INV-02-insufficient-stock-playwright.mjs`; disponible = stock − reservas activas, error con "disponible X (reservado Z), requerido Y" |
+| ~~INV-03~~ ✅ | Reserva vencida | No debe seguir bloqueando disponibilidad; exigir renovación o liberación auditable | Validado con `scripts/e2e-ui-inv-INV-03-reservation-expiry-playwright.mjs`; auto-expiración al consultar + renovar/liberar vencidas con audit y fecha |
+| ~~INV-04~~ ✅ | Reserva se libera o se suprime línea | Devolver disponibilidad correctamente, sin doble entrada/salida | Validado con `scripts/e2e-ui-inv-INV-04-release-stock-playwright.mjs`; liberar nunca toca stock, disponible restaurado una sola vez, doble liberación bloqueada |
+| ~~INV-05~~ ✅ | Stock cae bajo mínimo | Crear o alertar reposición automáticamente según política; no depender solo de botón manual | Validado con `scripts/e2e-ui-inv-INV-05-auto-replenishment-playwright.mjs`; item de reposición auto-creado con audit `REPLENISHMENT_AUTO_CREATED` y auto-resuelto al recuperarse |
+| ~~INV-06~~ ✅ | Referencia duplicada o muy similar | Alertar antes de crear; revisar referencia/código interno y proveedor | Validado con `scripts/e2e-ui-inv-INV-06-duplicate-reference-playwright.mjs`; duplicado por similitud/código interno/proveedor, forzar creación exige motivo auditado |
+| ~~INV-07~~ ✅ | Componente usado/ocasión | Diferenciarlo de nuevo y exigir prueba antes de instalar cuando aplique | Validado con `scripts/e2e-ui-inv-INV-07-used-condition-playwright.mjs`; condición `usado` + prueba aprobada ≤90 días exigida para salida/instalación |
+| ~~INV-08~~ ✅ | Bolsa recibida para técnico | No sumarla a stock general si está asignada al técnico; solo sobrante retorna a stock | Validado con `scripts/e2e-ui-inv-INV-08-technician-bag-playwright.mjs`; bolsa en custodia no mueve stock, liberar solo acredita el sobrante |
+| ~~INV-09~~ ✅ | Conteo físico anual difiere | Crear discrepancia, requerir aprobación y conservar acta; no ajustar silenciosamente | Validado con `scripts/e2e-ui-inv-INV-09-discrepancy-approval-playwright.mjs`; discrepancia creada por UI, ajuste aplicado solo tras aprobación (idempotente, 409 al re-aprobar) |
+| ~~INV-10~~ ✅ | Tercer intento de compra fallido | Escalar/cambiar proveedor o marcar obsoleto según decisión registrada | Validado con `scripts/e2e-ui-inv-INV-10-escalation-decision-playwright.mjs`; 3er intento escala, más intentos 409, decisión con motivo (cambiar proveedor/obsoleto) auditada |
 
 ## 7. Reparación, pruebas y garantía
 

@@ -97,7 +97,7 @@ interface ClientDraft {
                 <div class="alert alert-danger border mb-3">{{ formError }}</div>
             }
 
-            <div class="card adminuiux-card mb-3 mb-lg-4">
+            <div class="card adminuiux-card mb-3 mb-lg-4" data-testid="clients-list-card" *ngIf="!showAddClient && !showImport">
                 <div class="card-body">
                     <div class="d-flex flex-wrap gap-2 mb-3">
                         <button class="btn btn-theme" type="button" (click)="openCreateClient()"><i class="bi bi-plus-lg me-1"></i> Agregar Cliente</button>
@@ -121,13 +121,14 @@ interface ClientDraft {
                                     class="form-control"
                                     placeholder="Nombre, empresa, correo, NIT, teléfono..."
                                     [(ngModel)]="clientSearchTerm"
+                                    (ngModelChange)="clientPage = 1"
                                     autocomplete="off">
                                 <button
                                     *ngIf="clientSearchTerm"
                                     class="btn btn-outline-secondary"
                                     type="button"
                                     aria-label="Limpiar búsqueda"
-                                    (click)="clientSearchTerm = ''">
+                                    (click)="clientSearchTerm = ''; clientPage = 1">
                                     Limpiar
                                 </button>
                             </div>
@@ -165,7 +166,7 @@ interface ClientDraft {
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr *ngFor="let client of filteredClients">
+                                <tr *ngFor="let client of displayedClients">
                                     <td>
                                         <a class="text-decoration-none fw-semibold" [routerLink]="['/app/crm-clientes', client.id]">{{ client.nombre }}</a>
                                         <div class="small text-secondary">{{ client.empresa || '--' }}</div>
@@ -203,11 +204,19 @@ interface ClientDraft {
                                         </div>
                                     </td>
                                 </tr>
-                                <tr *ngIf="clients.length === 0">
-                                    <td colspan="5" class="text-center py-5 text-secondary">No hay clientes registrados. Usa "Agregar Cliente" para crear el primero.</td>
+                                <tr *ngIf="filteredClients.length === 0">
+                                    <td colspan="5" class="text-center py-5 text-secondary">No encontramos clientes. Cambia la búsqueda o agrega el primero.</td>
                                 </tr>
                             </tbody>
                         </table>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center gap-2 mt-3" *ngIf="filteredClients.length > 0" data-testid="clients-pagination">
+                        <span class="small text-secondary">Mostrando {{ clientPageStart }}–{{ clientPageEnd }} de {{ filteredClients.length }}</span>
+                        <div class="btn-group" aria-label="Paginación de clientes">
+                            <button class="btn btn-outline-secondary" type="button" (click)="clientPage = clientPage - 1" [disabled]="clientPage === 1">Anterior</button>
+                            <button class="btn btn-outline-secondary disabled" type="button" aria-current="page">Página {{ clientPage }} de {{ clientTotalPages }}</button>
+                            <button class="btn btn-outline-secondary" type="button" (click)="clientPage = clientPage + 1" [disabled]="clientPage === clientTotalPages">Siguiente</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -217,12 +226,24 @@ interface ClientDraft {
                 (imported)="onImportCompleted($event)"
                 (closed)="showImport = false"></app-crm-clients-import>
 
-            <div class="card adminuiux-card mb-3 mb-lg-4" *ngIf="showAddClient">
-                <div class="card-header border-bottom">
-                    <h5 class="mb-0">{{ editingClientId === null ? "Agregar Cliente" : "Editar Cliente" }}</h5>
+            <div class="card adminuiux-card mb-3 mb-lg-4" data-testid="client-form-card" *ngIf="showAddClient">
+                <div class="card-header border-bottom d-flex justify-content-between align-items-center gap-2">
+                    <div>
+                        <h5 class="mb-1">{{ editingClientId === null ? "Nuevo cliente" : "Editar cliente" }}</h5>
+                        <p class="small text-secondary mb-0">Datos comerciales, fiscales y de contacto de la cuenta.</p>
+                    </div>
+                    <button class="btn btn-outline-secondary" type="button" (click)="cancelForm()"><i class="bi bi-x-lg me-1"></i>Cerrar</button>
                 </div>
                 <div class="card-body">
-                    <h6 class="mb-3">Detalles De La Cuenta</h6>
+                    @if (draft.creditEnabled) {
+                        <div class="alert alert-info border">
+                            <strong>Cliente con crédito.</strong>
+                            Cupo máximo autorizado:
+                            {{ toPositiveNumber(draft.creditLimit) | currency: "COP" : "symbol" : "1.0-0" }}
+                        </div>
+                    }
+
+                    <h6 class="mb-3">Información de la cuenta</h6>
                     <div class="row gx-3">
                         <div class="col-12 col-lg-4 mb-3">
                             <label class="form-label">Nombre del cliente</label>
@@ -326,6 +347,15 @@ interface ClientDraft {
                                 <label class="form-check-label" for="creditEnabled">Si</label>
                             </div>
                         </div>
+                        <div class="col-12 col-lg-3 mb-3">
+                            <label class="form-label">Cupo maximo</label>
+                            <input class="form-control" type="number" min="0" step="1000" [(ngModel)]="draft.creditLimit" name="creditLimit" />
+                        </div>
+                        <div class="col-12 col-lg-3 mb-3">
+                            <label class="form-label">Cupo consumido</label>
+                            <input class="form-control" type="number" min="0" step="1000" [(ngModel)]="draft.creditConsumed" name="creditConsumed" />
+                        </div>
+
                         <div class="col-12 col-lg-4 mb-3">
                             <label class="form-label">Fecha de ultimo pago</label>
                             <input class="form-control" type="date" [(ngModel)]="draft.lastPaymentDate" name="lastPaymentDate" />
@@ -444,17 +474,21 @@ interface ClientDraft {
 export class CrmClientsComponent {
     clients: CrmClientRecord[] = [];
     clientSearchTerm = "";
+    clientPage = 1;
+    readonly clientPageSize = 10;
     sortColumn: "cliente" | "contacto" | "detalles" | "estado" = "cliente";
     sortDirection: "asc" | "desc" = "asc";
 
     toggleClientSort(column: "cliente" | "contacto" | "detalles" | "estado"): void {
         if (this.sortColumn === column) {
             this.sortDirection = this.sortDirection === "asc" ? "desc" : "asc";
+            this.clientPage = 1;
             return;
         }
 
         this.sortColumn = column;
         this.sortDirection = "asc";
+        this.clientPage = 1;
     }
 
     private getClientSortValue(client: CrmClientRecord, column: "cliente" | "contacto" | "detalles" | "estado"): string {
@@ -576,6 +610,16 @@ export class CrmClientsComponent {
 
         if (!this.draft.zona.trim()) {
             this.formError = "Selecciona una zona para el cliente.";
+            return;
+        }
+
+        if (this.draft.creditEnabled && creditLimit <= 0) {
+            this.formError = "Para clientes con credito debes indicar un cupo maximo mayor a cero.";
+            return;
+        }
+
+        if (creditConsumed > creditLimit && this.draft.creditEnabled) {
+            this.formError = "El cupo consumido no puede ser mayor al cupo maximo.";
             return;
         }
 
@@ -934,6 +978,23 @@ export class CrmClientsComponent {
 
             return this.sortDirection === "asc" ? comparison : -comparison;
         });
+    }
+
+    get displayedClients(): CrmClientRecord[] {
+        const start = (this.clientPage - 1) * this.clientPageSize;
+        return this.filteredClients.slice(start, start + this.clientPageSize);
+    }
+
+    get clientTotalPages(): number {
+        return Math.max(1, Math.ceil(this.filteredClients.length / this.clientPageSize));
+    }
+
+    get clientPageStart(): number {
+        return this.filteredClients.length === 0 ? 0 : (this.clientPage - 1) * this.clientPageSize + 1;
+    }
+
+    get clientPageEnd(): number {
+        return Math.min(this.clientPage * this.clientPageSize, this.filteredClients.length);
     }
 
     private loadClients(): void {

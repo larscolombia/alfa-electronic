@@ -54,6 +54,34 @@ type Quote struct {
 	UpdatedAt  string `json:"updatedAt"`
 }
 
+// Public devuelve una copia de la cotización limitada a los campos que
+// pertenecen al documento comercial controlado (lo que ve el cliente en
+// /estimate/:token). Los campos internos —identificadores de BD, lista de
+// equipos asociados, documentos y número de OC del comprador, estado de
+// facturación y timestamps administrativos— se vacían para NO exponerse por la
+// ruta pública sin autenticación (edge case COM-08: "No exponer costos/lista
+// de partes salvo que se cambie explícitamente el modelo comercial").
+func (q Quote) Public() Quote {
+	pub := q
+	pub.ID = ""
+	pub.ProspectID = 0
+	pub.Descripcion = ""
+	pub.TaxMode = ""
+	pub.Zone = ""
+	pub.SignatureRequired = false
+	pub.SelectedEquipmentIDs = nil
+	pub.PurchaseOrderNumber = ""
+	pub.PurchaseOrderFileName = ""
+	pub.PurchaseOrderFileDataURL = ""
+	pub.PurchaseOrderDate = ""
+	pub.PurchaseOrderUploadedAt = ""
+	pub.InvoiceID = nil
+	pub.InvoicedAt = ""
+	pub.CreatedAt = ""
+	pub.UpdatedAt = ""
+	return pub
+}
+
 type ListQuotesQuery struct {
 	Status string
 	Limit  int

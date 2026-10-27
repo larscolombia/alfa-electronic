@@ -22,7 +22,19 @@ func (s *Service) FinalizeRecord(companyID, recordID string) (Record, error) {
 		return Record{}, err
 	}
 
+	if err := validateIntakeTransportadora(record); err != nil {
+		return Record{}, err
+	}
+
 	if err := validateRequiredFaceEvidence(record.Items); err != nil {
+		return Record{}, err
+	}
+
+	if err := validateItemEdgeEvidence(record.Items); err != nil {
+		return Record{}, err
+	}
+
+	if err := s.checkDuplicateIdentifiers(companyID, record); err != nil {
 		return Record{}, err
 	}
 
@@ -36,21 +48,24 @@ func validateRequiredFaceEvidence(items []Item) error {
 			continue
 		}
 
-		label := strings.TrimSpace(item.ReceivedIdentifier)
-		if label == "" {
-			label = strings.TrimSpace(item.Serie)
-		}
-		if label == "" {
-			label = strings.TrimSpace(item.ID)
-		}
-		if label == "" {
-			label = "equipo"
-		}
-
-		return fmt.Errorf("%w: %s (%s)", errFinalizeEvidenceFacesRequired, strings.Join(missing, ", "), label)
+		return fmt.Errorf("%w: %s (%s)", errFinalizeEvidenceFacesRequired, strings.Join(missing, ", "), itemLabel(item))
 	}
 
 	return nil
+}
+
+func itemLabel(item Item) string {
+	label := strings.TrimSpace(item.ReceivedIdentifier)
+	if label == "" {
+		label = strings.TrimSpace(item.Serie)
+	}
+	if label == "" {
+		label = strings.TrimSpace(item.ID)
+	}
+	if label == "" {
+		label = "equipo"
+	}
+	return label
 }
 
 func missingRequiredFaceEvidence(photos []EvidencePhoto) []string {

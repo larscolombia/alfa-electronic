@@ -10,36 +10,6 @@ import (
 	"github.com/google/uuid"
 )
 
-func normalizeFollowupStatus(raw string) (string, error) {
-	switch strings.ToLower(strings.TrimSpace(raw)) {
-	case "", "pendiente", "pending":
-		return "Pendiente", nil
-	case "completado", "completed", "done":
-		return "Completado", nil
-	default:
-		return "", errFollowupStatusInvalid
-	}
-}
-
-func validateFollowupPayload(tipo, fecha, hora, recordatorio, observacion string) error {
-	if len(tipo) > 140 {
-		return newValidationError("el tipo de seguimiento no puede superar 140 caracteres")
-	}
-	if _, err := time.Parse("2006-01-02", fecha); err != nil {
-		return newValidationError("la fecha del seguimiento debe tener formato YYYY-MM-DD")
-	}
-	if _, err := time.Parse("15:04", hora); err != nil {
-		return newValidationError("la hora del seguimiento debe tener formato HH:MM")
-	}
-	if len(recordatorio) > 60 {
-		return newValidationError("el recordatorio no puede superar 60 caracteres")
-	}
-	if len(observacion) > 5000 {
-		return newValidationError("la observacion del seguimiento no puede superar 5000 caracteres")
-	}
-	return nil
-}
-
 func (s *Service) ListProspectFollowups(companyID, prospectID string, includeSoftDeleted bool) ([]ProspectFollowup, error) {
 	normalizedProspectID := strings.TrimSpace(prospectID)
 	if normalizedProspectID == "" {
@@ -52,7 +22,7 @@ func (s *Service) ListProspectFollowups(companyID, prospectID string, includeSof
 	}
 
 	rows, err := s.db.QueryContext(context.Background(), fmt.Sprintf(`
-		SELECT id, prospect_id, tipo, fecha, hora, recordatorio, observacion, estado, registrado_por, soft_delete, created_at, updated_at
+		SELECT id, prospect_id, tipo, fecha, hora, recordatorio, observacion, estado, registrado_por, contacto_nombre, soft_delete, created_at, updated_at
 		FROM crm_prospect_followups
 		WHERE company_id = $1 AND prospect_id = $2 %s
 		ORDER BY fecha ASC, hora ASC, created_at DESC
@@ -76,6 +46,7 @@ func (s *Service) ListProspectFollowups(companyID, prospectID string, includeSof
 			&item.Observacion,
 			&item.Estado,
 			&item.RegistradoPor,
+			&item.ContactoNombre,
 			&item.SoftDelete,
 			&createdAt,
 			&updatedAt,
@@ -117,12 +88,13 @@ func (s *Service) CreateProspectFollowup(companyID, prospectID string, req Upser
 	if len(registradoPor) > 180 {
 		return ProspectFollowup{}, newValidationError("el nombre de quien registra no puede superar 180 caracteres")
 	}
+	contactoNombre := strings.TrimSpace(req.ContactoNombre)
 	status, err := normalizeFollowupStatus(req.Estado)
 	if err != nil {
 		return ProspectFollowup{}, err
 	}
 
-	if err := validateFollowupPayload(tipo, fecha, hora, recordatorio, observacion); err != nil {
+	if err := validateFollowupPayload(tipo, fecha, hora, recordatorio, observacion, contactoNombre); err != nil {
 		return ProspectFollowup{}, err
 	}
 
@@ -130,26 +102,27 @@ func (s *Service) CreateProspectFollowup(companyID, prospectID string, req Upser
 	now := time.Now()
 	_, err = s.db.ExecContext(context.Background(), `
 		INSERT INTO crm_prospect_followups (
-			id, company_id, prospect_id, tipo, fecha, hora, recordatorio, observacion, estado, registrado_por, created_at, updated_at
+			id, company_id, prospect_id, tipo, fecha, hora, recordatorio, observacion, estado, registrado_por, contacto_nombre, created_at, updated_at
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $11)
-	`, id, companyID, normalizedProspectID, tipo, fecha, hora, recordatorio, observacion, status, registradoPor, now)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $12)
+	`, id, companyID, normalizedProspectID, tipo, fecha, hora, recordatorio, observacion, status, registradoPor, contactoNombre, now)
 	if err != nil {
 		return ProspectFollowup{}, err
 	}
 
 	return ProspectFollowup{
-		ID:            id,
-		ProspectID:    normalizedProspectID,
-		Tipo:          tipo,
-		Fecha:         fecha,
-		Hora:          hora,
-		Recordatorio:  recordatorio,
-		Observacion:   observacion,
-		Estado:        status,
-		RegistradoPor: registradoPor,
-		CreatedAt:     formatCRMDateTime(now),
-		UpdatedAt:     formatCRMDateTime(now),
+		ID:             id,
+		ProspectID:     normalizedProspectID,
+		Tipo:           tipo,
+		Fecha:          fecha,
+		Hora:           hora,
+		Recordatorio:   recordatorio,
+		Observacion:    observacion,
+		Estado:         status,
+		RegistradoPor:  registradoPor,
+		ContactoNombre: contactoNombre,
+		CreatedAt:      formatCRMDateTime(now),
+		UpdatedAt:      formatCRMDateTime(now),
 	}, nil
 }
 
@@ -185,12 +158,13 @@ func (s *Service) UpdateProspectFollowup(companyID, prospectID, followupID strin
 	if len(registradoPor) > 180 {
 		return ProspectFollowup{}, newValidationError("el nombre de quien registra no puede superar 180 caracteres")
 	}
+	contactoNombre := strings.TrimSpace(req.ContactoNombre)
 	status, err := normalizeFollowupStatus(req.Estado)
 	if err != nil {
 		return ProspectFollowup{}, err
 	}
 
-	if err := validateFollowupPayload(tipo, fecha, hora, recordatorio, observacion); err != nil {
+	if err := validateFollowupPayload(tipo, fecha, hora, recordatorio, observacion, contactoNombre); err != nil {
 		return ProspectFollowup{}, err
 	}
 
@@ -204,11 +178,12 @@ func (s *Service) UpdateProspectFollowup(companyID, prospectID, followupID strin
 			observacion = $5,
 			estado = $6,
 			registrado_por = COALESCE(NULLIF($11, ''), registrado_por),
+			contacto_nombre = COALESCE(NULLIF($12, ''), contacto_nombre),
 			updated_at = $7
 		WHERE id = $8
 		  AND company_id = $9
 		  AND prospect_id = $10
-	`, tipo, fecha, hora, recordatorio, observacion, status, now, normalizedFollowupID, companyID, normalizedProspectID, registradoPor)
+	`, tipo, fecha, hora, recordatorio, observacion, status, now, normalizedFollowupID, companyID, normalizedProspectID, registradoPor, contactoNombre)
 	if err != nil {
 		return ProspectFollowup{}, err
 	}
@@ -222,16 +197,17 @@ func (s *Service) UpdateProspectFollowup(companyID, prospectID, followupID strin
 	}
 
 	return ProspectFollowup{
-		ID:            normalizedFollowupID,
-		ProspectID:    normalizedProspectID,
-		Tipo:          tipo,
-		Fecha:         fecha,
-		Hora:          hora,
-		Recordatorio:  recordatorio,
-		Observacion:   observacion,
-		Estado:        status,
-		RegistradoPor: registradoPor,
-		UpdatedAt:     formatCRMDateTime(now),
+		ID:             normalizedFollowupID,
+		ProspectID:     normalizedProspectID,
+		Tipo:           tipo,
+		Fecha:          fecha,
+		Hora:           hora,
+		Recordatorio:   recordatorio,
+		Observacion:    observacion,
+		Estado:         status,
+		RegistradoPor:  registradoPor,
+		ContactoNombre: contactoNombre,
+		UpdatedAt:      formatCRMDateTime(now),
 	}, nil
 }
 
@@ -268,40 +244,6 @@ func (s *Service) DeleteProspectFollowup(companyID, prospectID, followupID strin
 	}
 
 	return nil
-}
-
-func (s *Service) UpdateProspectNote(companyID, prospectID, note string) (string, error) {
-	normalizedProspectID := strings.TrimSpace(prospectID)
-	if normalizedProspectID == "" {
-		return "", errProspectIDRequired
-	}
-
-	normalizedNote := strings.TrimSpace(note)
-	if len(normalizedNote) > 5000 {
-		return "", errProspectNoteTooLong
-	}
-
-	result, err := s.db.ExecContext(context.Background(), `
-		UPDATE crm_prospects
-		SET note = $1,
-			updated_at = NOW()
-		WHERE company_id = $2
-		  AND id = $3
-		  AND soft_delete = false
-	`, normalizedNote, companyID, normalizedProspectID)
-	if err != nil {
-		return "", err
-	}
-
-	affected, err := result.RowsAffected()
-	if err != nil {
-		return "", err
-	}
-	if affected == 0 {
-		return "", errProspectNotFound
-	}
-
-	return normalizedNote, nil
 }
 
 func isFollowupValidationError(err error) bool {

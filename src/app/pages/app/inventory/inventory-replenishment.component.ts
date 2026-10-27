@@ -20,13 +20,17 @@ import { SupplierRecord, SuppliersCatalogService } from "../../../services/suppl
 import { Project } from "../projects/models";
 import { ProjectService } from "../projects/services";
 import { PurchaseRequestsPanelComponent } from "./purchase-requests-panel.component";
+import { ReplenishmentAlertsComponent } from "./replenishment-alerts.component";
+import { ReplenishmentDecisionFormComponent } from "./replenishment-decision-form.component";
+import { InvBackendAlertComponent } from "./inv-backend-alert.component";
+import { InvRoleHintComponent } from "./inv-role-hint.component";
 import { projectOriginLabel } from "./project-origin-label.util";
 import { consumePurchaseWorkflowHandoff, PurchaseWorkflowHandoff } from "./purchase-workflow-handoff.store";
 
 @Component({
     selector: "app-inventory-replenishment",
     standalone: true,
-    imports: [CommonModule, FormsModule, RouterLink, PurchaseRequestsPanelComponent],
+    imports: [CommonModule, FormsModule, RouterLink, PurchaseRequestsPanelComponent, ReplenishmentAlertsComponent, ReplenishmentDecisionFormComponent, InvRoleHintComponent, InvBackendAlertComponent],
     template: `
         <div class="container-fluid py-3">
             <div class="row gx-3 gx-lg-4 align-items-center page-title">
@@ -75,6 +79,9 @@ import { consumePurchaseWorkflowHandoff, PurchaseWorkflowHandoff } from "./purch
                     </div>
                 </div>
             </div>
+
+            <app-inv-role-hint></app-inv-role-hint>
+            <app-inv-backend-alert></app-inv-backend-alert>
 
             <div *ngIf="feedback" class="alert mb-3" [ngClass]="feedbackClass">
                 {{ feedback }}
@@ -142,6 +149,8 @@ import { consumePurchaseWorkflowHandoff, PurchaseWorkflowHandoff } from "./purch
                     </div>
                 </div>
             </div>
+
+            <app-replenishment-alerts [items]="items"></app-replenishment-alerts>
 
             <div class="card adminuiux-card mb-3">
                 <div class="card-header">
@@ -228,27 +237,51 @@ import { consumePurchaseWorkflowHandoff, PurchaseWorkflowHandoff } from "./purch
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr *ngFor="let item of visibleItems">
-                                    <td>
-                                        <div class="fw-semibold">{{ item.reference }}</div>
-                                        <div class="small text-secondary">{{ item.description }}</div>
-                                    </td>
-                                    <td>{{ item.currentStock }}</td>
-                                    <td>{{ item.minStock }}</td>
-                                    <td>{{ item.supplier || '--' }}</td>
-                                    <td>{{ item.estimatedLeadDays ?? '--' }}</td>
-                                    <td>{{ item.lastQuotedUnitCost ?? '--' }}</td>
-                                    <td>{{ item.firstInsufficientAt | date: 'dd/MM/yyyy' }}</td>
-                                    <td>{{ item.lastAttemptAt | date: 'dd/MM/yyyy' }}</td>
-                                    <td>{{ item.attempts }}</td>
-                                    <td>{{ daysWaiting(item) }}</td>
-                                    <td><span class="badge" [ngClass]="statusClass(item.status)">{{ item.status }}</span></td>
-                                    <td class="text-end">
-                                        <button class="btn btn-sm btn-outline-secondary me-2" type="button" [disabled]="item.status === 'obsoleto' || !canManageReplenishment" (click)="registerAttempt(item.reference)">Intento rapido</button>
-                                        <button class="btn btn-sm btn-outline-theme me-2" type="button" [disabled]="item.status === 'obsoleto' || !canManageReplenishment" (click)="loadAttemptDraft(item)">Cargar detalle</button>
-                                        <button class="btn btn-sm btn-outline-danger" type="button" [disabled]="item.status === 'obsoleto' || !canManageReplenishment" (click)="markObsolete(item.reference)">Marcar obsoleto</button>
-                                    </td>
-                                </tr>
+                                <ng-container *ngFor="let item of visibleItems">
+                                    <tr>
+                                        <td>
+                                            <div class="fw-semibold">{{ item.reference }}</div>
+                                            <div class="small text-secondary">{{ item.description }}</div>
+                                        </td>
+                                        <td>{{ item.currentStock }}</td>
+                                        <td>{{ item.minStock }}</td>
+                                        <td>{{ item.supplier || '--' }}</td>
+                                        <td>{{ item.estimatedLeadDays ?? '--' }}</td>
+                                        <td>{{ item.lastQuotedUnitCost ?? '--' }}</td>
+                                        <td>{{ item.firstInsufficientAt | date: 'dd/MM/yyyy' }}</td>
+                                        <td>{{ item.lastAttemptAt | date: 'dd/MM/yyyy' }}</td>
+                                        <td>{{ item.attempts }}</td>
+                                        <td>{{ daysWaiting(item) }}</td>
+                                        <td><span class="badge" [ngClass]="statusClass(item.status)">{{ item.status }}</span></td>
+                                        <td class="text-end">
+                                            <button class="btn btn-sm btn-outline-secondary me-2" type="button" [disabled]="item.status === 'obsoleto' || item.status === 'escalar' || !canManageReplenishment" (click)="registerAttempt(item.reference)">Intento rapido</button>
+                                            <button class="btn btn-sm btn-outline-theme me-2" type="button" [disabled]="item.status === 'obsoleto' || !canManageReplenishment" (click)="loadAttemptDraft(item)">Cargar detalle</button>
+                                            <button class="btn btn-sm btn-outline-danger me-2" type="button" [disabled]="item.status === 'obsoleto' || !canManageReplenishment" (click)="markObsolete(item.reference)">Marcar obsoleto</button>
+                                            <button
+                                                *ngIf="item.status === 'escalar' && canManageReplenishment"
+                                                class="btn btn-sm btn-outline-theme"
+                                                type="button"
+                                                [attr.data-testid]="'decision-open-' + item.reference"
+                                                (click)="toggleDecisionForm(item.reference)"
+                                            >
+                                                {{ decisionFormFor === item.reference ? 'Cerrar decision' : 'Resolver escalacion' }}
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr *ngIf="item.status === 'escalar' && decisionFormFor === item.reference">
+                                        <td colspan="12" class="p-2 border-0">
+                                            <div class="alert alert-warning border small py-2 mb-2" [attr.data-testid]="'replenishment-escalated-hint-' + item.reference" role="note">
+                                                Este item esta escalado: registrar otro intento esta bloqueado. Registra una
+                                                decision (cambiar de proveedor o marcar obsoleto) para poder seguir gestionandolo.
+                                            </div>
+                                            <app-replenishment-decision-form
+                                                [reference]="item.reference"
+                                                (changed)="onDecisionChanged()"
+                                                (cancel)="decisionFormFor = ''"
+                                            ></app-replenishment-decision-form>
+                                        </td>
+                                    </tr>
+                                </ng-container>
                                 <tr *ngIf="visibleItems.length === 0">
                                     <td colspan="12" class="text-center text-secondary py-4">No hay items para el filtro actual.</td>
                                 </tr>
@@ -416,6 +449,7 @@ export class InventoryReplenishmentComponent implements OnInit, OnDestroy {
 
     feedback = "";
     feedbackType: "success" | "warning" | "danger" = "success";
+    decisionFormFor = "";
 
     constructor(
         private readonly inventoryRbac: InventoryRbacService,
@@ -601,6 +635,15 @@ export class InventoryReplenishmentComponent implements OnInit, OnDestroy {
         }
     }
 
+    toggleDecisionForm(reference: string): void {
+        this.decisionFormFor = this.decisionFormFor === reference ? "" : reference;
+    }
+
+    onDecisionChanged(): void {
+        this.decisionFormFor = "";
+        this.refreshState();
+    }
+
     generatePurchaseLines(): void {
         const result = this.inventoryWorkflow.generatePurchaseLines();
         this.setFeedback(result.message, result.ok ? "success" : "danger");
@@ -734,6 +777,16 @@ export class InventoryReplenishmentComponent implements OnInit, OnDestroy {
         return selected.length > 0 ? selected : visible;
     }
 
+    /**
+     * COMPR-01 (MD): una línea sin OC validada NO debe exportarse al proveedor.
+     * Solo las líneas con aprobación 'aprobada' son elegibles para los archivos
+     * Excel de proveedor; pendientes o rechazadas quedan visibles en la tabla
+     * (con su badge) pero nunca salen a los reportes que se suben al portal.
+     */
+    private onlyApproved(rows: PurchaseLine[]): PurchaseLine[] {
+        return rows.filter((line) => (line.approvalStatus || "pendiente") === "aprobada");
+    }
+
     receiveLine(line: PurchaseLine): void {
         const requested = Math.floor(Number(this.receiveDrafts[line.id]));
         if (!Number.isFinite(requested) || requested < 1) {
@@ -761,9 +814,10 @@ export class InventoryReplenishmentComponent implements OnInit, OnDestroy {
     }
 
     downloadSupplierExcel(): void {
-        const rows = this.exportRows();
+        const allRows = this.exportRows();
+        const rows = this.onlyApproved(allRows);
         if (rows.length === 0) {
-            this.setFeedback("No hay lineas de compra para exportar.", "warning");
+            this.setFeedback("No hay lineas de compra APROBADAS para exportar: las pendientes o rechazadas (sin OC validada) no se envian al proveedor.", "warning");
             return;
         }
         const header = [
@@ -796,8 +850,11 @@ export class InventoryReplenishmentComponent implements OnInit, OnDestroy {
         const supplierPart = this.lineSupplierFilter ? `_${this.lineSupplierFilter.replace(/[^A-Za-z0-9]+/g, "-")}` : "_todos";
         const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
         XLSX.writeFile(workbook, `repuestos${supplierPart}_${stamp}.xlsx`);
+        const unapproved = allRows.length - rows.length;
         this.setFeedback(
-            `Excel generado con ${rows.length} linea(s)${this.lineSupplierFilter ? ` del proveedor ${this.lineSupplierFilter}` : ""}. Verifica que solo queden las referencias que necesitas antes de enviarlo.`,
+            `Excel generado con ${rows.length} linea(s) aprobada(s)${this.lineSupplierFilter ? ` del proveedor ${this.lineSupplierFilter}` : ""}` +
+                (unapproved > 0 ? `, ${unapproved} pendiente(s)/rechazada(s) excluida(s): sin OC validada no se exportan.` : ".") +
+                " Verifica que solo queden las referencias que necesitas antes de enviarlo.",
             "success",
         );
     }
@@ -814,9 +871,11 @@ export class InventoryReplenishmentComponent implements OnInit, OnDestroy {
      * doble compra. Sin filtro de proveedor exporta lo visible/seleccionado.
      */
     downloadBomExcel(): void {
-        const rows = this.exportRows();
+        const allRows = this.exportRows();
+        // COMPR-01: sin OC validada (aprobacion 'aprobada') la linea no sale al BOM del proveedor.
+        const rows = this.onlyApproved(allRows);
         if (rows.length === 0) {
-            this.setFeedback("No hay lineas de compra para exportar.", "warning");
+            this.setFeedback("No hay lineas APROBADAS para el BOM: las lineas sin OC validada (pendientes o rechazadas) quedan fuera del archivo del proveedor.", "warning");
             return;
         }
 
@@ -851,10 +910,12 @@ export class InventoryReplenishmentComponent implements OnInit, OnDestroy {
         const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
         XLSX.writeFile(workbook, `BOM${supplierPart}_${stamp}.xlsx`);
 
+        const unapproved = allRows.length - rows.length;
         this.setFeedback(
-            `BOM generado con ${byReference.size} referencia(s) unica(s) a partir de ${rows.length} linea(s)` +
+            `BOM generado con ${byReference.size} referencia(s) unica(s) a partir de ${rows.length} linea(s) aprobada(s)` +
                 (this.lineSupplierFilter ? ` del proveedor ${this.lineSupplierFilter}` : "") +
-                (skippedFull > 0 ? `, ${skippedFull} ya recibida(s) por completo y excluida(s).` : ".") +
+                (skippedFull > 0 ? `, ${skippedFull} ya recibida(s) por completo y excluida(s)` : "") +
+                (unapproved > 0 ? `, ${unapproved} sin OC validada (pendiente/rechazada) excluida(s).` : ".") +
                 " Formato de 2 columnas listo para subir al portal del proveedor.",
             "success",
         );

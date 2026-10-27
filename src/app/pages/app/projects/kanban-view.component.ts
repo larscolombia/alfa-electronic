@@ -4475,8 +4475,11 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
   }
 
   getDispatchBorrowedEquipmentLabel(): string {
-    const borrowedEquipments = this.linkedEquipment?.borrowedEquipments ?? [];
-    return borrowedEquipments.length ? borrowedEquipments.join(', ') : 'sin equipos prestados';
+    const borrowedEquipments: unknown[] = this.linkedEquipment?.borrowedEquipments ?? [];
+    const labels = borrowedEquipments
+      .map((entry) => (typeof entry === 'string' ? entry.trim() : String((entry as { description?: string; code?: string })?.description ?? (entry as { code?: string })?.code ?? '').trim()))
+      .filter((label) => label !== '');
+    return labels.length ? labels.join(', ') : 'sin equipos prestados';
   }
 
   getLatestDispatchRecord(): ProjectDispatchRecord | null {

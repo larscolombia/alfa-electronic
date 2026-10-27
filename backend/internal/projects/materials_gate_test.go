@@ -101,7 +101,11 @@ func approveGateRequest(t *testing.T, db execer, companyID, requestID, lineID, r
 	}
 }
 
-func TestUpsertProjectBlocksRepairWithActiveReservation(t *testing.T) {
+// COMPR-02: equipo en Pos 05 (OC aprobada / pedir-repuestos) que SOLO requiere
+// stock. La reserva activa NO bloquea la entrada a Reparacion; es lo que la
+// habilita (el material ya esta dentro de instalaciones). Lo unico que bloquea
+// son las obligaciones de compra externa (demas tests de este archivo).
+func TestUpsertProjectAllowsRepairWithActiveStockReservation(t *testing.T) {
 	db := openSLATestDB(t)
 	s := NewService(db)
 
@@ -114,43 +118,22 @@ func TestUpsertProjectBlocksRepairWithActiveReservation(t *testing.T) {
 
 	if _, err := s.UpsertProject(companyID, UpsertProjectRequest{
 		ID:         projectID,
-		Status:     "por-cotizar",
+		Status:     "pedir-repuestos",
 		Properties: map[string]any{"shortCode": shortCode},
 	}); err != nil {
-		t.Fatalf("crear proyecto en por-cotizar: %v", err)
+		t.Fatalf("crear proyecto en pedir-repuestos: %v", err)
 	}
 
 	insertGateReservation(t, db, companyID, reservationID, "ABC-500", shortCode, "activa")
 
-	// Bloqueado: la reserva activa es material sin entregar al tecnico.
-	if _, err := s.UpsertProject(companyID, UpsertProjectRequest{
-		ID:         projectID,
-		Status:     "reparacion",
-		Properties: map[string]any{"shortCode": shortCode},
-	}); !errors.Is(err, errMaterialsPending) {
-		t.Fatalf("UpsertProject con reserva activa = %v, esperaba errMaterialsPending", err)
-	}
-
-	got, err := s.GetProject(companyID, projectID)
-	if err != nil {
-		t.Fatalf("GetProject: %v", err)
-	}
-	if got.Status != "por-cotizar" {
-		t.Fatalf("status tras intento bloqueado = %q, esperaba por-cotizar intacto", got.Status)
-	}
-
-	// Salida legal 1: liberar la reserva (Liberar o Consumir la dejan 'liberada').
-	if _, err := db.Exec(`UPDATE inventory_reservations SET status = 'liberada' WHERE company_id = $1 AND id = $2`, companyID, reservationID); err != nil {
-		t.Fatalf("liberar reserva de prueba: %v", err)
-	}
-
+	// Legal: reserva activa + sin lineas de compra abiertas -> Reparacion (Pos 1).
 	saved, err := s.UpsertProject(companyID, UpsertProjectRequest{
 		ID:         projectID,
 		Status:     "reparacion",
 		Properties: map[string]any{"shortCode": shortCode},
 	})
 	if err != nil {
-		t.Fatalf("tras liberar la reserva, Reparacion debe ser legal: %v", err)
+		t.Fatalf("COMPR-02: con reserva de stock activa y sin compras abiertas, Reparacion debe ser legal: %v", err)
 	}
 	if saved.Status != "reparacion" {
 		t.Fatalf("status = %q, esperaba reparacion", saved.Status)

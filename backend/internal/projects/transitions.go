@@ -42,16 +42,19 @@ import (
 //    despacho del caso principal.
 
 var legalProjectTransitions = map[string][]string{
-	"recibido":                  {"diagnostico", "prestamo"},
-	"diagnostico":               {"recibido", "por-cotizar", "pedir-repuestos", "reparacion", "prestamo"},
-	"por-cotizar":               {"diagnostico", "pedir-repuestos", "reparacion", "prestamo"},
-	"pedir-repuestos":           {"por-cotizar", "esperando-proveedor", "prestamo"},
+	"recibido":    {"diagnostico", "prestamo"},
+	"diagnostico": {"recibido", "por-cotizar", "pedir-repuestos", "reparacion", "prestamo"},
+	"por-cotizar": {"diagnostico", "pedir-repuestos", "reparacion", "prestamo"},
+	// 'reparacion' desde pedir-repuestos: equipo con OC aprobada (Pos 05) que solo
+	// requiere stock; la reserva activa habilita la reparacion (COMPR-02).
+	// Compras externas siguen bloqueadas por materials_gate, no por esta tabla.
+	"pedir-repuestos":           {"por-cotizar", "reparacion", "esperando-proveedor", "prestamo"},
 	"esperando-proveedor":       {"pedir-repuestos", "reparacion", "garantia", "garantia-espera-repuestos", "prestamo"},
 	"reparacion":                {"diagnostico", "por-cotizar", "esperando-proveedor", "listo-entrega", "garantia-espera-repuestos", "prestamo"},
 	"listo-entrega":             {"entregado", "prestamo"},
 	"entregado":                 {"listo-entrega", "garantia", "prestamo"},
 	"garantia":                  {"entregado", "esperando-proveedor", "garantia-espera-repuestos", "prestamo"},
-	"garantia-espera-repuestos":   {"garantia", "esperando-proveedor", "reparacion", "prestamo"},
+	"garantia-espera-repuestos": {"garantia", "esperando-proveedor", "reparacion", "prestamo"},
 	"prestamo":                  {"recibido", "diagnostico", "por-cotizar", "pedir-repuestos", "esperando-proveedor", "reparacion", "listo-entrega", "entregado", "garantia", "garantia-espera-repuestos"},
 }
 

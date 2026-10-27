@@ -140,42 +140,42 @@ type EditableProfileFieldConfig = {
                     </div>
                 </div>
             } @else {
-                <ul class="nav nav-tabs border-bottom-0">
+                <ul class="nav nav-tabs border-bottom-0 flex-nowrap overflow-auto" role="tablist" aria-label="Secciones de la ficha del prospecto">
                     <li class="nav-item">
-                        <button class="nav-link" type="button" [class.active]="activeTab === 'perfil'" (click)="activeTab = 'perfil'">Perfil</button>
+                        <button class="nav-link" role="tab" type="button" [class.active]="activeTab === 'perfil'" [attr.aria-selected]="activeTab === 'perfil'" (click)="activeTab = 'perfil'">Perfil</button>
                     </li>
                     <li class="nav-item">
-                        <button class="nav-link" type="button" [class.active]="activeTab === 'contactos-relacionados'" (click)="activeTab = 'contactos-relacionados'">Contactos relacionados</button>
+                        <button class="nav-link" role="tab" type="button" [class.active]="activeTab === 'contactos-relacionados'" [attr.aria-selected]="activeTab === 'contactos-relacionados'" (click)="activeTab = 'contactos-relacionados'">Contactos relacionados</button>
                     </li>
                     <li class="nav-item">
-                        <button class="nav-link" type="button" [class.active]="activeTab === 'acciones-comerciales'" (click)="activeTab = 'acciones-comerciales'">Acciones comerciales</button>
+                        <button class="nav-link" role="tab" type="button" [class.active]="activeTab === 'acciones-comerciales'" [attr.aria-selected]="activeTab === 'acciones-comerciales'" (click)="activeTab = 'acciones-comerciales'">Acciones comerciales</button>
                     </li>
                     <li class="nav-item">
-                        <button class="nav-link" type="button" [class.active]="activeTab === 'equipos'" (click)="activeTab = 'equipos'">Equipos</button>
+                        <button class="nav-link" role="tab" type="button" [class.active]="activeTab === 'equipos'" [attr.aria-selected]="activeTab === 'equipos'" (click)="activeTab = 'equipos'">Equipos</button>
                     </li>
                     <li class="nav-item">
-                        <button class="nav-link" type="button" [class.active]="activeTab === 'cotizacion'" (click)="activeTab = 'cotizacion'">Cotización</button>
+                        <button class="nav-link" role="tab" type="button" [class.active]="activeTab === 'cotizacion'" [attr.aria-selected]="activeTab === 'cotizacion'" (click)="activeTab = 'cotizacion'">Cotización</button>
                     </li>
                     <li class="nav-item">
-                        <button class="nav-link" type="button" [class.active]="activeTab === 'archivos'" (click)="activeTab = 'archivos'">Archivos</button>
+                        <button class="nav-link" role="tab" type="button" [class.active]="activeTab === 'archivos'" [attr.aria-selected]="activeTab === 'archivos'" (click)="activeTab = 'archivos'">Archivos</button>
                     </li>
                     <li class="nav-item">
-                        <button class="nav-link" type="button" [class.active]="activeTab === 'notas'" (click)="activeTab = 'notas'">Notas</button>
+                        <button class="nav-link" role="tab" type="button" [class.active]="activeTab === 'notas'" [attr.aria-selected]="activeTab === 'notas'" (click)="activeTab = 'notas'">Notas</button>
                     </li>
                     <li class="nav-item">
-                        <button class="nav-link" type="button" [class.active]="activeTab === 'sucursales'" (click)="activeTab = 'sucursales'">Sucursales</button>
+                        <button class="nav-link" role="tab" type="button" [class.active]="activeTab === 'sucursales'" [attr.aria-selected]="activeTab === 'sucursales'" (click)="activeTab = 'sucursales'">Sucursales</button>
                     </li>
                     <li class="nav-item">
-                        <button class="nav-link" type="button" [class.active]="activeTab === 'trazabilidad'" (click)="activeTab = 'trazabilidad'">Trazabilidad</button>
+                        <button class="nav-link" role="tab" type="button" [class.active]="activeTab === 'trazabilidad'" [attr.aria-selected]="activeTab === 'trazabilidad'" (click)="activeTab = 'trazabilidad'">Trazabilidad</button>
                     </li>
                 </ul>
 
-                <div class="pt-3">
+                <div class="pt-3" role="tabpanel" aria-live="polite">
                     @if (activeTab === "perfil") {
                         <div class="card adminuiux-card">
                             <div class="card-header border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
                                 <div>
-                                    <h5 class="mb-1">Informacion de perfil</h5>
+                                    <h5 class="mb-1">Información del perfil</h5>
                                     <p class="text-secondary small mb-0">
                                         Estado <span class="badge"
                                             [class.text-bg-warning]="prospect.estado === 'Pendiente'"
@@ -355,7 +355,7 @@ type EditableProfileFieldConfig = {
                     @if (activeTab === "acciones-comerciales") {
                         <div class="card adminuiux-card">
                             <div class="card-body border-bottom d-flex gap-2 flex-wrap">
-                                <button class="btn btn-theme" type="button" (click)="openCommercialActionModal()"><i class="bi bi-plus-lg me-1"></i> Nueva accion comercial</button>
+                                <button class="btn btn-theme" type="button" (click)="openCommercialActionModal()"><i class="bi bi-plus-lg me-1"></i> Nueva acción comercial</button>
                                 <button class="btn btn-outline-theme" type="button" data-testid="send-intake-documents-btn" (click)="openIntakeDocumentsModal()"><i class="bi bi-send me-1"></i> Enviar documentos de ingreso</button>
                                 <button class="btn btn-outline-theme" type="button" data-testid="technical-question-btn" (click)="openTechnicalQuestionModal()"><i class="bi bi-question-circle me-1"></i> Registrar consulta técnica</button>
                                 <button class="btn btn-outline-secondary" type="button"><i class="bi bi-download me-1"></i> Exportar</button>
@@ -1766,6 +1766,7 @@ export class CrmProspectDetailComponent {
             observacion: observation,
             estado: "Pendiente",
             registradoPor: this.authService.getCurrentUserName(),
+            contactoNombre: relatedContact?.nombre ?? "",
         };
 
         this.commercialActionValidationMessage = "";
@@ -1970,7 +1971,7 @@ export class CrmProspectDetailComponent {
             createdAt: this.formatApiDateTime(item.createdAt),
             prospectName: this.prospect?.nombre || "--",
             companyName: this.prospect?.compania || "",
-            relatedContactName: relatedContact?.nombre || this.prospect?.nombre || "--",
+            relatedContactName: item.contactoNombre?.trim() || relatedContact?.nombre || this.prospect?.nombre || "--",
             actionType: item.tipo,
             followUpDate: item.fecha,
             startTime: item.hora,

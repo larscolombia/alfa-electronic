@@ -100,7 +100,15 @@ func (h *Handler) upsertRecord(c echo.Context) error {
 
 	item, err := h.service.UpsertRecord(companyID, req)
 	if err != nil {
-		if errors.Is(err, errRecordIDRequired) {
+		var duplicateErr *DuplicateIdentifierError
+		if errors.As(err, &duplicateErr) {
+			return c.JSON(http.StatusConflict, map[string]string{
+				"error":            duplicateErr.Error(),
+				"code":             ErrCodeDuplicateIdentifier,
+				"existingRecordId": duplicateErr.ExistingRecordID,
+			})
+		}
+		if errors.Is(err, errRecordIDRequired) || errors.Is(err, errIntakeTransportadoraRequired) {
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 		}
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "no se pudo guardar el registro de equipo"})
@@ -115,8 +123,21 @@ func (h *Handler) finalizeRecord(c echo.Context) error {
 
 	item, err := h.service.FinalizeRecord(companyID, recordID)
 	if err != nil {
+		var duplicateErr *DuplicateIdentifierError
+		if errors.As(err, &duplicateErr) {
+			return c.JSON(http.StatusConflict, map[string]string{
+				"error":            duplicateErr.Error(),
+				"code":             ErrCodeDuplicateIdentifier,
+				"existingRecordId": duplicateErr.ExistingRecordID,
+			})
+		}
 		switch {
-		case errors.Is(err, errRecordIDRequired), errors.Is(err, errFinalizeEvidenceFacesRequired):
+		case errors.Is(err, errRecordIDRequired),
+			errors.Is(err, errFinalizeEvidenceFacesRequired),
+			errors.Is(err, errIntakeTransportadoraRequired),
+			errors.Is(err, errSerialPlateEvidenceRequired),
+			errors.Is(err, errAccessoriesEvidenceRequired),
+			errors.Is(err, errVisibleDamageEvidenceRequired):
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 		case errors.Is(err, errRecordNotFound):
 			return c.JSON(http.StatusNotFound, map[string]string{"error": err.Error()})
@@ -277,7 +298,7 @@ func (h *Handler) addItemAttachment(c echo.Context) error {
 	item, err := h.service.AddItemAttachment(companyID, recordID, itemID, req)
 	if err != nil {
 		switch {
-		case errors.Is(err, errRecordIDRequired), errors.Is(err, errItemIDRequired), errors.Is(err, errAttachmentInvalid), errors.Is(err, errAttachmentTooLarge):
+		case errors.Is(err, errRecordIDRequired), errors.Is(err, errItemIDRequired), errors.Is(err, errAttachmentInvalid), errors.Is(err, errAttachmentTooLarge), errors.Is(err, errAttachmentTypeDenied):
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 		case errors.Is(err, errRecordNotFound), errors.Is(err, errItemNotFound):
 			return c.JSON(http.StatusNotFound, map[string]string{"error": err.Error()})
@@ -302,7 +323,7 @@ func (h *Handler) assignItemTechnician(c echo.Context) error {
 	item, err := h.service.AssignItemTechnician(companyID, recordID, itemID, req)
 	if err != nil {
 		switch {
-		case errors.Is(err, errRecordIDRequired), errors.Is(err, errItemIDRequired), errors.Is(err, errTechnicianIDRequired):
+		case errors.Is(err, errRecordIDRequired), errors.Is(err, errItemIDRequired), errors.Is(err, errTechnicianIDRequired), errors.Is(err, errSenderUnknownAssignment):
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 		case errors.Is(err, errRecordNotFound), errors.Is(err, errItemNotFound), errors.Is(err, errTechnicianNotFound):
 			return c.JSON(http.StatusNotFound, map[string]string{"error": err.Error()})

@@ -153,12 +153,11 @@ func (s *Service) UpsertProject(companyID string, req UpsertProjectRequest) (Pro
 	// es un proyecto y queda fuera de la regla.
 	if normalizedProjectID != reservedBoardConfigProjectID {
 		var currentStatus string
-		var rawProps []byte
 		err := s.db.QueryRow(
-			`SELECT status, properties_json FROM projects WHERE company_id = $1 AND id = $2`,
+			`SELECT status FROM projects WHERE company_id = $1 AND id = $2`,
 			strings.TrimSpace(companyID),
 			normalizedProjectID,
-		).Scan(&currentStatus, &rawProps)
+		).Scan(&currentStatus)
 		switch {
 		case err == nil:
 			if !canTransition(currentStatus, normalizedStatus) {
@@ -170,17 +169,7 @@ func (s *Service) UpsertProject(companyID string, req UpsertProjectRequest) (Pro
 			// no-op (reparacion -> reparacion, que es todo guardado desde la ficha)
 			// y los proyectos nuevos quedan fuera.
 			if normalizedStatus == "reparacion" && !strings.EqualFold(strings.TrimSpace(currentStatus), "reparacion") {
-				// req.Properties puede ser nil: indexar un mapa nil es seguro y
-				// devuelve el cero, asi que asString cubre ambos casos.
-				shortCode := strings.TrimSpace(asString(req.Properties["shortCode"]))
-				if shortCode == "" && len(rawProps) > 0 {
-					var stored map[string]any
-					if jsonErr := json.Unmarshal(rawProps, &stored); jsonErr == nil {
-						shortCode = strings.TrimSpace(asString(stored["shortCode"]))
-					}
-				}
-
-				pendingItems, gateErr := s.pendingMaterialsForRepair(companyID, normalizedProjectID, shortCode)
+				pendingItems, gateErr := s.pendingMaterialsForRepair(companyID, normalizedProjectID)
 				if gateErr != nil {
 					return Project{}, gateErr
 				}
@@ -692,4 +681,3 @@ func (s *Service) CreateTechnicalReport(companyID string, data map[string]any) (
 
 	return data, nil
 }
-

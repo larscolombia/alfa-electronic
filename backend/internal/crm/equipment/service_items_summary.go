@@ -36,7 +36,7 @@ func flattenSummaries(records []Record) []Summary {
 				ReceivedIdentifier:        strings.TrimSpace(item.ReceivedIdentifier),
 				CustomerShipmentReference: strings.TrimSpace(item.CustomerShipmentReference),
 				Accessories:               strings.TrimSpace(item.Accessories),
-				BorrowedEquipments:        trimValues(item.BorrowedEquipments),
+				BorrowedEquipments:        borrowedDescriptions(item.BorrowedEquipments),
 				FailureDescription:        strings.TrimSpace(item.FailureDescription),
 				EvidenceCount:             len(item.EvidencePhotos),
 				DisplayName:               displayName,
@@ -49,6 +49,23 @@ func flattenSummaries(records []Record) []Summary {
 	}
 
 	return summaries
+}
+
+func borrowedDescriptions(items []BorrowedEquipment) []string {
+	if len(items) == 0 {
+		return []string{}
+	}
+	descriptions := make([]string, 0, len(items))
+	for _, item := range items {
+		description := strings.TrimSpace(item.Description)
+		if description == "" {
+			description = strings.TrimSpace(item.Code)
+		}
+		if description != "" {
+			descriptions = append(descriptions, description)
+		}
+	}
+	return descriptions
 }
 
 func formatReceptionLabel(record Record) string {

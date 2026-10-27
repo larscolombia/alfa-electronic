@@ -1,26 +1,28 @@
 package inventory
 
 type StockReference struct {
-	Reference             string `json:"reference"`
-	InternalCode          string `json:"internalCode"`
-	ManufacturerReference string `json:"manufacturerReference"`
-	Designation           string `json:"designation"`
-	Family                string `json:"family"`
-	Subfamily             string `json:"subfamily"`
-	Brand                 string `json:"brand"`
-	Location              string `json:"location"`
-	UnitMeasure           string `json:"unitMeasure"`
-	CompatibleEquipment   string `json:"compatibleEquipment"`
-	Criticality           string `json:"criticality"`
-	PreferredSupplierName string `json:"preferredSupplierName"`
-	LeadTimeDays          int    `json:"leadTimeDays"`
-	TechnicalNotes        string `json:"technicalNotes"`
-	SupplierCode          string `json:"supplierCode"`
-	CurrentStock          int    `json:"currentStock"`
-	MinStock              int    `json:"minStock"`
-	TargetStock           int    `json:"targetStock"`
-	CreatedAt             string `json:"createdAt"`
-	UpdatedAt             string `json:"updatedAt"`
+	Reference             string          `json:"reference"`
+	InternalCode          string          `json:"internalCode"`
+	ManufacturerReference string          `json:"manufacturerReference"`
+	Designation           string          `json:"designation"`
+	Family                string          `json:"family"`
+	Subfamily             string          `json:"subfamily"`
+	Brand                 string          `json:"brand"`
+	Location              string          `json:"location"`
+	UnitMeasure           string          `json:"unitMeasure"`
+	CompatibleEquipment   string          `json:"compatibleEquipment"`
+	Criticality           string          `json:"criticality"`
+	PreferredSupplierName string          `json:"preferredSupplierName"`
+	LeadTimeDays          int             `json:"leadTimeDays"`
+	TechnicalNotes        string          `json:"technicalNotes"`
+	SupplierCode          string          `json:"supplierCode"`
+	CurrentStock          int             `json:"currentStock"`
+	MinStock              int             `json:"minStock"`
+	TargetStock           int             `json:"targetStock"`
+	Condition             string          `json:"condition"`
+	LastUsedTest          *UsedTestRecord `json:"lastUsedTest,omitempty"`
+	CreatedAt             string          `json:"createdAt"`
+	UpdatedAt             string          `json:"updatedAt"`
 }
 
 type MovementRecord struct {
@@ -227,6 +229,8 @@ type CreateReferenceRequest struct {
 	SupplierCode          string `json:"supplierCode"`
 	MinStock              int    `json:"minStock"`
 	TargetStock           int    `json:"targetStock"`
+	ForceCreate           bool   `json:"forceCreate"`
+	ForceReason           string `json:"forceReason"`
 }
 
 type RegisterStockEntryRequest struct {
@@ -241,6 +245,8 @@ type RegisterStockEntryRequest struct {
 	ReceivedBy     string  `json:"receivedBy"`
 	UnitCost       float64 `json:"unitCost"`
 	ReceivedAt     string  `json:"receivedAt"`
+	Condition      string  `json:"condition"`
+	UsedTestNote   string  `json:"usedTestNote"`
 }
 
 type SubmitMovementRequest struct {
@@ -281,15 +287,17 @@ type RegisterReplenishmentAttemptRequest struct {
 }
 
 type ReceiveTechnicianBagRequest struct {
-	BagCode           string `json:"bagCode"`
-	Reference         string `json:"reference"`
-	Quantity          int    `json:"quantity"`
-	Technician        string `json:"technician"`
-	Notes             string `json:"notes"`
-	WorkOrder         string `json:"workOrder"`
-	SealCode          string `json:"sealCode"`
-	OriginArea        string `json:"originArea"`
-	ReceptionDocument string `json:"receptionDocument"`
+	BagCode           string    `json:"bagCode"`
+	Reference         string    `json:"reference"`
+	Quantity          int       `json:"quantity"`
+	Technician        string    `json:"technician"`
+	AssignedTo        string    `json:"assignedTo"`
+	Items             []BagItem `json:"items"`
+	Notes             string    `json:"notes"`
+	WorkOrder         string    `json:"workOrder"`
+	SealCode          string    `json:"sealCode"`
+	OriginArea        string    `json:"originArea"`
+	ReceptionDocument string    `json:"receptionDocument"`
 }
 
 type CreateSessionRequest struct {

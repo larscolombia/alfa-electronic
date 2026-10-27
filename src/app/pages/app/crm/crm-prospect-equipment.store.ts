@@ -1,4 +1,5 @@
 import { getEquipmentFamilyName, getEquipmentLocationById, getEquipmentServiceTypeById, getIndustrialEquipmentModelById } from "../company/company-equipment-config.store";
+import { normalizeBorrowedEquipments } from "./crm-prospect-equipment-borrowed.util";
 
 export type ProspectEquipmentAnswer = "" | "Sí" | "No";
 export type ProspectEquipmentQuestionType = "boolean" | "text";
@@ -62,6 +63,24 @@ export interface ProspectEquipmentQuestionDefinition {
     type: ProspectEquipmentQuestionType;
 }
 
+export interface ProspectEquipmentCustodyIncident {
+    photosNote: string;
+    responsible: string;
+    createdAt: string;
+}
+
+export type ProspectEquipmentDuplicateRelation = "reingreso" | "garantia" | "evento_nuevo";
+
+export interface ProspectEquipmentDuplicateConfirm {
+    reason: string;
+    relation: ProspectEquipmentDuplicateRelation;
+}
+
+export interface ProspectEquipmentBorrowedEquipment {
+    code: string;
+    description: string;
+}
+
 export interface ProspectEquipmentWarning {
     code: string;
     label: string;
@@ -87,8 +106,15 @@ export interface ProspectEquipmentItem {
     receivedIdentifierCapturedAt: string;
     customerShipmentReference: string;
     accessories: string;
-    borrowedEquipments: string[];
+    borrowedEquipments: Array<string | ProspectEquipmentBorrowedEquipment>;
     failureDescription: string;
+    senderUnknown?: boolean;
+    custodyIncident?: ProspectEquipmentCustodyIncident;
+    serieExceptionReason?: string;
+    visibleDamageReported?: boolean;
+    visibleDamageConfirmed?: boolean;
+    duplicateConfirm?: ProspectEquipmentDuplicateConfirm;
+    softwareSuspicionAcknowledged?: boolean;
     assignedTo?: string;
     assignedToId?: string;
     assignedAt?: string;
@@ -139,6 +165,8 @@ export interface ProspectEquipmentRecord {
     intakeCarrier?: string;
     intakeTrackingNumber?: string;
     intakeReceivedAt?: string;
+    senderUnknown?: boolean;
+    custodyIncident?: ProspectEquipmentCustodyIncident;
     companyName: string;
     sourceBranchName?: string;
     nit: string;
@@ -176,7 +204,7 @@ export interface ProspectEquipmentSummary {
     receivedIdentifier: string;
     customerShipmentReference: string;
     accessories: string;
-    borrowedEquipments: string[];
+    borrowedEquipments: Array<string | ProspectEquipmentBorrowedEquipment>;
     failureDescription: string;
     evidenceCount: number;
     displayName: string;
@@ -720,6 +748,8 @@ function normalizeStoredRecord(record: Partial<ProspectEquipmentRecord>): Prospe
         intakeCarrier: String(record.intakeCarrier ?? "").trim(),
         intakeTrackingNumber: String(record.intakeTrackingNumber ?? "").trim(),
         intakeReceivedAt: String(record.intakeReceivedAt ?? "").trim(),
+        senderUnknown: Boolean(record.senderUnknown),
+        custodyIncident: normalizeCustodyIncident(record.custodyIncident),
         companyName: String(record.companyName ?? "").trim(),
         sourceBranchName: String(record.sourceBranchName ?? "").trim(),
         nit: String(record.nit ?? "").trim(),
@@ -766,10 +796,15 @@ function normalizeStoredItem(item: Partial<ProspectEquipmentItem>): ProspectEqui
         receivedIdentifierCapturedAt: String(item.receivedIdentifierCapturedAt ?? "").trim(),
         customerShipmentReference: String(item.customerShipmentReference ?? "").trim(),
         accessories: String(item.accessories ?? "").trim(),
-        borrowedEquipments: Array.isArray(item.borrowedEquipments)
-            ? item.borrowedEquipments.map((entry) => String(entry ?? "").trim()).filter((entry) => entry.length > 0)
-            : [],
+        borrowedEquipments: normalizeBorrowedEquipments(item.borrowedEquipments),
         failureDescription: String(item.failureDescription ?? "").trim(),
+        senderUnknown: Boolean(item.senderUnknown),
+        custodyIncident: normalizeCustodyIncident(item.custodyIncident),
+        serieExceptionReason: String(item.serieExceptionReason ?? "").trim(),
+        visibleDamageReported: Boolean(item.visibleDamageReported),
+        visibleDamageConfirmed: Boolean(item.visibleDamageConfirmed),
+        duplicateConfirm: normalizeDuplicateConfirm(item.duplicateConfirm),
+        softwareSuspicionAcknowledged: Boolean(item.softwareSuspicionAcknowledged),
         assignedTo: String(item.assignedTo ?? "").trim(),
         assignedToId: String(item.assignedToId ?? "").trim(),
         assignedAt: String(item.assignedAt ?? "").trim(),
@@ -812,4 +847,40 @@ function normalizeStoredItem(item: Partial<ProspectEquipmentItem>): ProspectEqui
 
 function cloneProspectEquipmentRecord(record: ProspectEquipmentRecord): ProspectEquipmentRecord {
     return normalizeStoredRecord(record);
+}
+
+function normalizeCustodyIncident(value: unknown): ProspectEquipmentCustodyIncident | undefined {
+    if (!value || typeof value !== "object") {
+        return undefined;
+    }
+
+    const incident = value as Partial<ProspectEquipmentCustodyIncident>;
+    const photosNote = String(incident.photosNote ?? "").trim();
+    const responsible = String(incident.responsible ?? "").trim();
+    if (!photosNote && !responsible) {
+        return undefined;
+    }
+
+    return {
+        photosNote,
+        responsible,
+        createdAt: String(incident.createdAt ?? "").trim() || new Date().toISOString(),
+    };
+}
+
+function normalizeDuplicateConfirm(value: unknown): ProspectEquipmentDuplicateConfirm | undefined {
+    if (!value || typeof value !== "object") {
+        return undefined;
+    }
+
+    const confirm = value as Partial<ProspectEquipmentDuplicateConfirm>;
+    const relation = String(confirm.relation ?? "").trim().toLowerCase();
+    if (relation !== "reingreso" && relation !== "garantia" && relation !== "evento_nuevo") {
+        return undefined;
+    }
+
+    return {
+        relation,
+        reason: String(confirm.reason ?? "").trim(),
+    };
 }

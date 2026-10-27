@@ -1,7 +1,8 @@
 import { CommonModule } from "@angular/common";
-import { Component, OnInit } from "@angular/core";
+import { Component, OnDestroy, OnInit } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { RouterLink } from "@angular/router";
+import { Subscription } from "rxjs";
 import {
     AdjustmentRequest,
     InventoryPermission,
@@ -9,17 +10,19 @@ import {
     MovementRecord,
     MovementType,
     StockReference,
-    TechnicianBagTrace,
 } from "../../../services/inventory-domain.models";
 import { InventoryRbacService } from "../../../services/inventory-rbac.service";
 import { InventoryWorkflowService } from "../../../services/inventory-workflow.service";
+import { InvBackendAlertComponent } from "./inv-backend-alert.component";
+import { InvRoleHintComponent } from "./inv-role-hint.component";
+import { TechnicianBagsPanelComponent } from "./technician-bags-panel.component";
 import { Project } from "../../app/projects/models/project.model";
 import { ProjectService } from "../../app/projects/services/project.service";
 
 @Component({
     selector: "app-inventory-movements",
     standalone: true,
-    imports: [CommonModule, FormsModule, RouterLink],
+    imports: [CommonModule, FormsModule, RouterLink, InvRoleHintComponent, InvBackendAlertComponent, TechnicianBagsPanelComponent],
     template: `
         <div class="container-fluid py-3">
             <div class="row gx-3 gx-lg-4 align-items-center page-title">
@@ -66,7 +69,10 @@ import { ProjectService } from "../../app/projects/services/project.service";
                 </div>
             </div>
 
-            <div *ngIf="feedback" class="alert mb-3" [ngClass]="feedbackClass">
+            <app-inv-role-hint></app-inv-role-hint>
+            <app-inv-backend-alert></app-inv-backend-alert>
+
+            <div *ngIf="feedback" class="alert mb-3" [ngClass]="feedbackClass" [attr.data-testid]="feedbackTestId">
                 {{ feedback }}
             </div>
 
@@ -230,99 +236,17 @@ import { ProjectService } from "../../app/projects/services/project.service";
                 </div>
             </div>
 
-            <!-- MEJORA E: Bolsas colapsadas por defecto -->
-            <div class="card adminuiux-card mt-3">
-                <div class="card-header d-flex align-items-center justify-content-between">
-                    <div>
-                        <h6 class="mb-0">Bolsas de tecnico</h6>
-                        <p class="small text-secondary mb-0">Recepcion y liberacion administrativa.</p>
-                    </div>
-                    <button class="btn btn-sm btn-outline-secondary" type="button" (click)="showBags = !showBags">
-                        <i class="bi" [ngClass]="showBags ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
-                        {{ showBags ? 'Ocultar' : 'Expandir' }}
-                    </button>
-                </div>
-                <div *ngIf="showBags">
-                    <div class="card-body">
-                        <div class="row gx-3 gy-2">
-                            <div class="col-12 col-md-2">
-                                <label class="form-label">Codigo bolsa</label>
-                                <input class="form-control" [(ngModel)]="bagDraft.bagCode" placeholder="BOL-2041" />
-                            </div>
-                            <div class="col-12 col-md-2">
-                                <label class="form-label">Referencia</label>
-                                <input class="form-control" [(ngModel)]="bagDraft.reference" placeholder="LM324N" />
-                            </div>
-                            <div class="col-12 col-md-2">
-                                <label class="form-label">Cantidad</label>
-                                <input class="form-control" type="number" min="1" [(ngModel)]="bagDraft.quantity" />
-                            </div>
-                            <div class="col-12 col-md-3">
-                                <label class="form-label">Tecnico</label>
-                                <input class="form-control" [(ngModel)]="bagDraft.technician" placeholder="Tecnico C Torres" />
-                            </div>
-                            <div class="col-12 col-md-3">
-                                <label class="form-label">ODS / Orden</label>
-                                <input class="form-control" [(ngModel)]="bagDraft.workOrder" placeholder="ODS-2026-0721" />
-                            </div>
-                        </div>
-
-                        <div class="mt-3 d-flex gap-2 flex-wrap">
-                            <button class="btn btn-theme" type="button" [disabled]="!canManageBags" (click)="receiveBag()">Registrar recepcion</button>
-                            <button class="btn btn-outline-secondary" type="button" (click)="resetBagDraft()">Limpiar</button>
-                        </div>
-                    </div>
-
-                    <div class="card-body p-0 border-top">
-                        <div class="table-responsive">
-                            <table class="table align-middle mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Bolsa</th>
-                                        <th>Referencia</th>
-                                        <th>Tecnico</th>
-                                        <th>Recepcion</th>
-                                        <th>Estado</th>
-                                        <th>ODS</th>
-                                        <th class="text-end">Accion</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr *ngFor="let bag of bagTraces">
-                                        <td>{{ bag.bagCode }}</td>
-                                        <td>{{ bag.reference }} ({{ bag.quantity }})</td>
-                                        <td>{{ bag.technician }}</td>
-                                        <td>{{ bag.receivedBy }} - {{ bag.receivedAt | date: 'dd/MM HH:mm' }}</td>
-                                        <td>
-                                            <span class="badge" [ngClass]="bag.status === 'liberada' ? 'text-bg-success' : 'text-bg-warning'">{{ bag.status }}</span>
-                                        </td>
-                                        <td>{{ bag.workOrder || '--' }}</td>
-                                        <td class="text-end">
-                                            <button class="btn btn-sm btn-outline-theme" type="button" [disabled]="bag.status !== 'recibida' || !canManageBags" (click)="releaseBag(bag.id)">
-                                                Liberar
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr *ngIf="bagTraces.length === 0">
-                                        <td colspan="7" class="text-center text-secondary py-4">Sin bolsas trazadas todavia.</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <app-technician-bags-panel></app-technician-bags-panel>
         </div>
     `,
 })
-export class InventoryMovementsComponent implements OnInit {
+export class InventoryMovementsComponent implements OnInit, OnDestroy {
+    private readonly subscriptions = new Subscription();
     movementHistory: MovementRecord[] = [];
     pendingRequests: AdjustmentRequest[] = [];
-    bagTraces: TechnicianBagTrace[] = [];
     inventoryReferences: StockReference[] = [];
     projects: Project[] = [];
     selectedProjectId = "";
-    showBags = false;
 
     draft: {
         type: MovementType;
@@ -344,14 +268,6 @@ export class InventoryMovementsComponent implements OnInit {
         evidenceRef: "",
     };
 
-    bagDraft = {
-        bagCode: "",
-        reference: "",
-        quantity: 1,
-        technician: "",
-        workOrder: "",
-    };
-
     feedback = "";
     feedbackType: "success" | "warning" | "danger" = "success";
 
@@ -367,6 +283,17 @@ export class InventoryMovementsComponent implements OnInit {
         this.projectService.loadProjects("board-1").subscribe((p) => {
             this.projects = p;
         });
+        // El estado llega asincrono desde el backend: re-leerlo en cada emision.
+        this.subscriptions.add(
+            this.inventoryWorkflow.state$.subscribe(() => {
+                this.refreshState();
+                this.inventoryReferences = this.inventoryWorkflow.getSnapshot().references;
+            })
+        );
+    }
+
+    ngOnDestroy(): void {
+        this.subscriptions.unsubscribe();
     }
 
     get rolePreset(): InventoryRole {
@@ -381,8 +308,11 @@ export class InventoryMovementsComponent implements OnInit {
         return this.inventoryRbac.hasPermission("inventory.movements.approve");
     }
 
-    get canManageBags(): boolean {
-        return this.inventoryRbac.hasPermission("inventory.bags.manage");
+    get feedbackTestId(): string {
+        if (this.feedback.includes("No hay stock suficiente")) {
+            return "inv-insufficient-stock-alert";
+        }
+        return "inv-movements-feedback";
     }
 
     get feedbackClass(): string {
@@ -486,44 +416,6 @@ export class InventoryMovementsComponent implements OnInit {
         };
     }
 
-    receiveBag(): void {
-        const result = this.inventoryWorkflow.receiveTechnicianBag({
-            bagCode: this.bagDraft.bagCode,
-            reference: this.bagDraft.reference,
-            quantity: Number(this.bagDraft.quantity),
-            technician: this.bagDraft.technician,
-            notes: "",
-            workOrder: this.bagDraft.workOrder,
-            sealCode: "",
-            originArea: "",
-            receptionDocument: "",
-        });
-
-        this.setFeedback(result.message, result.ok ? "success" : "danger");
-        if (result.ok) {
-            this.resetBagDraft();
-            this.refreshState();
-        }
-    }
-
-    releaseBag(bagId: string): void {
-        const result = this.inventoryWorkflow.releaseTechnicianBag(bagId);
-        this.setFeedback(result.message, result.ok ? "success" : "danger");
-        if (result.ok) {
-            this.refreshState();
-        }
-    }
-
-    resetBagDraft(): void {
-        this.bagDraft = {
-            bagCode: "",
-            reference: "",
-            quantity: 1,
-            technician: "",
-            workOrder: "",
-        };
-    }
-
     private setFeedback(message: string, type: "success" | "warning" | "danger"): void {
         this.feedback = message;
         this.feedbackType = type;
@@ -533,7 +425,6 @@ export class InventoryMovementsComponent implements OnInit {
         const snapshot = this.inventoryWorkflow.getSnapshot();
         this.movementHistory = snapshot.movements;
         this.pendingRequests = snapshot.adjustmentRequests;
-        this.bagTraces = snapshot.bagTraces;
     }
 
     private hasMovementPermission(type: MovementType): boolean {

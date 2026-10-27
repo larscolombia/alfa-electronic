@@ -38,6 +38,8 @@ func TestCanTransitionRules(t *testing.T) {
 		// Auto-avance por repuestos con material disponible.
 		{"diagnostico a reparacion (repuesto en stock)", "diagnostico", "reparacion", true},
 		{"por-cotizar a reparacion (repuesto en stock)", "por-cotizar", "reparacion", true},
+		// COMPR-02: Pos 05 (OC aprobada) solo requiere stock -> Reparacion, nunca espera de importacion.
+		{"pedir-repuestos a reparacion (repuesto en stock, OC aprobada)", "pedir-repuestos", "reparacion", true},
 
 		// Garantia y su pausa visible mientras faltan repuestos.
 		{"entregado a garantia (reclamo)", "entregado", "garantia", true},
@@ -127,8 +129,7 @@ func TestUpsertProjectValidatesStatusTransitions(t *testing.T) {
 	// fila de la BD, asi la puerta se persiste antes con un upsert no-op en
 	// estado (diagnostico -> diagnostico es legal).
 	if _, err := s.UpsertProject(companyID, UpsertProjectRequest{
-		ID:
-			projectID,
+		ID:     projectID,
 		Status: "diagnostico",
 		Properties: map[string]any{
 			"diagnosisInspection": map[string]any{"faultIdentified": true},

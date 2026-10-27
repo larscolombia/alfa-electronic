@@ -1,0 +1,12 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+const source = readFileSync("src/app/pages/app/crm/crm-clients.component.ts", "utf8");
+assert.match(source, /\*ngIf="!showAddClient && !showImport"/);
+assert.match(source, /displayedClients/);
+assert.match(source, /clientPageSize = 10/);
+assert.match(source, /data-testid="clients-pagination"/);
+assert.match(source, /data-testid="clients-list-card"/);
+assert.match(source, /data-testid="client-form-card"/);
+assert.match(source, /"Nuevo cliente" : "Editar cliente"/);
+assert.match(source, /Información de la cuenta/);
+console.log("OK: listado y formulario de Clientes tienen estructura UX controlada.");

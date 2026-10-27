@@ -19,9 +19,29 @@ import {
 } from "../company/company-equipment-config.store";
 import { buildEvidencePhotosFromFiles } from "./crm-prospect-equipment-evidence.util";
 import {
+    getEvidenceRequirementsError,
+    isAccessoriesEvidenceMissing,
+    isSerialPlateEvidenceMissing,
+    isSerieExceptionReasonMissing,
+    isSoftwareSuspicionAckRequired,
+    isVisibleDamageSaveBlocked,
+    SERIE_EXCEPTION_REASON_ERROR,
+    SOFTWARE_SUSPICION_ACK_ERROR,
+    validateTransportadoraReception,
+    VISIBLE_DAMAGE_ERROR,
+} from "./crm-prospect-equipment-intake-validation.util";
+import { borrowedEntriesLabel, borrowedEntriesWithContent, normalizeBorrowedEntry } from "./crm-prospect-equipment-borrowed.util";
+import { CrmEquipmentBorrowedListComponent } from "./crm-equipment-borrowed-list.component";
+import { CrmEquipmentDuplicateDialogComponent, DuplicateIdentifierDialogData } from "./crm-equipment-duplicate-dialog.component";
+import { CrmEquipmentEvidenceDamageComponent } from "./crm-equipment-evidence-damage.component";
+import { CrmEquipmentQuestionAlertsComponent } from "./crm-equipment-question-alerts.component";
+import { CrmEquipmentSenderIncidentComponent } from "./crm-equipment-sender-incident.component";
+import { CrmEquipmentSerieExceptionComponent } from "./crm-equipment-serie-exception.component";
+import {
     PROSPECT_EQUIPMENT_QUESTION_DEFINITIONS,
     ProspectEquipmentRepairStatus,
     ProspectEquipmentAttachment,
+    ProspectEquipmentDuplicateRelation,
     ProspectEquipmentEvidencePhoto,
     ProspectEquipmentEvidenceType,
     ProspectEquipmentItem,
@@ -143,7 +163,16 @@ type SoftwareBackupInfo = {
 @Component({
     selector: "app-crm-prospect-equipment-modal",
     standalone: true,
-    imports: [CommonModule, FormsModule],
+    imports: [
+        CommonModule,
+        FormsModule,
+        CrmEquipmentBorrowedListComponent,
+        CrmEquipmentDuplicateDialogComponent,
+        CrmEquipmentEvidenceDamageComponent,
+        CrmEquipmentQuestionAlertsComponent,
+        CrmEquipmentSenderIncidentComponent,
+        CrmEquipmentSerieExceptionComponent,
+    ],
     template: `
         <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" (click)="close()">
             <div class="modal-dialog modal-xl modal-dialog-scrollable" role="document" (click)="$event.stopPropagation()">
@@ -157,7 +186,16 @@ type SoftwareBackupInfo = {
                     </div>
 
                     <div class="modal-body">
-                        <div class="alert alert-warning border mb-3" *ngIf="validationMessage">{{ validationMessage }}</div>
+                        <div class="alert alert-warning border mb-3" *ngIf="validationMessage" data-testid="equipment-modal-validation-message">{{ validationMessage }}</div>
+                        <div class="alert alert-success border mb-3" *ngIf="saveDraftSuccess" data-testid="save-draft-success">
+                            <i class="bi bi-check-circle me-1"></i>Borrador guardado: la recepción quedó en estado "recibido" sin finalizar.
+                        </div>
+                        <div class="alert alert-warning border mb-3" *ngIf="finalizeMissingFacesOffer" data-testid="finalize-faces-missing-offer">
+                            Faltan evidencias por cara obligatorias: no se pudo finalizar. Guarda el borrador y completa las fotos después.
+                            <button type="button" class="btn btn-sm btn-outline-theme ms-2" data-testid="equipment-modal-save-draft-offer" (click)="saveDraft()">
+                                <i class="bi bi-save me-1"></i>Guardar borrador
+                            </button>
+                        </div>
 
                         <div class="wizard-steps-grid mb-4">
                             <div class="wizard-step" *ngFor="let step of wizardSteps; let i = index; trackBy: trackByStepKey" [class.active]="currentStepIndex === i" [class.completed]="currentStepIndex > i">
@@ -353,7 +391,8 @@ type SoftwareBackupInfo = {
                                             class="form-select"
                                             [ngModel]="draft.intakeMethod || 'personal'"
                                             [ngModelOptions]="{ standalone: true }"
-                                            (ngModelChange)="onIntakeMethodChange($event)">
+                                            (ngModelChange)="onIntakeMethodChange($event)"
+                                            data-testid="equipment-modal-intake-method">
                                             <option value="personal">Entrega personal</option>
                                             <option value="transportadora">Transportadora</option>
                                         </select>
@@ -377,7 +416,15 @@ type SoftwareBackupInfo = {
                                             [ngModel]="toDateTimeLocalInput(draft.intakeReceivedAt || '')"
                                             [ngModelOptions]="{ standalone: true }"
                                             (ngModelChange)="onIntakeReceivedAtChange($event)" />
+                                        <div
+                                            class="alert alert-warning py-2 mt-2 mb-0"
+                                            *ngIf="(draft.intakeMethod || 'personal') === 'transportadora' && !(draft.intakeReceivedAt || '').trim()"
+                                            data-testid="intake-received-at-required">
+                                            Recepción por transportadora exige fecha y hora de recepción física.
+                                        </div>
                                     </div>
+
+                                    <app-crm-equipment-sender-incident [draft]="draft" [currentUserName]="currentUserName"></app-crm-equipment-sender-incident>
                                 </div>
                             </div>
                         </ng-container>
@@ -541,6 +588,7 @@ type SoftwareBackupInfo = {
                                                     <p class="small text-secondary mb-0 mt-2">Estos warnings no bloquean el avance ni el guardado; quedan visibles para operación en el listado.</p>
                                                 </div>
                                             </div>
+                                            <app-crm-equipment-serie-exception [item]="item"></app-crm-equipment-serie-exception>
                                             <div class="col-12 col-lg-3">
                                                 <label class="form-label">Remisión del cliente / guía</label>
                                                 <input class="form-control" [(ngModel)]="item.customerShipmentReference" [ngModelOptions]="{ standalone: true }" placeholder="BL o referencia de transporte" />
@@ -552,37 +600,7 @@ type SoftwareBackupInfo = {
                                                 <label class="form-label">Accesorios</label>
                                                 <input class="form-control" [(ngModel)]="item.accessories" [ngModelOptions]="{ standalone: true }" placeholder="USB, cables, CD, caja original..." />
 
-                                                <div class="borrowed-equipment-repeater mt-3">
-                                                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
-                                                        <label class="form-label mb-0">Equipos prestados para prueba</label>
-                                                        <button class="btn btn-sm btn-outline-theme" type="button" [attr.data-testid]="'equipment-modal-add-borrowed-' + i" (click)="addBorrowedEquipment(item)">
-                                                            <i class="bi bi-plus-lg me-1"></i> Agregar
-                                                        </button>
-                                                    </div>
-                                                    <p class="small text-secondary mb-2">Registra equipos que el cliente presta para pruebas (ej.: parlantes, monitor, cableado, motor equivalente).</p>
-
-                                                    <div class="vstack gap-2" *ngIf="item.borrowedEquipments.length > 0; else borrowedEquipmentEmptyState">
-                                                        <div class="input-group input-group-sm" *ngFor="let borrowedEquipment of item.borrowedEquipments; let borrowedIndex = index; trackBy: trackByBorrowedEquipmentIndex">
-                                                            <span class="input-group-text">#{{ borrowedIndex + 1 }}</span>
-                                                            <input
-                                                                class="form-control"
-                                                                [(ngModel)]="item.borrowedEquipments[borrowedIndex]"
-                                                                [ngModelOptions]="{ standalone: true }"
-                                                                placeholder="Ej.: Parlante activo de referencia, motor de prueba, etc." />
-                                                            <button
-                                                                class="btn btn-outline-danger"
-                                                                type="button"
-                                                                [attr.data-testid]="'equipment-modal-remove-borrowed-' + i + '-' + borrowedIndex"
-                                                                (click)="removeBorrowedEquipment(item, borrowedIndex)">
-                                                                Quitar
-                                                            </button>
-                                                        </div>
-                                                    </div>
-
-                                                    <ng-template #borrowedEquipmentEmptyState>
-                                                        <div class="small text-secondary border rounded px-2 py-2">Sin equipos prestados registrados.</div>
-                                                    </ng-template>
-                                                </div>
+                                                <app-crm-equipment-borrowed-list [item]="item" [itemIndex]="i"></app-crm-equipment-borrowed-list>
                                             </div>
                                             <div class="col-12 col-lg-6">
                                                 <label class="form-label">Descripción de la falla / error / alarma que presenta el equipo</label>
@@ -606,12 +624,16 @@ type SoftwareBackupInfo = {
                                                                 class="form-select"
                                                                 [ngModel]="item.assignedToId || ''"
                                                                 [ngModelOptions]="{ standalone: true }"
-                                                                (ngModelChange)="assignDraftTechnicianToItem(item, $event)">
+                                                                (ngModelChange)="assignDraftTechnicianToItem(item, $event)"
+                                                                [disabled]="draft.senderUnknown === true">
                                                                 <option value="">Sin asignar</option>
                                                                 <option *ngFor="let technician of technicianOptionsForItem(item)" [value]="technician.id">
                                                                     {{ technician.name }} · {{ technician.role || 'Sin rol' }} · carga {{ technician.activeItems }}
                                                                 </option>
                                                             </select>
+                                                            <div class="small text-warning mt-1" *ngIf="draft.senderUnknown" data-testid="technician-assignment-blocked">
+                                                                Incidencia de custodia: identifica empresa/contacto antes de asignar técnico.
+                                                            </div>
                                                         </div>
                                                         <div class="col-12 col-lg-4">
                                                             <div class="small text-secondary">Asignado por</div>
@@ -710,6 +732,8 @@ type SoftwareBackupInfo = {
                                                         <p class="text-secondary small mb-0">{{ item.serviceTypeName || "Sin tipo de servicio" }} · {{ item.storageLocationName || "Sin ubicación" }}</p>
                                                     </div>
                                                 </div>
+
+                                                <app-crm-equipment-question-alerts [item]="item"></app-crm-equipment-question-alerts>
 
                                                 <div class="alert border border-warning bg-warning-subtle mb-3" *ngIf="requiresIndustrialOverride(item)">
                                                     <div class="fw-semibold mb-1">Bloqueo por filtro industrial</div>
@@ -816,6 +840,15 @@ type SoftwareBackupInfo = {
                                             </div>
                                         </div>
 
+                                        <div class="alert alert-warning py-2 mb-3" *ngIf="isSerialPlateEvidenceMissing(item)" data-testid="serial-plate-evidence-required">
+                                            Placa o serie ilegible: sube una evidencia tipo "Placa / serie" y registra el motivo de excepción.
+                                        </div>
+                                        <div class="alert alert-warning py-2 mb-3" *ngIf="isAccessoriesEvidenceMissing(item)" data-testid="accessories-evidence-required">
+                                            El equipo tiene accesorios reportados: se requiere evidencia fotográfica de accesorios.
+                                        </div>
+
+                                        <app-crm-equipment-evidence-damage [item]="item"></app-crm-equipment-evidence-damage>
+
                                         <div class="row gx-4 gy-4 align-items-start">
                                             <div class="col-12 col-xxl-4">
                                                 <div class="border rounded p-3 bg-white h-100 evidence-side-panel">
@@ -855,6 +888,28 @@ type SoftwareBackupInfo = {
                                                     <label class="form-label">Tomar fotos / subir evidencia</label>
                                                     <input class="form-control" type="file" accept="image/*" capture="environment" multiple (change)="handleEvidenceFilesSelected(item, $event)" />
                                                     <p class="small text-secondary mb-3 mt-2">En móvil, el atributo capture intenta abrir la cámara trasera. Puedes cargar tantas fotos como necesites.</p>
+
+                                                    <label class="form-label">Formato físico firmado (imagen o PDF)</label>
+                                                    <input
+                                                        class="form-control"
+                                                        type="file"
+                                                        accept="image/*,application/pdf"
+                                                        data-testid="intake-format-file-input"
+                                                        (change)="handleIntakeFormatFilesSelected(item, $event)" />
+                                                    <p class="small text-secondary mb-2 mt-2">Adjunta el formato de recepción firmado. Se permiten imágenes o PDF de máximo 10MB.</p>
+                                                    <div class="vstack gap-1 mb-3" *ngIf="intakeFormatAttachments(item).length > 0">
+                                                        <div class="d-flex align-items-center gap-2 small border rounded px-2 py-1" *ngFor="let attachment of intakeFormatAttachments(item); let attachmentIndex = index">
+                                                            <i class="bi" [ngClass]="attachment.mimeType === 'application/pdf' ? 'bi-file-earmark-pdf' : 'bi-file-earmark-image'"></i>
+                                                            <span class="text-truncate flex-grow-1">{{ attachment.fileName }}</span>
+                                                            <button
+                                                                class="btn btn-sm btn-outline-danger"
+                                                                type="button"
+                                                                [attr.data-testid]="'intake-format-remove-' + attachmentIndex"
+                                                                (click)="removeIntakeFormatAttachment(item, attachment.id)">
+                                                                Quitar
+                                                            </button>
+                                                        </div>
+                                                    </div>
 
                                                     <div class="border rounded p-3 bg-light-subtle small mb-3" [class.border-success]="hasRequiredFaceEvidence(item)" [class.border-warning]="!hasRequiredFaceEvidence(item)">
                                                         <div class="fw-semibold text-dark mb-2">Checklist de caras obligatorias</div>
@@ -1004,6 +1059,12 @@ type SoftwareBackupInfo = {
                                                 <div class="small text-secondary">Escaneo: {{ item.receivedIdentifier || "Sin identificador" }} · Evidencias: {{ item.evidencePhotos.length }}</div>
                                                 <div class="small text-secondary">Remisión: {{ item.customerShipmentReference || "Sin referencia" }} · Accesorios: {{ item.accessories || "Sin accesorios" }}</div>
                                                 <div class="small text-secondary">Prestados: {{ borrowedEquipmentsSummary(item) }}</div>
+                                                <div class="d-flex flex-wrap gap-2 mt-2" *ngIf="borrowedEntriesWithContent(item).length > 0">
+                                                    <span class="badge text-bg-warning" *ngFor="let borrowed of borrowedEntriesWithContent(item)" data-testid="borrowed-return-alert">
+                                                        <i class="bi bi-arrow-left-right me-1"></i>Préstamo anclado: {{ borrowed.code || borrowed.description }} pendiente de devolución
+                                                    </span>
+                                                </div>
+                                                <app-crm-equipment-question-alerts class="d-block mt-2" [item]="item"></app-crm-equipment-question-alerts>
                                                 <div class="small text-secondary">Técnico: {{ item.assignedTo || 'Sin asignar' }} {{ item.assignedAt ? '· ' + formatEvidenceDate(item.assignedAt) : '' }}</div>
                                                 <div class="small text-secondary">Override industrial: {{ hasIndustrialOverrideAuthorization(item) ? 'Autorizado' : 'No aplica / pendiente' }}</div>
 
@@ -1073,6 +1134,9 @@ type SoftwareBackupInfo = {
                                 [disabled]="creatingRepairProjects">
                                 <i class="bi bi-printer me-1"></i> Descargar formato
                             </button>
+                            <button type="button" class="btn btn-outline-secondary" *ngIf="isLastStep" data-testid="equipment-modal-save-draft" (click)="saveDraft()" [disabled]="creatingRepairProjects || savingDraft">
+                                <i class="bi bi-save me-1"></i> {{ savingDraft ? "Guardando..." : "Guardar borrador" }}
+                            </button>
                             <button type="button" class="btn btn-outline-secondary" *ngIf="isLastStep" (click)="save(true)" [disabled]="creatingRepairProjects">
                                 <i class="bi bi-printer me-1"></i> Guardar + formato
                             </button>
@@ -1085,6 +1149,11 @@ type SoftwareBackupInfo = {
             </div>
         </div>
         <div class="modal-backdrop fade show"></div>
+
+        <app-crm-equipment-duplicate-dialog
+            [dialog]="duplicateDialog"
+            (confirmed)="onDuplicateConfirmed($event)"
+            (cancelled)="onDuplicateCancelled()"></app-crm-equipment-duplicate-dialog>
 
         <div class="scanner-backdrop" *ngIf="showScannerModal" (click)="closeScanner()">
             <div class="scanner-dialog" (click)="$event.stopPropagation()">
@@ -1528,6 +1597,11 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
     scannerError = "";
     scanningItemId: string | null = null;
     validationMessage = "";
+    savingDraft = false;
+    saveDraftSuccess = false;
+    finalizeMissingFacesOffer = false;
+    duplicateDialog: DuplicateIdentifierDialogData | null = null;
+    private pendingOpenPrintAfterSave = false;
     companySearchTerm = "";
     selectedCompanyOption = "";
     companyCatalogLoading = false;
@@ -1631,6 +1705,14 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
     get repairProjectsToCreateCount(): number {
         return this.reviewItems.filter((item) => this.isRepairServiceItem(item)).length;
     }
+
+    get currentUserName(): string {
+        return this.authService.getCurrentUserName() || "";
+    }
+
+    readonly isSerialPlateEvidenceMissing = isSerialPlateEvidenceMissing;
+    readonly isAccessoriesEvidenceMissing = isAccessoriesEvidenceMissing;
+    readonly borrowedEntriesWithContent = borrowedEntriesWithContent;
 
     get filteredCompanyOptions(): CompanyCatalogOption[] {
         const term = this.normalizeCompanyKey(this.companySearchTerm);
@@ -1792,19 +1874,6 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
         this.validationMessage = "";
     }
 
-    addBorrowedEquipment(item: ProspectEquipmentItem): void {
-        // Reasignamos el array (no push) para que *ngIf/*ngFor lo vean como cambio de referencia.
-        item.borrowedEquipments = [...item.borrowedEquipments, ""];
-        // Forzamos el repaint inmediato: sin esto la fila nueva podía quedarse colgada
-        // hasta que otro input disparara un ciclo de detección (el "Agregar no reacciona").
-        this.changeDetectorRef.detectChanges();
-    }
-
-    removeBorrowedEquipment(item: ProspectEquipmentItem, index: number): void {
-        item.borrowedEquipments = item.borrowedEquipments.filter((_, currentIndex) => currentIndex !== index);
-        this.changeDetectorRef.detectChanges();
-    }
-
     warrantyStateFor(item: ProspectEquipmentItem): ItemWarrantyState {
         let state = this.warrantyStateByItemId.get(item.id);
         if (!state) {
@@ -1924,6 +1993,64 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
         item.evidencePhotos = item.evidencePhotos.filter((photo) => photo.id !== evidenceId);
     }
 
+    intakeFormatAttachments(item: ProspectEquipmentItem): ProspectEquipmentAttachment[] {
+        return (item.attachments ?? []).filter((attachment) => (attachment.attachmentType || "").trim().toLowerCase() === "intake-format");
+    }
+
+    removeIntakeFormatAttachment(item: ProspectEquipmentItem, attachmentId: string): void {
+        item.attachments = (item.attachments ?? []).filter((attachment) => attachment.id !== attachmentId);
+    }
+
+    async handleIntakeFormatFilesSelected(item: ProspectEquipmentItem, event: Event): Promise<void> {
+        const input = event.target as HTMLInputElement | null;
+        const files = Array.from(input?.files ?? []);
+        if (files.length === 0) {
+            return;
+        }
+
+        const maxBytes = 10 * 1024 * 1024;
+        const accepted = files.filter((file) => (file.type.startsWith("image/") || file.type === "application/pdf") && file.size <= maxBytes);
+        if (accepted.length !== files.length) {
+            this.validationMessage = "Solo se permiten imágenes o PDF de máximo 10MB para el formato físico firmado.";
+            if (input) {
+                input.value = "";
+            }
+            return;
+        }
+
+        for (const file of accepted) {
+            const dataUrl = await this.readFileAsDataUrl(file);
+            const attachment: ProspectEquipmentAttachment = {
+                id: `intake-format-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                attachmentType: "intake-format",
+                fileName: file.name,
+                mimeType: file.type,
+                sizeBytes: file.size,
+                dataUrl,
+                thumbnailDataUrl: file.type === "application/pdf" ? undefined : dataUrl,
+                notes: "Formato físico firmado",
+                uploadedAt: new Date().toISOString(),
+                uploadedBy: this.authService.getCurrentUserName() || "recepcion",
+                sha256: await this.sha256Hex(dataUrl),
+            };
+            item.attachments = [...(item.attachments ?? []), attachment];
+        }
+
+        this.validationMessage = "";
+        if (input) {
+            input.value = "";
+        }
+    }
+
+    private readFileAsDataUrl(file: File): Promise<string> {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result ?? ""));
+            reader.onerror = () => reject(reader.error);
+            reader.readAsDataURL(file);
+        });
+    }
+
     onDispatchPhotosSelected(event: Event, item: ProspectEquipmentItem): void {
         const files = (event.target as HTMLInputElement).files;
         if (!files || !files.length) return;
@@ -2005,6 +2132,7 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
 
         this.currentStepIndex -= 1;
         this.validationMessage = "";
+        this.saveDraftSuccess = false;
     }
 
     nextStep(): void {
@@ -2018,6 +2146,8 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
 
         this.currentStepIndex += 1;
         this.validationMessage = "";
+        this.saveDraftSuccess = false;
+        this.finalizeMissingFacesOffer = false;
 
         if (this.currentWizardStep.key === "signatures") {
             void this.ensureQrAttachmentsForItems(this.reviewItems, this.draft.id).catch(() => {
@@ -2053,6 +2183,52 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
         void this.saveRecord(openPrintAfterSave);
     }
 
+    saveDraft(): void {
+        if (this.savingDraft || this.creatingRepairProjects) {
+            return;
+        }
+
+        const resolvedProspectId = this.prospect ? resolveEquipmentProspectId(this.prospect) : this.draft.prospectId;
+        const resolvedProspectName = this.prospect?.nombre?.trim() || this.draft.prospectName.trim();
+
+        if (!resolvedProspectName) {
+            this.validationMessage = "No encontramos el prospecto para asociar los equipos.";
+            return;
+        }
+
+        const itemsToPersist = this.getMeaningfulItems();
+        if (!this.validateEquipmentItems(itemsToPersist)) {
+            return;
+        }
+
+        const transportadoraError = validateTransportadoraReception(this.draft);
+        if (transportadoraError) {
+            this.validationMessage = transportadoraError;
+            return;
+        }
+
+        this.saveDraftSuccess = false;
+        this.validationMessage = "";
+        this.savingDraft = true;
+
+        const record = this.buildPersistedRecord(itemsToPersist, resolvedProspectId, resolvedProspectName);
+        this.crmEquipmentApi.upsertRecord(record).subscribe({
+            next: () => {
+                this.savingDraft = false;
+                this.saveDraftSuccess = true;
+                this.finalizeMissingFacesOffer = false;
+            },
+            error: (error: Error & { status?: number; code?: string; existingRecordId?: string }) => {
+                this.savingDraft = false;
+                if (error?.status === 409 && error?.code === "DUPLICATE_IDENTIFIER") {
+                    this.openDuplicateDialog(error, false);
+                    return;
+                }
+                this.validationMessage = error?.message || "No se pudo guardar el borrador. Intenta nuevamente.";
+            },
+        });
+    }
+
     private async saveRecord(openPrintAfterSave: boolean): Promise<void> {
         const resolvedProspectId = this.prospect ? resolveEquipmentProspectId(this.prospect) : this.draft.prospectId;
         const resolvedProspectName = this.prospect?.nombre?.trim() || this.draft.prospectName.trim();
@@ -2071,6 +2247,12 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
             return;
         }
 
+        const damageBlockedItem = itemsToPersist.find((item) => isVisibleDamageSaveBlocked(item));
+        if (damageBlockedItem) {
+            this.validationMessage = VISIBLE_DAMAGE_ERROR;
+            return;
+        }
+
         try {
             await this.ensureQrAttachmentsForItems(itemsToPersist, this.draft.id);
         } catch {
@@ -2078,9 +2260,42 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
             return;
         }
 
+        const record = this.buildPersistedRecord(itemsToPersist, resolvedProspectId, resolvedProspectName);
+
+        this.crmEquipmentApi.upsertRecord(record).subscribe({
+            next: (savedRecord) => {
+                this.crmEquipmentApi.finalizeRecord(savedRecord.id).subscribe({
+                    next: () => {
+                        this.finalizeAfterBackendSave(savedRecord, openPrintAfterSave);
+                        // Fase 5c: acuse de recepción por correo, con los
+                        // identificadores de los equipos. Es un paso aparte del
+                        // finalize porque la recepción ya es un hecho válido
+                        // aunque el cliente no tenga correo — pero la ausencia de
+                        // correo se muestra, no se esconde.
+                        this.sendReceptionAckEmail(savedRecord.id);
+                    },
+                    error: (error: Error) => {
+                        this.validationMessage = error?.message || "No se pudo finalizar la recepción de equipos.";
+                        if (/cara obligatoria/i.test(this.validationMessage)) {
+                            this.finalizeMissingFacesOffer = true;
+                        }
+                    },
+                });
+            },
+            error: (error: Error & { status?: number; code?: string; existingRecordId?: string }) => {
+                if (error?.status === 409 && error?.code === "DUPLICATE_IDENTIFIER") {
+                    this.openDuplicateDialog(error, openPrintAfterSave);
+                    return;
+                }
+                this.validationMessage = error?.message || "No se pudo guardar el registro en la base de datos. Intenta nuevamente.";
+            },
+        });
+    }
+
+    private buildPersistedRecord(itemsToPersist: ProspectEquipmentItem[], resolvedProspectId: string, resolvedProspectName: string): ProspectEquipmentRecord {
         const fallbackAssignedTo = this.resolveRecordAssignedTo(itemsToPersist);
 
-        const record: ProspectEquipmentRecord = {
+        return {
             ...this.draft,
             prospectId: resolvedProspectId,
             prospectName: resolvedProspectName,
@@ -2088,6 +2303,8 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
             intakeCarrier: (this.draft.intakeCarrier || "").trim(),
             intakeTrackingNumber: (this.draft.intakeTrackingNumber || "").trim(),
             intakeReceivedAt: this.draft.intakeReceivedAt || "",
+            senderUnknown: Boolean(this.draft.senderUnknown),
+            custodyIncident: this.draft.senderUnknown ? this.draft.custodyIncident : undefined,
             companyName: this.draft.companyName.trim(),
             sourceBranchName: (this.draft.sourceBranchName || "").trim(),
             nit: this.draft.nit.trim(),
@@ -2125,8 +2342,15 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
                 receivedIdentifierCapturedAt: item.receivedIdentifierCapturedAt,
                 customerShipmentReference: item.customerShipmentReference.trim(),
                 accessories: item.accessories.trim(),
-                borrowedEquipments: item.borrowedEquipments.map((entry) => entry.trim()).filter((entry) => entry.length > 0),
+                borrowedEquipments: item.borrowedEquipments
+                    .map((entry) => normalizeBorrowedEntry(entry))
+                    .filter((entry) => entry.description.length > 0),
                 failureDescription: item.failureDescription.trim(),
+                senderUnknown: Boolean(this.draft.senderUnknown),
+                custodyIncident: this.draft.senderUnknown ? this.draft.custodyIncident : undefined,
+                serieExceptionReason: (item.serieExceptionReason || "").trim(),
+                visibleDamageReported: Boolean(item.visibleDamageReported),
+                visibleDamageConfirmed: Boolean(item.visibleDamageConfirmed),
                 assignedTo: (item.assignedTo || "").trim(),
                 assignedToId: (item.assignedToId || "").trim(),
                 assignedAt: (item.assignedAt || "").trim(),
@@ -2156,28 +2380,38 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
                 answers: { ...item.answers },
             })),
         };
+    }
 
-        this.crmEquipmentApi.upsertRecord(record).subscribe({
-            next: (savedRecord) => {
-                this.crmEquipmentApi.finalizeRecord(savedRecord.id).subscribe({
-                    next: () => {
-                        this.finalizeAfterBackendSave(savedRecord, openPrintAfterSave);
-                        // Fase 5c: acuse de recepción por correo, con los
-                        // identificadores de los equipos. Es un paso aparte del
-                        // finalize porque la recepción ya es un hecho válido
-                        // aunque el cliente no tenga correo — pero la ausencia de
-                        // correo se muestra, no se esconde.
-                        this.sendReceptionAckEmail(savedRecord.id);
-                    },
-                    error: (error: Error) => {
-                        this.validationMessage = error?.message || "No se pudo finalizar la recepción de equipos.";
-                    },
-                });
-            },
-            error: () => {
-                this.validationMessage = "No se pudo guardar el registro en la base de datos. Intenta nuevamente.";
-            },
-        });
+    private openDuplicateDialog(error: Error & { status?: number; code?: string; existingRecordId?: string }, openPrintAfterSave: boolean): void {
+        this.pendingOpenPrintAfterSave = openPrintAfterSave;
+        const match = /el identificador "([^"]+)"/i.exec(error.message || "");
+        this.duplicateDialog = {
+            message: error.message,
+            identifier: match?.[1] ?? "",
+            existingRecordId: error.existingRecordId || "",
+        };
+    }
+
+    onDuplicateConfirmed(confirm: { reason: string; relation: ProspectEquipmentDuplicateRelation }): void {
+        const items = this.getMeaningfulItems();
+        const target =
+            items.find((item) =>
+                [item.receivedIdentifier, item.serie].some((value) => value.trim().length > 0 && value.trim() === this.duplicateDialog?.identifier),
+            ) ?? items.find((item) => (item.receivedIdentifier || "").trim() || (item.serie || "").trim());
+
+        if (target) {
+            target.duplicateConfirm = { reason: confirm.reason, relation: confirm.relation };
+        }
+
+        const openPrintAfterSave = this.pendingOpenPrintAfterSave;
+        this.duplicateDialog = null;
+        this.validationMessage = "";
+        void this.saveRecord(openPrintAfterSave);
+    }
+
+    onDuplicateCancelled(): void {
+        this.duplicateDialog = null;
+        this.validationMessage = "Guardado cancelado: el identificador duplicado requiere confirmación de relación y motivo.";
     }
 
     /**
@@ -2511,10 +2745,6 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
         return item.id;
     }
 
-    trackByBorrowedEquipmentIndex(index: number): number {
-        return index;
-    }
-
     trackByStepKey(_: number, step: WizardStepDefinition): WizardStepKey {
         return step.key;
     }
@@ -2651,8 +2881,7 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
     }
 
     borrowedEquipmentsSummary(item: ProspectEquipmentItem): string {
-        const borrowedEquipments = item.borrowedEquipments.map((entry) => entry.trim()).filter((entry) => entry.length > 0);
-        return borrowedEquipments.length > 0 ? borrowedEquipments.join(", ") : "Sin equipos prestados";
+        return borrowedEntriesLabel(item);
     }
 
     resolveItemAssignmentSpeciality(item: ProspectEquipmentItem): string {
@@ -2884,7 +3113,9 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
             intakeMethod: "personal",
             intakeCarrier: "",
             intakeTrackingNumber: "",
-            intakeReceivedAt: nowIso,
+            intakeReceivedAt: "",
+            senderUnknown: false,
+            custodyIncident: undefined,
             companyName: this.normalizeEmpty(this.prospect?.compania),
             sourceBranchName: this.normalizeEmpty(primaryProspectBranch?.name),
             nit: this.normalizeEmpty(this.prospect?.nit),
@@ -3646,6 +3877,11 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
             accessories: "",
             borrowedEquipments: [],
             failureDescription: "",
+            senderUnknown: false,
+            serieExceptionReason: "",
+            visibleDamageReported: false,
+            visibleDamageConfirmed: false,
+            softwareSuspicionAcknowledged: false,
             assignedTo: "",
             assignedToId: "",
             assignedAt: "",
@@ -3695,27 +3931,48 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
         }
 
         if (this.currentWizardStep.key === "equipment") {
-            return this.validateEquipmentItems(this.getMeaningfulItems());
+            const items = this.getMeaningfulItems();
+            if (!this.validateEquipmentItems(items)) {
+                return false;
+            }
+
+            const reasonlessItem = items.find((item) => isSerieExceptionReasonMissing(item));
+            if (reasonlessItem) {
+                this.validationMessage = SERIE_EXCEPTION_REASON_ERROR;
+                return false;
+            }
+
+            return true;
         }
 
         if (this.currentWizardStep.key === "questions") {
-            return this.validateIndustrialOverrides(this.getMeaningfulItems());
+            if (!this.validateIndustrialOverrides(this.getMeaningfulItems())) {
+                return false;
+            }
+
+            return this.validateSoftwareSuspicionAcks(this.getMeaningfulItems());
         }
 
         if (this.currentWizardStep.key === "evidence") {
-            return this.validateEvidenceFaces(this.getMeaningfulItems());
+            const evidenceItems = this.getMeaningfulItems();
+            const evidenceBlockedItem = evidenceItems.find((item) => getEvidenceRequirementsError(item));
+            if (evidenceBlockedItem) {
+                this.validationMessage = getEvidenceRequirementsError(evidenceBlockedItem) || "";
+                return false;
+            }
+            if (evidenceItems.some((item) => this.getMissingRequiredFaceEvidence(item).length > 0)) {
+                this.validationMessage = "Faltan fotos obligatorias por cara: podrás avanzar y guardar borrador, pero el guardado completo las exigirá.";
+            }
+            return true;
         }
 
         return true;
     }
 
     private validateReceptionStep(): boolean {
-        if ((this.draft.intakeMethod || "personal") !== "transportadora") {
-            return true;
-        }
-
-        if (!(this.draft.intakeCarrier || "").trim() || !(this.draft.intakeTrackingNumber || "").trim()) {
-            this.validationMessage = "Para recepción por transportadora debes registrar transportadora y número de guía.";
+        const transportadoraError = validateTransportadoraReception(this.draft);
+        if (transportadoraError) {
+            this.validationMessage = transportadoraError;
             return false;
         }
 
@@ -3765,12 +4022,29 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
 
     private validateEvidenceFaces(items: ProspectEquipmentItem[]): boolean {
         const missingItem = items.find((item) => this.getMissingRequiredFaceEvidence(item).length > 0);
-        if (!missingItem) {
+        if (missingItem) {
+            const missingLabels = this.getMissingRequiredFaceEvidence(missingItem).map((type) => this.getFaceEvidenceLabel(type));
+            this.validationMessage = `Faltan fotos obligatorias por cara (${missingLabels.join(", ")}) para continuar.`;
+            this.finalizeMissingFacesOffer = true;
+            return false;
+        }
+
+        const blockedItem = items.find((item) => getEvidenceRequirementsError(item));
+        if (blockedItem) {
+            this.validationMessage = getEvidenceRequirementsError(blockedItem) || "";
+            return false;
+        }
+
+        return true;
+    }
+
+    private validateSoftwareSuspicionAcks(items: ProspectEquipmentItem[]): boolean {
+        const blockedItem = items.find((item) => isSoftwareSuspicionAckRequired(item));
+        if (!blockedItem) {
             return true;
         }
 
-        const missingLabels = this.getMissingRequiredFaceEvidence(missingItem).map((type) => this.getFaceEvidenceLabel(type));
-        this.validationMessage = `Faltan fotos obligatorias por cara (${missingLabels.join(", ")}) para continuar.`;
+        this.validationMessage = SOFTWARE_SUSPICION_ACK_ERROR;
         return false;
     }
 
@@ -3832,7 +4106,7 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
             return true;
         }
 
-        if (item.borrowedEquipments.some((value) => value.trim().length > 0)) {
+        if (item.borrowedEquipments.some((value) => normalizeBorrowedEntry(value).description.length > 0)) {
             return true;
         }
 
@@ -3902,7 +4176,7 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
             parts.push(`Falla reportada: ${item.failureDescription.trim()}`);
         }
 
-        const borrowedEquipments = item.borrowedEquipments.map((entry) => entry.trim()).filter((entry) => entry.length > 0);
+        const borrowedEquipments = borrowedEntriesWithContent(item).map((entry) => entry.description);
         if (borrowedEquipments.length > 0) {
             parts.push(`Equipos prestados para prueba: ${borrowedEquipments.join(", ")}`);
         }
@@ -3975,7 +4249,7 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
             equipmentReceptionLabel: `${record.receptionDay || "--"}/${record.receptionMonth || "--"}/${record.receptionYear || "----"}`,
             equipmentServiceType: item.serviceTypeName.trim(),
             equipmentFailureDescription: item.failureDescription.trim(),
-            equipmentBorrowedForTesting: item.borrowedEquipments.map((entry) => entry.trim()).filter((entry) => entry.length > 0),
+            equipmentBorrowedForTesting: borrowedEntriesWithContent(item).map((entry) => entry.description),
             equipmentLocationId: item.storageLocationId,
             equipmentLocationName: item.storageLocationName.trim(),
             equipmentRepairStatus: repairStatus,
@@ -3990,32 +4264,45 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
     }
 
     private cloneRecord(record: ProspectEquipmentRecord): ProspectEquipmentRecord {
+        const items: ProspectEquipmentItem[] = record.items.map((item) => ({
+            ...item,
+            registrationMode: item.registrationMode === "manual" ? "manual" : item.equipmentModelId.trim() ? "catalog" : "manual",
+            isIndustrial: typeof item.isIndustrial === "boolean" ? item.isIndustrial : this.resolveItemIndustrialFlag(item),
+            borrowedEquipments: (item.borrowedEquipments ?? []).map((entry) => normalizeBorrowedEntry(entry)),
+            senderUnknown: Boolean(item.senderUnknown),
+            custodyIncident: item.custodyIncident ? { ...item.custodyIncident } : undefined,
+            serieExceptionReason: String(item.serieExceptionReason ?? "").trim(),
+            visibleDamageReported: Boolean(item.visibleDamageReported),
+            visibleDamageConfirmed: Boolean(item.visibleDamageConfirmed),
+            duplicateConfirm: item.duplicateConfirm ? { ...item.duplicateConfirm } : undefined,
+            softwareSuspicionAcknowledged: Boolean(item.softwareSuspicionAcknowledged),
+            assignedTo: String(item.assignedTo ?? "").trim(),
+            assignedToId: String(item.assignedToId ?? "").trim(),
+            assignedAt: String(item.assignedAt ?? "").trim(),
+            assignedBy: String(item.assignedBy ?? "").trim(),
+            industrialOverrideAuthorizedBy: String(item.industrialOverrideAuthorizedBy ?? "").trim(),
+            industrialOverrideReason: String(item.industrialOverrideReason ?? "").trim(),
+            industrialOverrideAuthorizedAt: String(item.industrialOverrideAuthorizedAt ?? "").trim(),
+            pendingHomologation: Boolean(item.pendingHomologation) || item.registrationMode === "manual" || !item.equipmentModelId.trim(),
+            estimatedData: Boolean(item.estimatedData),
+            identifierLabelIssue: Boolean(item.identifierLabelIssue),
+            evidencePhotos: item.evidencePhotos.map((photo) => ({ ...photo })),
+            attachments: Array.isArray(item.attachments) ? item.attachments.map((attachment) => ({ ...attachment })) : [],
+            answers: { ...item.answers },
+        }));
+
+        const incidentSource = items.find((item) => item.custodyIncident) ?? null;
+
         return {
             ...record,
             intakeMethod: record.intakeMethod === "transportadora" ? "transportadora" : "personal",
             intakeCarrier: String(record.intakeCarrier ?? "").trim(),
             intakeTrackingNumber: String(record.intakeTrackingNumber ?? "").trim(),
             intakeReceivedAt: String(record.intakeReceivedAt ?? "").trim(),
+            senderUnknown: Boolean(record.senderUnknown) || items.some((item) => item.senderUnknown),
+            custodyIncident: record.custodyIncident ?? (incidentSource?.custodyIncident ? { ...incidentSource.custodyIncident } : undefined),
             sourceBranchName: String(record.sourceBranchName ?? "").trim(),
-            items: record.items.map((item) => ({
-                ...item,
-                registrationMode: item.registrationMode === "manual" ? "manual" : item.equipmentModelId.trim() ? "catalog" : "manual",
-                isIndustrial: typeof item.isIndustrial === "boolean" ? item.isIndustrial : this.resolveItemIndustrialFlag(item),
-                borrowedEquipments: [...(item.borrowedEquipments ?? [])],
-                assignedTo: String(item.assignedTo ?? "").trim(),
-                assignedToId: String(item.assignedToId ?? "").trim(),
-                assignedAt: String(item.assignedAt ?? "").trim(),
-                assignedBy: String(item.assignedBy ?? "").trim(),
-                industrialOverrideAuthorizedBy: String(item.industrialOverrideAuthorizedBy ?? "").trim(),
-                industrialOverrideReason: String(item.industrialOverrideReason ?? "").trim(),
-                industrialOverrideAuthorizedAt: String(item.industrialOverrideAuthorizedAt ?? "").trim(),
-                pendingHomologation: Boolean(item.pendingHomologation) || item.registrationMode === "manual" || !item.equipmentModelId.trim(),
-                estimatedData: Boolean(item.estimatedData),
-                identifierLabelIssue: Boolean(item.identifierLabelIssue),
-                evidencePhotos: item.evidencePhotos.map((photo) => ({ ...photo })),
-                attachments: Array.isArray(item.attachments) ? item.attachments.map((attachment) => ({ ...attachment })) : [],
-                answers: { ...item.answers },
-            })),
+            items,
         };
     }
 }

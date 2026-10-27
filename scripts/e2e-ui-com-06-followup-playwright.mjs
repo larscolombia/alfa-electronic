@@ -58,10 +58,25 @@ try {
     await click(page, row.getByRole("button", { name: /^Acciones$/ }));
     await click(page, page.locator("ul.dropdown-menu.show a.dropdown-item", { hasText: "Abrir ficha" }));
     await page.waitForURL(/\/app\/crm-prospectos\/[^/?#]+$/, { timeout });
+    // COM-02 exige un contacto real como responsable del seguimiento: el
+    // prospecto solo ya no es un interlocutor válido para agendar la visita.
+    const contactName = `Responsable COM-06 ${stamp}`;
+    await click(page, page.getByRole("button", { name: "Contactos relacionados" }));
+    await click(page, page.getByRole("button", { name: /Agregar contacto/i }));
+    const contactModal = page.locator(".modal-dialog", { hasText: "Agregar contacto" });
+    await contactModal.waitFor({ state: "visible", timeout });
+    await fill(page, contactModal.locator("input").nth(0), contactName);
+    await fill(page, contactModal.locator("input").nth(1), "Gerente de mantenimiento");
+    await fill(page, contactModal.locator("input[type='email']"), `qa-contact-${stamp}@alfa.local`);
+    await click(page, contactModal.locator(".modal-footer button.btn-theme"));
+    await page.locator("tbody tr", { hasText: contactName }).waitFor({ state: "visible", timeout });
+    await capture(page, "03b-contacto-responsable");
+
     await click(page, page.getByRole("button", { name: "Acciones comerciales" }));
     await click(page, page.getByRole("button", { name: /Nueva accion comercial/i }));
     const modal = page.locator(".modal-dialog", { hasText: "Agregar Seguimiento" });
     await modal.waitFor({ state: "visible", timeout });
+    await modal.locator("select.form-select").nth(0).selectOption({ label: `${contactName} (Contacto)` });
     await modal.locator("select.form-select").nth(1).selectOption({ label: "Visita presencial" });
     await wait(page);
     await fill(page, modal.locator("input[type='date']"), new Date(Date.now() + 86400000).toISOString().slice(0, 10));
@@ -70,9 +85,11 @@ try {
     await capture(page, "04-seguimiento-formulario");
     await click(page, modal.getByTestId("commercial-action-save-btn"));
     await click(page, modal.locator(".modal-footer button.btn-link", { hasText: "Cerrar" }));
-    await page.locator("tbody tr", { hasText: "Visita presencial" }).waitFor({ state: "visible", timeout });
+    const followupRow = page.locator("tbody tr", { hasText: "Visita presencial" }).filter({ hasText: contactName });
+    await followupRow.waitFor({ state: "visible", timeout });
     await page.reload({ waitUntil: "networkidle", timeout });
-    await page.locator("tbody tr", { hasText: `Seguimiento COM-06 ${stamp}` }).waitFor({ state: "visible", timeout });
+    const persistedRow = page.locator("tbody tr", { hasText: `Seguimiento COM-06 ${stamp}` }).filter({ hasText: contactName });
+    await persistedRow.waitFor({ state: "visible", timeout });
     result.followupPersists = true;
     await capture(page, "05-seguimiento-persistido");
 } catch (error) {

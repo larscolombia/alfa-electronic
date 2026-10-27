@@ -24,17 +24,18 @@ func (h *Handler) RegisterRoutes(group *echo.Group) {
 
 	group.GET("/references", h.listReferences)
 	group.GET("/references/:reference", h.getReference)
-	group.POST("/references", h.createReference)
+	group.POST("/references", h.createReference, h.requireNonTechnician())
 	group.GET("/references/duplicates/check", h.checkDuplicates)
+	group.POST("/references/:reference/used-test", h.recordUsedTest)
 
-	group.POST("/stock-entry", h.registerStockEntry)
+	group.POST("/stock-entry", h.registerStockEntry, h.requireNonTechnician())
 
 	group.GET("/movements", h.listMovements)
 	group.POST("/movements", h.submitMovement)
 
 	group.GET("/adjustment-requests", h.listAdjustmentRequests)
-	group.POST("/adjustment-requests", h.createAdjustmentRequest)
-	group.POST("/adjustment-requests/:id/approve", h.approveMovementRequest)
+	group.POST("/adjustment-requests", h.createAdjustmentRequest, h.requireNonTechnician())
+	group.POST("/adjustment-requests/:id/approve", h.approveMovementRequest, h.requireNonTechnician())
 
 	group.GET("/reservations", h.listReservations)
 	group.POST("/reservations", h.createReservation)
@@ -46,6 +47,7 @@ func (h *Handler) RegisterRoutes(group *echo.Group) {
 	group.GET("/replenishment", h.listReplenishmentItems)
 	group.POST("/replenishment/attempt", h.registerReplenishmentAttempt)
 	group.POST("/replenishment/:reference/mark-obsolete", h.markReplenishmentObsolete)
+	group.POST("/replenishment/:reference/decision", h.registerReplenishmentDecision)
 	group.POST("/replenishment/rebuild", h.rebuildReplenishmentItems)
 
 	group.GET("/purchase-lines", h.listPurchaseLines)
@@ -64,9 +66,10 @@ func (h *Handler) RegisterRoutes(group *echo.Group) {
 	group.POST("/bags/:id/release", h.releaseTechnicianBag)
 
 	group.GET("/sessions", h.listSessions)
-	group.POST("/sessions", h.createSession)
-	group.POST("/sessions/:id/open", h.openSession)
-	group.POST("/sessions/:id/close", h.closeSession)
+	group.POST("/sessions", h.createSession, h.requireNonTechnician())
+	group.POST("/sessions/:id/open", h.openSession, h.requireNonTechnician())
+	group.POST("/sessions/:id/close", h.closeSession, h.requireNonTechnician())
+	group.POST("/sessions/:id/discrepancies", h.createDiscrepancy)
 
 	group.GET("/discrepancies", h.listDiscrepancies)
 	group.POST("/discrepancies/:id/approve", h.approveDiscrepancy)
@@ -175,7 +178,9 @@ func (h *Handler) checkDuplicates(c echo.Context) error {
 	companyID := company.IDFromRequest(c)
 	ref := c.QueryParam("reference")
 	desig := c.QueryParam("designation")
-	candidates, err := h.service.FindDuplicateCandidates(companyID, ref, desig)
+	internalCode := c.QueryParam("internalCode")
+	supplier := c.QueryParam("supplier")
+	candidates, err := h.service.FindDuplicateCandidates(companyID, ref, internalCode, desig, supplier)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "no se pudieron verificar duplicados"})
 	}
@@ -192,7 +197,7 @@ func (h *Handler) registerStockEntry(c echo.Context) error {
 	}
 	result, err := h.service.RegisterStockEntry(companyID, req, actorFromRequest(c))
 	if err != nil {
-		if errors.Is(err, errInvalidQuantity) || errors.Is(err, errReferenceNotFound) {
+		if errors.Is(err, errInvalidQuantity) || errors.Is(err, errReferenceNotFound) || errors.Is(err, errInvalidCondition) {
 			return c.JSON(http.StatusBadRequest, map[string]any{"error": result.Message, "ok": false})
 		}
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "no se pudo registrar la entrada"})
@@ -223,7 +228,7 @@ func (h *Handler) submitMovement(c echo.Context) error {
 		if errors.Is(err, errInsufficientStock) {
 			return c.JSON(http.StatusBadRequest, map[string]any{"error": result.Message, "ok": false})
 		}
-		if errors.Is(err, errInvalidQuantity) || errors.Is(err, errInvalidMovementType) || errors.Is(err, errReferenceNotFound) {
+		if errors.Is(err, errInvalidQuantity) || errors.Is(err, errInvalidMovementType) || errors.Is(err, errReferenceNotFound) || errors.Is(err, errInvalidCondition) {
 			return c.JSON(http.StatusBadRequest, map[string]any{"error": result.Message, "ok": false})
 		}
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "no se pudo registrar el movimiento"})
@@ -313,7 +318,7 @@ func (h *Handler) extendReservation(c echo.Context) error {
 	id := c.Param("id")
 	result, err := h.service.ExtendReservation(companyID, id, actorFromRequest(c))
 	if err != nil {
-		if errors.Is(err, errReservationNotFound) {
+		if errors.Is(err, errReservationNotFound) || errors.Is(err, errInvalidStatus) {
 			return c.JSON(http.StatusBadRequest, map[string]any{"error": result.Message, "ok": false})
 		}
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "no se pudo renovar la reserva"})
@@ -326,7 +331,7 @@ func (h *Handler) consumeReservation(c echo.Context) error {
 	id := c.Param("id")
 	result, err := h.service.ConsumeReservation(companyID, id, actorFromRequest(c))
 	if err != nil {
-		if errors.Is(err, errReservationNotFound) || errors.Is(err, errInvalidStatus) || errors.Is(err, errInsufficientStock) {
+		if errors.Is(err, errReservationNotFound) || errors.Is(err, errInvalidStatus) || errors.Is(err, errInsufficientStock) || errors.Is(err, errInvalidCondition) {
 			return c.JSON(http.StatusBadRequest, map[string]any{"error": result.Message, "ok": false})
 		}
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "no se pudo consumir la reserva"})
@@ -362,6 +367,9 @@ func (h *Handler) registerReplenishmentAttempt(c echo.Context) error {
 	}
 	result, err := h.service.RegisterReplenishmentAttempt(companyID, req, actorFromRequest(c))
 	if err != nil {
+		if errors.Is(err, errReplenishmentEscalated) {
+			return c.JSON(http.StatusConflict, map[string]any{"error": result.Message, "ok": false})
+		}
 		if errors.Is(err, errReplenishmentNotFound) {
 			return c.JSON(http.StatusBadRequest, map[string]any{"error": result.Message, "ok": false})
 		}
@@ -534,9 +542,17 @@ func (h *Handler) receiveTechnicianBag(c echo.Context) error {
 func (h *Handler) releaseTechnicianBag(c echo.Context) error {
 	companyID := company.IDFromRequest(c)
 	id := c.Param("id")
-	result, err := h.service.ReleaseTechnicianBag(companyID, id, actorFromRequest(c))
+	var req ReleaseTechnicianBagRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "cuerpo de solicitud invalido"})
+	}
+	leftover := 0
+	if req.LeftoverQty != nil {
+		leftover = *req.LeftoverQty
+	}
+	result, err := h.service.ReleaseTechnicianBag(companyID, id, actorFromRequest(c), leftover)
 	if err != nil {
-		if errors.Is(err, errBagNotFound) || errors.Is(err, errInvalidStatus) || errors.Is(err, errInsufficientStock) {
+		if errors.Is(err, errBagNotFound) || errors.Is(err, errInvalidStatus) || errors.Is(err, errInvalidQuantity) {
 			return c.JSON(http.StatusBadRequest, map[string]any{"error": result.Message, "ok": false})
 		}
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "no se pudo liberar la bolsa"})
@@ -613,6 +629,9 @@ func (h *Handler) approveDiscrepancy(c echo.Context) error {
 	id := c.Param("id")
 	result, err := h.service.ApproveDiscrepancy(companyID, id, actorFromRequest(c))
 	if err != nil {
+		if errors.Is(err, errDiscrepancyAlreadyApproved) {
+			return c.JSON(http.StatusConflict, map[string]any{"error": result.Message, "ok": false})
+		}
 		if errors.Is(err, errRequestNotFound) {
 			return c.JSON(http.StatusBadRequest, map[string]any{"error": result.Message, "ok": false})
 		}

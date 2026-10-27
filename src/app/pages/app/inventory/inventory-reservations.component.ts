@@ -1,16 +1,21 @@
 import { CommonModule } from "@angular/common";
-import { Component, OnInit } from "@angular/core";
+import { Component, OnDestroy, OnInit } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { RouterLink } from "@angular/router";
+import { Subscription } from "rxjs";
 import { InventoryRole, ReservationRecord } from "../../../services/inventory-domain.models";
 import { InventoryRbacService } from "../../../services/inventory-rbac.service";
+import { InventoryReservationActionsService } from "../../../services/inventory-reservation-actions.service";
 import { InventoryWorkflowService } from "../../../services/inventory-workflow.service";
 import { HrPeoplePickerService } from "../../../services/hr-people-picker.service";
+import { InvBackendAlertComponent } from "./inv-backend-alert.component";
+import { InvRoleHintComponent } from "./inv-role-hint.component";
+import { ReservationsTableComponent } from "./reservations-table.component";
 
 @Component({
     selector: "app-inventory-reservations",
     standalone: true,
-    imports: [CommonModule, FormsModule, RouterLink],
+    imports: [CommonModule, FormsModule, RouterLink, InvRoleHintComponent, InvBackendAlertComponent, ReservationsTableComponent],
     template: `
         <div class="container-fluid py-3">
             <div class="row gx-3 gx-lg-4 align-items-center page-title">
@@ -57,7 +62,10 @@ import { HrPeoplePickerService } from "../../../services/hr-people-picker.servic
                 </div>
             </div>
 
-            <div *ngIf="feedback" class="alert mb-3" [ngClass]="feedbackClass">
+            <app-inv-role-hint></app-inv-role-hint>
+            <app-inv-backend-alert></app-inv-backend-alert>
+
+            <div *ngIf="feedback" class="alert mb-3" [ngClass]="feedbackClass" [attr.data-testid]="feedbackTestId">
                 {{ feedback }}
             </div>
 
@@ -96,7 +104,7 @@ import { HrPeoplePickerService } from "../../../services/hr-people-picker.servic
                     <div class="row gx-3 gy-2 align-items-end">
                         <div class="col-12 col-md-3">
                             <label class="form-label">Maximo de dias</label>
-                            <input class="form-control" type="number" min="1" [(ngModel)]="maxReserveDays" [disabled]="!canManageReservations" />
+                            <input class="form-control" type="number" min="0" [(ngModel)]="maxReserveDays" [disabled]="!canManageReservations" />
                         </div>
                         <div class="col-12 col-md-auto">
                             <button class="btn btn-outline-theme" type="button" [disabled]="!canManageReservations" (click)="saveReservePolicy()">Aplicar politica</button>
@@ -173,56 +181,26 @@ import { HrPeoplePickerService } from "../../../services/hr-people-picker.servic
             <div class="card adminuiux-card">
                 <div class="card-header">
                     <h6 class="mb-0">Reservas registradas</h6>
+                    <p class="small text-secondary mb-0">
+                        Las reservas vencidas se pueden renovar (nueva fecha) o liberar (el stock
+                        reservado vuelve a estar disponible una sola vez).
+                    </p>
                 </div>
                 <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table align-middle mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Referencia</th>
-                                    <th>Cantidad</th>
-                                    <th>Asignado</th>
-                                    <th>ODS</th>
-                                    <th>Equipo</th>
-                                    <th>Cliente/Planta</th>
-                                    <th>Prioridad</th>
-                                    <th>Inicio</th>
-                                    <th>Vence</th>
-                                    <th>Estado</th>
-                                    <th class="text-end">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr *ngFor="let reservation of reservations">
-                                    <td>{{ reservation.reference }}</td>
-                                    <td>{{ reservation.quantity }}</td>
-                                    <td>{{ reservation.assignedTo }}</td>
-                                    <td>{{ reservation.workOrder || '--' }}</td>
-                                    <td>{{ reservation.equipmentTag || '--' }}</td>
-                                    <td>{{ reservation.customerSite || '--' }}</td>
-                                    <td>{{ reservation.priority || '--' }}</td>
-                                    <td>{{ reservation.reservedAt | date: 'dd/MM/yyyy' }}</td>
-                                    <td>{{ reservation.expiresAt | date: 'dd/MM/yyyy' }}</td>
-                                    <td>
-                                        <span class="badge" [ngClass]="statusClass(reservation.status)">{{ reservation.status }}</span>
-                                    </td>
-                                    <td class="text-end">
-                                        <button class="btn btn-sm btn-outline-secondary me-2" type="button" [disabled]="reservation.status !== 'activa' || !canManageReservations" (click)="extendReservation(reservation.id)">Renovar</button>
-                                        <button class="btn btn-sm btn-outline-danger" type="button" [disabled]="reservation.status !== 'activa' || !canManageReservations" (click)="releaseReservation(reservation.id)">Liberar</button>
-                                    </td>
-                                </tr>
-                                <tr *ngIf="reservations.length === 0">
-                                    <td colspan="11" class="text-center text-secondary py-4">No hay reservas registradas.</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                    <app-reservations-table
+                        [reservations]="reservations"
+                        [canManage]="canManageReservations"
+                        (renew)="extendReservation($event)"
+                        (release)="releaseReservation($event)"
+                        (consume)="consumeReservation($event)"
+                    ></app-reservations-table>
                 </div>
             </div>
         </div>
     `,
 })
-export class InventoryReservationsComponent implements OnInit {
+export class InventoryReservationsComponent implements OnInit, OnDestroy {
+    private readonly subscriptions = new Subscription();
     maxReserveDays = 5;
 
     draft = {
@@ -245,8 +223,12 @@ export class InventoryReservationsComponent implements OnInit {
     constructor(
         private readonly inventoryRbac: InventoryRbacService,
         private readonly inventoryWorkflow: InventoryWorkflowService,
+        private readonly reservationActions: InventoryReservationActionsService,
         private readonly hrPeople: HrPeoplePickerService
     ) { }
+
+    /** Confirmacion del ultima accion para el data-testid del feedback (INV-03/04). */
+    private lastAction: { id: string; kind: "released" | "renewed" } | null = null;
 
     /** Fase 6: empleados activos de RRHH para el select de asignado a. */
     peopleNames: string[] = [];
@@ -263,6 +245,14 @@ export class InventoryReservationsComponent implements OnInit {
             this.peopleNames = names;
         });
         this.refreshState();
+        // El estado llega asincrono desde el backend: re-leerlo en cada emision.
+        this.subscriptions.add(
+            this.inventoryWorkflow.state$.subscribe(() => this.refreshState())
+        );
+    }
+
+    ngOnDestroy(): void {
+        this.subscriptions.unsubscribe();
     }
 
     get rolePreset(): InventoryRole {
@@ -324,19 +314,38 @@ export class InventoryReservationsComponent implements OnInit {
     }
 
     async releaseReservation(id: string): Promise<void> {
-        const result = await this.inventoryWorkflow.releaseReservation(id);
-        this.setFeedback(result.message, result.ok ? "success" : "danger");
-        if (result.ok) {
-            this.refreshState();
-        }
+        const result = await this.reservationActions.release(id);
+        this.lastAction = result.ok ? { id, kind: "released" } : null;
+        const suffix = result.ok
+            ? " El stock reservado quedo disponible de nuevo (liberado una sola vez)."
+            : "";
+        this.setFeedback(result.message + suffix, result.ok ? "success" : "danger");
+        this.refreshState();
     }
 
     async extendReservation(id: string): Promise<void> {
-        const result = await this.inventoryWorkflow.extendReservation(id);
+        const result = await this.reservationActions.extend(id);
+        this.lastAction = result.ok ? { id, kind: "renewed" } : null;
+        const expires = result.ok && result.expiresAt ? ` Nueva fecha de vencimiento: ${new Date(result.expiresAt).toLocaleDateString("es-CO")}.` : "";
+        this.setFeedback(result.message + expires, result.ok ? "success" : "danger");
+        this.refreshState();
+    }
+
+    async consumeReservation(id: string): Promise<void> {
+        this.lastAction = null;
+        const result = await this.reservationActions.consume(id);
         this.setFeedback(result.message, result.ok ? "success" : "danger");
-        if (result.ok) {
-            this.refreshState();
+        this.refreshState();
+    }
+
+    get feedbackTestId(): string {
+        if (this.lastAction?.kind === "released") {
+            return `reservation-released-${this.lastAction.id}`;
         }
+        if (this.lastAction?.kind === "renewed") {
+            return `reservation-renewed-${this.lastAction.id}`;
+        }
+        return "inv-reservations-feedback";
     }
 
     statusClass(status: ReservationRecord["status"]): string {

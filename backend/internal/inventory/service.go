@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math"
 	"strings"
 	"time"
 	"unicode"
@@ -55,8 +54,10 @@ func (s *Service) GetConfig(companyID string) (InventoryConfig, error) {
 }
 
 func (s *Service) SetMaxReserveDays(companyID string, days int, actor string) (InventoryConfig, error) {
-	if days < 1 {
-		days = 1
+	// 0 dias es un valor valido: fuerza el vencimiento inmediato de las reservas
+	// existentes (INV-03) y equivale a "no se permiten reservas".
+	if days < 0 {
+		days = 0
 	}
 	now := time.Now().UTC()
 	row := s.db.QueryRow(`
@@ -71,6 +72,20 @@ func (s *Service) SetMaxReserveDays(companyID string, days int, actor string) (I
 		return cfg, err
 	}
 	cfg.UpdatedAt = updatedAt.UTC().Format(time.RFC3339)
+	// Bajar la politica envejece las reservas activas: su vencimiento se recalcula
+	// como reserved_at + dias (solo se acorta, nunca se alarga) y las que queden
+	// en el pasado se marcan vencidas de inmediato, sin esperar al GET full state.
+	if _, err := s.db.Exec(`
+		UPDATE inventory_reservations
+		SET expires_at = reserved_at + make_interval(days => $2)
+		WHERE company_id = $1 AND status = 'activa'
+		  AND reserved_at + make_interval(days => $2) < expires_at
+	`, companyID, days); err != nil {
+		return cfg, err
+	}
+	if _, err := s.RefreshExpiredReservations(companyID); err != nil {
+		return cfg, err
+	}
 	s.pushAudit(companyID, actor, "SET_MAX_RESERVE_DAYS", fmt.Sprintf("Politica de reserva actualizada a %d dia(s).", days))
 	return cfg, nil
 }
@@ -79,6 +94,10 @@ func (s *Service) SetMaxReserveDays(companyID string, days int, actor string) (I
 
 func (s *Service) GetFullState(companyID string) (InventoryStateResponse, error) {
 	state := InventoryStateResponse{}
+
+	if _, err := s.RefreshExpiredReservations(companyID); err != nil {
+		return state, err
+	}
 
 	refs, err := s.ListReferences(companyID)
 	if err != nil {
@@ -162,7 +181,7 @@ func (s *Service) ListReferences(companyID string) ([]StockReference, error) {
 		SELECT reference, internal_code, manufacturer_reference, designation, family, subfamily,
 			brand, location, unit_measure, compatible_equipment, criticality, preferred_supplier_name,
 			lead_time_days, technical_notes, supplier_code, current_stock, min_stock, target_stock,
-			created_at, updated_at
+			condition, last_used_test, created_at, updated_at
 		FROM inventory_references WHERE company_id = $1 ORDER BY updated_at DESC
 	`, companyID)
 	if err != nil {
@@ -174,15 +193,22 @@ func (s *Service) ListReferences(companyID string) ([]StockReference, error) {
 	for rows.Next() {
 		var r StockReference
 		var createdAt, updatedAt time.Time
+		var testRaw sql.NullString
 		if err := rows.Scan(
 			&r.Reference, &r.InternalCode, &r.ManufacturerReference, &r.Designation,
 			&r.Family, &r.Subfamily, &r.Brand, &r.Location, &r.UnitMeasure,
 			&r.CompatibleEquipment, &r.Criticality, &r.PreferredSupplierName,
 			&r.LeadTimeDays, &r.TechnicalNotes, &r.SupplierCode,
 			&r.CurrentStock, &r.MinStock, &r.TargetStock,
-			&createdAt, &updatedAt,
+			&r.Condition, &testRaw, &createdAt, &updatedAt,
 		); err != nil {
 			return nil, err
+		}
+		if testRaw.Valid && testRaw.String != "" {
+			var t UsedTestRecord
+			if json.Unmarshal([]byte(testRaw.String), &t) == nil {
+				r.LastUsedTest = &t
+			}
 		}
 		r.CreatedAt = createdAt.UTC().Format(time.RFC3339)
 		r.UpdatedAt = updatedAt.UTC().Format(time.RFC3339)
@@ -196,24 +222,31 @@ func (s *Service) GetReference(companyID, reference string) (StockReference, err
 		SELECT reference, internal_code, manufacturer_reference, designation, family, subfamily,
 			brand, location, unit_measure, compatible_equipment, criticality, preferred_supplier_name,
 			lead_time_days, technical_notes, supplier_code, current_stock, min_stock, target_stock,
-			created_at, updated_at
+			condition, last_used_test, created_at, updated_at
 		FROM inventory_references WHERE company_id = $1 AND reference = $2
 	`, companyID, reference)
 
 	var r StockReference
 	var createdAt, updatedAt time.Time
+	var testRaw sql.NullString
 	if err := row.Scan(
 		&r.Reference, &r.InternalCode, &r.ManufacturerReference, &r.Designation,
 		&r.Family, &r.Subfamily, &r.Brand, &r.Location, &r.UnitMeasure,
 		&r.CompatibleEquipment, &r.Criticality, &r.PreferredSupplierName,
 		&r.LeadTimeDays, &r.TechnicalNotes, &r.SupplierCode,
 		&r.CurrentStock, &r.MinStock, &r.TargetStock,
-		&createdAt, &updatedAt,
+		&r.Condition, &testRaw, &createdAt, &updatedAt,
 	); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return StockReference{}, errReferenceNotFound
 		}
 		return StockReference{}, err
+	}
+	if testRaw.Valid && testRaw.String != "" {
+		var t UsedTestRecord
+		if json.Unmarshal([]byte(testRaw.String), &t) == nil {
+			r.LastUsedTest = &t
+		}
 	}
 	r.CreatedAt = createdAt.UTC().Format(time.RFC3339)
 	r.UpdatedAt = updatedAt.UTC().Format(time.RFC3339)
@@ -227,61 +260,29 @@ func (s *Service) CreateReference(companyID string, req CreateReferenceRequest, 
 		return StockReference{}, OperationResult{OK: false, Message: "Referencia y designacion son obligatorias."}, errReferenceRequired
 	}
 
-	existing, _ := s.ListReferences(companyID)
-	for _, item := range existing {
-		sim := similarity(normalizeToken(item.Reference), normalizeToken(ref))
-		if sim >= 0.9 {
-			return StockReference{}, OperationResult{OK: false, Message: fmt.Sprintf("Ya existe una referencia muy similar (%s). Usa la opcion de entrada a stock o corrige la nueva referencia.", item.Reference)}, errDuplicateReference
+	candidates, _ := s.FindDuplicateCandidates(companyID, ref, strings.TrimSpace(req.InternalCode), desig, strings.TrimSpace(req.PreferredSupplierName))
+	blocking := make([]DuplicateCandidate, 0)
+	for _, c := range candidates {
+		if c.Similarity >= 0.9 {
+			blocking = append(blocking, c)
 		}
 	}
-
-	family := strings.TrimSpace(req.Family)
-	if family == "" {
-		family = "Sin familia"
-	}
-	brand := strings.TrimSpace(req.Brand)
-	if brand == "" {
-		brand = "Sin marca"
-	}
-	location := strings.TrimSpace(req.Location)
-	if location == "" {
-		location = "Sin ubicacion"
-	}
-	unitMeasure := strings.TrimSpace(req.UnitMeasure)
-	if unitMeasure == "" {
-		unitMeasure = "unidad"
+	if len(blocking) > 0 {
+		if !req.ForceCreate {
+			return StockReference{}, OperationResult{OK: false, Message: duplicateRejectMessage}, errDuplicateReference
+		}
+		forceReason := strings.TrimSpace(req.ForceReason)
+		if forceReason == "" {
+			return StockReference{}, OperationResult{OK: false, Message: "Para forzar la creacion debes indicar el motivo (forceReason)."}, errReferenceRequired
+		}
+		return s.forceCreateReference(companyID, req, actor, ref, desig, candidates, forceReason)
 	}
 
-	internalCode := strings.TrimSpace(req.InternalCode)
-	if internalCode == "" {
-		internalCode = generateInternalCode(family, len(existing))
-	}
-
-	criticality := strings.TrimSpace(req.Criticality)
-	if criticality == "" {
-		criticality = "media"
-	}
-
-	now := time.Now().UTC()
-	_, err := s.db.Exec(`
-		INSERT INTO inventory_references (company_id, reference, internal_code, manufacturer_reference, designation,
-			family, subfamily, brand, location, unit_measure, compatible_equipment, criticality,
-			preferred_supplier_name, lead_time_days, technical_notes, supplier_code,
-			current_stock, min_stock, target_stock, created_at, updated_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,0,$17,$18,$19,$20)
-	`, companyID, ref, internalCode, strings.TrimSpace(req.ManufacturerReference), desig,
-		family, strings.TrimSpace(req.Subfamily), brand, location, unitMeasure,
-		strings.TrimSpace(req.CompatibleEquipment), criticality,
-		strings.TrimSpace(req.PreferredSupplierName), maxInt(0, req.LeadTimeDays),
-		strings.TrimSpace(req.TechnicalNotes), strings.TrimSpace(req.SupplierCode),
-		maxInt(0, req.MinStock), maxInt(0, req.TargetStock), now, now)
+	created, err := s.insertReference(companyID, req, actor, ref, desig)
 	if err != nil {
 		return StockReference{}, OperationResult{}, err
 	}
-
 	s.pushAudit(companyID, actor, "CREATE_REFERENCE", fmt.Sprintf("Referencia %s creada.", ref))
-
-	created, _ := s.GetReference(companyID, ref)
 	return created, OperationResult{OK: true, Message: fmt.Sprintf("Ficha %s creada correctamente.", ref)}, nil
 }
 
@@ -292,6 +293,17 @@ func (s *Service) RegisterStockEntry(companyID string, req RegisterStockEntryReq
 	qty := req.Quantity
 	if ref == "" || qty <= 0 {
 		return OperationResult{OK: false, Message: "Selecciona una referencia y una cantidad valida."}, errInvalidQuantity
+	}
+
+	condition := strings.TrimSpace(req.Condition)
+	if condition == "" {
+		condition = conditionNew
+	}
+	if condition != conditionNew && condition != conditionUsed {
+		return OperationResult{OK: false, Message: "Condicion invalida (use nuevo o usado)."}, errInvalidCondition
+	}
+	if condition == conditionUsed && strings.TrimSpace(req.UsedTestNote) == "" {
+		return OperationResult{OK: false, Message: "La entrada de un componente usado requiere nota de prueba/origen (usedTestNote)."}, errInvalidCondition
 	}
 
 	existing, err := s.GetReference(companyID, ref)
@@ -366,6 +378,11 @@ func (s *Service) RegisterStockEntry(companyID string, req RegisterStockEntryReq
 	}
 
 	s.pushAudit(companyID, actor, "REGISTER_STOCK_ENTRY", fmt.Sprintf("Entrada de %d unidad(es) en %s.", qty, ref))
+	if condition == conditionUsed {
+		_, _ = s.db.Exec(`UPDATE inventory_references SET condition = 'usado', updated_at = $1 WHERE company_id = $2 AND reference = $3`, time.Now().UTC(), companyID, ref)
+		s.pushAudit(companyID, actor, "STOCK_ENTRY_USED", fmt.Sprintf("Entrada de %d unidad(es) USADAS en %s. Declaracion: %s", qty, ref, strings.TrimSpace(req.UsedTestNote)))
+	}
+	_ = s.syncReplenishmentForReference(companyID, ref, actor)
 	return OperationResult{OK: true, Message: fmt.Sprintf("Entrada registrada: %d unidad(es) en %s.", qty, ref)}, nil
 }
 
@@ -416,8 +433,17 @@ func (s *Service) SubmitMovement(companyID string, req SubmitMovementRequest, ac
 		return OperationResult{OK: false, Message: "La referencia indicada no existe en el catalogo."}, err
 	}
 
-	if movType == "salida" && existing.CurrentStock < qty {
-		return OperationResult{OK: false, Message: "No hay stock suficiente para procesar la salida solicitada."}, errInsufficientStock
+	if movType == "salida" {
+		available, reserved, availErr := s.AvailableStock(companyID, ref)
+		if availErr != nil {
+			return OperationResult{OK: false, Message: "La referencia indicada no existe en el catalogo."}, availErr
+		}
+		if available < qty {
+			return OperationResult{OK: false, Message: insufficientStockMessage(available, reserved, qty)}, errInsufficientStock
+		}
+		if condErr := s.requireUsableForInstall(companyID, ref); condErr != nil {
+			return OperationResult{OK: false, Message: usedTestRequiredMessage}, condErr
+		}
 	}
 
 	now := time.Now().UTC()
@@ -452,6 +478,7 @@ func (s *Service) SubmitMovement(companyID string, req SubmitMovementRequest, ac
 	}
 
 	s.pushAudit(companyID, actor, "REGISTER_MOVEMENT", fmt.Sprintf("Movimiento %s aplicado en %s (%d).", movType, ref, qty))
+	_ = s.syncReplenishmentForReference(companyID, ref, actor)
 	return OperationResult{OK: true, Message: "Movimiento registrado correctamente."}, nil
 }
 
@@ -577,6 +604,7 @@ func (s *Service) ApproveMovementRequest(companyID, requestID, actor string) (Op
 	}
 
 	s.pushAudit(companyID, actor, "APPROVE_MOVEMENT_REQUEST", fmt.Sprintf("Solicitud %s aprobada y aplicada para %s.", requestID, req.Reference))
+	_ = s.syncReplenishmentForReference(companyID, req.Reference, actor)
 	return OperationResult{OK: true, Message: "Solicitud aprobada y movimiento aplicado."}, nil
 }
 
@@ -619,35 +647,12 @@ func (s *Service) CreateReservation(companyID string, req CreateReservationReque
 		return ReservationRecord{}, OperationResult{OK: false, Message: "Completa referencia, tecnico, motivo y cantidad valida."}, errInvalidQuantity
 	}
 
-	existingRef, err := s.GetReference(companyID, ref)
-	if err != nil {
-		return ReservationRecord{}, OperationResult{OK: false, Message: "La referencia de la reserva no existe."}, err
-	}
-	// No se puede apartar lo que no esta en bodega; el flujo para material faltante es la solicitud de compra.
-	if existingRef.CurrentStock < qty {
-		return ReservationRecord{}, OperationResult{OK: false, Message: fmt.Sprintf("Stock insuficiente para %s. Disponible: %d, requerido: %d. Si falta material usa el flujo de compra.", ref, existingRef.CurrentStock, qty)}, errInsufficientStock
-	}
-
-	cfg, _ := s.GetConfig(companyID)
-	now := time.Now().UTC()
-	expiresAt := now.AddDate(0, 0, cfg.MaxReserveDays)
-
-	priority := strings.TrimSpace(req.Priority)
-	if priority == "" {
-		priority = "media"
-	}
-
-	workOrder := strings.TrimSpace(req.WorkOrder)
-	equipmentTag := strings.TrimSpace(req.EquipmentTag)
-	customerSite := strings.TrimSpace(req.CustomerSite)
-	commitmentDate := strings.TrimSpace(req.CommitmentDate)
-
 	resID := normalizeClientReservationID(req.ID)
 	if resID != "" {
 		// Idempotencia: si la identidad del cliente ya existe, devolver la reserva existente en vez de duplicarla.
 		var current ReservationRecord
 		var reservedAt, rowExpires time.Time
-		err = s.db.QueryRow(`
+		err := s.db.QueryRow(`
 			SELECT id, reference, quantity, assigned_to, purpose, work_order, equipment_tag, customer_site,
 				priority, commitment_date, reserved_at, expires_at, status
 			FROM inventory_reservations WHERE company_id = $1 AND id = $2`, companyID, resID).Scan(
@@ -666,6 +671,32 @@ func (s *Service) CreateReservation(companyID string, req CreateReservationReque
 		resID = buildID("res")
 	}
 
+	if _, err := s.GetReference(companyID, ref); err != nil {
+		return ReservationRecord{}, OperationResult{OK: false, Message: "La referencia de la reserva no existe."}, err
+	}
+	// No se puede apartar lo que no esta en bodega; el flujo para material faltante es la solicitud de compra.
+	available, reserved, availErr := s.AvailableStock(companyID, ref)
+	if availErr != nil {
+		return ReservationRecord{}, OperationResult{OK: false, Message: "La referencia de la reserva no existe."}, availErr
+	}
+	if available < qty {
+		return ReservationRecord{}, OperationResult{OK: false, Message: insufficientStockMessage(available, reserved, qty) + ". Si falta material usa el flujo de compra."}, errInsufficientStock
+	}
+
+	cfg, _ := s.GetConfig(companyID)
+	now := time.Now().UTC()
+	expiresAt := now.AddDate(0, 0, cfg.MaxReserveDays)
+
+	priority := strings.TrimSpace(req.Priority)
+	if priority == "" {
+		priority = "media"
+	}
+
+	workOrder := strings.TrimSpace(req.WorkOrder)
+	equipmentTag := strings.TrimSpace(req.EquipmentTag)
+	customerSite := strings.TrimSpace(req.CustomerSite)
+	commitmentDate := strings.TrimSpace(req.CommitmentDate)
+
 	record := ReservationRecord{
 		ID:             resID,
 		Reference:      ref,
@@ -682,7 +713,7 @@ func (s *Service) CreateReservation(companyID string, req CreateReservationReque
 		Status:         "activa",
 	}
 
-	_, err = s.db.Exec(`
+	_, err := s.db.Exec(`
 		INSERT INTO inventory_reservations (company_id, id, reference, quantity, assigned_to, purpose,
 			work_order, equipment_tag, customer_site, priority, commitment_date, reserved_at, expires_at, status)
 		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,'activa')
@@ -698,7 +729,7 @@ func (s *Service) CreateReservation(companyID string, req CreateReservationReque
 }
 
 func (s *Service) ReleaseReservation(companyID, reservationID, actor string) (OperationResult, error) {
-	result, err := s.db.Exec(`UPDATE inventory_reservations SET status = 'liberada' WHERE company_id = $1 AND id = $2 AND status = 'activa'`, companyID, reservationID)
+	result, err := s.db.Exec(`UPDATE inventory_reservations SET status = 'liberada' WHERE company_id = $1 AND id = $2 AND status IN ('activa', 'vencida')`, companyID, reservationID)
 	if err != nil {
 		return OperationResult{}, err
 	}
@@ -713,22 +744,34 @@ func (s *Service) ReleaseReservation(companyID, reservationID, actor string) (Op
 func (s *Service) ExtendReservation(companyID, reservationID, actor string) (OperationResult, error) {
 	cfg, _ := s.GetConfig(companyID)
 
+	var status string
 	var currentExpires time.Time
-	err := s.db.QueryRow(`SELECT expires_at FROM inventory_reservations WHERE company_id = $1 AND id = $2 AND status = 'activa'`, companyID, reservationID).Scan(&currentExpires)
+	err := s.db.QueryRow(`SELECT status, expires_at FROM inventory_reservations WHERE company_id = $1 AND id = $2`, companyID, reservationID).Scan(&status, &currentExpires)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return OperationResult{OK: false, Message: "La reserva no esta activa o no existe."}, errReservationNotFound
+			return OperationResult{OK: false, Message: "La reserva no existe."}, errReservationNotFound
 		}
 		return OperationResult{}, err
 	}
 
-	newExpires := currentExpires.AddDate(0, 0, cfg.MaxReserveDays)
-	_, err = s.db.Exec(`UPDATE inventory_reservations SET expires_at = $1 WHERE company_id = $2 AND id = $3`, newExpires, companyID, reservationID)
+	now := time.Now().UTC()
+	var newExpires time.Time
+	switch status {
+	case "activa":
+		newExpires = currentExpires.AddDate(0, 0, cfg.MaxReserveDays)
+	case "vencida":
+		// Reactivar: la reserva vuelve a correr desde hoy con la politica completa.
+		newExpires = now.AddDate(0, 0, cfg.MaxReserveDays)
+	default:
+		return OperationResult{OK: false, Message: "La reserva no esta activa o no existe."}, errReservationNotFound
+	}
+
+	_, err = s.db.Exec(`UPDATE inventory_reservations SET expires_at = $1, status = 'activa' WHERE company_id = $2 AND id = $3`, newExpires, companyID, reservationID)
 	if err != nil {
 		return OperationResult{}, err
 	}
 
-	s.pushAudit(companyID, actor, "EXTEND_RESERVATION", fmt.Sprintf("Reserva %s renovada.", reservationID))
+	s.pushAudit(companyID, actor, "RESERVATION_EXTENDED", fmt.Sprintf("Reserva %s renovada hasta %s.", reservationID, newExpires.UTC().Format(time.RFC3339)))
 	return OperationResult{OK: true, Message: "Reserva renovada."}, nil
 }
 
@@ -749,17 +792,28 @@ func (s *Service) ConsumeReservation(companyID, reservationID, actor string) (Op
 		return OperationResult{}, err
 	}
 
+	if res.Status == "vencida" {
+		return OperationResult{OK: false, Message: "La reserva esta vencida: renovala o liberela antes de consumirla."}, errInvalidStatus
+	}
 	if res.Status != "activa" {
 		return OperationResult{OK: false, Message: "Solo se pueden consumir reservas activas."}, errInvalidStatus
 	}
 
-	existing, err := s.GetReference(companyID, res.Reference)
-	if err != nil || existing.CurrentStock < res.Quantity {
-		avail := 0
-		if err == nil {
-			avail = existing.CurrentStock
+	if condErr := s.requireUsableForInstall(companyID, res.Reference); condErr != nil {
+		return OperationResult{OK: false, Message: usedTestRequiredMessage}, condErr
+	}
+
+	available, reserved, availErr := s.AvailableStock(companyID, res.Reference)
+	if availErr != nil || available < res.Quantity {
+		if availErr != nil {
+			return OperationResult{}, availErr
 		}
-		return OperationResult{OK: false, Message: fmt.Sprintf("Stock insuficiente para %s. Disponible: %d, requerido: %d.", res.Reference, avail, res.Quantity)}, errInsufficientStock
+		return OperationResult{OK: false, Message: insufficientStockMessage(available, reserved, res.Quantity)}, errInsufficientStock
+	}
+
+	existing, err := s.GetReference(companyID, res.Reference)
+	if err != nil {
+		return OperationResult{}, err
 	}
 
 	now := time.Now().UTC()
@@ -788,17 +842,36 @@ func (s *Service) ConsumeReservation(companyID, reservationID, actor string) (Op
 	}
 
 	s.pushAudit(companyID, actor, "CONSUME_RESERVATION", fmt.Sprintf("Reserva %s consumida: %dx %s.", reservationID, res.Quantity, res.Reference))
+	_ = s.syncReplenishmentForReference(companyID, res.Reference, actor)
 	return OperationResult{OK: true, Message: fmt.Sprintf("%dx %s consumidos y salida registrada automaticamente.", res.Quantity, res.Reference)}, nil
 }
 
 func (s *Service) RefreshExpiredReservations(companyID string) (int, error) {
-	now := time.Now().UTC()
-	result, err := s.db.Exec(`UPDATE inventory_reservations SET status = 'vencida' WHERE company_id = $1 AND status = 'activa' AND expires_at < $2`, companyID, now)
+	rows, err := s.db.Query(`SELECT id FROM inventory_reservations WHERE company_id = $1 AND status = 'activa' AND expires_at < NOW()`, companyID)
 	if err != nil {
 		return 0, err
 	}
-	affected, _ := result.RowsAffected()
-	return int(affected), nil
+	ids := make([]string, 0)
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			rows.Close()
+			return 0, err
+		}
+		ids = append(ids, id)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return 0, err
+	}
+
+	for _, id := range ids {
+		if _, err := s.db.Exec(`UPDATE inventory_reservations SET status = 'vencida' WHERE company_id = $1 AND id = $2 AND status = 'activa'`, companyID, id); err != nil {
+			return 0, err
+		}
+		s.pushAudit(companyID, "system", "RESERVATION_EXPIRED", "Reserva "+id+" vencida por politica de reserva.")
+	}
+	return len(ids), nil
 }
 
 // ─── REPLENISHMENT ───────────────────────────────────────────────────────────
@@ -927,6 +1000,10 @@ func (s *Service) RegisterReplenishmentAttempt(companyID string, req RegisterRep
 
 	if current.Status == "obsoleto" {
 		return OperationResult{OK: false, Message: "El item no existe o ya esta marcado como obsoleto."}, errReplenishmentNotFound
+	}
+
+	if current.Status == "escalar" {
+		return OperationResult{OK: false, Message: "item escalado: registre una decision (cambiar proveedor o marcar obsoleto)"}, errReplenishmentEscalated
 	}
 
 	now := time.Now().UTC()
@@ -1256,6 +1333,7 @@ func (s *Service) ReceivePurchaseLine(companyID, lineID string, qty int, actor s
 
 	newTotal := received + qty
 	s.pushAudit(companyID, actor, "RECEIVE_PURCHASE_LINE", fmt.Sprintf("Linea %s: recibido %d/%d de %s.", lineID, newTotal, quantity, reference))
+	_ = s.syncReplenishmentForReference(companyID, reference, actor)
 	msg := fmt.Sprintf("Recibo registrado: %s x%d. Recibido total %d de %d solicitados.%s%s", reference, qty, newTotal, quantity, stockNote, capped)
 	return OperationResult{OK: true, Message: msg}, nil
 }
@@ -1324,6 +1402,7 @@ func (s *Service) ClosePurchaseLine(companyID, lineID, actor string) (OperationR
 	}
 
 	s.pushAudit(companyID, actor, "CLOSE_PURCHASE_LINE", fmt.Sprintf("Linea %s cerrada. Recibido total %d/%d de %s.", lineID, line.ReceivedQuantity+remaining, line.Quantity, line.Reference))
+	_ = s.syncReplenishmentForReference(companyID, line.Reference, actor)
 	return OperationResult{OK: true, Message: message}, nil
 }
 
@@ -1472,129 +1551,6 @@ func (s *Service) ListBagTraces(companyID string) ([]TechnicianBagTrace, error) 
 	return items, rows.Err()
 }
 
-func (s *Service) ReceiveTechnicianBag(companyID string, req ReceiveTechnicianBagRequest, actor string) (OperationResult, error) {
-	bagCode := strings.TrimSpace(req.BagCode)
-	ref := strings.TrimSpace(req.Reference)
-	technician := strings.TrimSpace(req.Technician)
-	qty := req.Quantity
-
-	if bagCode == "" || ref == "" || technician == "" || qty <= 0 {
-		return OperationResult{OK: false, Message: "Completa bolsa, referencia, tecnico y cantidad valida."}, errInvalidQuantity
-	}
-
-	_, err := s.GetReference(companyID, ref)
-	if err != nil {
-		return OperationResult{OK: false, Message: "La referencia indicada no existe en catalogo."}, err
-	}
-
-	var activeCount int
-	_ = s.db.QueryRow(`SELECT COUNT(*) FROM inventory_bag_traces WHERE company_id = $1 AND bag_code = $2 AND status = 'recibida'`, companyID, bagCode).Scan(&activeCount)
-	if activeCount > 0 {
-		return OperationResult{OK: false, Message: "Ya existe una bolsa activa con ese codigo."}, errBagAlreadyActive
-	}
-
-	now := time.Now().UTC()
-	bagID := buildID("bag")
-
-	_, err = s.db.Exec(`
-		INSERT INTO inventory_bag_traces (company_id, id, bag_code, reference, quantity, technician,
-			work_order, seal_code, origin_area, reception_document, received_by, received_at,
-			status, released_by, notes)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'recibida','',$13)
-	`, companyID, bagID, bagCode, ref, qty, technician,
-		strings.TrimSpace(req.WorkOrder), strings.TrimSpace(req.SealCode),
-		strings.TrimSpace(req.OriginArea), strings.TrimSpace(req.ReceptionDocument),
-		actor, now, strings.TrimSpace(req.Notes))
-	if err != nil {
-		return OperationResult{}, err
-	}
-
-	// Auto entry movement
-	existing, _ := s.GetReference(companyID, ref)
-	if existing.Reference != "" {
-		newStock := existing.CurrentStock + qty
-		movID := buildID("mov")
-		reason := fmt.Sprintf("Recepcion administrativa de bolsa %s", bagCode)
-		if strings.TrimSpace(req.OriginArea) != "" {
-			reason += fmt.Sprintf(" (%s)", req.OriginArea)
-		}
-		evidenceRef := strings.TrimSpace(req.ReceptionDocument)
-		if evidenceRef == "" {
-			evidenceRef = "Sin documento"
-		}
-		if strings.TrimSpace(req.SealCode) != "" {
-			evidenceRef += " / sello " + req.SealCode
-		}
-
-		_, _ = s.db.Exec(`UPDATE inventory_references SET current_stock = $1, updated_at = $2 WHERE company_id = $3 AND reference = $4`,
-			newStock, now, companyID, ref)
-		_, _ = s.db.Exec(`
-			INSERT INTO inventory_movements (company_id, id, type, reference, quantity, reason, work_order,
-				equipment_tag, customer_site, movement_category, evidence_ref, requested_by, requested_at)
-			VALUES ($1,$2,'entrada',$3,$4,$5,$6,'','','recepcion-bolsa',$7,$8,$9)
-		`, companyID, movID, ref, qty, reason, strings.TrimSpace(req.WorkOrder), evidenceRef, actor, now)
-	}
-
-	s.pushAudit(companyID, actor, "RECEIVE_TECHNICIAN_BAG", fmt.Sprintf("Bolsa %s recibida de %s para %s.", bagCode, technician, ref))
-	return OperationResult{OK: true, Message: "Bolsa recibida y trazabilidad registrada."}, nil
-}
-
-func (s *Service) ReleaseTechnicianBag(companyID, bagID, actor string) (OperationResult, error) {
-	var bag TechnicianBagTrace
-	var receivedAt time.Time
-	var releasedAt sql.NullTime
-	err := s.db.QueryRow(`
-		SELECT id, bag_code, reference, quantity, technician, work_order, seal_code,
-			origin_area, reception_document, received_by, received_at, status,
-			released_by, released_at, notes
-		FROM inventory_bag_traces WHERE company_id = $1 AND id = $2
-	`, companyID, bagID).Scan(&bag.ID, &bag.BagCode, &bag.Reference, &bag.Quantity, &bag.Technician,
-		&bag.WorkOrder, &bag.SealCode, &bag.OriginArea, &bag.ReceptionDocument,
-		&bag.ReceivedBy, &receivedAt, &bag.Status, &bag.ReleasedBy, &releasedAt, &bag.Notes)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return OperationResult{OK: false, Message: "La bolsa no existe o ya fue liberada."}, errBagNotFound
-		}
-		return OperationResult{}, err
-	}
-
-	if bag.Status != "recibida" {
-		return OperationResult{OK: false, Message: "La bolsa no existe o ya fue liberada."}, errInvalidStatus
-	}
-
-	existing, err := s.GetReference(companyID, bag.Reference)
-	if err != nil {
-		return OperationResult{OK: false, Message: "La referencia asociada no existe."}, err
-	}
-
-	if existing.CurrentStock < bag.Quantity {
-		return OperationResult{OK: false, Message: "No hay stock suficiente para liberar la bolsa."}, errInsufficientStock
-	}
-
-	now := time.Now().UTC()
-
-	_, err = s.db.Exec(`UPDATE inventory_bag_traces SET status = 'liberada', released_by = $1, released_at = $2 WHERE company_id = $3 AND id = $4`,
-		actor, now, companyID, bagID)
-	if err != nil {
-		return OperationResult{}, err
-	}
-
-	newStock := existing.CurrentStock - bag.Quantity
-	movID := buildID("mov")
-	_, _ = s.db.Exec(`UPDATE inventory_references SET current_stock = $1, updated_at = $2 WHERE company_id = $3 AND reference = $4`,
-		newStock, now, companyID, bag.Reference)
-	_, _ = s.db.Exec(`
-		INSERT INTO inventory_movements (company_id, id, type, reference, quantity, reason, work_order,
-			equipment_tag, customer_site, movement_category, evidence_ref, requested_by, requested_at)
-		VALUES ($1,$2,'salida',$3,$4,$5,'','','','liberacion-bolsa',$6,$7,$8)
-	`, companyID, movID, bag.Reference, bag.Quantity,
-		fmt.Sprintf("Liberacion de bolsa %s a %s", bag.BagCode, bag.Technician),
-		bag.ReceptionDocument, actor, now)
-
-	s.pushAudit(companyID, actor, "RELEASE_TECHNICIAN_BAG", fmt.Sprintf("Bolsa %s liberada para %s.", bag.BagCode, bag.Technician))
-	return OperationResult{OK: true, Message: "Bolsa liberada correctamente."}, nil
-}
-
 // ─── SESSIONS ────────────────────────────────────────────────────────────────
 
 func (s *Service) ListSessions(companyID string) ([]CountSession, error) {
@@ -1707,27 +1663,6 @@ func (s *Service) ListDiscrepancies(companyID string) ([]DiscrepancyRecord, erro
 	return items, rows.Err()
 }
 
-func (s *Service) ApproveDiscrepancy(companyID, discrepancyID, actor string) (OperationResult, error) {
-	var ref string
-	err := s.db.QueryRow(`SELECT reference FROM inventory_discrepancies WHERE company_id = $1 AND id = $2 AND approved_at IS NULL`, companyID, discrepancyID).Scan(&ref)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return OperationResult{OK: false, Message: "La diferencia no existe o ya fue aprobada."}, errRequestNotFound
-		}
-		return OperationResult{}, err
-	}
-
-	now := time.Now().UTC()
-	_, err = s.db.Exec(`UPDATE inventory_discrepancies SET approved_by = $1, approved_at = $2 WHERE company_id = $3 AND id = $4`,
-		actor, now, companyID, discrepancyID)
-	if err != nil {
-		return OperationResult{}, err
-	}
-
-	s.pushAudit(companyID, actor, "APPROVE_DIFFERENCE", fmt.Sprintf("Ajuste aprobado para %s.", ref))
-	return OperationResult{OK: true, Message: "Diferencia aprobada."}, nil
-}
-
 // ─── AUDIT TRAIL ─────────────────────────────────────────────────────────────
 
 func (s *Service) ListAuditTrail(companyID string) ([]AuditEvent, error) {
@@ -1762,92 +1697,12 @@ func (s *Service) pushAudit(companyID, actor, action, detail string) {
 
 // ─── DUPLICATE DETECTION ─────────────────────────────────────────────────────
 
-func (s *Service) FindDuplicateCandidates(companyID, reference, designation string) ([]DuplicateCandidate, error) {
+func (s *Service) FindDuplicateCandidates(companyID, reference, internalCode, designation, supplier string) ([]DuplicateCandidate, error) {
 	refs, err := s.ListReferences(companyID)
 	if err != nil {
 		return nil, err
 	}
-
-	normRef := normalizeToken(reference)
-	normDesig := normalizeToken(designation)
-
-	if normRef == "" {
-		return []DuplicateCandidate{}, nil
-	}
-
-	type candidate struct {
-		ref    string
-		desig  string
-		score  float64
-		reason string
-	}
-
-	candidates := make([]candidate, 0)
-	for _, item := range refs {
-		itemRef := normalizeToken(item.Reference)
-		itemDesig := normalizeToken(item.Designation)
-
-		exactMatch := itemRef == normRef
-		refSim := similarity(itemRef, normRef)
-		desigSim := 0.0
-		if normDesig != "" {
-			desigSim = similarity(itemDesig, normDesig)
-		}
-		prefixMatch := strings.HasPrefix(itemRef, normRef) || strings.HasPrefix(normRef, itemRef)
-
-		score := 0.0
-		if exactMatch {
-			score = 1.0
-		} else {
-			score = math.Max(refSim, math.Max(func() float64 {
-				if prefixMatch {
-					return 0.9
-				}
-				return 0
-			}(), (refSim+desigSim)/2))
-		}
-
-		if score < 0.72 {
-			continue
-		}
-
-		reason := "Referencia similar"
-		if exactMatch {
-			reason = "Coincidencia exacta"
-		} else if prefixMatch {
-			reason = "Prefijo/sufijo similar"
-		} else if desigSim >= 0.8 {
-			reason = "Designacion con alta similitud"
-		}
-
-		candidates = append(candidates, candidate{ref: item.Reference, desig: item.Designation, score: score, reason: reason})
-	}
-
-	// Sort by score desc
-	for i := 0; i < len(candidates); i++ {
-		for j := i + 1; j < len(candidates); j++ {
-			if candidates[j].score > candidates[i].score {
-				candidates[i], candidates[j] = candidates[j], candidates[i]
-			}
-		}
-	}
-
-	limit := 5
-	if len(candidates) < limit {
-		limit = len(candidates)
-	}
-
-	result := make([]DuplicateCandidate, limit)
-	for i := 0; i < limit; i++ {
-		result[i] = DuplicateCandidate{
-			Reference:   candidates[i].ref,
-			Designation: candidates[i].desig,
-			Similarity:  math.Round(candidates[i].score*100) / 100,
-			Reason:      candidates[i].reason,
-		}
-	}
-
-	return result, nil
+	return scoreDuplicateCandidates(refs, reference, internalCode, designation, supplier), nil
 }
 
 type DuplicateCandidate struct {

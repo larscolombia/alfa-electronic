@@ -252,6 +252,8 @@ export class InventoryWorkflowService {
         receivedBy: string;
         unitCost: number;
         receivedAt: string;
+        condition?: string;
+        usedTestNote?: string;
     }): InventoryOperationResult {
         if (!this.hasPermission("inventory.stock.register-entry") && !this.hasPermission("inventory.movements.register-entry")) {
             return this.permissionDenied("inventory.stock.register-entry");
@@ -363,8 +365,15 @@ export class InventoryWorkflowService {
             return { ok: false, message: "La referencia indicada no existe en el catalogo." };
         }
 
-        if (payload.type === "salida" && currentRef.currentStock < quantity) {
-            return { ok: false, message: "No hay stock suficiente para procesar la salida solicitada." };
+        if (payload.type === "salida") {
+            const reserved = this.reservedFor(reference);
+            const available = currentRef.currentStock - reserved;
+            if (available < quantity) {
+                return {
+                    ok: false,
+                    message: `No hay stock suficiente: disponible ${available} (reservado ${reserved}), requerido ${quantity}. Si falta material usa el flujo de compra.`,
+                };
+            }
         }
 
         // Optimistic local update
@@ -430,7 +439,7 @@ export class InventoryWorkflowService {
             return this.permissionDenied("inventory.reservations.manage");
         }
 
-        const safeDays = Math.max(1, Math.floor(days));
+        const safeDays = Math.max(0, Math.floor(days));
         this.state.maxReserveDays = safeDays;
         this.emitState();
 
@@ -988,6 +997,12 @@ export class InventoryWorkflowService {
         } else {
             ref.currentStock = ref.currentStock + quantity;
         }
+    }
+
+    private reservedFor(reference: string): number {
+        return this.state.reservations
+            .filter((item) => item.reference === reference && item.status === "activa")
+            .reduce((sum, item) => sum + item.quantity, 0);
     }
 
     private actorLabel(): string {

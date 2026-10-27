@@ -19,6 +19,7 @@ func migrationStatements() []string {
 	statements = append(statements, migrationStatementsAuthFlows()...)
 	statements = append(statements, migrationStatementsProjects()...)
 	statements = append(statements, migrationStatementsInventory()...)
+	statements = append(statements, migrationStatementsInventoryEdge()...)
 	statements = append(statements, migrationStatementsSuppliers()...)
 	statements = append(statements, migrationStatementsComprasGaps()...)
 	statements = append(statements, migrationStatementsPurchaseLinesFields()...)

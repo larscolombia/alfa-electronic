@@ -75,7 +75,6 @@ func normalizeItems(items []Item) []Item {
 		entry.ReceivedIdentifierCaptured = strings.TrimSpace(entry.ReceivedIdentifierCaptured)
 		entry.CustomerShipmentReference = strings.TrimSpace(entry.CustomerShipmentReference)
 		entry.Accessories = strings.TrimSpace(entry.Accessories)
-		entry.BorrowedEquipments = trimValues(entry.BorrowedEquipments)
 		entry.FailureDescription = strings.TrimSpace(entry.FailureDescription)
 		entry.AssignedTo = strings.TrimSpace(entry.AssignedTo)
 		entry.AssignedToID = strings.TrimSpace(entry.AssignedToID)
@@ -97,6 +96,7 @@ func normalizeItems(items []Item) []Item {
 			entry.EvidencePhotos = make([]EvidencePhoto, 0)
 		}
 		entry.Attachments = normalizeAttachments(entry.Attachments)
+		entry = normalizeItemEdgeFlags(entry)
 
 		normalized = append(normalized, entry)
 	}

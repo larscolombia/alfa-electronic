@@ -14,7 +14,6 @@ import { getProjectWorkflowStatusLabel } from "../projects/project-workflow.conf
 import { ProjectService } from "../projects/services/project.service";
 import { CrmEquipmentApiService } from "../../../services/crm-equipment-api.service";
 import { CrmProspectRecord, CrmProspectsApiService } from "../../../services/crm-prospects-api.service";
-import { CrmClientRecord, CrmClientsApiService } from "../../../services/crm-clients-api.service";
 import { CrmQuoteRecord, CrmQuotesApiService } from "../../../services/crm-quotes-api.service";
 import { EmailsApiService } from "../../../services/emails-api.service";
 import { FinanceBillingApiService } from "../../../services/finance-billing-api.service";
@@ -74,18 +73,34 @@ type QuoteLine = {
         </div>
 
         <div class="container-fluid mt-3" id="main-content">
-            <div class="card adminuiux-card mb-3" *ngIf="!showQuoteForm">
+            <div class="card adminuiux-card mb-3" data-testid="quotes-list-card" *ngIf="!showQuoteForm">
                 <div class="card-body">
                     <div class="d-flex flex-wrap gap-2 mb-3">
                         <button class="btn btn-theme" type="button" (click)="openQuoteForm()">
-                            <i class="bi bi-plus-lg me-1"></i> Crear Cotizacion
+                            <i class="bi bi-plus-lg me-1"></i> Crear cotización
                         </button>
-                        <button class="btn btn-outline-secondary" type="button">
-                            <i class="bi bi-stack me-1"></i> Plantilla De Cotización
-                        </button>
-                        <button class="btn btn-outline-secondary" type="button">
+                        <button class="btn btn-outline-secondary" type="button" (click)="exportQuotesToCsv()" [disabled]="filteredQuoteRows.length === 0">
                             <i class="bi bi-download me-1"></i> Exportar
                         </button>
+                    </div>
+
+                    <div class="row g-2 align-items-end mb-3">
+                        <div class="col-12 col-md-7">
+                            <label class="form-label small mb-1" for="quotesSearch">Buscar cotizaciones</label>
+                            <input id="quotesSearch" class="form-control" type="search" data-testid="quotes-search"
+                                placeholder="Código, prospecto u orden de compra"
+                                [(ngModel)]="quotesSearch" (ngModelChange)="quotesPage = 1" autocomplete="off" />
+                        </div>
+                        <div class="col-12 col-md-5">
+                            <label class="form-label small mb-1" for="quotesStatus">Estado</label>
+                            <select id="quotesStatus" class="form-select" data-testid="quotes-status-filter"
+                                [(ngModel)]="quotesStatus" (ngModelChange)="quotesPage = 1">
+                                <option value="Todos">Todos los estados</option>
+                                <option value="Borrador">Borrador</option>
+                                <option value="Enviado">Enviado</option>
+                                <option value="Aprobado">Aprobado</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div class="alert alert-danger border mb-3" *ngIf="quotesLoadErrorMessage">{{ quotesLoadErrorMessage }}</div>
@@ -116,7 +131,7 @@ type QuoteLine = {
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr *ngFor="let row of quotesRows">
+                                <tr *ngFor="let row of displayedQuoteRows">
                                     <td>{{ row.codigo }}</td>
                                     <td>{{ row.prospecto }}</td>
                                     <td>{{ row.total | number: '1.0-0' }}</td>
@@ -158,29 +173,37 @@ type QuoteLine = {
                                         <button class="btn btn-sm btn-outline-danger" type="button" (click)="openDeleteModal(row)"><i class="bi bi-trash me-1"></i>Eliminar</button>
                                     </td>
                                 </tr>
-                                <tr *ngIf="quotesRows.length === 0">
-                                    <td colspan="8" class="text-center py-4 text-secondary">Ningun dato disponible en esta tabla</td>
+                                <tr *ngIf="filteredQuoteRows.length === 0">
+                                    <td colspan="8" class="text-center py-5 text-secondary">No encontramos cotizaciones. Cambia los filtros o crea la primera.</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
+                    <div class="d-flex justify-content-between align-items-center gap-2 mt-3" *ngIf="filteredQuoteRows.length > 0" data-testid="quotes-pagination">
+                        <span class="small text-secondary">Mostrando {{ quotesPageStart }}–{{ quotesPageEnd }} de {{ filteredQuoteRows.length }}</span>
+                        <div class="btn-group" aria-label="Paginación de cotizaciones">
+                            <button class="btn btn-outline-secondary" type="button" (click)="quotesPage = quotesPage - 1" [disabled]="quotesPage === 1">Anterior</button>
+                            <button class="btn btn-outline-secondary disabled" type="button" aria-current="page">Página {{ quotesPage }} de {{ quotesTotalPages }}</button>
+                            <button class="btn btn-outline-secondary" type="button" (click)="quotesPage = quotesPage + 1" [disabled]="quotesPage === quotesTotalPages">Siguiente</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="card adminuiux-card mb-3" *ngIf="showQuoteForm">
+            <div class="card adminuiux-card mb-3" data-testid="quote-form-card" *ngIf="showQuoteForm">
                 <div class="card-header border-bottom d-flex align-items-center justify-content-between">
                     <h5 class="mb-0">
-                        <button class="btn btn-link p-0 me-2 text-secondary" type="button" (click)="cancelQuoteForm()" title="Volver a cotizaciones">
+                        <button class="btn btn-link p-0 me-2 text-secondary" type="button" (click)="cancelQuoteForm()" title="Volver a cotizaciones" aria-label="Volver a cotizaciones">
                             <i class="bi bi-arrow-left"></i>
                         </button>
-                        {{ editingQuoteId ? 'Editar Cotizacion' : 'Nueva Cotizacion' }}
+                        {{ editingQuoteId ? 'Editar cotización' : 'Nueva cotización' }}
                     </h5>
                     <!-- Fase 6: el código lo asigna el servidor al guardar; esto es
                          sólo una previsualización y puede cambiar si otro usuario
                          guarda antes. -->
                     @if (!editingQuoteId && nextQuoteCodePreview) {
                         <span class="badge bg-light text-dark border" data-testid="quote-next-code-preview">
-                            Codigo: {{ nextQuoteCodePreview }}
+                            Código: {{ nextQuoteCodePreview }}
                         </span>
                     }
                 </div>
@@ -509,6 +532,10 @@ type QuoteLine = {
 })
 export class CrmQuotesComponent implements OnInit {
     quotesRows: QuoteRow[] = [];
+    quotesSearch = "";
+    quotesStatus: QuoteStatus | "Todos" = "Todos";
+    quotesPage = 1;
+    readonly quotesPageSize = 10;
 
     prospectOptions: string[] = [];
     serviceOptions: string[] = [];
@@ -606,7 +633,6 @@ export class CrmQuotesComponent implements OnInit {
 
     private quoteIdByToken: Record<string, string> = {};
     private prospectRecords: CrmProspectRecord[] = [];
-    private clientRecords: CrmClientRecord[] = [];
     private availableEquipmentItemsApi: ProspectEquipmentSummary[] = [];
     private editingQuotePurchaseOrderDataUrl = "";
     private editingQuotePurchaseOrderUploadedAt = "";
@@ -620,7 +646,6 @@ export class CrmQuotesComponent implements OnInit {
 
     constructor(
         private readonly crmProspectsApi: CrmProspectsApiService,
-        private readonly crmClientsApi: CrmClientsApiService,
         private readonly crmQuotesApi: CrmQuotesApiService,
         private readonly crmEquipmentApi: CrmEquipmentApiService,
         private readonly financeBillingApi: FinanceBillingApiService,
@@ -704,6 +729,60 @@ export class CrmQuotesComponent implements OnInit {
 
     ngOnDestroy(): void {
         this.stopDraftWatch();
+    }
+
+    get filteredQuoteRows(): QuoteRow[] {
+        const search = this.normalizeQuoteSearch(this.quotesSearch);
+        return this.quotesRows.filter((row) => {
+            const matchesStatus = this.quotesStatus === "Todos" || row.estado === this.quotesStatus;
+            const haystack = this.normalizeQuoteSearch([
+                row.codigo,
+                row.prospecto,
+                row.purchaseOrderNumber ?? "",
+                row.invoiceCode ?? "",
+            ].join(" "));
+            return matchesStatus && (!search || haystack.includes(search));
+        });
+    }
+
+    get displayedQuoteRows(): QuoteRow[] {
+        const start = (this.quotesPage - 1) * this.quotesPageSize;
+        return this.filteredQuoteRows.slice(start, start + this.quotesPageSize);
+    }
+
+    get quotesTotalPages(): number {
+        return Math.max(1, Math.ceil(this.filteredQuoteRows.length / this.quotesPageSize));
+    }
+
+    get quotesPageStart(): number {
+        return this.filteredQuoteRows.length === 0 ? 0 : (this.quotesPage - 1) * this.quotesPageSize + 1;
+    }
+
+    get quotesPageEnd(): number {
+        return Math.min(this.quotesPage * this.quotesPageSize, this.filteredQuoteRows.length);
+    }
+
+    exportQuotesToCsv(): void {
+        const escape = (value: unknown) => `"${String(value ?? "").replaceAll('"', '""')}"`;
+        const rows = this.filteredQuoteRows.map((row) => [
+            row.codigo,
+            row.prospecto,
+            row.total,
+            row.fecha,
+            row.validoHasta,
+            row.purchaseOrderNumber ?? "",
+            row.estado,
+        ]);
+        const csv = [["Cotización", "Prospecto", "Total", "Fecha", "Válido hasta", "OC", "Estado"], ...rows]
+            .map((row) => row.map(escape).join(","))
+            .join("\n");
+        const link = document.createElement("a");
+        link.href = `data:text/csv;charset=utf-8,${encodeURIComponent(`\uFEFF${csv}`)}`;
+        link.download = `cotizaciones-${new Date().toISOString().slice(0, 10)}.csv`;
+        link.style.display = "none";
+        document.body.appendChild(link);
+        link.click();
+        window.setTimeout(() => link.remove(), 1_000);
     }
 
     openQuoteForm(): void {
@@ -1408,82 +1487,48 @@ export class CrmQuotesComponent implements OnInit {
         this.crmProspectsApi.listProspects().subscribe({
             next: (items) => {
                 this.prospectRecords = [...items];
+                this.prospectOptions = items.map((item) => item.nombre);
+
+                if (!this.prospectOptions.includes(this.selectedProspecto)) {
+                    this.selectedProspecto = this.prospectOptions[0] ?? "";
+                }
+
                 this.prospectsLoadErrorMessage = "";
-                this.loadClientsForQuoteRecipients();
+
+                // Prefill del proyecto: emparejar el cliente por nombre (case-
+                // insensitive) y, si no existe en CRM, dejar aviso visible en vez
+                // de bloquear — la decisión D2 aprobada.
+                if (this.projectPrefillPending && this.prefillProspectName) {
+                    const wanted = this.normalizeProspectMatchKey(this.prefillProspectName);
+                    const match = this.prospectOptions.find((name) => this.normalizeProspectMatchKey(name) === wanted);
+                    if (match) {
+                        this.selectedProspecto = match;
+                        // Re-correr el handler: equipos y preview deben corresponder
+                        // al prospecto correcto, no al default de la lista.
+                        this.handleProspectChange(match);
+                    } else {
+                        this.prefillNotice = `El cliente "${this.prefillProspectName}" del proyecto aún no existe como prospecto en CRM. Se abrió el formulario con "${this.selectedProspecto || 'sin prospecto'}"; verifica el prospecto antes de guardar.`;
+                    }
+                }
+
+                if (this.projectPrefillPending) {
+                    this.projectPrefillPending = false;
+                    // openQuoteForm re-valida selectedProspecto contra la lista ya poblada.
+                    this.openQuoteForm();
+                }
+
+                this.cdr.detectChanges();
             },
             error: (error) => {
                 this.prospectRecords = [];
+                this.prospectOptions = [];
+                this.selectedProspecto = "";
                 this.availableEquipmentItemsApi = [];
                 this.selectedQuoteEquipmentIds = [];
                 this.prospectsLoadErrorMessage = this.resolveErrorMessage(error, "No se pudo cargar prospectos desde backend.");
-                this.loadClientsForQuoteRecipients();
+                this.cdr.detectChanges();
             },
         });
-    }
-
-    private loadClientsForQuoteRecipients(): void {
-        this.crmClientsApi.listClients().subscribe({
-            next: (items) => {
-                this.clientRecords = [...items];
-                this.refreshQuoteRecipientOptions();
-            },
-            error: () => {
-                this.clientRecords = [];
-                this.refreshQuoteRecipientOptions();
-            },
-        });
-    }
-
-    private refreshQuoteRecipientOptions(): void {
-        const names = new Map<string, string>();
-
-        for (const record of this.prospectRecords) {
-            const name = String(record.nombre ?? "").trim();
-            const key = this.normalizeProspectMatchKey(name);
-            if (name && key && !names.has(key)) {
-                names.set(key, name);
-            }
-        }
-
-        for (const record of this.clientRecords) {
-            const name = String(record.nombre ?? "").trim();
-            const key = this.normalizeProspectMatchKey(name);
-            if (name && key && !names.has(key)) {
-                names.set(key, name);
-            }
-        }
-
-        const previousSelection = this.selectedProspecto;
-        this.prospectOptions = [...names.values()];
-
-        if (!this.prospectOptions.includes(this.selectedProspecto)) {
-            this.selectedProspecto = this.prospectOptions[0] ?? "";
-        }
-
-        if (this.selectedProspecto !== previousSelection) {
-            this.handleProspectChange(this.selectedProspecto);
-        }
-
-        if (this.projectPrefillPending && this.prefillProspectName) {
-            const wanted = this.normalizeProspectMatchKey(this.prefillProspectName);
-            const match = this.prospectOptions.find(
-                (name) => this.normalizeProspectMatchKey(name) === wanted,
-            );
-
-            if (match) {
-                this.selectedProspecto = match;
-                this.handleProspectChange(match);
-            } else {
-                this.prefillNotice = `El cliente "${this.prefillProspectName}" del proyecto aún no existe como cliente ni prospecto en CRM. Se abrió el formulario con "${this.selectedProspecto || 'sin destinatario'}"; verifica el destinatario antes de guardar.`;
-            }
-        }
-
-        if (this.projectPrefillPending) {
-            this.projectPrefillPending = false;
-            this.openQuoteForm();
-        }
-
-        this.cdr.detectChanges();
     }
 
     private loadCatalogsFromApi(): void {
@@ -1718,15 +1763,6 @@ export class CrmQuotesComponent implements OnInit {
             };
         }
 
-        const client = this.findClientByName(prospecto);
-        if (client) {
-            return {
-                empresa: client.empresa?.trim() || client.nombre,
-                correo: client.correo?.trim() || client.billingEmail?.trim() || "contacto@empresa.com",
-                movil: client.officePhone?.trim() || "--",
-            };
-        }
-
         return {
             empresa: "Empresa del prospecto",
             correo: "contacto@empresa.com",
@@ -1735,23 +1771,11 @@ export class CrmQuotesComponent implements OnInit {
     }
 
     private findProspectByName(name: string): CrmProspectRecord | undefined {
-        const normalized = this.normalizeProspectMatchKey(name);
+        const normalized = name.trim().toLowerCase();
         if (!normalized) {
             return undefined;
         }
-        return this.prospectRecords.find(
-            (prospect) => this.normalizeProspectMatchKey(prospect.nombre) === normalized,
-        );
-    }
-
-    private findClientByName(name: string): CrmClientRecord | undefined {
-        const normalized = this.normalizeProspectMatchKey(name);
-        if (!normalized) {
-            return undefined;
-        }
-        return this.clientRecords.find(
-            (client) => this.normalizeProspectMatchKey(client.nombre) === normalized,
-        );
+        return this.prospectRecords.find((prospect) => prospect.nombre.trim().toLowerCase() === normalized);
     }
 
     private resolveErrorMessage(error: unknown, fallback: string): string {
@@ -1759,6 +1783,10 @@ export class CrmQuotesComponent implements OnInit {
             return error.message;
         }
         return fallback;
+    }
+
+    private normalizeQuoteSearch(value: string): string {
+        return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
     }
 
     private defaultValidUntil(): string {

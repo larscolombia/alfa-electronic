@@ -40,7 +40,14 @@ type EditableClientFieldConfig = {
         </div>
 
         <div class="container-fluid mt-3" id="main-content">
-            @if (!client) {
+            @if (clientLoading) {
+                <div class="card adminuiux-card" aria-live="polite">
+                    <div class="card-body py-5 text-center">
+                        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        Cargando ficha del cliente...
+                    </div>
+                </div>
+            } @else if (!client) {
                 <div class="card adminuiux-card">
                     <div class="card-body py-5 text-center">
                         <h6 class="mb-2">No encontramos el cliente solicitado.</h6>
@@ -49,30 +56,30 @@ type EditableClientFieldConfig = {
                     </div>
                 </div>
             } @else {
-                <ul class="nav nav-tabs border-bottom-0">
+                <ul class="nav nav-tabs border-bottom-0 flex-nowrap overflow-auto" role="tablist" aria-label="Secciones de la ficha del cliente">
                     <li class="nav-item">
-                        <button class="nav-link" type="button" [class.active]="activeTab === 'perfil'" (click)="activeTab = 'perfil'">Perfil</button>
+                        <button class="nav-link" role="tab" type="button" [attr.aria-selected]="activeTab === 'perfil'" [class.active]="activeTab === 'perfil'" (click)="activeTab = 'perfil'">Perfil</button>
                     </li>
                     <li class="nav-item">
-                        <button class="nav-link" type="button" [class.active]="activeTab === 'contactos'" (click)="activeTab = 'contactos'">Contactos</button>
+                        <button class="nav-link" role="tab" type="button" [attr.aria-selected]="activeTab === 'contactos'" [class.active]="activeTab === 'contactos'" (click)="activeTab = 'contactos'">Contactos</button>
                     </li>
                     <li class="nav-item">
-                        <button class="nav-link" type="button" [class.active]="activeTab === 'credito'" (click)="activeTab = 'credito'">Crédito</button>
+                        <button class="nav-link" role="tab" type="button" [attr.aria-selected]="activeTab === 'credito'" [class.active]="activeTab === 'credito'" (click)="activeTab = 'credito'">Crédito</button>
                     </li>
                     <li class="nav-item">
-                        <button class="nav-link" type="button"
+                        <button class="nav-link" role="tab" type="button" [attr.aria-selected]="activeTab === 'historial'"
                             [class.active]="activeTab === 'historial'"
                             (click)="activeTab = 'historial'">Historial comercial</button>
                     </li>
                 </ul>
 
-                <div class="pt-3">
+                <div class="pt-3" role="tabpanel" aria-live="polite">
                     @if (activeTab === 'perfil') {
                         <div class="row gx-3 gx-lg-4">
                             <div class="col-12 col-xl-4 mb-3 mb-xl-0">
                                 <div class="card adminuiux-card h-100">
                                     <div class="card-header border-bottom">
-                                        <h6 class="mb-0">Informacion de perfil</h6>
+                                        <h6 class="mb-0">Información de perfil</h6>
                                     </div>
                                     <div class="card-body">
                                         @if (profileFieldErrorMessage) {
@@ -88,6 +95,7 @@ type EditableClientFieldConfig = {
                                                 <button class="btn btn-sm btn-link text-secondary p-0" type="button"
                                                     [disabled]="isSavingField"
                                                     [title]="'Editar ' + field.label"
+                                                    [attr.aria-label]="'Editar ' + field.label"
                                                     (click)="startEdit(field.key)">
                                                     <i class="bi bi-pencil"></i>
                                                 </button>
@@ -101,10 +109,10 @@ type EditableClientFieldConfig = {
                                                         [ngModelOptions]="{ standalone: true }"
                                                         [disabled]="isSavingField"
                                                         [attr.placeholder]="'Editar ' + field.label" />
-                                                    <button class="btn btn-theme" type="button" [disabled]="isSavingField" (click)="saveEdit(field.key)">
+                                                    <button class="btn btn-theme" type="button" aria-label="Guardar cambio" [disabled]="isSavingField" (click)="saveEdit(field.key)">
                                                         <i class="bi bi-check-lg"></i>
                                                     </button>
-                                                    <button class="btn btn-outline-secondary" type="button" [disabled]="isSavingField" (click)="cancelEdit()">
+                                                    <button class="btn btn-outline-secondary" type="button" aria-label="Cancelar edición" [disabled]="isSavingField" (click)="cancelEdit()">
                                                         <i class="bi bi-x-lg"></i>
                                                     </button>
                                                 </div>
@@ -312,7 +320,7 @@ type EditableClientFieldConfig = {
                                             <div class="row gx-3 gy-3">
                                                 <div class="col-6">
                                                     <div class="border rounded p-3 text-center">
-                                                        <div class="small text-secondary mb-1">Cupo maximo</div>
+                                                        <div class="small text-secondary mb-1">Cupo máximo</div>
                                                         <div class="fw-semibold">{{ client.credito.creditLimit | currency: 'COP' : 'symbol' : '1.0-0' }}</div>
                                                     </div>
                                                 </div>
@@ -330,20 +338,20 @@ type EditableClientFieldConfig = {
                                                 </div>
                                                 <div class="col-6">
                                                     <div class="border rounded p-3 text-center">
-                                                        <div class="small text-secondary mb-1">Dias en mora</div>
+                                                        <div class="small text-secondary mb-1">Días en mora</div>
                                                         <div class="fw-semibold" [class.text-danger]="daysInArrears > 0" [class.text-success]="daysInArrears === 0">{{ daysInArrears }}</div>
                                                     </div>
                                                 </div>
                                                 <div class="col-12">
                                                     <div class="small text-secondary mb-1">Plazo de pago</div>
-                                                    <p class="mb-0">{{ client.credito.paymentTermDays }} dias</p>
-                                                    <div class="small text-secondary mt-2 mb-1">Ultimo pago</div>
+                                                    <p class="mb-0">{{ client.credito.paymentTermDays }} días</p>
+                                                    <div class="small text-secondary mt-2 mb-1">Último pago</div>
                                                     <p class="mb-0">{{ client.credito.lastPaymentDate || 'Sin registro' }}</p>
                                                 </div>
                                             </div>
                                             <div class="mt-3">
                                                 <a class="btn btn-outline-secondary btn-sm" routerLink="/app/finance-clientes-credito">
-                                                    <i class="bi bi-pencil me-1"></i> Editar credito
+                                                    <i class="bi bi-pencil me-1"></i> Editar crédito
                                                 </a>
                                             </div>
                                         }
@@ -359,6 +367,7 @@ type EditableClientFieldConfig = {
 })
 export class CrmClientDetailComponent {
     client: CrmClientRecord | undefined;
+    clientLoading = true;
     activeTab: ClientDetailTab = "perfil";
 
     historyLoading = false;
@@ -496,13 +505,16 @@ export class CrmClientDetailComponent {
     }
 
     private loadClient(clientId: string): void {
+        this.clientLoading = true;
         if (!clientId.trim()) {
             this.client = undefined;
+            this.clientLoading = false;
             return;
         }
         this.crmClientsApi.getClient(clientId).subscribe({
             next: (client) => {
                 this.client = client;
+                this.clientLoading = false;
                 this.editingField = null;
                 this.editingValue = "";
                 this.loadCommercialHistory(client);
@@ -510,6 +522,7 @@ export class CrmClientDetailComponent {
             },
             error: () => {
                 this.client = undefined;
+                this.clientLoading = false;
                 this.cdr.detectChanges();
             },
         });

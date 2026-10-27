@@ -32,13 +32,23 @@ try {
     result.linesAvailable = await rows.first().isVisible({ timeout: 20000 }).catch(() => false);
     if (!result.linesAvailable) throw new Error("La UI no muestra líneas de compra; no hay insumo visual para generar BOM.");
     // Una línea recibida al 100 % no debe producir BOM. Elegimos en la tabla
-    // visible una que muestre el faltante y luego aplicamos su proveedor.
-    const pendingRow = rows.filter({ hasText: "Faltan" }).first();
-    if (!(await pendingRow.isVisible({ timeout: 10000 }).catch(() => false))) {
-        throw new Error("Las líneas visibles ya están recibidas al 100 %; UI no ofrece un BOM comprable para COMPR-08.");
+    // visible una que muestre el faltante y esté APROBADA (COMPR-01: solo las
+    // líneas con OC validada se exportan al proveedor; si el proveedor elegido
+    // solo tiene pendientes/rechazadas la app avisa y no descarga nada), y
+    // luego aplicamos su proveedor.
+    const pendingCandidates = rows.filter({ hasText: "Faltan" });
+    const candidateCount = await pendingCandidates.count();
+    let pendingSupplier = "";
+    for (let i = 0; i < candidateCount; i++) {
+        const candidate = pendingCandidates.nth(i);
+        const approval = (await candidate.getByTestId("purchase-line-approval").innerText().catch(() => "")).trim().toLowerCase();
+        if (approval !== "aprobada") continue;
+        const supplier = (await candidate.locator("td").nth(8).innerText()).trim();
+        if (supplier && supplier !== "--") { pendingSupplier = supplier; break; }
     }
-    const pendingSupplier = (await pendingRow.locator("td").nth(8).innerText()).trim();
-    if (!pendingSupplier || pendingSupplier === "--") throw new Error("La línea pendiente no muestra proveedor en la UI.");
+    if (!pendingSupplier) {
+        throw new Error("No hay línea visible con faltante y aprobada (OC validada); UI no ofrece un BOM comprable para COMPR-08.");
+    }
     const supplier = page.locator("#line-supplier-filter");
     await supplier.selectOption({ label: pendingSupplier }); await pause(page);
     await capture(page, "01-lineas-filtradas");

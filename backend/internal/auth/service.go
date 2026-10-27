@@ -159,6 +159,9 @@ func NewService(cfg Config) (*Service, error) {
 		if err := s.EnsureAdminUser(context.Background()); err != nil {
 			return nil, err
 		}
+		if err := s.EnsureTechnicianUser(context.Background()); err != nil {
+			return nil, err
+		}
 	}
 
 	return s, nil

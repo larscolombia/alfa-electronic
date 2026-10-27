@@ -10,8 +10,9 @@ import (
 )
 
 var (
-	errTechnicianIDRequired = errors.New("assignedToId es obligatorio")
-	errTechnicianNotFound   = errors.New("tecnico no encontrado")
+	errTechnicianIDRequired    = errors.New("assignedToId es obligatorio")
+	errTechnicianNotFound      = errors.New("tecnico no encontrado")
+	errSenderUnknownAssignment = errors.New("Remitente no identificado: no se puede asignar técnico ni cotizar hasta identificar empresa/contacto")
 )
 
 // Contextos de relevancia por donde se muestra el listado. Los roles y
@@ -142,6 +143,12 @@ func (s *Service) AssignItemTechnician(companyID, recordID, itemID string, req A
 	for index, item := range record.Items {
 		if strings.TrimSpace(item.ID) != itemID {
 			continue
+		}
+
+		// REC-03: sin remitente identificado el equipo no puede salir de
+		// custodia hacia un técnico ni cotizarse.
+		if item.SenderUnknown {
+			return Item{}, errSenderUnknownAssignment
 		}
 
 		item.AssignedToID = technician.ID

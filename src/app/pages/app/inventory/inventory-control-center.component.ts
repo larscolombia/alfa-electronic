@@ -4,6 +4,7 @@ import { FormsModule } from "@angular/forms";
 import { RouterLink } from "@angular/router";
 import { InventoryPermission, InventoryRole } from "../../../services/inventory-domain.models";
 import { InventoryRbacService } from "../../../services/inventory-rbac.service";
+import { InvRoleHintComponent } from "./inv-role-hint.component";
 
 type BacklogStatus = "pendiente" | "en-curso" | "resuelto";
 
@@ -25,7 +26,7 @@ interface InventoryTreeNode {
 @Component({
     selector: "app-inventory-control-center",
     standalone: true,
-    imports: [CommonModule, FormsModule, RouterLink],
+    imports: [CommonModule, FormsModule, RouterLink, InvRoleHintComponent],
     template: `
         <div class="container-fluid py-3">
             <div class="row gx-3 gx-lg-4 align-items-center page-title">
@@ -47,6 +48,7 @@ interface InventoryTreeNode {
         </div>
 
         <div class="container mt-3" id="main-content">
+            <app-inv-role-hint></app-inv-role-hint>
             <div class="card adminuiux-card mb-3">
                 <div class="card-body">
                     <div class="row gx-3 gy-2 align-items-end">

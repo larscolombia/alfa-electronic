@@ -33,62 +33,25 @@ func materialLabel(reference string, quantity int) string {
 // equipo no ha recibido la totalidad de sus repuestos no puede entrar a
 // Reparacion, porque las lineas de compra debieron entregarse al tecnico.
 //
+// COMPR-02: una reserva de stock NO bloquea la entrada; es lo que habilita la
+// reparacion (el material ya esta dentro de instalaciones, listo para consumir
+// en mesa). La puerta solo cubre las obligaciones de compra externa.
+//
 // "Abierto" se define por estado terminal vs. pendiente en cada tabla:
-//  - inventory_reservations: 'activa' (apartada sin consumir/entregar) y
-//    'vencida' (caduco sin consumo; aun puede consumirse). La 'liberada' NO
-//    bloquea: el bloqueo fue resuelto a proposito y, si faltan repuestos, una
-//    reserva nueva (activa) vuelve a bloquear hasta su consumo.
-//  - inventory_purchase_lines: 'pendiente'/'enviada' sin rechazo de aprobacion,
-//    y NO totalmente recibidas (received_quantity < quantity). Se vinculan por
-//    project_id directo o via purchase_requests.purchase_line_id (al aprobar una
-//    solicitud la linea creada NO hereda project_id).
-//    'cerrada', o recibida al 100% sin cerrar, no bloquea: el material ya llego.
-//  - purchase_requests: solo 'pendiente' (sin ordenar todavia); al aprobar se
-//    convierte en linea y queda cubierta por el punto anterior.
-func (s *Service) pendingMaterialsForRepair(companyID, projectID, shortCode string) ([]materialsGateItem, error) {
+//   - inventory_purchase_lines: 'pendiente'/'enviada' sin rechazo de aprobacion,
+//     y NO totalmente recibidas (received_quantity < quantity). Se vinculan por
+//     project_id directo o via purchase_requests.purchase_line_id (al aprobar una
+//     solicitud la linea creada NO hereda project_id).
+//     'cerrada', o recibida al 100% sin cerrar, no bloquea: el material ya llego.
+//   - purchase_requests: solo 'pendiente' (sin ordenar todavia); al aprobar se
+//     convierte en linea y queda cubierta por el punto anterior.
+func (s *Service) pendingMaterialsForRepair(companyID, projectID string) ([]materialsGateItem, error) {
 	companyID = strings.TrimSpace(companyID)
 	projectID = strings.TrimSpace(projectID)
 
 	items := make([]materialsGateItem, 0)
 
-	workOrders := []string{projectID}
-	if sc := strings.TrimSpace(shortCode); sc != "" && sc != projectID {
-		workOrders = append(workOrders, sc)
-	}
-
-	// 1) Reservas del proyecto (work_order = shortCode o id, igual que el
-	//    frontend al crearlas y filtrarlas en la ficha).
-	resQuery := fmt.Sprintf(`
-		SELECT reference, quantity, status
-		FROM inventory_reservations
-		WHERE company_id = $1 AND work_order IN (%s) AND status IN ('activa','vencida')
-		ORDER BY reserved_at DESC`, placeholderList(2, len(workOrders)))
-
-	args := append([]any{companyID}, toAnySlice(workOrders)...)
-	rows, err := s.db.Query(resQuery, args...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var ref string
-		var qty int
-		var status string
-		if scanErr := rows.Scan(&ref, &qty, &status); scanErr != nil {
-			return nil, scanErr
-		}
-		label := "reserva activa"
-		if status == "vencida" {
-			label = "reserva vencida sin consumir"
-		}
-		items = append(items, materialsGateItem{kind: label, label: materialLabel(ref, qty)})
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	// 2) Lineas de compra abiertas del proyecto (directa o via solicitud aprobada).
+	// 1) Lineas de compra abiertas del proyecto (directa o via solicitud aprobada).
 	lineRows, err := s.db.Query(`
 		SELECT l.reference, l.quantity
 		FROM inventory_purchase_lines l
@@ -155,24 +118,9 @@ func newMaterialsPendingError(items []materialsGateItem) error {
 		details = append(details, fmt.Sprintf("%s (%s)", item.label, item.kind))
 	}
 
-	return fmt.Errorf("%w: %d material(es) pendiente(s): %s. Consuma la reserva o cierre la linea de compra antes de pasar a Reparacion.",
+	return fmt.Errorf("%w: %d material(es) pendiente(s): %s. Reciba el faltante y cierre la linea de compra antes de pasar a Reparacion.",
 		errMaterialsPending, len(items), strings.Join(details, "; "))
 }
 
-// placeholderList genera N placeholders posicionales seguidos empezando en
-// start (p.ej. "$2,$3"). Solo se usa con hasta 2 valores, pero es generico.
-func placeholderList(start, count int) string {
-	placeholders := make([]string, 0, count)
-	for i := 0; i < count; i++ {
-		placeholders = append(placeholders, fmt.Sprintf("$%d", start+i))
-	}
-	return strings.Join(placeholders, ",")
-}
-
-func toAnySlice(values []string) []any {
-	out := make([]any, 0, len(values))
-	for _, v := range values {
-		out = append(out, v)
-	}
-	return out
-}
+// Nota: las reservas de stock ya no participan en esta puerta (COMPR-02);
+// solo se consultan inventory_purchase_lines y purchase_requests.

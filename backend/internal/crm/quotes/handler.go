@@ -116,7 +116,9 @@ func (h *Handler) getQuoteByToken(c echo.Context) error {
 		}
 	}
 
-	return c.JSON(http.StatusOK, item)
+	// COM-08: la vista pública sin autenticación solo recibe el documento
+	// comercial controlado; los campos internos no deben salir por aquí.
+	return c.JSON(http.StatusOK, item.Public())
 }
 
 func (h *Handler) createQuote(c echo.Context) error {
@@ -266,7 +268,8 @@ func (h *Handler) updateDecisionByToken(c echo.Context) error {
 		}
 	}
 
-	return c.JSON(http.StatusOK, item)
+	// COM-08: el ack de la decisión tampoco expone campos internos.
+	return c.JSON(http.StatusOK, item.Public())
 }
 
 func parseLimit(raw string) (int, error) {

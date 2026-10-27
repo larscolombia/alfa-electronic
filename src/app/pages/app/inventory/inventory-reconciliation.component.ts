@@ -6,11 +6,14 @@ import { AuditEvent, CountSession, DiscrepancyRecord, InventoryRole, SessionStat
 import { InventoryRbacService } from "../../../services/inventory-rbac.service";
 import { InventoryWorkflowService } from "../../../services/inventory-workflow.service";
 import { HrPeoplePickerService } from "../../../services/hr-people-picker.service";
+import { DiscrepancyPanelComponent } from "./discrepancy-panel.component";
+import { InvBackendAlertComponent } from "./inv-backend-alert.component";
+import { InvRoleHintComponent } from "./inv-role-hint.component";
 
 @Component({
     selector: "app-inventory-reconciliation",
     standalone: true,
-    imports: [CommonModule, FormsModule, RouterLink],
+    imports: [CommonModule, FormsModule, RouterLink, DiscrepancyPanelComponent, InvRoleHintComponent, InvBackendAlertComponent],
     template: `
         <div class="container-fluid py-3">
             <div class="row gx-3 gx-lg-4 align-items-center page-title">
@@ -56,6 +59,9 @@ import { HrPeoplePickerService } from "../../../services/hr-people-picker.servic
                     </div>
                 </div>
             </div>
+
+            <app-inv-role-hint></app-inv-role-hint>
+            <app-inv-backend-alert></app-inv-backend-alert>
 
             <div *ngIf="feedback" class="alert mb-3" [ngClass]="feedbackClass">
                 {{ feedback }}
@@ -186,50 +192,9 @@ import { HrPeoplePickerService } from "../../../services/hr-people-picker.servic
                 </div>
             </div>
 
-            <div class="card adminuiux-card mb-3 mb-lg-4">
-                <div class="card-header">
-                    <h6 class="mb-0">Diferencias detectadas</h6>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table align-middle mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Referencia</th>
-                                    <th>Ubicacion</th>
-                                    <th>Sistema</th>
-                                    <th>Fisico</th>
-                                    <th>Diferencia</th>
-                                    <th>Motivo</th>
-                                    <th>Aprobacion</th>
-                                    <th class="text-end">Accion</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr *ngFor="let diff of discrepancies">
-                                    <td>{{ diff.reference }}</td>
-                                    <td>{{ diff.location }}</td>
-                                    <td>{{ diff.expected }}</td>
-                                    <td>{{ diff.counted }}</td>
-                                    <td [ngClass]="diff.counted - diff.expected < 0 ? 'text-danger fw-semibold' : 'text-success fw-semibold'">
-                                        {{ diff.counted - diff.expected }}
-                                    </td>
-                                    <td>{{ diff.reason }}</td>
-                                    <td>
-                                        <span *ngIf="diff.approvedAt" class="small text-success">{{ diff.approvedBy }} ({{ diff.approvedAt | date: 'dd/MM HH:mm' }})</span>
-                                        <span *ngIf="!diff.approvedAt" class="small text-secondary">Pendiente</span>
-                                    </td>
-                                    <td class="text-end">
-                                        <button class="btn btn-sm btn-outline-theme" type="button" [disabled]="!!diff.approvedAt || !canManageReconciliation" (click)="approveDifference(diff.id)">Aprobar ajuste</button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+            <app-discrepancy-panel></app-discrepancy-panel>
 
-            <div class="card adminuiux-card">
+<div class="card adminuiux-card">
                 <div class="card-header">
                     <h6 class="mb-0">Bitacora de auditoria</h6>
                 </div>

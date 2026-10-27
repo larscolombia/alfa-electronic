@@ -23,6 +23,13 @@ export type InventoryPermission =
 
 export type MovementType = "salida" | "entrada" | "ajuste";
 
+export interface UsedTestRecord {
+    testedBy: string;
+    testedAt: string;
+    result: "aprobada" | "rechazada" | string;
+    note: string;
+}
+
 export interface StockReference {
     reference: string;
     internalCode?: string;
@@ -42,6 +49,8 @@ export interface StockReference {
     currentStock: number;
     minStock: number;
     targetStock?: number;
+    condition?: "nuevo" | "usado" | string;
+    lastUsedTest?: UsedTestRecord;
 }
 
 export interface DuplicateReferenceCandidate {
@@ -217,6 +226,7 @@ export interface CountSession {
 
 export interface DiscrepancyRecord {
     id: string;
+    sessionId?: string;
     reference: string;
     location: string;
     expected: number;

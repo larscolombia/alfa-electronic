@@ -396,15 +396,20 @@ export class CrmEquipmentApiService {
 
         if (!response.ok) {
             let message = `Request failed with status ${response.status}`;
+            let errorBody: { error?: string; code?: string; existingRecordId?: string } | null = null;
             try {
-                const errorBody = (await response.json()) as { error?: string };
+                errorBody = (await response.json()) as { error?: string; code?: string; existingRecordId?: string };
                 if (errorBody?.error) {
                     message = errorBody.error;
                 }
             } catch {
                 // Keep fallback message when backend returns non-JSON error.
             }
-            throw new Error(message);
+            const requestError = new Error(message) as Error & { status?: number; code?: string; existingRecordId?: string };
+            requestError.status = response.status;
+            requestError.code = errorBody?.code;
+            requestError.existingRecordId = errorBody?.existingRecordId;
+            throw requestError;
         }
 
         if (response.status === 204) {

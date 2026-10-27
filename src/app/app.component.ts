@@ -1,17 +1,20 @@
 import { Component, HostListener, Inject, OnInit, OnDestroy, AfterViewChecked, AfterViewInit, ElementRef, Renderer2, ApplicationConfig } from "@angular/core";
 import { CommonModule, DOCUMENT } from "@angular/common";
-import { NavigationEnd, ChildActivationEnd, Router, RouterOutlet } from "@angular/router";
+import { NavigationCancel, NavigationEnd, NavigationError, NavigationStart, Router, RouterOutlet } from "@angular/router";
 import { Subscription } from "rxjs";
-import { filter } from "rxjs/operators";
 import { WorkTimeTrackerService } from "./services/work-time-tracker.service";
 import { ConfirmationModalService } from "./services/confirmation-modal.service";
 import { CompanyProfile, CompanySettingsApiService } from "./services/company-settings-api.service";
+import { SelectEnhancementService } from "./services/select-enhancement.service";
 
 @Component({
     selector: "app-root",
     standalone: true,
     imports: [RouterOutlet, CommonModule],
     template: `
+        <a class="app-skip-link" href="#main-content">Saltar al contenido principal</a>
+        <div *ngIf="isNavigating" class="app-route-progress" role="progressbar" aria-label="Cargando vista" aria-valuetext="Cargando"></div>
+        <div class="visually-hidden" aria-live="polite" aria-atomic="true">{{ navigationAnnouncement }}</div>
         <router-outlet></router-outlet>
 
         <div class="app-confirm-backdrop" *ngIf="confirmationModal.state() as dialog" (click)="cancelDialog()">
@@ -34,11 +37,21 @@ import { CompanyProfile, CompanySettingsApiService } from "./services/company-se
             </div>
         </div>
     `,
+    styles: [`
+        .app-skip-link { position: fixed; left: 1rem; top: -5rem; z-index: 1100; padding: .65rem 1rem; border-radius: .5rem; background: var(--bs-body-bg); color: var(--bs-body-color); box-shadow: 0 .25rem 1rem rgba(0,0,0,.2); }
+        .app-skip-link:focus { top: 1rem; }
+        .app-route-progress { position: fixed; inset: 0 0 auto; z-index: 1200; height: 3px; overflow: hidden; background: color-mix(in srgb, var(--bs-primary) 20%, transparent); }
+        .app-route-progress::after { content: ""; display: block; width: 35%; height: 100%; background: var(--bs-primary); animation: app-route-loading 1s ease-in-out infinite; }
+        @keyframes app-route-loading { from { transform: translateX(-110%); } to { transform: translateX(300%); } }
+        @media (prefers-reduced-motion: reduce) { .app-route-progress::after { animation: none; width: 100%; } }
+    `],
 })
 export class AppComponent implements OnDestroy {
     name = "Angular";
     lastScrollTop: number = 0;
     pagelength: number = 0;
+    isNavigating = false;
+    navigationAnnouncement = "";
     private routerSub!: Subscription;
 
     constructor(
@@ -48,19 +61,40 @@ export class AppComponent implements OnDestroy {
         private tracker: WorkTimeTrackerService,
         public readonly confirmationModal: ConfirmationModalService,
         private companySettingsApi: CompanySettingsApiService,
+        private readonly selectEnhancement: SelectEnhancementService,
         @Inject(DOCUMENT) private document: Document
     ) {
         this.tracker.startTracking();
+        this.selectEnhancement.start();
         this.loadCompanyIdentity();
-        this.routerSub = this.router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe(() => {
-            this.document.documentElement.scrollTop = 0;
-            this.document.body.scrollTop = 0; // For Safari
+        this.routerSub = this.router.events.subscribe((event) => {
+            if (event instanceof NavigationStart) {
+                this.isNavigating = true;
+                this.navigationAnnouncement = "Cargando vista";
+            } else if (event instanceof NavigationEnd) {
+                this.isNavigating = false;
+                this.navigationAnnouncement = "Vista cargada";
+                this.document.documentElement.scrollTop = 0;
+                this.document.body.scrollTop = 0;
+                queueMicrotask(() => this.focusPageContent());
+            } else if (event instanceof NavigationCancel || event instanceof NavigationError) {
+                this.isNavigating = false;
+                this.navigationAnnouncement = "No se pudo completar la navegación";
+            }
         });
     }
 
     ngOnDestroy(): void {
         this.tracker.stopTracking();
+        this.selectEnhancement.stop();
         this.routerSub?.unsubscribe();
+    }
+
+    private focusPageContent(): void {
+        const target = this.document.querySelector<HTMLElement>("#main-content, main, [role='main'], h1, h2, h5");
+        if (!target) return;
+        if (!target.hasAttribute("tabindex")) target.setAttribute("tabindex", "-1");
+        target.focus({ preventScroll: true });
     }
 
     /**

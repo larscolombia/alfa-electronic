@@ -91,6 +91,7 @@ func (s *Service) findClientByEmpresa(companyID, empresa string) (Client, error)
 
 	row := s.db.QueryRowContext(ctx, `
 SELECT id, nombre, correo, empresa, nit, zona, estado, website, office_phone, country, city, address,
+	COALESCE(dv, ''), COALESCE(postal_code, ''), COALESCE(billing_email, ''), grand_contributor, id_type,
 	credit_enabled, credit_limit, credit_consumed, last_payment_date, payment_term_days, created_at
 FROM crm_clients
 WHERE company_id = $1

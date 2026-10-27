@@ -13,9 +13,23 @@ var (
 	errAttachmentNotFound   = errors.New("adjunto no encontrado")
 	errAttachmentInvalid    = errors.New("adjunto invalido: fileName y dataUrl son obligatorios")
 	errAttachmentTooLarge   = errors.New("el adjunto supera el limite permitido (10MB)")
+	errAttachmentTypeDenied = errors.New("tipo de adjunto no permitido: solo imagenes y PDF (application/pdf)")
 )
 
 const maxAttachmentDataURLBytes = 10 * 1024 * 1024 * 4 / 3 // ~10MB binario en base64
+
+// attachmentMIMEAllowed (REC-04): el formato físico del cliente nuevo se
+// adjunta como PDF; el resto de evidencias siguen siendo imágenes.
+func attachmentMIMEAllowed(mimeType string) bool {
+	normalized := strings.ToLower(strings.TrimSpace(mimeType))
+	if normalized == "" {
+		return true
+	}
+	if normalized == "application/pdf" {
+		return true
+	}
+	return strings.HasPrefix(normalized, "image/")
+}
 
 // AddItemAttachment agrega un adjunto al item indicado dentro del record.
 // Devuelve el item actualizado (incluye todos los adjuntos).
@@ -39,6 +53,9 @@ func (s *Service) AddItemAttachment(companyID, recordID, itemID string, attachme
 
 	if attachment.FileName == "" || attachment.DataURL == "" {
 		return Item{}, errAttachmentInvalid
+	}
+	if !attachmentMIMEAllowed(attachment.MIMEType) {
+		return Item{}, errAttachmentTypeDenied
 	}
 	if len(attachment.DataURL) > maxAttachmentDataURLBytes {
 		return Item{}, errAttachmentTooLarge
