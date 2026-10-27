@@ -128,7 +128,7 @@ acción de interfaz nunca es una autorización de negocio por sí sola.
 | ~~LOG-04~~ ✅ | Accesorios de recepción no están confirmados | Pedir confirmación explícita antes de cerrar entrega | Validado con `scripts/e2e-ui-log-04-accessories-confirmation-playwright.mjs`; el botón de confirmar queda deshabilitado hasta aceptar accesorios |
 | ~~LOG-05~~ ✅ | Falta ubicación física | No presentar como listo para retiro; resolver ubicación antes de empaque | Validado con `scripts/e2e-ui-log-05-location-required-playwright.mjs`; el panel de despacho excluye equipos sin ubicación |
 | ~~LOG-06~~ ✅ | Entrega por transportadora | Exigir transportadora, guía, fotos de empaque y notificación al cliente | Validado con `scripts/e2e-ui-log-06-carrier-guide-required-playwright.mjs`; UI y servidor bloquean transportadora/guía ausentes |
-| LOG-07 | Recoge el cliente | Exigir nombre/identificación de quien recibe y remisión firmada | Recibido por y firma |
+| ~~LOG-07~~ ✅ | Recoge el cliente | Exigir nombre/identificación de quien recibe y remisión firmada | Validado con `scripts/e2e-ui-log-07-pickup-recipient-playwright.mjs`; la confirmación queda bloqueada sin receptor y firma |
 | ~~LOG-08~~ ✅ | Garantía/notas de instalación faltan | Incluir texto estándar o una excepción aprobada en la remisión | Validado con `scripts/e2e-ui-log-08-warranty-required-playwright.mjs`; frontend y servidor bloquean garantía/excepción ausentes |
 | LOG-09 | OC debe acompañar envío | Generar/anexar copia cuando la política o el cliente lo exijan | Anexo y referencia a OC |
 | LOG-10 | Remisión firmada no ha regresado | Mantener entrega como pendiente de prueba de entrega; no concluir trazabilidad | Guía/acta pendiente y seguimiento |

@@ -409,7 +409,12 @@ const REMISSIONS_TEMPLATE = `
                     <input class="form-check-input" type="checkbox" id="accessoriesDeliveredCheck" [(ngModel)]="accessoriesDeliveredConfirmed" data-testid="accessories-delivered-check" />
                     <label class="form-check-label" for="accessoriesDeliveredCheck">Confirmo que se entregaron los accesorios y equipos anclados listados</label>
                 </div>
-                <button class="btn btn-success" [disabled]="!accessoriesDeliveredConfirmed" (click)="confirmMarkDelivered()" data-testid="confirm-delivered-btn">
+                <div *ngIf="deliveryConfirmRemission?.dispatchType === 'recoge-cliente'" class="border rounded p-2 mb-3" data-testid="pickup-recipient-fields">
+                    <label class="form-label">Recibido por (nombre e identificación)</label>
+                    <input class="form-control mb-2" [(ngModel)]="pickupRecipient" data-testid="pickup-recipient-input" placeholder="Nombre - identificación" />
+                    <div class="form-check"><input class="form-check-input" type="checkbox" [(ngModel)]="pickupSigned" data-testid="pickup-signed-check" id="pickupSigned" /><label class="form-check-label" for="pickupSigned">Remisión firmada cargada</label></div>
+                </div>
+                <button class="btn btn-success" [disabled]="!accessoriesDeliveredConfirmed || (deliveryConfirmRemission?.dispatchType === 'recoge-cliente' && (!pickupRecipient.trim() || !pickupSigned))" (click)="confirmMarkDelivered()" data-testid="confirm-delivered-btn">
                     <i class="bi bi-check-lg me-1"></i>Confirmar entrega
                 </button>
             </div>
@@ -663,6 +668,8 @@ export class RemissionsComponent implements OnInit {
     showDeliveryConfirm = false;
     deliveryConfirmRemission: Remission | null = null;
     accessoriesDeliveredConfirmed = false;
+    pickupRecipient = "";
+    pickupSigned = false;
 
     // ── Fase 5c: puente pago → despacho ──────────────────────────────────
     /** Mensaje visible del resultado de despachar (éxito, rechazo o error). */
@@ -1197,6 +1204,14 @@ export class RemissionsComponent implements OnInit {
             this.showDeliveryConfirm = true;
             return;
         }
+        if (remission.dispatchType === "recoge-cliente") {
+            this.deliveryConfirmRemission = remission;
+            this.accessoriesDeliveredConfirmed = true;
+            this.pickupRecipient = "";
+            this.pickupSigned = false;
+            this.showDeliveryConfirm = true;
+            return;
+        }
         await this.patchDelivered(remission, false);
     }
 
@@ -1212,6 +1227,9 @@ export class RemissionsComponent implements OnInit {
 
     async confirmMarkDelivered() {
         if (!this.accessoriesDeliveredConfirmed || !this.deliveryConfirmRemission) {
+            return;
+        }
+        if (this.deliveryConfirmRemission.dispatchType === "recoge-cliente" && (!this.pickupRecipient.trim() || !this.pickupSigned)) {
             return;
         }
         const remission = this.deliveryConfirmRemission;
