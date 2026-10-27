@@ -29,7 +29,7 @@ acción de interfaz nunca es una autorización de negocio por sí sola.
 | ID | Condición límite | Regla requerida | Evidencia / siguiente paso |
 |---|---|---|---|
 | ~~REC-01~~ ✅ | Equipo no es industrial o cuesta nuevo ≤ COP 2M | Bloquear reparación normal; requerir rechazo o override de jefe con motivo | Validado con `scripts/e2e-ui-rec-01-industrial-gate-playwright.mjs`; la UI exige autorización de jefe y motivo |
-| REC-02 | Llega equipo sin formato de recepción | Siempre registrar e inventariar para no perder custodia; solicitar formato después sin bloquear el registro físico | Guía/remisión, remitente, fecha y solicitud enviada |
+| ~~REC-02~~ ✅ | Llega equipo sin formato de recepción | Siempre registrar e inventariar para no perder custodia; solicitar formato después sin bloquear el registro físico | Validado con `scripts/e2e-ui-rec-02-missing-format-playwright.mjs`; advierte soporte pendiente y permite continuar la custodia |
 | REC-03 | No se identifica remitente | Registrar incidencia de custodia, no asignar a técnico ni cotizar hasta identificar empresa/contacto | Fotos, transportadora, guía y responsable de resolver |
 | REC-04 | Cliente nuevo entrega personalmente | Capturar formato físico y crear prospecto/empresa sin duplicarlo | Formato, contacto, identificación y firma |
 | REC-05 | Transportadora entrega paquete | Transportadora, guía y hora de recibo son obligatorias; no reemplazarlas por texto libre sin trazabilidad | Guía, transportadora y recepción física |

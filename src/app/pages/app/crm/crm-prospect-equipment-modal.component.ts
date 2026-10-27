@@ -544,6 +544,9 @@ type SoftwareBackupInfo = {
                                             <div class="col-12 col-lg-3">
                                                 <label class="form-label">Remisión del cliente / guía</label>
                                                 <input class="form-control" [(ngModel)]="item.customerShipmentReference" [ngModelOptions]="{ standalone: true }" placeholder="BL o referencia de transporte" />
+                                                <div class="alert alert-warning py-2 mt-2 mb-0" *ngIf="!item.customerShipmentReference?.trim()" data-testid="missing-intake-format-warning">
+                                                    Formato/remisión pendiente: registra la custodia ahora y solicita el soporte al cliente antes del diagnóstico.
+                                                </div>
                                             </div>
                                             <div class="col-12 col-lg-6">
                                                 <label class="form-label">Accesorios</label>
