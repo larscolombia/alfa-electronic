@@ -19,6 +19,8 @@ var (
 	errTooManyItems        = errors.New("maximo 4 equipos por remision: divida el despacho en varias remisiones independientes")
 	errContactRequired     = errors.New("el contacto del cliente es obligatorio para despachar: complete la casilla Contacto y vuelva a guardar")
 	errAnchoredNotAccepted = errors.New("la remision incluye equipos con prestamos anclados: confirme su inclusion antes de guardar")
+	errCarrierRequired     = errors.New("la transportadora es obligatoria para una entrega por transportadora: complete la casilla Transportadora")
+	errGuideRequired       = errors.New("la guia es obligatoria para una entrega por transportadora: complete la casilla Numero de guia")
 )
 
 // hasAnchoredEquipment reporta si algún item lleva préstamos anclados. Es la
@@ -45,6 +47,15 @@ func validateUpsert(req UpsertRemissionRequest) error {
 	if strings.TrimSpace(req.ContactName) == "" {
 		return errContactRequired
 	}
+	dispatchType := strings.ToLower(strings.TrimSpace(req.DispatchType))
+	if dispatchType == "servientrega" || dispatchType == "dhl" {
+		if strings.TrimSpace(req.CarrierName) == "" {
+			return errCarrierRequired
+		}
+		if strings.TrimSpace(req.GuideNumber) == "" {
+			return errGuideRequired
+		}
+	}
 	if hasAnchoredEquipment(req.Items) && !req.AnchoredAccepted {
 		return errAnchoredNotAccepted
 	}
@@ -58,6 +69,8 @@ func isUpsertRuleError(err error) bool {
 	case errors.Is(err, errNoItems),
 		errors.Is(err, errTooManyItems),
 		errors.Is(err, errContactRequired),
+		errors.Is(err, errCarrierRequired),
+		errors.Is(err, errGuideRequired),
 		errors.Is(err, errAnchoredNotAccepted):
 		return true
 	default:

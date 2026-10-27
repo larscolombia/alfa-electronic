@@ -79,6 +79,15 @@ export function validateRemissionDraft(form: any): string {
     if (String(form?.contactName || "").trim() === "") {
         return "el contacto del cliente es obligatorio para despachar: complete la casilla Contacto y vuelva a guardar";
     }
+    const dispatchType = String(form?.dispatchType || "").trim().toLowerCase();
+    if (["servientrega", "dhl"].includes(dispatchType)) {
+        if (String(form?.carrierName || "").trim() === "") {
+            return "la transportadora es obligatoria para una entrega por transportadora: complete la casilla Transportadora";
+        }
+        if (String(form?.guideNumber || "").trim() === "") {
+            return "la guia es obligatoria para una entrega por transportadora: complete la casilla Numero de guia";
+        }
+    }
     if (hasAnchoredEquipment(items) && !form?.anchoredAccepted) {
         return "la remision incluye equipos con prestamos anclados: confirme su inclusion antes de guardar";
     }
