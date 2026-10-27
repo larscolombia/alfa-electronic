@@ -5,8 +5,8 @@ import { ActivatedRoute, Router, RouterLink } from "@angular/router";
 import { Subscription } from "rxjs";
 
 import { ProspectEquipmentEvidencePhoto, ProspectEquipmentRecord, formatProspectEquipmentReception } from "./crm-prospect-equipment.store";
-import { buildEquipmentMatchCriteria } from "./crm-prospect-equipment-match.logic";
 import { CrmClientRecord, getCrmClients } from "./crm-clients.store";
+import { buildEquipmentMatchCriteria } from "./crm-prospect-equipment-match.logic";
 import { ProspectRecord, ProspectBranchRecord, getProspectById, getProspects, replaceProspects } from "./crm-prospects.store";
 import { CrmEquipmentApiService } from "../../../services/crm-equipment-api.service";
 import { CrmFollowupsApiService, CrmProspectFollowup, UpsertCrmProspectFollowupRequest } from "../../../services/crm-followups-api.service";
@@ -22,7 +22,7 @@ import { HrPeoplePickerService } from "../../../services/hr-people-picker.servic
 type DetailTab = "perfil" | "contactos-relacionados" | "acciones-comerciales" | "equipos" | "cotizacion" | "archivos" | "notas" | "trazabilidad" | "sucursales";
 type ActivityTab = "actividad" | "notas" | "correos" | "llamadas" | "tareas" | "reuniones";
 
-type RelatedContactType = "Prospecto" | "Cliente";
+type RelatedContactType = "Prospecto" | "Cliente" | "Contacto";
 
 type RelatedContactRecord = {
     key: string;
@@ -1796,7 +1796,6 @@ export class CrmProspectDetailComponent {
             return [];
         }
 
-        const normalizedCompany = this.normalizeCompanyName(this.prospect.compania);
         const contacts: RelatedContactRecord[] = [];
         const usedKeys = new Set<string>();
 
@@ -1809,7 +1808,26 @@ export class CrmProspectDetailComponent {
             contacts.push(contact);
         };
 
-        if (normalizedCompany) {
+        // Un prospecto no es un contacto operativo por sí mismo. Las acciones
+        // comerciales requieren una persona real registrada (mantenimiento o
+        // compras); usar el prospecto como sustituto permitía agendar visitas
+        // sin interlocutor y violaba COM-02.
+        this.prospectContacts.forEach((contact) => {
+            registerContact({
+                key: `contact-${contact.id}`,
+                nombre: contact.name,
+                correo: contact.email,
+                telefono: contact.phone,
+                empresa: this.prospect?.compania || "",
+                tipo: "Contacto",
+                estado: "Activo",
+                esPrincipal: false,
+            });
+        });
+
+        return contacts;
+
+        if (false) {
             getProspects().forEach((prospect) => {
                 if (this.normalizeCompanyName(prospect.compania) !== normalizedCompany) {
                     return;
@@ -1833,19 +1851,6 @@ export class CrmProspectDetailComponent {
                 }
 
                 registerContact(this.mapClientToRelatedContact(client));
-            });
-        }
-
-        if (contacts.length === 0) {
-            registerContact({
-                key: `prospect-${this.prospect.id}`,
-                nombre: this.prospect.nombre,
-                correo: this.prospect.correo,
-                telefono: this.prospect.movil,
-                empresa: this.prospect.compania,
-                tipo: "Prospecto",
-                estado: this.prospect.estado,
-                esPrincipal: true,
             });
         }
 
