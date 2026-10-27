@@ -122,7 +122,7 @@ acción de interfaz nunca es una autorización de negocio por sí sola.
 
 | ID | Condición límite | Regla requerida | Evidencia / siguiente paso |
 |---|---|---|---|
-| LOG-01 | Código no está Listo para entrega | No permitir crear remisión de equipo sin cierre técnico | Estado técnico y motivo de bloqueo |
+| ~~LOG-01~~ ✅ | Código no está Listo para entrega | No permitir crear remisión de equipo sin cierre técnico | Validado con `scripts/e2e-ui-log-01-not-ready-playwright.mjs`: Guardar queda bloqueado sin equipo listo para entrega |
 | LOG-02 | Marca, tipo o serie no coinciden | Bloquear despacho; no aceptar coincidencia parcial | Comparación de origen vs remisión |
 | LOG-03 | Equipo principal tiene préstamo anclado | Bloquear despacho hasta incluir/devolver el préstamo en la misma remisión | Relación anclada y confirmación |
 | LOG-04 | Accesorios de recepción no están confirmados | Pedir confirmación explícita antes de cerrar entrega | Lista de accesorios y operador |
