@@ -286,6 +286,11 @@ const REMISSIONS_TEMPLATE = `
                 <div class="col-md-2"><input class="form-control form-control-sm" [(ngModel)]="item.sourceSeries" placeholder="Serie origen" data-testid="source-series-input" /></div>
                 <div class="col-md-2"><input class="form-control form-control-sm" [(ngModel)]="item.description" placeholder="Descripcion" /></div>
                 <div class="col-md-2"><input class="form-control form-control-sm" [(ngModel)]="item.accessories" placeholder="Accesorios" data-testid="item-accessories" /></div>
+                <div class="col-md-3">
+                    <input class="form-control form-control-sm" [(ngModel)]="item.anchoredNote"
+                           (ngModelChange)="anchoredAlertMessage = $event; form.anchoredAccepted = false"
+                           placeholder="Equipo prestado anclado" data-testid="item-anchored-note" />
+                </div>
                 <div class="col-md-2">
                     <select class="form-select form-select-sm" [(ngModel)]="item.warrantyMonths">
                         <option [ngValue]="0">Sin garantía</option>
