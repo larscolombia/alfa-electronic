@@ -67,6 +67,8 @@
     "test:inventory-rbac-logic": "node scripts/test-inventory-rbac-logic.mjs",
     "test:crm-prospects-searchable-selects": "node scripts/test-searchable-selects-crm-prospects.mjs",
     "test:global-ux-baseline": "node scripts/test-global-ux-baseline.mjs",
+    "test:select-visual-style": "node scripts/test-select-visual-style.mjs",
+    "check:select-visual-style": "node scripts/check-select-visual-style-playwright.mjs",
     "check:global-ux-baseline": "node scripts/check-global-ux-baseline-playwright.mjs",
     "test:crm-prospects-ux": "node scripts/test-crm-prospects-ux.mjs",
     "check:crm-prospects-ux": "node scripts/check-crm-prospects-ux-playwright.mjs",

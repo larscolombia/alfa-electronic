@@ -41,6 +41,18 @@ app-date-picker-inline ngx-daterangepicker-bootstrap {
 .choices__list--dropdown, .choices__list[aria-expanded] {
     z-index: 4;
 }
+
+/* El tema pinta los items múltiples como etiquetas azules. En un selector
+   simple el valor activo es texto del control, no una etiqueta. */
+.choices[data-type*="select-one"] .choices__list--single .choices__item {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font-size: inherit;
+}
+
 .NgxEditor__Wrapper {
     --ngx-editor-background-color: var(--bs-body-bg);
     --ngx-editor-menubar-bg-color: var(--bs-body-bg);
