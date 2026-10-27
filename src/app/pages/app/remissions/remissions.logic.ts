@@ -28,7 +28,8 @@ interface DispatchReadyGroup {
 export function groupDispatchReadyByClient(equipments: any[]): DispatchReadyGroup[] {
     const ready = (equipments || []).filter((eq) => {
         const status = String(eq?.repairStatus || eq?.status || "");
-        return DISPATCH_READY_STATUSES.indexOf(status) >= 0;
+        const location = String(eq?.storageLocationName || eq?.storageLocationId || eq?.locationName || eq?.location || "").trim();
+        return DISPATCH_READY_STATUSES.indexOf(status) >= 0 && location !== "";
     });
 
     const groups = new Map<string, DispatchReadyGroup>();
@@ -90,6 +91,11 @@ export function validateRemissionDraft(form: any): string {
     }
     if (Number(form?.warrantyMonths || 0) <= 0 && String(form?.notes || "").trim() === "") {
         return "la remision debe incluir una garantia o una excepcion aprobada en Notas / Comentarios";
+    }
+    for (const item of items) {
+        if (item?.sourceSeries && String(item.identifier || "").trim() !== String(item.sourceSeries).trim()) {
+            return "marca, tipo y serie deben coincidir exactamente con el equipo origen; no se aceptan coincidencias parciales";
+        }
     }
     if (hasAnchoredEquipment(items) && !form?.anchoredAccepted) {
         return "la remision incluye equipos con prestamos anclados: confirme su inclusion antes de guardar";
