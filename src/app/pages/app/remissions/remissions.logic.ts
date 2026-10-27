@@ -92,6 +92,9 @@ export function validateRemissionDraft(form: any): string {
     if (Number(form?.warrantyMonths || 0) <= 0 && String(form?.notes || "").trim() === "") {
         return "la remision debe incluir una garantia o una excepcion aprobada en Notas / Comentarios";
     }
+    if (String(form?.purchaseOrder || "").trim() === "") {
+        return "la orden de compra debe acompañar el envio: registre el numero de OC antes de guardar";
+    }
     for (const item of items) {
         if (item?.sourceSeries && String(item.identifier || "").trim() !== String(item.sourceSeries).trim()) {
             return "marca, tipo y serie deben coincidir exactamente con el equipo origen; no se aceptan coincidencias parciales";

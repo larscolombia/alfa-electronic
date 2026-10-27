@@ -22,6 +22,7 @@ var (
 	errCarrierRequired     = errors.New("la transportadora es obligatoria para una entrega por transportadora: complete la casilla Transportadora")
 	errGuideRequired       = errors.New("la guia es obligatoria para una entrega por transportadora: complete la casilla Numero de guia")
 	errWarrantyRequired    = errors.New("la remision debe incluir una garantia o una excepcion aprobada en Notas / Comentarios")
+	errPurchaseOrderRequired = errors.New("la orden de compra debe acompañar el envio: registre el numero de OC antes de guardar")
 	errEquipmentMismatch   = errors.New("marca, tipo y serie deben coincidir exactamente con el equipo origen; no se aceptan coincidencias parciales")
 )
 
@@ -61,6 +62,9 @@ func validateUpsert(req UpsertRemissionRequest) error {
 	if req.WarrantyMonths <= 0 && strings.TrimSpace(req.Notes) == "" {
 		return errWarrantyRequired
 	}
+	if strings.TrimSpace(req.PurchaseOrder) == "" {
+		return errPurchaseOrderRequired
+	}
 	for _, item := range req.Items {
 		if strings.TrimSpace(item.SourceSeries) != "" && strings.TrimSpace(item.Identifier) != strings.TrimSpace(item.SourceSeries) {
 			return errEquipmentMismatch
@@ -82,6 +86,7 @@ func isUpsertRuleError(err error) bool {
 		errors.Is(err, errCarrierRequired),
 		errors.Is(err, errGuideRequired),
 		errors.Is(err, errWarrantyRequired),
+		errors.Is(err, errPurchaseOrderRequired),
 		errors.Is(err, errEquipmentMismatch),
 		errors.Is(err, errAnchoredNotAccepted):
 		return true
