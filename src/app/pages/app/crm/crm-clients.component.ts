@@ -222,14 +222,6 @@ interface ClientDraft {
                     <h5 class="mb-0">{{ editingClientId === null ? "Agregar Cliente" : "Editar Cliente" }}</h5>
                 </div>
                 <div class="card-body">
-                    @if (draft.creditEnabled) {
-                        <div class="alert alert-info border">
-                            <strong>Cliente con crédito.</strong>
-                            Cupo máximo autorizado:
-                            {{ toPositiveNumber(draft.creditLimit) | currency: "COP" : "symbol" : "1.0-0" }}
-                        </div>
-                    }
-
                     <h6 class="mb-3">Detalles De La Cuenta</h6>
                     <div class="row gx-3">
                         <div class="col-12 col-lg-4 mb-3">
@@ -334,15 +326,6 @@ interface ClientDraft {
                                 <label class="form-check-label" for="creditEnabled">Si</label>
                             </div>
                         </div>
-                        <div class="col-12 col-lg-3 mb-3">
-                            <label class="form-label">Cupo maximo</label>
-                            <input class="form-control" type="number" min="0" step="1000" [(ngModel)]="draft.creditLimit" name="creditLimit" />
-                        </div>
-                        <div class="col-12 col-lg-3 mb-3">
-                            <label class="form-label">Cupo consumido</label>
-                            <input class="form-control" type="number" min="0" step="1000" [(ngModel)]="draft.creditConsumed" name="creditConsumed" />
-                        </div>
-
                         <div class="col-12 col-lg-4 mb-3">
                             <label class="form-label">Fecha de ultimo pago</label>
                             <input class="form-control" type="date" [(ngModel)]="draft.lastPaymentDate" name="lastPaymentDate" />
@@ -593,16 +576,6 @@ export class CrmClientsComponent {
 
         if (!this.draft.zona.trim()) {
             this.formError = "Selecciona una zona para el cliente.";
-            return;
-        }
-
-        if (this.draft.creditEnabled && creditLimit <= 0) {
-            this.formError = "Para clientes con credito debes indicar un cupo maximo mayor a cero.";
-            return;
-        }
-
-        if (creditConsumed > creditLimit && this.draft.creditEnabled) {
-            this.formError = "El cupo consumido no puede ser mayor al cupo maximo.";
             return;
         }
 

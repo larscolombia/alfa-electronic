@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
 func (s *Service) ListClients(companyID string, query ClientListQuery) ([]Client, error) {
@@ -217,10 +219,152 @@ func (s *Service) DeleteClient(companyID, clientID string) (bool, error) {
 		return false, errClientIDRequired
 	}
 
-	result, err := s.db.ExecContext(ctx, `
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return false, err
+	}
+	defer tx.Rollback()
+
+	// Leer y bloquear el cliente antes de preparar su devolución a Prospectos.
+	var nombre, correo, empresa, nit, zona string
+	var website, officePhone, country, city, address string
+
+	err = tx.QueryRowContext(ctx, `
+SELECT nombre, correo, empresa, nit, zona,
+       website, office_phone, country, city, address
+FROM crm_clients
+WHERE company_id = $1
+  AND id = $2
+  AND soft_delete = false
+FOR UPDATE;
+`, companyID, normalizedID).Scan(
+		&nombre, &correo, &empresa, &nit, &zona,
+		&website, &officePhone, &country, &city, &address,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	nombre = strings.TrimSpace(nombre)
+	correo = strings.TrimSpace(correo)
+	empresa = strings.TrimSpace(empresa)
+	if empresa == "" {
+		empresa = nombre
+	}
+	if zona = strings.TrimSpace(zona); zona == "" {
+		zona = "General"
+	}
+
+	// Leer las sucursales antes de retirar el cliente.
+	rows, err := tx.QueryContext(ctx, `
+SELECT name, contact_name, contact_role, email, phone,
+       country, city, address, is_primary
+FROM crm_client_branches
+WHERE company_id = $1 AND client_id = $2
+ORDER BY is_primary DESC, created_at ASC;
+`, companyID, normalizedID)
+	if err != nil {
+		return false, err
+	}
+
+	type savedBranch struct {
+		name, contactName, contactRole, email, phone string
+		country, city, address                       string
+		isPrimary                                    bool
+	}
+	branches := make([]savedBranch, 0)
+	for rows.Next() {
+		var b savedBranch
+		if err := rows.Scan(
+			&b.name, &b.contactName, &b.contactRole, &b.email, &b.phone,
+			&b.country, &b.city, &b.address, &b.isPrimary,
+		); err != nil {
+			rows.Close()
+			return false, err
+		}
+		branches = append(branches, b)
+	}
+	if err := rows.Err(); err != nil {
+		rows.Close()
+		return false, err
+	}
+	if err := rows.Close(); err != nil {
+		return false, err
+	}
+
+	// Si ya existe el prospecto original, reutilizarlo.
+	// Si no existe, crear un prospecto con los datos disponibles del cliente.
+	var prospectID string
+	err = tx.QueryRowContext(ctx, `
+SELECT id
+FROM crm_prospects
+WHERE company_id = $1
+  AND soft_delete = false
+  AND LOWER(TRIM(company)) = LOWER(TRIM($2))
+  AND (
+       ($3 <> '' AND LOWER(TRIM(email)) = LOWER(TRIM($3)))
+       OR LOWER(TRIM(name)) = LOWER(TRIM($4))
+  )
+ORDER BY created_at ASC
+LIMIT 1
+FOR UPDATE;
+`, companyID, empresa, correo, nombre).Scan(&prospectID)
+
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return false, err
+	}
+	if errors.Is(err, sql.ErrNoRows) {
+		prospectID = uuid.NewString()
+		_, err = tx.ExecContext(ctx, `
+INSERT INTO crm_prospects (
+    id, company_id, salutation, name, email, mobile, company, nit,
+    assigned_employee, source, category, zone, prospect_value,
+    allow_follow_up, status, service, note, website, office_phone,
+    country, city, address, quotations, soft_delete, created_at, updated_at
+)
+VALUES (
+    $1, $2, '--', $3, $4, '', $5, $6,
+    '', '', '', $7, 0,
+    true, 'Pendiente', '', '', $8, $9,
+    $10, $11, $12, 0, false, NOW(), NOW()
+);
+`, prospectID, companyID, nombre, correo, empresa, nit, zona,
+			website, officePhone, country, city, address)
+		if err != nil {
+			return false, err
+		}
+	}
+
+	// Copiar sucursales que todavía no estén registradas en el prospecto.
+	// Así no se duplican las sucursales de un prospecto que ya existía.
+	for _, b := range branches {
+		_, err = tx.ExecContext(ctx, `
+INSERT INTO crm_prospect_branches (
+    company_id, id, prospect_id, name, contact_name, contact_role,
+    email, phone, country, city, address, is_primary, created_at, updated_at
+)
+SELECT $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW()
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM crm_prospect_branches
+    WHERE company_id = $1
+      AND prospect_id = $3
+      AND LOWER(TRIM(name)) = LOWER(TRIM($4))
+      AND LOWER(TRIM(email)) = LOWER(TRIM($7))
+);
+`, companyID, uuid.NewString(), prospectID, b.name, b.contactName,
+			b.contactRole, b.email, b.phone, b.country, b.city, b.address, b.isPrimary)
+		if err != nil {
+			return false, err
+		}
+	}
+
+	result, err := tx.ExecContext(ctx, `
 UPDATE crm_clients
-SET soft_delete = true,
-	updated_at = NOW()
+SET soft_delete = true, updated_at = NOW()
 WHERE company_id = $1
   AND id = $2
   AND soft_delete = false;
@@ -228,16 +372,23 @@ WHERE company_id = $1
 	if err != nil {
 		return false, err
 	}
-
-	affected, _ := result.RowsAffected()
-	if affected > 0 {
-		if _, err := s.db.ExecContext(ctx, `
-DELETE FROM crm_client_branches
-WHERE company_id = $1
-  AND client_id = $2;
-`, companyID, normalizedID); err != nil {
-			return false, err
-		}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return false, err
 	}
-	return affected > 0, nil
+	if affected == 0 {
+		return false, nil
+	}
+
+	if _, err := tx.ExecContext(ctx, `
+DELETE FROM crm_client_branches
+WHERE company_id = $1 AND client_id = $2;
+`, companyID, normalizedID); err != nil {
+		return false, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return false, err
+	}
+	return true, nil
 }

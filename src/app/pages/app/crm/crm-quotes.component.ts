@@ -14,6 +14,7 @@ import { getProjectWorkflowStatusLabel } from "../projects/project-workflow.conf
 import { ProjectService } from "../projects/services/project.service";
 import { CrmEquipmentApiService } from "../../../services/crm-equipment-api.service";
 import { CrmProspectRecord, CrmProspectsApiService } from "../../../services/crm-prospects-api.service";
+import { CrmClientRecord, CrmClientsApiService } from "../../../services/crm-clients-api.service";
 import { CrmQuoteRecord, CrmQuotesApiService } from "../../../services/crm-quotes-api.service";
 import { EmailsApiService } from "../../../services/emails-api.service";
 import { FinanceBillingApiService } from "../../../services/finance-billing-api.service";
@@ -605,6 +606,7 @@ export class CrmQuotesComponent implements OnInit {
 
     private quoteIdByToken: Record<string, string> = {};
     private prospectRecords: CrmProspectRecord[] = [];
+    private clientRecords: CrmClientRecord[] = [];
     private availableEquipmentItemsApi: ProspectEquipmentSummary[] = [];
     private editingQuotePurchaseOrderDataUrl = "";
     private editingQuotePurchaseOrderUploadedAt = "";
@@ -618,6 +620,7 @@ export class CrmQuotesComponent implements OnInit {
 
     constructor(
         private readonly crmProspectsApi: CrmProspectsApiService,
+        private readonly crmClientsApi: CrmClientsApiService,
         private readonly crmQuotesApi: CrmQuotesApiService,
         private readonly crmEquipmentApi: CrmEquipmentApiService,
         private readonly financeBillingApi: FinanceBillingApiService,
@@ -1405,48 +1408,82 @@ export class CrmQuotesComponent implements OnInit {
         this.crmProspectsApi.listProspects().subscribe({
             next: (items) => {
                 this.prospectRecords = [...items];
-                this.prospectOptions = items.map((item) => item.nombre);
-
-                if (!this.prospectOptions.includes(this.selectedProspecto)) {
-                    this.selectedProspecto = this.prospectOptions[0] ?? "";
-                }
-
                 this.prospectsLoadErrorMessage = "";
-
-                // Prefill del proyecto: emparejar el cliente por nombre (case-
-                // insensitive) y, si no existe en CRM, dejar aviso visible en vez
-                // de bloquear — la decisión D2 aprobada.
-                if (this.projectPrefillPending && this.prefillProspectName) {
-                    const wanted = this.normalizeProspectMatchKey(this.prefillProspectName);
-                    const match = this.prospectOptions.find((name) => this.normalizeProspectMatchKey(name) === wanted);
-                    if (match) {
-                        this.selectedProspecto = match;
-                        // Re-correr el handler: equipos y preview deben corresponder
-                        // al prospecto correcto, no al default de la lista.
-                        this.handleProspectChange(match);
-                    } else {
-                        this.prefillNotice = `El cliente "${this.prefillProspectName}" del proyecto aún no existe como prospecto en CRM. Se abrió el formulario con "${this.selectedProspecto || 'sin prospecto'}"; verifica el prospecto antes de guardar.`;
-                    }
-                }
-
-                if (this.projectPrefillPending) {
-                    this.projectPrefillPending = false;
-                    // openQuoteForm re-valida selectedProspecto contra la lista ya poblada.
-                    this.openQuoteForm();
-                }
-
-                this.cdr.detectChanges();
+                this.loadClientsForQuoteRecipients();
             },
             error: (error) => {
                 this.prospectRecords = [];
-                this.prospectOptions = [];
-                this.selectedProspecto = "";
                 this.availableEquipmentItemsApi = [];
                 this.selectedQuoteEquipmentIds = [];
                 this.prospectsLoadErrorMessage = this.resolveErrorMessage(error, "No se pudo cargar prospectos desde backend.");
-                this.cdr.detectChanges();
+                this.loadClientsForQuoteRecipients();
             },
         });
+    }
+
+    private loadClientsForQuoteRecipients(): void {
+        this.crmClientsApi.listClients().subscribe({
+            next: (items) => {
+                this.clientRecords = [...items];
+                this.refreshQuoteRecipientOptions();
+            },
+            error: () => {
+                this.clientRecords = [];
+                this.refreshQuoteRecipientOptions();
+            },
+        });
+    }
+
+    private refreshQuoteRecipientOptions(): void {
+        const names = new Map<string, string>();
+
+        for (const record of this.prospectRecords) {
+            const name = String(record.nombre ?? "").trim();
+            const key = this.normalizeProspectMatchKey(name);
+            if (name && key && !names.has(key)) {
+                names.set(key, name);
+            }
+        }
+
+        for (const record of this.clientRecords) {
+            const name = String(record.nombre ?? "").trim();
+            const key = this.normalizeProspectMatchKey(name);
+            if (name && key && !names.has(key)) {
+                names.set(key, name);
+            }
+        }
+
+        const previousSelection = this.selectedProspecto;
+        this.prospectOptions = [...names.values()];
+
+        if (!this.prospectOptions.includes(this.selectedProspecto)) {
+            this.selectedProspecto = this.prospectOptions[0] ?? "";
+        }
+
+        if (this.selectedProspecto !== previousSelection) {
+            this.handleProspectChange(this.selectedProspecto);
+        }
+
+        if (this.projectPrefillPending && this.prefillProspectName) {
+            const wanted = this.normalizeProspectMatchKey(this.prefillProspectName);
+            const match = this.prospectOptions.find(
+                (name) => this.normalizeProspectMatchKey(name) === wanted,
+            );
+
+            if (match) {
+                this.selectedProspecto = match;
+                this.handleProspectChange(match);
+            } else {
+                this.prefillNotice = `El cliente "${this.prefillProspectName}" del proyecto aún no existe como cliente ni prospecto en CRM. Se abrió el formulario con "${this.selectedProspecto || 'sin destinatario'}"; verifica el destinatario antes de guardar.`;
+            }
+        }
+
+        if (this.projectPrefillPending) {
+            this.projectPrefillPending = false;
+            this.openQuoteForm();
+        }
+
+        this.cdr.detectChanges();
     }
 
     private loadCatalogsFromApi(): void {
@@ -1681,6 +1718,15 @@ export class CrmQuotesComponent implements OnInit {
             };
         }
 
+        const client = this.findClientByName(prospecto);
+        if (client) {
+            return {
+                empresa: client.empresa?.trim() || client.nombre,
+                correo: client.correo?.trim() || client.billingEmail?.trim() || "contacto@empresa.com",
+                movil: client.officePhone?.trim() || "--",
+            };
+        }
+
         return {
             empresa: "Empresa del prospecto",
             correo: "contacto@empresa.com",
@@ -1689,11 +1735,23 @@ export class CrmQuotesComponent implements OnInit {
     }
 
     private findProspectByName(name: string): CrmProspectRecord | undefined {
-        const normalized = name.trim().toLowerCase();
+        const normalized = this.normalizeProspectMatchKey(name);
         if (!normalized) {
             return undefined;
         }
-        return this.prospectRecords.find((prospect) => prospect.nombre.trim().toLowerCase() === normalized);
+        return this.prospectRecords.find(
+            (prospect) => this.normalizeProspectMatchKey(prospect.nombre) === normalized,
+        );
+    }
+
+    private findClientByName(name: string): CrmClientRecord | undefined {
+        const normalized = this.normalizeProspectMatchKey(name);
+        if (!normalized) {
+            return undefined;
+        }
+        return this.clientRecords.find(
+            (client) => this.normalizeProspectMatchKey(client.nombre) === normalized,
+        );
     }
 
     private resolveErrorMessage(error: unknown, fallback: string): string {

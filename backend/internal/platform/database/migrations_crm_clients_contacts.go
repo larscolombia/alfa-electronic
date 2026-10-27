@@ -25,6 +25,8 @@ func migrationStatementsCRMClients() []string {
 		`CREATE INDEX IF NOT EXISTS idx_crm_clients_company_status ON crm_clients(company_id, estado);`,
 		`CREATE INDEX IF NOT EXISTS idx_crm_clients_company_soft_delete ON crm_clients(company_id, soft_delete);`,
 		`ALTER TABLE crm_clients ADD COLUMN IF NOT EXISTS nit VARCHAR(80) NOT NULL DEFAULT '';`,
+		`ALTER TABLE crm_clients ADD COLUMN IF NOT EXISTS prospect_id TEXT NULL;`,
+		`CREATE INDEX IF NOT EXISTS idx_crm_clients_prospect_id ON crm_clients(company_id, prospect_id);`,
 		`ALTER TABLE crm_clients ADD COLUMN IF NOT EXISTS website VARCHAR(255) NOT NULL DEFAULT '';`,
 		`ALTER TABLE crm_clients ADD COLUMN IF NOT EXISTS office_phone VARCHAR(40) NOT NULL DEFAULT '';`,
 		`ALTER TABLE crm_clients ADD COLUMN IF NOT EXISTS country VARCHAR(120) NOT NULL DEFAULT '';`,

@@ -310,6 +310,20 @@ export class CrmProspectsApiService {
         return `${this.apiBaseUrl}${path}`;
     }
 
+    convertProspectToClient(prospectId: string) {
+        return from(this.request<{ client: unknown; created: boolean }>(
+            `/api/v1/crm/prospects/${encodeURIComponent(prospectId)}/convert-to-client`,
+            { method: "POST" },
+        ));
+    }
+
+    listClientRelatedProspects(clientId: string) {
+        return from(this.request<{ items: Array<{ id: string; nombre: string; compania: string }> }>(
+            `/api/v1/crm/clients/${encodeURIComponent(clientId)}/related-prospects`,
+            { method: "GET" },
+        )).pipe(map((response) => response.items ?? []));
+    }
+
     private async request<T>(path: string, init: RequestInit): Promise<T> {
         const headers = new Headers(init.headers);
         headers.set("Content-Type", "application/json");

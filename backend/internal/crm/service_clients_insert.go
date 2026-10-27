@@ -14,6 +14,10 @@ type clientExecutor interface {
 }
 
 func insertClient(ctx context.Context, ex clientExecutor, companyID string, payload normalizedClientInput) (string, error) {
+	return insertClientWithProspect(ctx, ex, companyID, payload, "")
+}
+
+func insertClientWithProspect(ctx context.Context, ex clientExecutor, companyID string, payload normalizedClientInput, prospectID string) (string, error) {
 	clientID := uuid.NewString()
 	var lastPaymentDate any
 	if payload.LastPaymentDate != "" {
@@ -23,16 +27,16 @@ func insertClient(ctx context.Context, ex clientExecutor, companyID string, payl
 	if _, err := ex.ExecContext(ctx, `
 INSERT INTO crm_clients (
 	company_id, id, nombre, correo, empresa, nit, zona, estado,
-	website, office_phone, country, city, address,
+	website, office_phone, country, city, address, prospect_id,
 	dv, postal_code, billing_email, grand_contributor, id_type,
 	credit_enabled, credit_limit, credit_consumed, last_payment_date, payment_term_days,
 	soft_delete, created_at, updated_at
 )
 VALUES (
 	$1, $2, $3, $4, $5, $6, $7, $8,
-	$9, $10, $11, $12, $13,
-	$14, $15, $16, $17, $18,
-	$19, $20, $21, $22, $23,
+	$9, $10, $11, $12, $13, NULLIF($14, ''),
+	$15, $16, $17, $18, $19,
+	$20, $21, $22, $23, $24,
 	false, NOW(), NOW()
 );
 `,
@@ -49,6 +53,7 @@ VALUES (
 		payload.Country,
 		payload.City,
 		payload.Address,
+		prospectID,
 		payload.DV,
 		payload.PostalCode,
 		payload.BillingEmail,

@@ -3,6 +3,8 @@ import { ChangeDetectorRef, Component, ElementRef, ViewChild } from "@angular/co
 import { FormsModule } from "@angular/forms";
 import { Router, RouterLink } from "@angular/router";
 import { catchError, forkJoin, map, of } from "rxjs";
+import { firstValueFrom } from "rxjs";
+import * as XLSX from "xlsx";
 
 import { CrmProspectEquipmentModalComponent } from "./crm-prospect-equipment-modal.component";
 import { ProspectRecord, replaceProspects } from "./crm-prospects.store";
@@ -61,6 +63,13 @@ type CompanyRelatedProspectTarget = {
     name: string;
 };
 
+type ProspectExcelImportRow = {
+    rowNumber: number;
+    data: Record<string, unknown>;
+    errors: string[];
+    selected: boolean;
+};
+
 const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
 
 @Component({
@@ -97,14 +106,118 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
                 <div class="card-body">
                     <div class="d-flex flex-wrap gap-2 mb-3">
                         <button class="btn btn-theme" type="button" (click)="openProspectForm()"><i class="bi bi-plus-lg me-1"></i> Agregar Prospecto</button>
-                        <button class="btn btn-outline-secondary" type="button"><i class="bi bi-upload me-1"></i> Importar</button>
-                        <button class="btn btn-outline-secondary" type="button"><i class="bi bi-download me-1"></i> Exportar</button>
+                        <button class="btn btn-outline-secondary" type="button" (click)="showProspectImport = !showProspectImport">
+                            <i class="bi bi-upload me-1"></i> Importar
+                        </button>
+                        <button class="btn btn-outline-secondary" type="button" (click)="exportProspectsToExcel()"><i class="bi bi-download me-1"></i> Exportar</button>
+                    </div>
+
+                    <div class="card border mb-3" *ngIf="showProspectImport">
+                        <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+                            <strong>Importar prospectos desde Excel</strong>
+                            <button class="btn btn-sm btn-outline-secondary" type="button"
+                                [disabled]="isImportingProspects" (click)="showProspectImport = false">Cerrar</button>
+                        </div>
+                        <div class="card-body">
+                            <p class="small text-secondary">
+                                Descarga la plantilla, completa los datos y selecciona el archivo .xlsx, .xls o .csv.
+                                El campo Nombre es obligatorio.
+                            </p>
+                            <div class="d-flex flex-wrap gap-2 mb-3">
+                                <button class="btn btn-outline-theme" type="button" (click)="downloadProspectTemplate()">
+                                    <i class="bi bi-download me-1"></i> Descargar plantilla
+                                </button>
+                                <input class="form-control" style="max-width: 420px" type="file"
+                                    accept=".xlsx,.xls,.csv" [disabled]="isImportingProspects"
+                                    (change)="onProspectImportFileSelected($event)" />
+                            </div>
+                            <div class="alert alert-info" *ngIf="prospectImportFileName">
+                                Archivo: <strong>{{ prospectImportFileName }}</strong>.
+                                {{ selectedProspectImportCount }} filas seleccionadas para importar.
+                            </div>
+                            <div class="alert alert-success" *ngIf="prospectImportSuccessMessage">
+                                {{ prospectImportSuccessMessage }}
+                            </div>
+                            <div class="alert alert-danger" *ngIf="prospectImportErrorMessage">
+                                {{ prospectImportErrorMessage }}
+                            </div>
+                            <div class="form-check mb-3" *ngIf="prospectImportRows.length">
+                                <input
+                                    class="form-check-input"
+                                    type="checkbox"
+                                    id="selectAllProspects"
+                                    [checked]="allValidProspectsSelected"
+                                    [disabled]="!prospectImportRows.some(row => row.errors.length === 0) || isImportingProspects"
+                                    (change)="toggleSelectAllProspects($any($event.target).checked)"
+                                />
+                                <label class="form-check-label" for="selectAllProspects">
+                                    Seleccionar todos los prospectos válidos
+                                    ({{ selectedProspectImportCount }} seleccionados)
+                                </label>
+                            </div>
+
+                            <div class="table-responsive" *ngIf="prospectImportRows.length">
+                                <table class="table table-sm table-bordered align-middle">
+                                    <thead>
+                                        <tr><th>Importar</th><th>Fila</th><th>Nombre</th><th>Empresa</th><th>Correo</th><th>Validación</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr *ngFor="let row of prospectImportRows">
+                                            <td>
+                                                <input class="form-check-input" type="checkbox"
+                                                    [(ngModel)]="row.selected"
+                                                    [disabled]="row.errors.length > 0 || isImportingProspects" />
+                                            </td>
+                                            <td>{{ row.rowNumber }}</td>
+                                            <td>{{ row.data['Nombre'] }}</td>
+                                            <td>{{ row.data['Empresa'] }}</td>
+                                            <td>{{ row.data['Correo'] }}</td>
+                                            <td>
+                                                <span *ngIf="row.errors.length === 0" class="text-success">Válido</span>
+                                                <span *ngIf="row.errors.length > 0" class="text-danger">{{ row.errors.join('; ') }}</span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <button class="btn btn-theme" type="button"
+                                    [disabled]="isImportingProspects || selectedProspectImportCount === 0"
+                                    (click)="importSelectedProspects()">
+                                    <i class="bi bi-upload me-1"></i>
+                                    {{ isImportingProspects ? 'Importando...' : 'Importar seleccionados' }}
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="alert alert-success border mb-3" *ngIf="prospectConvertSuccessMessage">{{ prospectConvertSuccessMessage }}</div>
                     <div class="alert alert-danger border mb-3" *ngIf="prospectConvertErrorMessage">{{ prospectConvertErrorMessage }}</div>
+                    <div class="alert alert-success border mb-3" *ngIf="prospectDeleteSuccessMessage">{{ prospectDeleteSuccessMessage }}</div>
+                    <div class="alert alert-danger border mb-3" *ngIf="prospectDeleteErrorMessage">{{ prospectDeleteErrorMessage }}</div>
 
                     <div class="alert alert-danger border mb-3" *ngIf="prospectsLoadErrorMessage">{{ prospectsLoadErrorMessage }}</div>
+
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                        <div class="input-group" style="max-width: 480px;">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input
+                                class="form-control"
+                                type="search"
+                                [(ngModel)]="prospectSearchTerm"
+                                name="prospectSearchTerm"
+                                placeholder="Buscar por nombre, correo, empresa, NIT..."
+                                aria-label="Buscar prospectos"
+                            />
+                            <button
+                                *ngIf="prospectSearchTerm"
+                                class="btn btn-outline-secondary"
+                                type="button"
+                                (click)="prospectSearchTerm = ''"
+                            >Limpiar</button>
+                        </div>
+                        <small class="text-secondary">
+                            {{ visibleProspectRows.length }} prospecto(s) encontrado(s)
+                        </small>
+                    </div>
 
                     <div class="table-responsive border rounded">
                         <table class="table align-middle mb-0">
@@ -165,12 +278,15 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
                                                 <li><button class="dropdown-item" type="button" (click)="openEquipmentModal(row)">Asociar equipo{{ associatedEquipmentCount(row) > 0 ? ' (' + associatedEquipmentCount(row) + ')' : '' }}</button></li>
                                                 <li><button class="dropdown-item" type="button" [disabled]="isConvertingProspect(row.id) || isProspectConverted(row.id)" (click)="convertProspectToClient(row)">{{ isProspectConverted(row.id) ? 'Convertido' : isConvertingProspect(row.id) ? 'Convirtiendo...' : 'Convertir a cliente' }}</button></li>
                                                 <li><a class="dropdown-item" routerLink="/app/crm-cotizaciones">Ver cotizaciones</a></li>
+                                                <li><button class="dropdown-item text-danger" type="button" [disabled]="deletingProspectIds.has(row.backendId)" (click)="removeProspect(row)">{{ deletingProspectIds.has(row.backendId) ? 'Eliminando...' : 'Eliminar' }}</button></li>
                                             </ul>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr *ngIf="visibleProspectRows.length === 0">
-                                    <td colspan="7" class="text-center py-4 text-secondary">Ningun dato disponible en esta tabla</td>
+                                    <td colspan="7" class="text-center py-4 text-secondary">
+                                        {{ prospectSearchTerm.trim() ? 'No se encontraron prospectos que coincidan con la búsqueda.' : 'Ningun dato disponible en esta tabla' }}
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>
@@ -504,19 +620,57 @@ export class CrmProspectsComponent {
     @ViewChild("prospectFormCard") private prospectFormCardRef?: ElementRef<HTMLDivElement>;
     @ViewChild("prospectNameInput") private prospectNameInputRef?: ElementRef<HTMLInputElement>;
 
+    showProspectImport = false;
+    isImportingProspects = false;
+    prospectImportFileName = "";
+    prospectImportRows: ProspectExcelImportRow[] = [];
+    prospectImportSuccessMessage = "";
+    prospectImportErrorMessage = "";
+
+    get selectedProspectImportCount(): number {
+        return this.prospectImportRows.filter(row => row.selected && row.errors.length === 0).length;
+    }
+
     prospectRows: ProspectRecord[] = [];
+    prospectSearchTerm = "";
 
     sortKey: "nombre" | "creado" | null = null;
     sortDirection: "asc" | "desc" = "asc";
 
     get visibleProspectRows(): ProspectRecord[] {
-        // Sin filtrado: un prospecto convertido a cliente SIGUE listado (con
-        // badge "Convertido"), no desaparece silenciosamente por colisión de ids.
-        const rows = this.prospectRows;
+        const query = this.prospectSearchTerm.trim().toLocaleLowerCase("es");
+
+        const rows = this.prospectRows.filter((row) => {
+            if (!query) return true;
+
+            const searchableValues = [
+                row.id, row.salutation, row.nombre, row.correo, row.movil,
+                row.nit, row.zona, row.valor,
+                row.allowFollowUp ? "sí si permitido seguimiento" : "no",
+                row.creado, row.cotizaciones, row.empleado, row.estado,
+                row.servicio, row.compania, row.sitioWeb, row.telefonoOficina,
+                row.pais, row.ciudad, row.direccion, row.fuente,
+                row.categoria, row.nota,
+                ...(row.branches ?? []).flatMap((branch) => [
+                    branch.name, branch.contactName, branch.contactRole,
+                    branch.email, branch.phone, branch.country, branch.city,
+                    branch.address,
+                ]),
+            ];
+
+            return searchableValues.some((value) =>
+                String(value ?? "").toLocaleLowerCase("es").includes(query)
+            );
+        });
         if (!this.sortKey) {
             return rows;
         }
-        return [...rows].sort((a, b) => this.compareProspectRows(a, b, this.sortKey!) * (this.sortDirection === "asc" ? 1 : -1));
+
+        return [...rows].sort(
+            (a, b) =>
+                this.compareProspectRows(a, b, this.sortKey!) *
+                (this.sortDirection === "asc" ? 1 : -1)
+        );
     }
 
     toggleSort(key: "nombre" | "creado"): void {
@@ -565,6 +719,9 @@ export class CrmProspectsComponent {
     prospectSaveErrorMessage = "";
     prospectConvertSuccessMessage = "";
     prospectConvertErrorMessage = "";
+    prospectDeleteSuccessMessage = "";
+    prospectDeleteErrorMessage = "";
+    deletingProspectIds = new Set<string>();
     isSavingProspect = false;
 
     isDuplicateModalOpen = false;
@@ -722,6 +879,327 @@ export class CrmProspectsComponent {
         this.quickAddInput = "";
         this.quickAddErrorMessage = "";
         this.isQuickAddModalOpen = true;
+    }
+
+    exportProspectsToExcel(): void {
+        const rows = this.visibleProspectRows;
+
+        if (!rows.length) {
+            window.alert("No hay prospectos disponibles para exportar.");
+            return;
+        }
+
+        const data = rows.map((row) => ({
+            "ID": row.id,
+            "Saludo": row.salutation,
+            "Nombre": row.nombre,
+            "Correo electrónico": row.correo,
+            "Móvil": row.movil,
+            "NIT": row.nit,
+            "Empresa": row.compania,
+            "Zona": row.zona,
+            "Valor del prospecto": row.valor,
+            "Permite seguimiento": row.allowFollowUp ? "Sí" : "No",
+            "Fecha de creación": row.creado,
+            "Cotizaciones": row.cotizaciones,
+            "Empleado asignado": row.empleado,
+            "Estado": row.estado,
+            "Servicio": row.servicio,
+            "Sitio web": row.sitioWeb,
+            "Teléfono de oficina": row.telefonoOficina,
+            "País": row.pais,
+            "Ciudad": row.ciudad,
+            "Dirección": row.direccion,
+            "Fuente": row.fuente,
+            "Categoría": row.categoria,
+            "Nota": row.nota,
+            "Sucursales": (row.branches ?? [])
+                .map((branch) => [
+                    branch.name,
+                    branch.contactName,
+                    branch.contactRole,
+                    branch.email,
+                    branch.phone,
+                    branch.country,
+                    branch.city,
+                    branch.address,
+                ].filter(Boolean).join(" | "))
+                .join(" ; "),
+        }));
+
+        const worksheet = XLSX.utils.json_to_sheet(data);
+        worksheet["!cols"] = Object.keys(data[0]).map((key) => ({
+            wch: Math.min(Math.max(key.length + 4, 16), 35),
+        }));
+
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Prospectos");
+
+        const date = new Date().toISOString().slice(0, 10);
+        XLSX.writeFile(workbook, `prospectos_${date}.xlsx`);
+    }
+
+    downloadProspectTemplate(): void {
+        const headers = [
+            "Nombre", "Correo", "Empresa", "NIT", "Móvil", "Sitio web",
+            "Teléfono oficina", "País", "Ciudad", "Dirección", "Saludo",
+            "Empleado", "Fuente", "Categoría", "Zona", "Valor", "Estado",
+            "Servicio", "Nota"
+        ];
+        const examples = [[
+            "Ejemplo Prospecto", "contacto@ejemplo.com", "Empresa Ejemplo", "",
+            "3001234567", "", "", "Colombia", "Girardot", "", "Sr.",
+            "", "", "", "", 0, "Pendiente", "", "Fila de ejemplo: reemplazar por datos reales"
+        ]];
+        const sheet = XLSX.utils.aoa_to_sheet([headers, ...examples]);
+        sheet["!cols"] = headers.map(h => ({ wch: Math.max(h.length + 3, 18) }));
+        const book = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(book, sheet, "Prospectos");
+        XLSX.writeFile(book, "plantilla_prospectos.xlsx");
+    }
+
+    async onProspectImportFileSelected(event: Event): Promise<void> {
+        const input = event.target as HTMLInputElement;
+        const file = input.files?.[0];
+        if (!file) return;
+
+        this.prospectImportFileName = file.name;
+        this.prospectImportRows = [];
+        this.prospectImportSuccessMessage = "";
+        this.prospectImportErrorMessage = "";
+
+        try {
+            const bytes = await file.arrayBuffer();
+            const workbook = XLSX.read(bytes, { type: "array" });
+            const sheetName = workbook.SheetNames[0];
+            if (!sheetName) throw new Error("El archivo no contiene hojas de cálculo.");
+
+            const sheet = workbook.Sheets[sheetName];
+            const data = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
+                defval: "",
+                raw: false
+            });
+
+            if (!data.length) throw new Error("No se encontraron filas con datos.");
+            if (!Object.keys(data[0]).some(key => key.trim().toLowerCase() === "nombre")) {
+                throw new Error("No se encontró la columna obligatoria «Nombre». Descarga y utiliza la plantilla.");
+            }
+
+            this.prospectImportRows = data.map((row, index) => {
+                const normalized: Record<string, unknown> = {};
+                for (const [key, value] of Object.entries(row)) {
+                    normalized[key.trim().toLowerCase()] = value;
+                }
+                const get = (key: string): string => String(normalized[key.toLowerCase()] ?? "").trim();
+                const name = get("Nombre");
+                const email = get("Correo");
+                const status = get("Estado");
+                const valueText = get("Valor").replace(/[ $]/g, "").replace(",", ".");
+                const errors: string[] = [];
+
+                if (!name) errors.push("Falta Nombre.");
+                if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.push("Correo inválido.");
+                if (valueText && (!Number.isFinite(Number(valueText)) || Number(valueText) < 0)) {
+                    errors.push("Valor debe ser un número igual o mayor que cero.");
+                }
+                if (status && !["pendiente", "en proceso", "cerrado"].includes(status.toLowerCase())) {
+                    errors.push("Estado debe ser Pendiente, En proceso o Cerrado.");
+                }
+
+                const canonicalData: Record<string, unknown> = {};
+                for (const [key, value] of Object.entries(row)) canonicalData[key.trim()] = value;
+
+                return {
+                    rowNumber: index + 2,
+                    data: canonicalData,
+                    errors,
+                    selected: errors.length === 0
+                };
+            });
+
+            await this.detectProspectImportDuplicates();
+
+            if (!this.prospectImportRows.length) {
+                this.prospectImportErrorMessage = "No se encontraron prospectos para revisar.";
+            }
+        } catch (error) {
+            this.prospectImportErrorMessage = error instanceof Error
+                ? error.message
+                : "No fue posible leer el archivo seleccionado.";
+        } finally {
+            input.value = "";
+            this.cdr.detectChanges();
+        }
+    }
+
+    async importSelectedProspects(): Promise<void> {
+        const selected = this.prospectImportRows.filter(row => row.selected && row.errors.length === 0);
+        if (!selected.length || this.isImportingProspects) return;
+
+        this.isImportingProspects = true;
+        this.prospectImportErrorMessage = "";
+        this.prospectImportSuccessMessage = "";
+        let succeeded = 0;
+        const failures: string[] = [];
+
+        const text = (row: ProspectExcelImportRow, key: string): string =>
+            String(row.data[key] ?? "").trim();
+
+        for (const row of selected) {
+            const statusInput = text(row, "Estado").toLowerCase();
+            const status = statusInput === "cerrado" ? "Cerrado"
+                : statusInput === "en proceso" ? "En proceso" : "Pendiente";
+            const valueInput = text(row, "Valor").replace(/[ $]/g, "").replace(",", ".");
+            const value = valueInput ? Number(valueInput) : 0;
+
+            try {
+                await firstValueFrom(this.crmProspectsApi.createProspect({
+                    salutation: text(row, "Saludo") || "Sr.",
+                    name: text(row, "Nombre"),
+                    email: text(row, "Correo"),
+                    mobile: text(row, "Móvil"),
+                    company: text(row, "Empresa"),
+                    nit: text(row, "NIT"),
+                    website: text(row, "Sitio web"),
+                    officePhone: text(row, "Teléfono oficina"),
+                    country: text(row, "País"),
+                    city: text(row, "Ciudad"),
+                    address: text(row, "Dirección"),
+                    assignedEmployee: text(row, "Empleado"),
+                    source: text(row, "Fuente"),
+                    category: text(row, "Categoría"),
+                    zone: text(row, "Zona") || this.selectedProspectZone,
+                    prospectValue: value,
+                    allowFollowUp: true,
+                    status,
+                    service: text(row, "Servicio"),
+                    note: text(row, "Nota"),
+                    branches: []
+                }));
+                succeeded++;
+            } catch (error) {
+                const message = error instanceof Error ? error.message : "Error desconocido";
+                failures.push(`Fila ${row.rowNumber}: ${message}`);
+            }
+        }
+
+        this.isImportingProspects = false;
+        if (succeeded > 0) {
+            this.prospectImportSuccessMessage = `Se importaron ${succeeded} prospecto(s) correctamente.`;
+            this.loadProspectsFromApi();
+        }
+        if (failures.length) {
+            this.prospectImportErrorMessage = `No se pudieron importar ${failures.length} fila(s):\n${failures.slice(0, 10).join("\n")}`;
+        }
+        this.cdr.detectChanges();
+    }
+
+    private async detectProspectImportDuplicates(): Promise<void> {
+        const normalize = (value: unknown): string =>
+            String(value ?? "").trim().toLowerCase();
+
+        let prospects: CrmProspectRecord[];
+        let clients: CrmClientRecord[];
+
+        try {
+            const result = await firstValueFrom(forkJoin({
+                prospects: this.crmProspectsApi.listProspects(),
+                clients: this.crmClientsApi.listClients({ limit: 500 })
+            }));
+
+            prospects = result.prospects;
+            clients = result.clients;
+        } catch {
+            this.prospectImportRows = this.prospectImportRows.map(row => ({
+                ...row,
+                errors: [
+                    ...row.errors,
+                    "No se pudieron verificar duplicados. Revisa la conexión antes de importar."
+                ],
+                selected: false
+            }));
+            throw new Error(
+                "No fue posible consultar los registros existentes. " +
+                "Las filas quedaron desmarcadas para evitar importaciones sin verificar."
+            );
+        }
+
+        const prospectEmails = new Set(
+            prospects.map(item => normalize(item.correo)).filter(Boolean)
+        );
+        const prospectNits = new Set(
+            prospects.map(item => normalize(item.nit)).filter(Boolean)
+        );
+        const clientEmails = new Set(
+            clients.map(item => normalize(item.correo)).filter(Boolean)
+        );
+        const clientNits = new Set(
+            clients.map(item => normalize(item.nit)).filter(Boolean)
+        );
+
+        const firstEmailRow = new Map<string, number>();
+        const firstNitRow = new Map<string, number>();
+
+        this.prospectImportRows = this.prospectImportRows.map(row => {
+            const email = normalize(row.data["Correo"]);
+            const nit = normalize(row.data["NIT"]);
+            const errors = [...row.errors];
+
+            if (
+                (email && prospectEmails.has(email)) ||
+                (nit && prospectNits.has(nit))
+            ) {
+                errors.push(
+                    "Duplicado existente: coincide por correo o NIT con un prospecto registrado."
+                );
+            } else if (
+                (email && clientEmails.has(email)) ||
+                (nit && clientNits.has(nit))
+            ) {
+                errors.push(
+                    "Duplicado existente: coincide por correo o NIT con un cliente registrado."
+                );
+            }
+
+            const previousEmailRow = email ? firstEmailRow.get(email) : undefined;
+            const previousNitRow = nit ? firstNitRow.get(nit) : undefined;
+            const previousRow = previousEmailRow ?? previousNitRow;
+
+            if (previousRow !== undefined) {
+                errors.push(
+                    `Duplicado dentro del archivo: coincide por correo o NIT con la fila ${previousRow}.`
+                );
+            }
+
+            if (email && !firstEmailRow.has(email)) {
+                firstEmailRow.set(email, row.rowNumber);
+            }
+            if (nit && !firstNitRow.has(nit)) {
+                firstNitRow.set(nit, row.rowNumber);
+            }
+
+            return {
+                ...row,
+                errors,
+                selected: errors.length === 0
+            };
+        });
+    }
+
+    get allValidProspectsSelected(): boolean {
+        const validRows = this.prospectImportRows.filter(
+            row => row.errors.length === 0
+        );
+
+        return validRows.length > 0 &&
+            validRows.every(row => row.selected);
+    }
+
+    toggleSelectAllProspects(selected: boolean): void {
+        this.prospectImportRows = this.prospectImportRows.map(row => ({
+            ...row,
+            selected: row.errors.length === 0 ? selected : false
+        }));
     }
 
     openProspectForm(): void {
@@ -915,6 +1393,52 @@ export class CrmProspectsComponent {
         this.refreshEquipmentCountsFromApi();
     }
 
+    removeProspect(prospect: ProspectRecord): void {
+        const backendId = String(prospect.backendId ?? "").trim();
+
+        if (!backendId) {
+            this.prospectDeleteSuccessMessage = "";
+            this.prospectDeleteErrorMessage = "No se puede eliminar el prospecto: falta su identificador del backend.";
+            return;
+        }
+
+        if (this.deletingProspectIds.has(backendId)) {
+            return;
+        }
+
+        const nombre = String(prospect.nombre ?? "").trim() || "este prospecto";
+
+        if (typeof window !== "undefined" &&
+            !window.confirm(`¿Eliminar "${nombre}"? Esta acción no se puede deshacer.`)) {
+            return;
+        }
+
+        this.prospectDeleteSuccessMessage = "";
+        this.prospectDeleteErrorMessage = "";
+        this.deletingProspectIds.add(backendId);
+
+        this.crmProspectsApi.deleteProspect(backendId).subscribe({
+            next: () => {
+                this.deletingProspectIds.delete(backendId);
+                this.prospectRows = this.prospectRows.filter(
+                    (item) => String(item.backendId ?? "").trim() !== backendId
+                );
+                this.prospectDeleteErrorMessage = "";
+                this.prospectDeleteSuccessMessage = `Prospecto "${nombre}" eliminado correctamente.`;
+                this.cdr.detectChanges();
+            },
+            error: (error) => {
+                this.deletingProspectIds.delete(backendId);
+                this.prospectDeleteSuccessMessage = "";
+                this.prospectDeleteErrorMessage = this.resolveErrorMessage(
+                    error,
+                    "No se pudo eliminar el prospecto."
+                );
+                this.cdr.detectChanges();
+            },
+        });
+    }
+
     convertProspectToClient(prospect: ProspectRecord): void {
         if (this.isConvertingProspect(prospect.id) || this.isProspectConverted(prospect.id)) {
             return;
@@ -960,7 +1484,7 @@ export class CrmProspectsComponent {
         this.prospectConvertSuccessMessage = "";
         this.prospectConvertErrorMessage = "";
 
-        this.crmClientsApi.createClient(payload).subscribe({
+        this.crmProspectsApi.convertProspectToClient(String(prospect.backendId).trim()).subscribe({
             next: () => {
                 this.convertingProspectIds.delete(prospect.id);
                 this.convertedProspectIds.add(prospect.id);

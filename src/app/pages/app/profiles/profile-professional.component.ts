@@ -352,12 +352,8 @@ function blankEmployeeProfile() {
                                     <label class="form-label">Correo electronico</label>
                                     <input class="form-control" type="email" name="email" [(ngModel)]="employee.email" />
                                 </div>
-                                <div class="col-12 col-md-3">
-                                    <label class="form-label">Contrasena del correo</label>
-                                    <input class="form-control" type="password" name="emailPassword" [(ngModel)]="employee.emailPassword" />
-                                </div>
                                 @if (needsAccessAccount) {
-                                    <div class="col-12 col-md-3">
+                                <div class="col-12 col-md-3">
                                         <label class="form-label">Contrasena de acceso <span class="text-danger">*</span></label>
                                         <input
                                             class="form-control"
