@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BoardColumn, Project, PropertyTemplate } from '../../models';
 import { describeProjectSla, getProjectTechnicalTestTypeLabel, resolveProjectSlaSeverity } from '../../project-workflow.config';
@@ -9,14 +9,15 @@ import { describeProjectSla, getProjectTechnicalTestTypeLabel, resolveProjectSla
 @Component({
   selector: 'app-project-card',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule],
   template: `
     <div class="project-card"
-      [attr.data-sla-severity]="getSlaSeverity()"
-      [class.project-card--success]="getSlaSeverity() === 'success'"
-      [class.project-card--warning]="getSlaSeverity() === 'warning'"
-      [class.project-card--overdue]="getSlaSeverity() === 'overdue'"
-      [class.project-card--critical]="getSlaSeverity() === 'critical'">
+      [attr.data-sla-severity]="slaSeverity"
+      [class.project-card--success]="slaSeverity === 'success'"
+      [class.project-card--warning]="slaSeverity === 'warning'"
+      [class.project-card--overdue]="slaSeverity === 'overdue'"
+      [class.project-card--critical]="slaSeverity === 'critical'">
       <button type="button" class="project-card__drag-handle" aria-label="Arrastrar proyecto" title="Arrastrar proyecto">
         <i class="bi bi-grip-vertical"></i>
       </button>
@@ -47,7 +48,7 @@ import { describeProjectSla, getProjectTechnicalTestTypeLabel, resolveProjectSla
           [class.project-card__badge--medium]="project.properties['priority'] === 'medium'"
           [class.project-card__badge--low]="project.properties['priority'] === 'low'">
           <i class="bi bi-flag-fill"></i>
-          {{ getPriorityLabel(project.properties['priority']) }}
+          {{ priorityLabel }}
         </span>
 
         <span *ngIf="project.properties['dueDate']" class="badge project-card__badge project-card__badge--ghost">
@@ -55,13 +56,13 @@ import { describeProjectSla, getProjectTechnicalTestTypeLabel, resolveProjectSla
           {{ project.properties['dueDate'] | date:'dd/MM' }}
         </span>
 
-        <span *ngIf="getSlaSeverity() !== 'neutral'" class="badge project-card__badge"
-          [class.project-card__badge--sla-success]="getSlaSeverity() === 'success'"
-          [class.project-card__badge--sla-warning]="getSlaSeverity() === 'warning'"
-          [class.project-card__badge--sla-overdue]="getSlaSeverity() === 'overdue'"
-          [class.project-card__badge--sla-critical]="getSlaSeverity() === 'critical'">
+        <span *ngIf="slaSeverity !== 'neutral'" class="badge project-card__badge"
+          [class.project-card__badge--sla-success]="slaSeverity === 'success'"
+          [class.project-card__badge--sla-warning]="slaSeverity === 'warning'"
+          [class.project-card__badge--sla-overdue]="slaSeverity === 'overdue'"
+          [class.project-card__badge--sla-critical]="slaSeverity === 'critical'">
           <i class="bi bi-circle-fill"></i>
-          {{ getSlaLabel() }}
+          {{ slaLabel }}
         </span>
 
         <span *ngIf="project.properties['budget']" class="badge project-card__badge project-card__badge--ghost">
@@ -84,19 +85,19 @@ import { describeProjectSla, getProjectTechnicalTestTypeLabel, resolveProjectSla
           {{ project.properties['equipmentLocationName'] }}
         </span>
 
-        <span *ngIf="getActualHours() > 0" class="badge project-card__badge project-card__badge--ghost">
+        <span *ngIf="actualHours > 0" class="badge project-card__badge project-card__badge--ghost">
           <i class="bi bi-stopwatch"></i>
-          {{ getActualHours() }}h real
+          {{ actualHours }}h real
         </span>
 
-        <span *ngIf="getRepairabilityPercent() > 0" class="badge project-card__badge project-card__badge--repairability">
+        <span *ngIf="repairabilityPercent > 0" class="badge project-card__badge project-card__badge--repairability">
           <i class="bi bi-activity"></i>
-          {{ getRepairabilityPercent() }}% reparable
+          {{ repairabilityPercent }}% reparable
         </span>
 
         <span *ngIf="project.properties['testType']" class="badge project-card__badge project-card__badge--test">
           <i class="bi bi-clipboard2-pulse"></i>
-          {{ getTestTypeLabel() }}
+          {{ testTypeLabel }}
         </span>
 
         <span *ngIf="project.totalTasks && project.totalTasks > 0" class="badge project-card__badge project-card__badge--tasks">
@@ -441,10 +442,28 @@ import { describeProjectSla, getProjectTechnicalTestTypeLabel, resolveProjectSla
     }
   `]
 })
-export class ProjectCardComponent {
+export class ProjectCardComponent implements OnChanges {
   @Input() project!: Project;
   @Input() column: BoardColumn | null = null;
   @Input() propertyTemplates: PropertyTemplate[] = [];
+
+  actualHours = 0;
+  priorityLabel = '';
+  repairabilityPercent = 0;
+  slaLabel = '';
+  slaSeverity = 'neutral';
+  testTypeLabel = '';
+
+  ngOnChanges(_: SimpleChanges): void {
+    const priority = String(this.project?.properties?.['priority'] ?? '');
+    const stageEnteredAt = this.getStageEnteredAt();
+    this.priorityLabel = this.getPriorityLabel(priority);
+    this.slaSeverity = resolveProjectSlaSeverity(this.column, stageEnteredAt, priority);
+    this.slaLabel = describeProjectSla(this.column, stageEnteredAt, priority);
+    this.actualHours = this.readRoundedNumber('actualHours');
+    this.repairabilityPercent = this.readRoundedNumber('repairabilityPercent');
+    this.testTypeLabel = getProjectTechnicalTestTypeLabel(String(this.project?.properties?.['testType'] ?? 'sin-pruebas'));
+  }
 
   getPriorityLabel(priority: string): string {
     const labels: Record<string, string> = {
@@ -455,26 +474,9 @@ export class ProjectCardComponent {
     return labels[priority] || priority;
   }
 
-  getSlaSeverity() {
-    return resolveProjectSlaSeverity(this.column, this.getStageEnteredAt(), String(this.project.properties['priority'] ?? ''));
-  }
-
-  getSlaLabel(): string {
-    return describeProjectSla(this.column, this.getStageEnteredAt(), String(this.project.properties['priority'] ?? ''));
-  }
-
-  getRepairabilityPercent(): number {
-    const value = Number(this.project.properties['repairabilityPercent'] ?? 0);
+  private readRoundedNumber(property: string): number {
+    const value = Number(this.project?.properties?.[property] ?? 0);
     return Number.isFinite(value) ? Math.max(0, Math.round(value)) : 0;
-  }
-
-  getActualHours(): number {
-    const value = Number(this.project.properties['actualHours'] ?? 0);
-    return Number.isFinite(value) ? Math.max(0, Math.round(value)) : 0;
-  }
-
-  getTestTypeLabel(): string {
-    return getProjectTechnicalTestTypeLabel(String(this.project.properties['testType'] ?? 'sin-pruebas'));
   }
 
   private getStageEnteredAt(): Date | null {
