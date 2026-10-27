@@ -15,7 +15,7 @@ acción de interfaz nunca es una autorización de negocio por sí sola.
 
 | ID | Condición límite | Regla requerida | Evidencia / siguiente paso |
 |---|---|---|---|
-| COM-01 | Empresa ya existe con variación de nombre | Advertir posible duplicado antes de crear; permitir continuar solo de forma explícita y auditable | Empresa existente o justificación de duplicado |
+| ~~COM-01~~ ✅ | Empresa ya existe con variación de nombre | Advertir posible duplicado antes de crear; permitir continuar solo de forma explícita y auditable | Validado por `e2e-ui-com-01-duplicate-playwright` |
 | COM-02 | Lead sin contacto de mantenimiento/compras | Puede existir como base por depurar, pero no debe marcarse como visita efectiva ni recibir seguimiento comercial asignado | Fuente del lead y tarea para completar contacto |
 | COM-03 | Prospecto contacta por web, WhatsApp o recomendación | Debe conservarse el origen y enviarse el formato de recepción + condiciones por canal trazable | Canal, fecha, responsable y copia/enlace enviado |
 | COM-04 | Prospecto aún no aprueba reparación | Conserva estado Prospecto aunque haya enviado equipos, recibido diagnóstico o cotización | Historial comercial y estado de cotización |
@@ -76,8 +76,8 @@ acción de interfaz nunca es una autorización de negocio por sí sola.
 
 | ID | Condición límite | Regla requerida | Evidencia / siguiente paso |
 |---|---|---|---|
-| COMPR-01 | Línea sin OC validada | No debe aparecer en compras ni exportarse al proveedor | Referencia a OC/línea aprobada |
-| COMPR-02 | Equipo solo requiere stock | Pasar a Reparación cuando la reserva esté disponible; no enviarlo a espera de importación | Reserva activa/consumible |
+| ~~COMPR-01~~ ✅ | Línea sin OC validada | No debe aparecer en compras ni exportarse al proveedor | Validado por `test:e2e-compr01-sin-oc-no-se-exporta`; gate de exportación a líneas aprobadas (bionic) |
+| ~~COMPR-02~~ ✅ | Equipo solo requiere stock | Pasar a Reparación cuando la reserva esté disponible; no enviarlo a espera de importación | Validado por `test:e2e-compr02-stock-a-reparacion`; corregidos `transitions.go` + `materials_gate.go` (bionic) |
 | ~~COMPR-03~~ ✅ | Equipo requiere al menos una compra externa | Pasar a Esperando proveedor, no a Reparación al crear/enviar la solicitud | Validado por `test:e2e-fase1-tec07-compr03` (bionic) |
 | ~~COMPR-04~~ ✅ | Compra parcial o una línea pendiente | Mantener Posición 11; no liberar reparación hasta recibir todas las líneas requeridas | Validado por `test:e2e-fase2-compr04-10-recibo-parcial` (bionic) |
 | ~~COMPR-05~~ ✅ | Compra cerrada | Cambiar líneas a Comprado/En tránsito y asociar pedido, proveedor y fecha | Validado por `test:e2e-fase1-compr05-envio-lote` (bionic) |
