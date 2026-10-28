@@ -162,8 +162,12 @@ export function buildRemissionPrefillFromProject(project: any, equipmentItem?: a
         ? project.properties
         : {};
 
-    const clientName = String(props.client || "").trim();
-    const clientNit = String((equipmentItem && equipmentItem.clientNit) || props.clientNit || "").trim();
+    const snapshot = props.journeySnapshot && typeof props.journeySnapshot === "object" ? props.journeySnapshot : {};
+    const owner = snapshot.owner && typeof snapshot.owner === "object" ? snapshot.owner : {};
+    const equipment = snapshot.equipment && typeof snapshot.equipment === "object" ? snapshot.equipment : {};
+    const commercial = snapshot.commercial && typeof snapshot.commercial === "object" ? snapshot.commercial : {};
+    const clientName = String(props.client || owner.companyName || owner.prospectName || "").trim();
+    const clientNit = String((equipmentItem && equipmentItem.clientNit) || props.clientNit || owner.nit || "").trim();
 
     let dispatchType = String(props.paymentCondition || props.dispatchType || "").trim().toLowerCase();
     if (!DISPATCH_TYPE_LABELS[dispatchType]) {
@@ -174,7 +178,7 @@ export function buildRemissionPrefillFromProject(project: any, equipmentItem?: a
         props.equipmentIdentifier
         || (equipmentItem && (equipmentItem.receivedIdentifier || equipmentItem.identifier))
         || (equipmentItem && equipmentItem.serie)
-        || "",
+        || equipment.identifier || equipment.serie || "",
     ).trim();
 
     let description = String(props.equipmentDisplayName || "").trim();
@@ -195,7 +199,7 @@ export function buildRemissionPrefillFromProject(project: any, equipmentItem?: a
         clientName,
         clientNit,
         dispatchType,
-        purchaseOrder: String(props.purchaseOrder || props.ordenCompra || "").trim(),
+        purchaseOrder: String(props.purchaseOrder || props.purchaseOrderNumber || props.ordenCompra || commercial.purchaseOrderNumber || "").trim(),
         items: [{
             equipmentId: String(props.equipmentItemId || (equipmentItem && (equipmentItem.itemId || equipmentItem.id)) || ""),
             identifier,

@@ -11,6 +11,7 @@ import { buildEquipmentMatchCriteria } from "./crm-prospect-equipment-match.logi
 import { PublicQuotePreview, PublicQuotePreviewLine, upsertPublicQuotePreview } from "./crm-quote-preview.store";
 import { CrmZoneRecord } from "./crm-zones.store";
 import { getProjectWorkflowStatusLabel } from "../projects/project-workflow.config";
+import { mergeJourneyCommercial } from "../projects/equipment-journey-snapshot";
 import { ProjectService } from "../projects/services/project.service";
 import { CrmEquipmentApiService } from "../../../services/crm-equipment-api.service";
 import { CrmProspectRecord, CrmProspectsApiService } from "../../../services/crm-prospects-api.service";
@@ -1125,7 +1126,7 @@ export class CrmQuotesComponent implements OnInit {
             projects
                 .filter((project) => selectedEquipmentSet.has(String(project.properties?.["equipmentItemId"] ?? "").trim()))
                 .forEach((project) => {
-                    const nextProperties = {
+                    const nextProperties = mergeJourneyCommercial({
                         ...project.properties,
                         purchaseOrderNumber,
                         purchaseOrderDate,
@@ -1134,7 +1135,7 @@ export class CrmQuotesComponent implements OnInit {
                         purchaseOrderLinkedAt: quote.purchaseOrderUploadedAt || new Date().toISOString(),
                         equipmentRepairStatus: "pedir-repuestos",
                         equipmentRepairStatusLabel: repairLabel,
-                    };
+                    }, { quoteCode: quote.codigo, purchaseOrderNumber, purchaseOrderDate });
 
                     this.projectService.updateProject(project.id, {
                         properties: nextProperties,

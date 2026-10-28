@@ -61,8 +61,12 @@ function buildRemissionPrefillFromProject(project, equipmentItem) {
         ? project.properties
         : {};
 
-    const clientName = String(props.client || "").trim();
-    const clientNit = String((equipmentItem && equipmentItem.clientNit) || props.clientNit || "").trim();
+    const snapshot = props.journeySnapshot && typeof props.journeySnapshot === "object" ? props.journeySnapshot : {};
+    const owner = snapshot.owner && typeof snapshot.owner === "object" ? snapshot.owner : {};
+    const equipment = snapshot.equipment && typeof snapshot.equipment === "object" ? snapshot.equipment : {};
+    const commercial = snapshot.commercial && typeof snapshot.commercial === "object" ? snapshot.commercial : {};
+    const clientName = String(props.client || owner.companyName || owner.prospectName || "").trim();
+    const clientNit = String((equipmentItem && equipmentItem.clientNit) || props.clientNit || owner.nit || "").trim();
 
     let dispatchType = String(props.paymentCondition || props.dispatchType || "").trim().toLowerCase();
     if (!DISPATCH_TYPE_LABELS[dispatchType]) {
@@ -73,7 +77,7 @@ function buildRemissionPrefillFromProject(project, equipmentItem) {
         props.equipmentIdentifier
         || (equipmentItem && (equipmentItem.receivedIdentifier || equipmentItem.identifier))
         || (equipmentItem && equipmentItem.serie)
-        || "",
+        || equipment.identifier || equipment.serie || "",
     ).trim();
 
     let description = String(props.equipmentDisplayName || "").trim();
@@ -94,7 +98,7 @@ function buildRemissionPrefillFromProject(project, equipmentItem) {
         clientName,
         clientNit,
         dispatchType,
-        purchaseOrder: String(props.purchaseOrder || props.ordenCompra || "").trim(),
+        purchaseOrder: String(props.purchaseOrder || props.purchaseOrderNumber || props.ordenCompra || commercial.purchaseOrderNumber || "").trim(),
         items: [{
             equipmentId: String(props.equipmentItemId || (equipmentItem && (equipmentItem.itemId || equipmentItem.id)) || ""),
             identifier,
@@ -399,6 +403,14 @@ prefill = buildRemissionPrefillFromProject({ properties: { warrantyMonths: 5 } }
 assertEqual(prefill.items[0].warrantyMonths, 0, "non-selectable warranty (5) normalized to 0");
 prefill = buildRemissionPrefillFromProject({ properties: { warrantyMonths: "6" } });
 assertEqual(prefill.items[0].warrantyMonths, 6, "string warranty '6' parsed to 6");
+
+prefill = buildRemissionPrefillFromProject({ properties: {
+    journeySnapshot: { owner: { companyName: "Dueño Snapshot SAS", nit: "901999001-1" }, equipment: { identifier: "EQ-SNAPSHOT", serie: "SER-SNAPSHOT" }, commercial: { purchaseOrderNumber: "OC-SNAPSHOT-10M" } },
+} });
+assertEqual(prefill.clientName, "Dueño Snapshot SAS", "snapshot preserves owner when project client is absent");
+assertEqual(prefill.clientNit, "901999001-1", "snapshot preserves owner NIT when item is unavailable");
+assertEqual(prefill.items[0].identifier, "EQ-SNAPSHOT", "snapshot preserves equipment identifier when item is unavailable");
+assertEqual(prefill.purchaseOrder, "OC-SNAPSHOT-10M", "snapshot propagates OC without retyping it in logistics");
 
 prefill = buildRemissionPrefillFromProject(
     { properties: { client: "C", equipmentBorrowedForTesting: ["ANCLADO-1"] } },

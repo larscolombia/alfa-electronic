@@ -243,7 +243,7 @@ async function setupChain() {
 
     // 7. Repuesto: referencia en inventario → solicitud (línea de compra) → aprobación → recibo con stock
     //    (ReceivePurchaseLine sólo suma stock si la referencia YA existe en inventory_references)
-    await apiOk("crear referencia inventario", "POST", "/api/v1/inventory/references", {
+    const referencePayload = {
         reference: PART_REF,
         internalCode: PART_REF,
         designation: `IGBT módulo de potencia LARS T16`,
@@ -252,7 +252,18 @@ async function setupChain() {
         preferredSupplierName: "Mouser LARS",
         minStock: 0,
         targetStock: 4,
-    }, [200, 201]);
+    };
+    const referenceCreated = await api("POST", "/api/v1/inventory/references", referencePayload);
+    if (!referenceCreated.ok && referenceCreated.status === 400 && /duplicada/i.test(referenceCreated.text)) {
+        await apiOk("forzar referencia de prueba", "POST", "/api/v1/inventory/references", {
+            ...referencePayload,
+            forceCreate: true,
+            forceReason: `Referencia QA exclusiva ${PART_REF}; no sustituye el IGBT catalogado.`,
+        }, [200, 201]);
+        find("7.repuesto", "La detección de duplicado se activó; la suite usó el flujo auditable de creación forzada.");
+    } else if (!referenceCreated.ok) {
+        throw new Error(`crear referencia inventario: HTTP ${referenceCreated.status} — ${referenceCreated.text.slice(0, 300)}`);
+    }
     const pl = await apiOk("solicitar repuesto", "POST", "/api/v1/inventory/purchase-lines", {
         reference: PART_REF,
         description: `Repuesto IGBT para equipo ${EQUIPO_ID}`,

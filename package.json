@@ -39,6 +39,7 @@
     "test:workflow-transitions": "node scripts/test-workflow-transitions.mjs",
     "test:remission-logic": "node scripts/test-remission-logic.mjs",
     "test:remission-features": "node scripts/test-remission-features-logic.mjs",
+    "test:equipment-journey-snapshot": "node scripts/test-remission-features-logic.mjs",
     "check:dashboard-priorities": "node scripts/check-dashboard-priorities-playwright.mjs",
     "check:sla-config-summary": "node scripts/check-sla-config-summary-playwright.mjs",
     "check:projects-sla-chips": "node scripts/check-projects-sla-chips-playwright.mjs",

@@ -57,6 +57,7 @@ import { resolveEquipmentProspectId } from "./crm-prospect-equipment-match.logic
 import { ProspectRecord } from "./crm-prospects.store";
 import { Project } from "../projects/models";
 import { ProjectService } from "../projects/services";
+import { buildEquipmentJourneySnapshot } from "../projects/equipment-journey-snapshot";
 import { CrmBranchRecord, CrmClientRecord, CrmClientsApiService } from "../../../services/crm-clients-api.service";
 import { CrmEquipmentApiService, EquipmentTechnicianOption } from "../../../services/crm-equipment-api.service";
 import { CrmProspectContact, CrmProspectRecord, CrmProspectsApiService } from "../../../services/crm-prospects-api.service";
@@ -4259,6 +4260,7 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
             equipmentLastScanSource: item.receivedIdentifierSource,
             equipmentLastWorkflowUpdate: nowIso,
             equipmentDiagnosisMode: this.isPriorityPaid(item) ? "urgencia-prioridad" : "diagnostico-gratis",
+            journeySnapshot: buildEquipmentJourneySnapshot(record, item),
             progress: 0,
         };
     }
