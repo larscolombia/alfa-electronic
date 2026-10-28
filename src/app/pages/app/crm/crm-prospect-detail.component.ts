@@ -2047,7 +2047,7 @@ export class CrmProspectDetailComponent {
     private refreshTimelineFromCommercialActions(): void {
         const lifecycleEvent = this.prospect ? [{
             id: `prospect-created-${this.prospect.backendId || this.prospect.id}`,
-            fecha: this.prospect.creado || "Fecha no disponible",
+            fecha: this.formatProspectCreatedLabel(),
             titulo: "Prospecto creado",
             descripcion: `Se registró el prospecto${this.prospect.compania ? ` para ${this.prospect.compania}` : ""}. Estado inicial: ${this.prospect.estado || "Pendiente"}.`,
             responsable: this.prospect.empleado || "Sin asignar",
@@ -2064,6 +2064,17 @@ export class CrmProspectDetailComponent {
                 icono: this.resolveTimelineIcon(action.actionType),
             }));
         this.timelineItems = [...lifecycleEvent, ...followupEvents];
+    }
+
+    // Hora de creación en la zona horaria del usuario: el servidor envía
+    // RFC3339 en UTC y new Date() lo convierte a la hora local del navegador.
+    private formatProspectCreatedLabel(): string {
+        const raw = String(this.prospect?.creadoAt ?? "").trim();
+        if (raw) {
+            return this.formatApiDateTime(raw);
+        }
+
+        return this.prospect?.creado || "Fecha no disponible";
     }
 
     private resolveTimelineIcon(actionType: string): string {

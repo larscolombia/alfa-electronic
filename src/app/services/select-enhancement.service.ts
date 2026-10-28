@@ -73,6 +73,11 @@ export class SelectEnhancementService {
 
     private enhance(select: HTMLSelectElement): void {
         if (this.enhanced.has(select) || select.hasAttribute("appSearchableSelect")) return;
+        // Los selects del modal de equipos viven en pasos que se crean/destruyen
+        // con *ngIf y alternan [disabled] por datos: Choices no sincroniza el
+        // estado disabled ni los valores escritos por ngModel, y su lista se
+        // corta dentro del cuerpo scrollable del modal. Se quedan nativos.
+        if (select.closest("app-crm-prospect-equipment-modal")) return;
 
         const accessibleName = this.resolveAccessibleName(select);
         if (!select.hasAttribute("aria-label") && !this.hasAssociatedLabel(select)) {

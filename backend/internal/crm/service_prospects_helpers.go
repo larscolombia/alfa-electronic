@@ -178,7 +178,8 @@ func boolValueOrDefault(value *bool, fallback bool) bool {
 }
 
 func formatCRMDateTime(value time.Time) string {
-	return value.UTC().Format("2006-01-02T15:04:05")
+	// RFC3339 con "Z": el navegador convierte a la zona horaria del usuario.
+	return value.UTC().Format(time.RFC3339)
 }
 
 func scanProspect(scanner interface{ Scan(dest ...any) error }) (Prospect, error) {

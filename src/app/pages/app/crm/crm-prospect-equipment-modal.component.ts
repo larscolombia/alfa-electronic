@@ -65,7 +65,7 @@ import { AuthService } from "../../../services/auth.service";
 import { FormDraftService } from "../../../services/form-draft.service";
 import { EmailsApiService } from "../../../services/emails-api.service";
 import { resolveApiBaseUrl } from "../../../services/api-base-url.util";
-import { backupAvailableForModel, findPreviousReception, isUnderLegalWarranty, warrantyMonthsRemaining } from "./warranty.logic";
+import { backupAvailableForModel, findPreviousReception, isUnderLegalWarranty, warrantyDaysStatus } from "./warranty.logic";
 
 const CRM_EQUIPMENT_MODAL_DRAFT_PREFIX = "app.crm.equipment-modal";
 
@@ -198,7 +198,7 @@ type SoftwareBackupInfo = {
                             </button>
                         </div>
 
-                        <div class="wizard-steps-grid mb-4">
+                        <div class="wizard-steps-grid mb-3">
                             <div class="wizard-step" *ngFor="let step of wizardSteps; let i = index; trackBy: trackByStepKey" [class.active]="currentStepIndex === i" [class.completed]="currentStepIndex > i">
                                 <span class="wizard-step-number">{{ i + 1 }}</span>
                                 <div class="wizard-step-content">
@@ -208,31 +208,15 @@ type SoftwareBackupInfo = {
                             </div>
                         </div>
 
-                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-                            <div>
-                                <p class="text-uppercase text-secondary small fw-semibold mb-1">Paso {{ currentStepIndex + 1 }} de {{ wizardSteps.length }}</p>
-                                <h6 class="mb-1">{{ currentWizardStep.title }}</h6>
-                                <p class="text-secondary small mb-0">{{ currentWizardStep.description }}</p>
-                            </div>
+                        <div class="d-flex justify-content-end mb-3">
                             <button class="btn btn-outline-theme" type="button" *ngIf="currentWizardStep.key === 'equipment'" data-testid="equipment-modal-add-item" (click)="addEquipmentItem()">
                                 <i class="bi bi-plus-lg me-1"></i> Agregar equipo
                             </button>
                         </div>
 
-                        <div class="alert alert-info border mb-3" *ngIf="currentWizardStep.key === 'reception' || currentWizardStep.key === 'equipment'">
-                            Puedes recibir equipos desde el catálogo central o en modo manual/no homologado. Si faltan datos, el flujo sigue y el listado los marcará con warnings operativos.
-                        </div>
-
                         <ng-container *ngIf="currentWizardStep.key === 'reception'">
                             <div class="border rounded p-3">
-                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-                                    <div>
-                                        <h6 class="mb-1">Orden de recepción de equipos</h6>
-                                        <p class="text-secondary small mb-0">Datos generales del cliente y la recepción antes de cargar los equipos.</p>
-                                    </div>
-                                </div>
-
-                                <div class="row gx-3 gy-3">
+                                <div class="row gx-3 gy-2 form-compact">
                                     <div class="col-12 col-lg-3">
                                         <label class="form-label d-block">Fecha</label>
                                         <div class="row gx-2">
@@ -342,26 +326,67 @@ type SoftwareBackupInfo = {
 
                                     <div class="col-12">
                                         <label class="form-label">Contacto remitente (empresa)</label>
-                                        <select
-                                            class="form-select"
-                                            [ngModel]="selectedCompanyContactOption"
-                                            [ngModelOptions]="{ standalone: true }"
-                                            (ngModelChange)="onCompanyContactSelectionChange($event)"
-                                            [disabled]="!draft.companyName.trim() || companyContactsLoading"
-                                            data-testid="equipment-modal-company-contact-select">
-                                            <option value="">
-                                                {{
-                                                    companyContactsLoading
-                                                        ? 'Cargando contactos...'
-                                                        : companyContactOptions.length > 0
-                                                            ? 'Seleccionar contacto de la empresa'
-                                                            : 'Sin contactos registrados para esta empresa'
-                                                }}
-                                            </option>
-                                            <option *ngFor="let option of companyContactOptions; trackBy: trackByCompanyContactOption" [value]="option.value">
-                                                {{ option.name }}{{ option.role ? ' · ' + option.role : '' }}{{ option.sourceLabel ? ' · ' + option.sourceLabel : '' }}
-                                            </option>
-                                        </select>
+                                        <div class="d-flex gap-2 align-items-stretch">
+                                            <select
+                                                class="form-select"
+                                                [ngModel]="selectedCompanyContactOption"
+                                                [ngModelOptions]="{ standalone: true }"
+                                                (ngModelChange)="onCompanyContactSelectionChange($event)"
+                                                [disabled]="!draft.companyName.trim() || companyContactsLoading"
+                                                data-testid="equipment-modal-company-contact-select">
+                                                <option value="">
+                                                    {{
+                                                        companyContactsLoading
+                                                            ? 'Cargando contactos...'
+                                                            : companyContactOptions.length > 0
+                                                                ? 'Seleccionar contacto de la empresa'
+                                                                : 'Sin contactos registrados para esta empresa'
+                                                    }}
+                                                </option>
+                                                <option *ngFor="let option of companyContactOptions; trackBy: trackByCompanyContactOption" [value]="option.value">
+                                                    {{ option.name }}{{ option.role ? ' · ' + option.role : '' }}{{ option.sourceLabel ? ' · ' + option.sourceLabel : '' }}
+                                                </option>
+                                            </select>
+                                            <button
+                                                class="btn btn-outline-theme flex-shrink-0"
+                                                type="button"
+                                                (click)="openCompanyContactCreate()"
+                                                [disabled]="!canCreateCompanyContact"
+                                                data-testid="equipment-modal-contact-create">
+                                                <i class="bi bi-plus-lg me-1"></i>Nuevo contacto
+                                            </button>
+                                        </div>
+                                        <div class="small text-secondary mt-1" *ngIf="!canCreateCompanyContact && draft.companyName.trim() && !companyContactsLoading">
+                                            {{ companyContactCreateHint }}
+                                        </div>
+                                        <div class="border rounded p-3 mt-2 bg-light-subtle" *ngIf="showCompanyContactCreate" data-testid="equipment-modal-contact-create-form">
+                                            <div class="small fw-semibold mb-2">Nuevo contacto para {{ draft.companyName }}</div>
+                                            <div class="row gx-3 gy-2">
+                                                <div class="col-12 col-lg-3">
+                                                    <label class="form-label small">Nombre <span class="text-danger">*</span></label>
+                                                    <input class="form-control form-control-sm" [(ngModel)]="companyContactCreateDraft.name" [ngModelOptions]="{ standalone: true }" maxlength="180" data-testid="contact-create-name" />
+                                                </div>
+                                                <div class="col-12 col-lg-3">
+                                                    <label class="form-label small">Cargo / Rol</label>
+                                                    <input class="form-control form-control-sm" [(ngModel)]="companyContactCreateDraft.role" [ngModelOptions]="{ standalone: true }" maxlength="120" />
+                                                </div>
+                                                <div class="col-12 col-lg-3">
+                                                    <label class="form-label small">Correo electrónico</label>
+                                                    <input class="form-control form-control-sm" type="email" [(ngModel)]="companyContactCreateDraft.email" [ngModelOptions]="{ standalone: true }" maxlength="180" />
+                                                </div>
+                                                <div class="col-12 col-lg-3">
+                                                    <label class="form-label small">Teléfono</label>
+                                                    <input class="form-control form-control-sm" [(ngModel)]="companyContactCreateDraft.phone" [ngModelOptions]="{ standalone: true }" maxlength="40" />
+                                                </div>
+                                            </div>
+                                            <div class="alert alert-danger py-2 mt-2 mb-0" *ngIf="companyContactCreateError">{{ companyContactCreateError }}</div>
+                                            <div class="d-flex justify-content-end gap-2 mt-2">
+                                                <button class="btn btn-sm btn-link" type="button" (click)="cancelCompanyContactCreate()" [disabled]="creatingCompanyContact">Cancelar</button>
+                                                <button class="btn btn-sm btn-theme" type="button" (click)="saveNewCompanyContact()" [disabled]="creatingCompanyContact || !companyContactCreateDraft.name.trim()" data-testid="contact-create-save">
+                                                    <i class="bi bi-check-lg me-1"></i>{{ creatingCompanyContact ? 'Guardando...' : 'Guardar contacto' }}
+                                                </button>
+                                            </div>
+                                        </div>
                                         <div class="small text-danger mt-1" *ngIf="companyContactsError">{{ companyContactsError }}</div>
                                         <div class="small text-secondary mt-1" *ngIf="!companyContactsError && !draft.companyName.trim()">
                                             Selecciona una empresa para cargar sus contactos.
@@ -431,14 +456,7 @@ type SoftwareBackupInfo = {
                         </ng-container>
 
                         <ng-container *ngIf="currentWizardStep.key === 'equipment'">
-                            <div class="mb-3">
-                                <div>
-                                    <h6 class="mb-1">Equipos a asociar</h6>
-                                    <p class="text-secondary small mb-0">Completa cada equipo y deja que el wizard te lleve luego a la captura de evidencia.</p>
-                                </div>
-                            </div>
-
-                            <div class="row gx-3 gy-3">
+                            <div class="row gx-3 gy-2 form-compact">
                                 <div class="col-12" *ngFor="let item of draft.items; let i = index; trackBy: trackByItemId">
                                     <div class="border rounded p-3 equipment-card" [class.equipment-card-warning]="itemWarningCount(item) > 0">
                                         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
@@ -658,7 +676,7 @@ type SoftwareBackupInfo = {
                                                         <label class="form-check-label" [for]="'is-warranty-' + item.id">Es garantía</label>
                                                     </div>
                                                     <div class="row gx-3 gy-2 mt-1" *ngIf="warrantyStateFor(item).isWarranty">
-                                                        <div class="col-12 col-lg-4">
+                                                        <div class="col-12 col-lg-4" *ngIf="warrantyStateFor(item).previousReception">
                                                             <label class="form-label small">Codigo antiguo</label>
                                                             <input
                                                                 class="form-control form-control-sm"
@@ -668,16 +686,11 @@ type SoftwareBackupInfo = {
                                                                 data-testid="old-code-field" />
                                                         </div>
                                                         <div class="col-12 col-lg-4">
-                                                            <label class="form-label small">Fecha de compra / primera recepcion</label>
-                                                            <input
-                                                                type="date"
-                                                                class="form-control form-control-sm"
-                                                                [(ngModel)]="warrantyStateFor(item).firstReceptionDate"
-                                                                [ngModelOptions]="{ standalone: true }"
-                                                                data-testid="warranty-first-reception-input" />
+                                                            <div class="small text-secondary">Fecha de ingreso del equipo</div>
+                                                            <div class="fw-semibold" data-testid="warranty-entry-date">{{ warrantyEntryDateLabel(item) }}</div>
                                                         </div>
                                                         <div class="col-12 col-lg-4">
-                                                            <label class="form-label small">Meses de garantía</label>
+                                                            <label class="form-label small">Meses de garantía <span class="text-danger">*</span></label>
                                                             <input
                                                                 type="number"
                                                                 min="0"
@@ -686,12 +699,12 @@ type SoftwareBackupInfo = {
                                                                 [ngModelOptions]="{ standalone: true }"
                                                                 data-testid="warranty-months-input" />
                                                         </div>
-                                                        <div class="col-12" *ngIf="warrantyMonthsRemainingFor(item) !== null">
+                                                        <div class="col-12" *ngIf="warrantyDaysStatusFor(item)">
                                                             <span
                                                                 class="badge"
-                                                                data-testid="warranty-months-badge"
-                                                                [ngClass]="(warrantyMonthsRemainingFor(item) || 0) > 0 ? 'bg-success' : 'bg-danger'">
-                                                                {{ (warrantyMonthsRemainingFor(item) || 0) > 0 ? "Quedan " + warrantyMonthsRemainingFor(item) + " mes(es) de garantía" : "Garantía vencida" }}
+                                                                data-testid="warranty-days-badge"
+                                                                [ngClass]="warrantyDaysStatusFor(item)?.expired ? 'bg-danger' : 'bg-success'">
+                                                                {{ warrantyDaysBadgeLabel(item) }}
                                                             </span>
                                                         </div>
                                                         <div class="col-12" *ngIf="warrantyStateFor(item).previousReception">
@@ -1551,6 +1564,40 @@ type SoftwareBackupInfo = {
             color: var(--bs-secondary-color, #6c757d);
             font-size: 0.875rem;
         }
+
+        .form-compact > [class*="col-"] {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            column-gap: 0.75rem;
+            row-gap: 0.35rem;
+        }
+
+        .form-compact > [class*="col-"] > .form-label {
+            flex: 0 0 7.5rem;
+            width: 7.5rem;
+            margin-bottom: 0;
+        }
+
+        .form-compact > [class*="col-"] > .form-control,
+        .form-compact > [class*="col-"] > .form-select,
+        .form-compact > [class*="col-"] > .row,
+        .form-compact > [class*="col-"] > .company-combobox,
+        .form-compact > [class*="col-"] > .input-group,
+        .form-compact > [class*="col-"] > .d-flex {
+            flex: 1 1 8rem;
+            width: auto;
+            min-width: 0;
+        }
+
+        .form-compact > [class*="col-"] > .alert,
+        .form-compact > [class*="col-"] > .small,
+        .form-compact > [class*="col-"] > .border,
+        .form-compact > [class*="col-"] > app-crm-equipment-borrowed-list,
+        .form-compact > [class*="col-"] > app-crm-equipment-serie-exception {
+            flex: 1 1 100%;
+            min-width: 0;
+        }
     `],
 })
 export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy {
@@ -1616,6 +1663,10 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
     companyContactsError = "";
     selectedCompanyContactOption = "";
     companyContactOptions: CompanyContactOption[] = [];
+    showCompanyContactCreate = false;
+    creatingCompanyContact = false;
+    companyContactCreateError = "";
+    readonly companyContactCreateDraft = { name: "", role: "", email: "", phone: "" };
     readonly questionDefinitions: readonly ProspectEquipmentQuestionDefinition[] = PROSPECT_EQUIPMENT_QUESTION_DEFINITIONS;
     readonly priorityQuestionKey = "priorityPaidDiagnosis";
     readonly industrialCostQuestionKey = "costAboveTwoMillion";
@@ -1902,14 +1953,55 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
                 state.firstReceptionDate = previous.receptionDate.slice(0, 10);
             }
         }
+        // Primer equipo de la empresa: no hay recepción previa, la garantía
+        // corre desde la fecha de ingreso de ESTA recepción.
+        if (!state.firstReceptionDate) {
+            state.firstReceptionDate = this.draftReceptionIsoDate();
+        }
     }
 
-    warrantyMonthsRemainingFor(item: ProspectEquipmentItem): number | null {
+    private draftReceptionIsoDate(): string {
+        const year = String(this.draft.receptionYear ?? "").trim();
+        const month = String(this.draft.receptionMonth ?? "").trim().padStart(2, "0");
+        const day = String(this.draft.receptionDay ?? "").trim().padStart(2, "0");
+        if (/^\d{4}$/.test(year) && /^\d{2}$/.test(month) && /^\d{2}$/.test(day)) {
+            return `${year}-${month}-${day}`;
+        }
+
+        const now = new Date();
+        const fallbackMonth = String(now.getMonth() + 1).padStart(2, "0");
+        const fallbackDay = String(now.getDate()).padStart(2, "0");
+        return `${now.getFullYear()}-${fallbackMonth}-${fallbackDay}`;
+    }
+
+    warrantyEntryDateLabel(item: ProspectEquipmentItem): string {
+        const raw = String(this.warrantyStateFor(item).firstReceptionDate ?? "").trim();
+        if (raw.length < 10) {
+            return "--";
+        }
+
+        const [year, month, day] = raw.slice(0, 10).split("-");
+        return `${day}/${month}/${year}`;
+    }
+
+    warrantyDaysStatusFor(item: ProspectEquipmentItem): { expired: boolean; days: number } | null {
         const state = this.warrantyStateFor(item);
         if (!state.isWarranty) {
             return null;
         }
-        return warrantyMonthsRemaining(state.firstReceptionDate, state.warrantyMonths, new Date());
+        return warrantyDaysStatus(state.firstReceptionDate, state.warrantyMonths, new Date());
+    }
+
+    warrantyDaysBadgeLabel(item: ProspectEquipmentItem): string {
+        const status = this.warrantyDaysStatusFor(item);
+        if (!status) {
+            return "";
+        }
+        const unit = status.days === 1 ? "día" : "días";
+        if (status.expired) {
+            return `-${status.days} ${unit} · garantía vencida`;
+        }
+        return `Quedan ${status.days} ${unit} de garantía`;
     }
 
     showWarrantyValidationAlert(item: ProspectEquipmentItem): boolean {
@@ -2554,6 +2646,106 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
 
     openCompanyDropdown(): void {
         this.companyDropdownOpen = true;
+    }
+
+    get canCreateCompanyContact(): boolean {
+        return this.resolveContactTargetProspectId() !== "";
+    }
+
+    get companyContactCreateHint(): string {
+        return "Para crear un contacto desde aquí, la empresa debe existir como prospecto en el CRM.";
+    }
+
+    openCompanyContactCreate(): void {
+        if (!this.canCreateCompanyContact) {
+            return;
+        }
+
+        this.companyContactCreateDraft.name = this.draft.contactName.trim();
+        this.companyContactCreateDraft.role = this.draft.contactRole.trim();
+        this.companyContactCreateDraft.email = this.draft.email.trim();
+        this.companyContactCreateDraft.phone = this.draft.cellphone.trim() || this.draft.phone.trim();
+        this.companyContactCreateError = "";
+        this.showCompanyContactCreate = true;
+    }
+
+    cancelCompanyContactCreate(): void {
+        this.showCompanyContactCreate = false;
+        this.companyContactCreateError = "";
+    }
+
+    saveNewCompanyContact(): void {
+        const prospectId = this.resolveContactTargetProspectId();
+        const name = this.companyContactCreateDraft.name.trim();
+        if (!prospectId || !name) {
+            this.companyContactCreateError = "El nombre del contacto es obligatorio.";
+            return;
+        }
+
+        const payload = {
+            name,
+            role: this.companyContactCreateDraft.role.trim(),
+            email: this.companyContactCreateDraft.email.trim(),
+            phone: this.companyContactCreateDraft.phone.trim(),
+            notes: "",
+        };
+
+        this.creatingCompanyContact = true;
+        this.companyContactCreateError = "";
+        this.crmProspectsApi.createProspectContact(prospectId, payload).subscribe({
+            next: (contact) => {
+                this.creatingCompanyContact = false;
+                this.showCompanyContactCreate = false;
+                this.companyContactCreateDraft.name = "";
+                this.companyContactCreateDraft.role = "";
+                this.companyContactCreateDraft.email = "";
+                this.companyContactCreateDraft.phone = "";
+
+                const companyKey = this.normalizeCompanyKey(this.draft.companyName);
+                if (companyKey) {
+                    const contactId = String(contact?.id ?? "").trim();
+                    const newOption: CompanyContactOption = {
+                        value: `crm:${prospectId}:${contactId || name}`,
+                        name,
+                        role: payload.role,
+                        email: payload.email,
+                        phone: payload.phone,
+                        sourceLabel: "CRM",
+                    };
+                    const cached = this.companyContactsByCompanyKey.get(companyKey) ?? this.companyContactOptions;
+                    const merged = this.mergeCompanyContactOptions([newOption, ...cached]);
+                    this.companyContactsByCompanyKey.set(companyKey, merged);
+                    this.companyContactOptions = merged;
+                    this.onCompanyContactSelectionChange(newOption.value);
+                }
+
+                this.changeDetectorRef.detectChanges();
+            },
+            error: () => {
+                this.creatingCompanyContact = false;
+                this.companyContactCreateError = "No se pudo crear el contacto. Inténtalo de nuevo.";
+                this.changeDetectorRef.detectChanges();
+            },
+        });
+    }
+
+    private resolveContactTargetProspectId(): string {
+        const companyKey = this.normalizeCompanyKey(this.draft.companyName);
+        if (!companyKey) {
+            return "";
+        }
+
+        const prospects = (this.companyProspectsByKey.get(companyKey) ?? []).filter((prospect) => String(prospect.backendId ?? "").trim().length > 0);
+        if (prospects.length > 0) {
+            return String(prospects[0].backendId).trim();
+        }
+
+        const current = this.prospect;
+        if (current && this.normalizeCompanyKey(current.compania) === companyKey && String(current.backendId ?? "").trim()) {
+            return String(current.backendId).trim();
+        }
+
+        return "";
     }
 
     isCompanyOptionSelected(option: CompanyCatalogOption): boolean {

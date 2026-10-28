@@ -25,6 +25,7 @@ export interface ProspectRecord {
     valor: number;
     allowFollowUp?: boolean;
     creado: string;
+    creadoAt?: string;
     cotizaciones: number;
     empleado: string;
     estado: ProspectStatus;
@@ -97,6 +98,7 @@ function normalizeProspect(record: Partial<ProspectRecord>, index: number): Pros
         valor: normalizePositiveNumber(record.valor),
         allowFollowUp: typeof record.allowFollowUp === "boolean" ? record.allowFollowUp : true,
         creado: normalizeText(record.creado),
+        creadoAt: normalizeText(record.creadoAt),
         cotizaciones: normalizePositiveNumber(record.cotizaciones),
         empleado: normalizeText(record.empleado),
         estado: normalizeStatus(record.estado),

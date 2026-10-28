@@ -30,6 +30,7 @@ export interface CrmProspectRecord {
     valor: number;
     allowFollowUp: boolean;
     creado: string;
+    creadoAt: string;
     cotizaciones: number;
     empleado: string;
     estado: CrmProspectStatus;
@@ -248,6 +249,7 @@ export class CrmProspectsApiService {
             valor: Number(item.prospectValue ?? 0),
             allowFollowUp: Boolean(item.allowFollowUp),
             creado: this.toDateLabel(item.createdAt),
+            creadoAt: String(item.createdAt ?? "").trim(),
             cotizaciones: Number(item.quotations ?? 0),
             empleado: String(item.assignedEmployee ?? "").trim(),
             estado: this.normalizeStatus(item.status),
