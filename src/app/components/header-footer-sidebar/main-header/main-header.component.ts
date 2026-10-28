@@ -25,7 +25,7 @@ import { AuthService } from "../../../services/auth.service";
                     <div class="collapse navbar-collapse" id="mainheaderNavbar">
                         <ul class="navbar-nav">
                             <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle no-caret" data-bs-toggle="dropdown" role="button" aria-expanded="false" data-bs-auto-close="outside">Pages</a>
+                                
                                 <div class="dropdown-menu">
                                     <div><a class="dropdown-item" routerLink="/app/profile-professional">Profile</a></div>
                                     <div class="dropend">
@@ -55,10 +55,8 @@ import { AuthService } from "../../../services/auth.service";
                                 </div>
                             </li>
                             <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle no-caret" data-bs-toggle="dropdown" role="button" aria-expanded="false">Supportive</a>
                                 <div class="dropdown-menu width-300">
                                     <div class="dropdown-title mb-3 p-2">
-                                        <p>Supportive &amp; Helpful Pages</p>
                                         <p class="text-secondary small">Do not make your user lost somewhere else from where they can't come back. Make important journey flawless.</p>
                                     </div>
                                     <div class="row g-0">
