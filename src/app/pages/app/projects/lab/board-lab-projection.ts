@@ -1,4 +1,5 @@
 import type { BoardColumn, Project } from '../models';
+import { visibleBoardColumns } from '../board-audience.logic';
 
 export type LabAudience = 'todos' | 'tecnico' | 'administrativo';
 export interface LabColumn {
@@ -12,7 +13,7 @@ export function projectLabColumns(
   columns: BoardColumn[], projects: Project[], audience: LabAudience,
   assignee: string, limits: Map<string, number>,
 ): LabColumn[] {
-  const result = columns.map(column => ({ column, total: 0, visible: [] as Project[] }));
+  const result = visibleBoardColumns(columns, audience).map(column => ({ column, total: 0, visible: [] as Project[] }));
   const byId = new Map(result.map(item => [item.column.id, item]));
   const person = assignee.trim().toLowerCase();
   for (const project of projects) {

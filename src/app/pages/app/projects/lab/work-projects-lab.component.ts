@@ -30,7 +30,7 @@ export class WorkProjectsLabComponent {
   readonly projects = signal<Project[]>(this.initial?.projects ?? []);
   readonly ready = signal(Boolean(this.initial));
   readonly error = signal('');
-  readonly compact = signal(false);
+  readonly compact = signal(true);
   readonly audience = signal<LabAudience>('todos');
   readonly mine = signal(false);
   readonly limits = signal(new Map<string, number>());
