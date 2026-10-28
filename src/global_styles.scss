@@ -152,3 +152,17 @@ app-date-picker-inline ngx-daterangepicker-bootstrap {
         width: 100%;
     }
 }
+
+/* CRM: neutralizar el resaltado azul de las opciones */
+.choices__list--dropdown .choices__item--selectable.is-highlighted,
+.choices__list--dropdown .choices__item--selectable.is-selected,
+.choices__list[aria-expanded] .choices__item--selectable.is-highlighted,
+.choices__list[aria-expanded] .choices__item--selectable.is-selected {
+    background-color: #e9ecef !important;
+    color: #212529 !important;
+}
+
+select.form-select option:checked {
+    background-color: #e9ecef !important;
+    color: #212529 !important;
+}
