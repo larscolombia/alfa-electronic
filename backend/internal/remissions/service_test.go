@@ -8,16 +8,18 @@ import (
 
 func sampleRequest() UpsertRemissionRequest {
 	return UpsertRemissionRequest{
-		ClientName:   "Cliente Demo",
-		ClientNIT:    "900123456",
-		ContactName:  "Juan Contacto",
-		DispatchType: "servientrega",
-		CarrierName:  "Servientrega",
-		GuideNumber:  "GUIA-001",
-		Valued:       true,
+		ClientName:     "Cliente Demo",
+		ClientNIT:      "900123456",
+		ContactName:    "Juan Contacto",
+		DispatchType:   "servientrega",
+		CarrierName:    "Servientrega",
+		GuideNumber:    "GUIA-001",
+		WarrantyMonths: 6,
+		PurchaseOrder:  "OC-001",
+		Valued:         true,
 		Items: []RemissionItem{
-			{EquipmentID: "eq-1", Identifier: "MTR-01", Description: "Motor", UnitPrice: 100, Quantity: 2},
-			{EquipmentID: "eq-2", Identifier: "PMP-01", Description: "Bomba", UnitPrice: 50.5, Quantity: 2},
+			{EquipmentID: "eq-1", Identifier: "MTR-01", Description: "Motor", UnitPrice: 100, Quantity: 2, WarrantyMonths: 3},
+			{EquipmentID: "eq-2", Identifier: "PMP-01", Description: "Bomba", UnitPrice: 50.5, Quantity: 2, WarrantyMonths: 6},
 		},
 	}
 }

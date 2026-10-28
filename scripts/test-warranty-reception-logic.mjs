@@ -93,6 +93,21 @@ function isUnderLegalWarranty(startDate, warrantyMonths, today) {
     return now.getTime() <= expiry.getTime();
 }
 
+function warrantyDaysStatus(startDate, warrantyMonths, today) {
+    const start = parseWarrantyDate(startDate);
+    const months = Number(warrantyMonths);
+    if (!start || !Number.isFinite(months) || months <= 0) {
+        return null;
+    }
+    const now = parseWarrantyDate(today ?? new Date());
+    if (!now) {
+        return null;
+    }
+    const expiry = warrantyExpiryDate(start, months);
+    const days = Math.ceil((expiry.getTime() - now.getTime()) / 86400000);
+    return { expired: days < 0, days: Math.abs(days) };
+}
+
 function findPreviousReception(equipment, history) {
     const serie = normalizeWarrantyKey(equipment?.serie);
     const identifier = normalizeWarrantyKey(equipment?.receivedIdentifier ?? equipment?.identifier);
@@ -208,6 +223,14 @@ assert(!isUnderLegalWarranty("2026-01-09", 0, "2026-08-09"), "Meses = 0 -> isUnd
 
 // Acepta Date objects y meses como string numerico
 assertEqual(warrantyMonthsRemaining(new Date(2026, 0, 9), "12", new Date(2026, 7, 9)), 5, "Acepta Date y meses como string");
+
+console.log("\n── warrantyDaysStatus ──");
+assertEqual(warrantyDaysStatus("2026-06-09", 6, "2026-08-09"), { expired: false, days: 122 }, "Vigente: 122 dias restantes (vence 2026-12-09)");
+assertEqual(warrantyDaysStatus("2026-02-09", 6, "2026-08-09"), { expired: false, days: 0 }, "Limite: 0 dias restantes el dia del vencimiento (vigente)");
+assertEqual(warrantyDaysStatus("2025-08-09", 6, "2026-08-09"), { expired: true, days: 181 }, "Vencida: -181 dias (vencio 2026-02-09)");
+assertEqual(warrantyDaysStatus(null, 6, "2026-08-09"), null, "Sin fecha -> null");
+assertEqual(warrantyDaysStatus("2026-01-09", 0, "2026-08-09"), null, "Meses = 0 -> null");
+assertEqual(warrantyDaysStatus("2026-01-09", null, "2026-08-09"), null, "Meses null -> null");
 
 console.log("\n── findPreviousReception ──");
 const historyRecords = [

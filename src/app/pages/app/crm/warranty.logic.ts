@@ -79,6 +79,24 @@ export function isUnderLegalWarranty(startDate: any, warrantyMonths: any, today?
     return now.getTime() <= expiry.getTime();
 }
 
+// Días de garantía restantes (vigente) o de vencimiento (expirada).
+// expired=false + days=N → quedan N días; expired=true + days=N → venció
+// hace N días (el badge lo pinta como "-N días" en rojo).
+export function warrantyDaysStatus(startDate: any, warrantyMonths: any, today?: any): { expired: boolean; days: number } | null {
+    const start = parseWarrantyDate(startDate);
+    const months = Number(warrantyMonths);
+    if (!start || !Number.isFinite(months) || months <= 0) {
+        return null;
+    }
+    const now = parseWarrantyDate(today ?? new Date());
+    if (!now) {
+        return null;
+    }
+    const expiry = warrantyExpiryDate(start, months);
+    const days = Math.ceil((expiry.getTime() - now.getTime()) / 86400000);
+    return { expired: days < 0, days: Math.abs(days) };
+}
+
 export function findPreviousReception(equipment: any, history: any[]): any | null {
     const serie = normalizeWarrantyKey(equipment?.serie);
     const identifier = normalizeWarrantyKey(equipment?.receivedIdentifier ?? equipment?.identifier);

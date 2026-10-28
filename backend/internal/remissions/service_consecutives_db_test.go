@@ -12,17 +12,20 @@ import (
 
 func sampleRemissionRequest() UpsertRemissionRequest {
 	return UpsertRemissionRequest{
-		ClientName:   "Cliente QA",
-		ClientNIT:    "901000000-1",
-		ContactName:  "QA Contacto",
-		DispatchType: "Servientrega",
-		CarrierName:  "QA Courier",
-		GuideNumber:  "QA-1",
+		ClientName:     "Cliente QA",
+		ClientNIT:      "901000000-1",
+		ContactName:    "QA Contacto",
+		DispatchType:   "Servientrega",
+		CarrierName:    "QA Courier",
+		GuideNumber:    "QA-1",
+		WarrantyMonths: 6,
+		PurchaseOrder:  "OC-QA",
 		Items: []RemissionItem{{
-			Identifier:  "EQ-001",
-			Description: "Equipo QA",
-			Quantity:    1,
-			UnitPrice:   500000,
+			Identifier:     "EQ-001",
+			Description:    "Equipo QA",
+			Quantity:       1,
+			UnitPrice:      500000,
+			WarrantyMonths: 3,
 		}},
 	}
 }

@@ -15,15 +15,16 @@ import (
 const MaxItemsPerRemission = 4
 
 var (
-	errNoItems             = errors.New("una remision sin equipos no se puede generar: agregue al menos un equipo antes de guardar")
-	errTooManyItems        = errors.New("maximo 4 equipos por remision: divida el despacho en varias remisiones independientes")
-	errContactRequired     = errors.New("el contacto del cliente es obligatorio para despachar: complete la casilla Contacto y vuelva a guardar")
-	errAnchoredNotAccepted = errors.New("la remision incluye equipos con prestamos anclados: confirme su inclusion antes de guardar")
-	errCarrierRequired     = errors.New("la transportadora es obligatoria para una entrega por transportadora: complete la casilla Transportadora")
-	errGuideRequired       = errors.New("la guia es obligatoria para una entrega por transportadora: complete la casilla Numero de guia")
-	errWarrantyRequired    = errors.New("la remision debe incluir una garantia o una excepcion aprobada en Notas / Comentarios")
+	errNoItems               = errors.New("una remision sin equipos no se puede generar: agregue al menos un equipo antes de guardar")
+	errTooManyItems          = errors.New("maximo 4 equipos por remision: divida el despacho en varias remisiones independientes")
+	errContactRequired       = errors.New("el contacto del cliente es obligatorio para despachar: complete la casilla Contacto y vuelva a guardar")
+	errAnchoredNotAccepted   = errors.New("la remision incluye equipos con prestamos anclados: confirme su inclusion antes de guardar")
+	errCarrierRequired       = errors.New("la transportadora es obligatoria para una entrega por transportadora: complete la casilla Transportadora")
+	errGuideRequired         = errors.New("la guia es obligatoria para una entrega por transportadora: complete la casilla Numero de guia")
+	errWarrantyRequired      = errors.New("la remision debe incluir una garantia o una excepcion aprobada en Notas / Comentarios")
+	errItemWarrantyRequired  = errors.New("cada equipo debe tener un tiempo de garantia: seleccione los meses de garantia de cada equipo antes de guardar")
 	errPurchaseOrderRequired = errors.New("la orden de compra debe acompañar el envio: registre el numero de OC antes de guardar")
-	errEquipmentMismatch   = errors.New("marca, tipo y serie deben coincidir exactamente con el equipo origen; no se aceptan coincidencias parciales")
+	errEquipmentMismatch     = errors.New("marca, tipo y serie deben coincidir exactamente con el equipo origen; no se aceptan coincidencias parciales")
 )
 
 // hasAnchoredEquipment reporta si algún item lleva préstamos anclados. Es la
@@ -62,6 +63,13 @@ func validateUpsert(req UpsertRemissionRequest) error {
 	if req.WarrantyMonths <= 0 && strings.TrimSpace(req.Notes) == "" {
 		return errWarrantyRequired
 	}
+	// La entrega al cliente final inicia la garantía del equipo: cada ítem
+	// debe declarar su tiempo de garantía (meses) — sin excepción por notas.
+	for _, item := range req.Items {
+		if item.WarrantyMonths <= 0 {
+			return errItemWarrantyRequired
+		}
+	}
 	if strings.TrimSpace(req.PurchaseOrder) == "" {
 		return errPurchaseOrderRequired
 	}
@@ -86,6 +94,7 @@ func isUpsertRuleError(err error) bool {
 		errors.Is(err, errCarrierRequired),
 		errors.Is(err, errGuideRequired),
 		errors.Is(err, errWarrantyRequired),
+		errors.Is(err, errItemWarrantyRequired),
 		errors.Is(err, errPurchaseOrderRequired),
 		errors.Is(err, errEquipmentMismatch),
 		errors.Is(err, errAnchoredNotAccepted):

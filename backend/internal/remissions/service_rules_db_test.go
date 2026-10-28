@@ -45,6 +45,14 @@ func TestCreateEnforcesDispatchRulesIntegration(t *testing.T) {
 		t.Fatalf("anclados sin aceptar debe rechazarse, got %v", err)
 	}
 
+	// 4b) Equipo sin garantía: rechazado (la entrega inicia la garantía y cada
+	//     equipo debe declarar su tiempo).
+	noWarranty := sampleRequest()
+	noWarranty.Items[1].WarrantyMonths = 0
+	if _, err := s.Create(companyID, noWarranty, "tester"); err == nil || !strings.Contains(err.Error(), "tiempo de garantia") {
+		t.Fatalf("equipo sin garantia debe rechazarse, got %v", err)
+	}
+
 	// 5) Anclados CON consentimiento: legal. Queda el único registro válido y
 	//    su contacto debe leerse de vuelta (round-trip de la columna nueva).
 	ok := sampleRequest()
@@ -100,7 +108,7 @@ func TestUpdateEnforcesDispatchRulesIntegration(t *testing.T) {
 	// Editar agregando un equipo más (2→3, dentro del límite): legal y el
 	// contacto actualizado queda persistido.
 	more := sampleRequest()
-	more.Items = append(more.Items, RemissionItem{Identifier: "PMP-02", Description: "Bomba 2"})
+	more.Items = append(more.Items, RemissionItem{Identifier: "PMP-02", Description: "Bomba 2", WarrantyMonths: 3})
 	more.ContactName = "Maria Ingeniera"
 	updated, err := s.Update(companyID, base.ID, more)
 	if err != nil {

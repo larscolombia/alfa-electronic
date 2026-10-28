@@ -8,7 +8,8 @@
  *   1. al menos un equipo
  *   2. máximo 4 equipos por remisión (límite inclusivo: 4 pasa, 5 no)
  *   3. contacto del cliente obligatorio (vacío o solo espacios → falla)
- *   4. préstamos anclados requieren aceptación explícita (solo si algún item
+ *   4. cada equipo con tiempo de garantía obligatorio (meses > 0)
+ *   5. préstamos anclados requieren aceptación explícita (solo si algún item
  *      trae anchoredNote; una nota de solo espacios NO cuenta como anclado)
  *
  * Run: node scripts/test-remission-rules-logic.mjs
@@ -32,6 +33,11 @@ function validateRemissionDraft(form) {
     }
     if (String(form?.contactName ?? "").trim() === "") {
         return "el contacto del cliente es obligatorio para despachar: complete la casilla Contacto y vuelva a guardar";
+    }
+    for (const item of items) {
+        if (Number(item?.warrantyMonths || 0) <= 0) {
+            return "cada equipo debe tener un tiempo de garantia: seleccione los meses de garantia de cada equipo antes de guardar";
+        }
     }
     if (hasAnchoredEquipment(items) && !form?.anchoredAccepted) {
         return "la remision incluye equipos con prestamos anclados: confirme su inclusion antes de guardar";
@@ -61,7 +67,7 @@ function assert(condition, description) {
 function makeItems(count, anchored = false) {
     const items = [];
     for (let i = 0; i < count; i++) {
-        items.push({ equipmentId: "", identifier: `EQ-${i}`, description: "Equipo", accessories: "", anchoredNote: "" });
+        items.push({ equipmentId: "", identifier: `EQ-${i}`, description: "Equipo", accessories: "", anchoredNote: "", warrantyMonths: 3 });
     }
     if (anchored && items.length > 0) {
         items[0].anchoredNote = "TV-99 en prestamo";
@@ -140,7 +146,26 @@ assert(
     "contacto con espacios/tabulaciones -> rechazado"
 );
 
-console.log("\n── Regla 4: préstamos anclados requieren aceptación ──");
+console.log("\n── Regla 4: garantía de cada equipo obligatoria ──");
+
+assert(
+    validateRemissionDraft(validForm()) === "",
+    "todos los equipos con garantia -> pasa"
+);
+const oneWithoutWarranty = makeItems(2);
+oneWithoutWarranty[1].warrantyMonths = 0;
+assert(
+    validateRemissionDraft(validForm({ items: oneWithoutWarranty })).includes("cada equipo debe tener un tiempo de garantia"),
+    "un equipo sin garantia -> rechazado con mensaje accionable"
+);
+const oneWithNullWarranty = makeItems(2);
+oneWithNullWarranty[0].warrantyMonths = null;
+assert(
+    validateRemissionDraft(validForm({ items: oneWithNullWarranty })).includes("cada equipo debe tener un tiempo de garantia"),
+    "warrantyMonths null -> rechazado (null-safe, igual que 0)"
+);
+
+console.log("\n── Regla 5: préstamos anclados requieren aceptación ──");
 
 assert(
     validateRemissionDraft(validForm({ items: makeItems(2, true) })).includes("prestamos anclados"),

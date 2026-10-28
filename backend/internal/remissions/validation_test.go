@@ -17,7 +17,7 @@ func validRuleRequest() UpsertRemissionRequest {
 		WarrantyMonths: 6,
 		PurchaseOrder:  "OC-1234",
 		Items: []RemissionItem{{
-			EquipmentID: "eq-1", Identifier: "MTR-01", Description: "Motor", Quantity: 1,
+			EquipmentID: "eq-1", Identifier: "MTR-01", Description: "Motor", Quantity: 1, WarrantyMonths: 3,
 		}},
 	}
 }
@@ -50,10 +50,26 @@ func TestValidateUpsertRules(t *testing.T) {
 	t.Run("cuatro equipos pasan (el limite es inclusivo)", func(t *testing.T) {
 		req := validRuleRequest()
 		for i := 0; i < 3; i++ {
-			req.Items = append(req.Items, RemissionItem{Identifier: "OK" + string(rune('1'+i))})
+			req.Items = append(req.Items, RemissionItem{Identifier: "OK" + string(rune('1'+i)), WarrantyMonths: 3})
 		}
 		if err := validateUpsert(req); err != nil {
 			t.Fatalf("4 items es legal, got %v", err)
+		}
+	})
+
+	t.Run("equipo sin garantia se rechaza", func(t *testing.T) {
+		req := validRuleRequest()
+		req.Items[0].WarrantyMonths = 0
+		if err := validateUpsert(req); !errors.Is(err, errItemWarrantyRequired) {
+			t.Fatalf("esperaba errItemWarrantyRequired, got %v", err)
+		}
+	})
+
+	t.Run("un equipo sin garantia contamina toda la remision", func(t *testing.T) {
+		req := validRuleRequest()
+		req.Items = append(req.Items, RemissionItem{Identifier: "SIN-GARANTIA", WarrantyMonths: 0})
+		if err := validateUpsert(req); !errors.Is(err, errItemWarrantyRequired) {
+			t.Fatalf("esperaba errItemWarrantyRequired, got %v", err)
 		}
 	})
 
@@ -125,6 +141,7 @@ func TestIsUpsertRuleError(t *testing.T) {
 		!isUpsertRuleError(errCarrierRequired) ||
 		!isUpsertRuleError(errGuideRequired) ||
 		!isUpsertRuleError(errWarrantyRequired) ||
+		!isUpsertRuleError(errItemWarrantyRequired) ||
 		!isUpsertRuleError(errPurchaseOrderRequired) ||
 		!isUpsertRuleError(errEquipmentMismatch) ||
 		!isUpsertRuleError(errAnchoredNotAccepted) {

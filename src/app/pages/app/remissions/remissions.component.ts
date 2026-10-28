@@ -292,8 +292,8 @@ const REMISSIONS_TEMPLATE = `
                            placeholder="Equipo prestado anclado" data-testid="item-anchored-note" />
                 </div>
                 <div class="col-md-2">
-                    <select class="form-select form-select-sm" [(ngModel)]="item.warrantyMonths">
-                        <option [ngValue]="0">Sin garantía</option>
+                    <select class="form-select form-select-sm" [(ngModel)]="item.warrantyMonths" data-testid="item-warranty-select">
+                        <option [ngValue]="0" disabled>Seleccionar garantía *</option>
                         <option [ngValue]="3">3 meses</option>
                         <option [ngValue]="6">6 meses</option>
                         <option [ngValue]="12">12 meses</option>
