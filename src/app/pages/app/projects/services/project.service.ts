@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, Observable, combineLatest, firstValueFrom, from, throwError } from 'rxjs';
-import { filter, map, switchMap } from 'rxjs/operators';
+import { filter, map, shareReplay, switchMap } from 'rxjs/operators';
 import { Attachment, BoardColumn, Project, ProjectBoard, PropertyType } from '../models';
 import {
   PROJECT_WORKFLOW_STATUS_OPTIONS,
@@ -110,8 +110,19 @@ export class ProjectService {
     this.taskService.tasks$
   ]).pipe(
     map(([projects, tasks]) => {
+      // Avoid filtering every task for every project on a populated board.
+      const tasksByProject = new Map<string, typeof tasks>();
+      for (const task of tasks) {
+        const projectTasks = tasksByProject.get(task.projectId);
+        if (projectTasks) {
+          projectTasks.push(task);
+        } else {
+          tasksByProject.set(task.projectId, [task]);
+        }
+      }
+
       return projects.map(project => {
-        const projectTasks = tasks.filter(t => t.projectId === project.id);
+        const projectTasks = tasksByProject.get(project.id) ?? [];
         const completedTasks = projectTasks.filter(t => t.completed).length;
         const totalTasks = projectTasks.length;
         const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
@@ -128,7 +139,8 @@ export class ProjectService {
           }
         };
       });
-    })
+    }),
+    shareReplay({ bufferSize: 1, refCount: true }),
   );
 
   constructor() {

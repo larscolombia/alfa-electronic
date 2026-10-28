@@ -1,0 +1,36 @@
+:host { display: block; }
+.lab-board { padding: 24px; background: var(--bs-body-bg); min-height: 100%; }
+.board-header { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 24px; border-radius: 20px; border: 1px solid #818cf833; background: linear-gradient(135deg,#6366f112,#818cf81c); margin-bottom: 24px; }
+.board-identity { display: flex; gap: 16px; align-items: center; }
+.board-icon { padding: 15px; font-size: 24px; color: #474ee8; background: #6366f11a; border-radius: 16px; }
+h1 { font-size: 24px; font-weight: 600; margin: 0; }
+p { margin: 4px 0; }
+.board-identity p, .audience-toolbar small, .limit-note { color: var(--bs-secondary-color); font-size: 14px; }
+.lab-label { color: #6366f1; }
+.header-stats { display: flex; align-items: center; gap: 12px; }
+.stat { display: flex; flex-direction: column; background: var(--bs-body-bg); padding: 14px; border-radius: 16px; min-width: 100px; }
+.stat small { font-size: 11px; opacity: .6; }
+.audience-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.audience-toolbar small { display: block; }
+.chips { display: flex; gap: 8px; }
+.chips button, .sla-chip { padding: 7px 12px; border: 1px solid #6366f126; border-radius: 24px; background: var(--bs-body-bg); color: var(--bs-body-color); }
+.chips button.active { background: #6366f1; color: white; }
+.sla-summary-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+.sla-chip { font-size: 12px; text-decoration: none; }
+.sla-chip[data-severity=critical], .sla-chip[data-severity=overdue] { color: #dc2626; }
+.sla-chip[data-severity=warning] { color: #a16207; }
+.kanban-board { display: flex; gap: 16px; overflow-x: auto; padding-bottom: 16px; align-items: flex-start; }
+.kanban-column { flex: 0 0 320px; padding: 12px; background: #6366f105; border: 1px solid #6366f11a; border-radius: 16px; }
+.column-header { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; font-size: 14px; }
+.column-dot { width: 10px; height: 10px; border-radius: 50%; }
+.count { margin-left: auto; padding: 2px 8px; border-radius: 15px; background: #6366f11a; }
+.cards-container { display: flex; flex-direction: column; gap: 12px; }
+.lab-card { cursor: pointer; }
+.lab-card:focus-visible { outline: 2px solid #6366f1; }
+.compact-code { display: block; padding: 12px; border: 1px solid #6366f133; border-radius: 12px; }
+.column-empty { font-size: 13px; opacity: .6; padding: 20px 10px; }
+.kanban-column > button { margin-top: 12px; }
+:host ::ng-deep .lab-detail .board-audience-toolbar,
+:host ::ng-deep .lab-detail .sla-summary-bar,
+:host ::ng-deep .lab-detail .kanban-board { display: none !important; }
+@media(max-width: 1000px) { .board-header, .audience-toolbar { align-items: flex-start; flex-direction: column; } .header-stats { flex-wrap: wrap; } }

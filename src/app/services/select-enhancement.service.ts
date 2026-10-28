@@ -1,5 +1,5 @@
 import { DOCUMENT } from "@angular/common";
-import { Inject, Injectable } from "@angular/core";
+import { Inject, Injectable, NgZone } from "@angular/core";
 import Choices from "choices.js";
 
 type EnhancedSelect = {
@@ -12,16 +12,21 @@ export class SelectEnhancementService {
     private readonly enhanced = new Map<HTMLSelectElement, EnhancedSelect>();
     private pageObserver: MutationObserver | null = null;
 
-    constructor(@Inject(DOCUMENT) private readonly document: Document) {}
+    constructor(@Inject(DOCUMENT) private readonly document: Document, private readonly zone: NgZone) {}
 
     start(): void {
         if (this.pageObserver) return;
-        this.enhanceAll();
-        this.pageObserver = new MutationObserver(() => {
-            this.removeDisconnected();
+        // DOM decoration must not schedule Angular change detection. Otherwise
+        // a render that recreates nodes triggers the observer, another render,
+        // and an endless microtask loop that starves painting and user input.
+        this.zone.runOutsideAngular(() => {
             this.enhanceAll();
+            this.pageObserver = new MutationObserver(() => {
+                this.removeDisconnected();
+                this.enhanceAll();
+            });
+            this.pageObserver.observe(this.document.body, { childList: true, subtree: true });
         });
-        this.pageObserver.observe(this.document.body, { childList: true, subtree: true });
     }
 
     stop(): void {

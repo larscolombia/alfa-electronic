@@ -1,0 +1,54 @@
+<main class="lab-board" data-testid="lab-board" [attr.data-ready]="ready()">
+  <header class="board-header">
+    <div class="board-identity"><span class="board-icon"><i class="bi bi-kanban"></i></span>
+      <div><h1>{{ board().name }}</h1><p>Tablero principal del equipo con flujo visual y edición directa</p>
+        <small class="lab-label">Laboratorio de rendimiento · vista independiente</small></div>
+    </div>
+    <div class="header-stats">
+      <label><input type="checkbox" [checked]="compact()" (change)="compact.set(!compact())"> Modo compacto</label>
+      <div class="stat"><small>VISTA</small><strong>{{ compact() ? 'Compacto' : 'Tablero' }}</strong></div>
+      <div class="stat"><small>ITEMS CARGADOS</small><strong>{{ projects().length }}</strong></div>
+      <button class="btn btn-outline-primary btn-sm" (click)="load(true)">Actualizar</button>
+    </div>
+  </header>
+  @if (error()) { <div role="alert" class="alert alert-danger">{{ error() }} <button (click)="load(true)">Reintentar</button></div> }
+  <div class="audience-toolbar"><div><strong>Vista del tablero</strong><small>Filtra por audiencia sin borrar información del caso.</small></div>
+    <div class="chips" role="group" aria-label="Filtro de audiencia del tablero">
+      @for (option of audiences; track option.value) {
+        <button [class.active]="audience() === option.value" (click)="audience.set(option.value)">{{ option.label }}</button>
+      }
+      <button data-testid="lab-mine" [class.active]="mine()" (click)="mine.set(!mine())">Mis equipos</button>
+    </div>
+  </div>
+  <div class="sla-summary-bar">
+    @for (chip of summary(); track chip.columnId) {
+      <a class="sla-chip" [attr.data-severity]="chip.severity" [href]="'#lab-column-' + chip.columnId">{{ chip.title }} · {{ chip.count }}{{ moreAvailable().has(chip.columnId) ? '+' : '' }}</a>
+    }
+  </div>
+  @if (!ready() && !error()) { <p role="status">Cargando casos del servidor…</p> }
+  <p class="limit-note">Carga por etapas de 12 casos. «+» indica más casos disponibles; filtros y SLA corresponden a los casos cargados.</p>
+  <div class="kanban-board">
+    @for (entry of columns(); track entry.column.id) {
+      <section class="kanban-column" [id]="'lab-column-' + entry.column.id">
+        <header class="column-header" [attr.data-testid]="'lab-column-' + entry.column.id">
+          <span class="column-dot" [style.background]="entry.column.color"></span>
+          <strong>{{ entry.column.name }}</strong><span class="count">{{ entry.total }}{{ moreAvailable().has(entry.column.id) ? '+' : '' }}</span>
+        </header>
+        <div class="cards-container">
+          @for (project of entry.visible; track project.id) {
+            <div class="lab-card" role="button" tabindex="0" [attr.data-project-id]="project.id" (click)="open(project)" (keydown.enter)="open(project)">
+              @if (compact()) { <span class="compact-code">{{ project.properties['equipmentIdentifier'] || project.properties['shortCode'] || project.id }}</span> }
+              @else { <app-project-card [project]="project" [column]="entry.column" [propertyTemplates]="board().propertyTemplates" /> }
+            </div>
+          }
+          @if (ready() && entry.total === 0) { <p class="column-empty">No hay casos en esta etapa.</p> }
+        </div>
+        @if (moreAvailable().has(entry.column.id)) {
+          <button class="btn btn-outline-primary btn-sm" [disabled]="!!pageLoading() || (limits().get(entry.column.id) || 12) >= 1000" [attr.data-testid]="'lab-more-' + entry.column.id" (click)="more(entry.column.id)">{{ (limits().get(entry.column.id) || 12) >= 1000 ? 'Límite actual de la API: 1.000' : pageLoading() === entry.column.id ? 'Cargando…' : 'Mostrar 12 más' }}</button>
+        }
+      </section>
+    }
+  </div>
+  @if (opening()) { <p role="status">Abriendo ficha del equipo…</p> }
+  <div class="lab-detail"><ng-container [ngComponentOutlet]="detailType()" [ngComponentOutletInputs]="{ compactMode: compact() }" /></div>
+</main>

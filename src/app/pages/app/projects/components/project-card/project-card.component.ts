@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BoardColumn, Project, PropertyTemplate } from '../../models';
 import { describeProjectSla, getProjectTechnicalTestTypeLabel, resolveProjectSlaSeverity } from '../../project-workflow.config';
@@ -10,6 +10,7 @@ import { describeProjectSla, getProjectTechnicalTestTypeLabel, resolveProjectSla
   selector: 'app-project-card',
   standalone: true,
   imports: [CommonModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="project-card"
       [attr.data-sla-severity]="getSlaSeverity()"

@@ -171,7 +171,7 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
         <button
           type="button"
           class="sla-summary-chip"
-          *ngFor="let chip of getSlaSummaryChips(board)"
+          *ngFor="let chip of getSlaSummaryChips(board); trackBy: trackBySlaColumnId"
           data-testid="sla-summary-chip"
           [attr.data-column-id]="chip.columnId"
           [attr.title]="'Ir a la columna ' + chip.title"
@@ -210,7 +210,7 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
               [attr.data-column-id]="column.id">
               <div
                 class="project-drag-item"
-                *ngFor="let project of columnProjects; trackBy: trackByProjectId"
+                *ngFor="let project of getVisibleProjectsByColumn(column.id, columnProjects); trackBy: trackByProjectId"
                 [attr.data-project-id]="project.id"
                 (click)="onProjectCardClick($event, project)">
                 <ng-container *ngIf="!compactMode">
@@ -236,6 +236,15 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
               </div>
 
             </div>
+
+            <button
+              *ngIf="hasMoreProjects(column.id, columnProjects)"
+              type="button"
+              class="btn btn-outline-theme btn-sm project-load-more"
+              [attr.data-testid]="'load-more-projects-' + column.id"
+              (click)="showMoreProjects(column.id)">
+              Mostrar {{ getRemainingProjectCount(column.id, columnProjects) }} más
+            </button>
 
             <div class="project-composer" *ngIf="creatingColumnId === column.id">
               <input
@@ -3376,6 +3385,12 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
   private inventoryStateSubscription?: Subscription;
   private readonly emptyColumnProjects: Project[] = [];
   private readonly projectsByColumn = new Map<string, Project[]>();
+  private readonly visibleProjectLimitByColumn = new Map<string, number>();
+  private readonly initialProjectsPerColumn = 40;
+  private readonly filteredColumnProjects = new Map<string, Project[]>();
+  private readonly visibleColumnProjects = new Map<string, Project[]>();
+  private slaSummaryBoard: ProjectBoard | null = null;
+  private slaSummaryChips: SlaSummaryChip[] = [];
   private dragulaInstance: any;
   private readonly equipmentBarcodeReader = new BrowserMultiFormatReader();
   private equipmentScannerControls: { stop: () => void } | null = null;
@@ -3419,6 +3434,7 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
       });
 
       this.projectsByColumn.clear();
+      this.invalidateBoardProjection();
       nextProjectsByColumn.forEach((columnProjects, columnId) => {
         this.projectsByColumn.set(columnId, columnProjects);
       });
@@ -3561,6 +3577,7 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
     this.routeParamsSubscription?.unsubscribe();
     this.inventoryStateSubscription?.unsubscribe();
     this.projectsByColumn.clear();
+    this.visibleProjectLimitByColumn.clear();
     this.destroyDragAndDrop();
     this.stopEquipmentScannerSession();
     if (this.slaColumnHighlightTimeoutId) {
@@ -3583,16 +3600,53 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
   }
 
   getProjectsByColumn(columnId: string): Project[] {
+    const cached = this.filteredColumnProjects.get(columnId);
+    if (cached) return cached;
     const projects = this.projectsByColumn.get(columnId) ?? this.emptyColumnProjects;
-    return this.filterProjectsByAudience(projects);
+    const filtered = this.filterProjectsByAudience(projects);
+    this.filteredColumnProjects.set(columnId, filtered);
+    return filtered;
+  }
+
+  /** Keeps first paint bounded even when a column contains thousands of cases. */
+  getVisibleProjectsByColumn(columnId: string, projects: Project[]): Project[] {
+    const cached = this.visibleColumnProjects.get(columnId);
+    if (cached) return cached;
+    const limit = this.visibleProjectLimitByColumn.get(columnId) ?? this.initialProjectsPerColumn;
+    const visible = projects.length > limit ? projects.slice(0, limit) : projects;
+    this.visibleColumnProjects.set(columnId, visible);
+    return visible;
+  }
+
+  hasMoreProjects(columnId: string, projects: Project[]): boolean {
+    return projects.length > (this.visibleProjectLimitByColumn.get(columnId) ?? this.initialProjectsPerColumn);
+  }
+
+  getRemainingProjectCount(columnId: string, projects: Project[]): number {
+    const limit = this.visibleProjectLimitByColumn.get(columnId) ?? this.initialProjectsPerColumn;
+    return Math.max(0, projects.length - limit);
+  }
+
+  showMoreProjects(columnId: string): void {
+    const currentLimit = this.visibleProjectLimitByColumn.get(columnId) ?? this.initialProjectsPerColumn;
+    this.visibleProjectLimitByColumn.set(columnId, currentLimit + this.initialProjectsPerColumn);
+    this.visibleColumnProjects.delete(columnId);
   }
 
   setBoardAudience(audience: BoardAudience): void {
     this.boardAudience = audience;
+    this.invalidateBoardProjection();
   }
 
   toggleOnlyMyProjects(): void {
     this.onlyMyProjects = !this.onlyMyProjects;
+    this.invalidateBoardProjection();
+  }
+
+  private invalidateBoardProjection(): void {
+    this.filteredColumnProjects.clear();
+    this.visibleColumnProjects.clear();
+    this.slaSummaryBoard = null;
   }
 
   currentUserName(): string {
@@ -3607,6 +3661,10 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
     return project.id;
   }
 
+  trackBySlaColumnId(index: number, chip: SlaSummaryChip): string {
+    return chip.columnId;
+  }
+
   trackByEquipmentEvidenceId(index: number, evidence: ProspectEquipmentEvidencePhoto): string {
     return evidence.id || `evidence-${index}`;
   }
@@ -3619,10 +3677,13 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
   }
 
   getSlaSummaryChips(board: ProjectBoard): SlaSummaryChip[] {
+    if (this.slaSummaryBoard === board) return this.slaSummaryChips;
     const projects = board.columns.flatMap((column) => this.getProjectsByColumn(column.id));
-    return buildSlaSummary(board.columns, projects, (project, column) => {
+    this.slaSummaryChips = buildSlaSummary(board.columns, projects, (project, column) => {
       return this.getCompactSlaSeverity(project as Project, column as BoardColumn);
     });
+    this.slaSummaryBoard = board;
+    return this.slaSummaryChips;
   }
 
   onSlaSummaryChipClick(chip: SlaSummaryChip): void {
