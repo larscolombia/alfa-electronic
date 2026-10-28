@@ -215,6 +215,15 @@ export class ProjectService {
       return serverProjects;
     }
 
+    // La migración es sólo para una instalación aún vacía. Releer y recorrer
+    // el snapshot heredado en cada carga cuando el servidor ya tiene proyectos
+    // bloquea el hilo principal en navegadores que conservaron un localStorage
+    // grande de versiones anteriores. El servidor es la fuente de verdad una
+    // vez que existe al menos un proyecto.
+    if (serverProjects.length > 0) {
+      return serverProjects;
+    }
+
     const rawBoard = window.localStorage.getItem(this.legacyBoardStorageKey);
     const rawProjects = window.localStorage.getItem(this.legacyProjectsStorageKey);
 
