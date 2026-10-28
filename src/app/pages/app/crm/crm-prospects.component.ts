@@ -146,7 +146,7 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
                                 <tr>
                                     <th>
                                         <button class="btn btn-link p-0 text-decoration-none fw-semibold" type="button" (click)="toggleSort('nombre')">
-                                            Nombre
+                                            Nombre del contacto
                                             <i class="bi" [class.bi-sort-alpha-down]="sortKey === 'nombre' && sortDirection === 'asc'" [class.bi-sort-alpha-up]="sortKey === 'nombre' && sortDirection === 'desc'" [class.bi-arrow-down-up]="sortKey !== 'nombre'"></i>
                                         </button>
                                     </th>
@@ -245,22 +245,23 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
                             </select>
                         </div>
                         <div class="col-12 col-lg-3 mb-3">
-                            <label class="form-label">Nombre del Prospecto *</label>
-                            <input #prospectNameInput class="form-control" placeholder="por ejemplo, Juan Perez" [(ngModel)]="formNombre" name="formNombre" maxlength="180" />
-                        </div>
-                        <div class="col-12 col-lg-3 mb-3">
-                            <label class="form-label">Correo electrónico del prospecto</label>
-                            <input class="form-control" type="email" placeholder="por ejemplo, juanperez@example.com" [(ngModel)]="formCorreo" name="formCorreo" maxlength="180" />
-                        </div>
-                        <div class="col-12 col-lg-3 mb-3">
-                            <label class="form-label">Empresa</label>
+                            <label class="form-label" for="prospect-company">Empresa</label>
                             <input
+                                id="prospect-company"
                                 class="form-control"
                                 placeholder="por ejemplo, Corporacion Acme"
                                 [ngModel]="formCompania"
                                 (ngModelChange)="onProspectCompanyInputChange($event)"
                                 name="formCompania"
                                 maxlength="180" />
+                        </div>
+                        <div class="col-12 col-lg-3 mb-3">
+                            <label class="form-label">Correo electrónico del contacto</label>
+                            <input class="form-control" type="email" placeholder="por ejemplo, juanperez@example.com" [(ngModel)]="formCorreo" name="formCorreo" maxlength="180" />
+                        </div>
+                        <div class="col-12 col-lg-3 mb-3">
+                            <label class="form-label" for="prospect-contact-name">Nombre del contacto *</label>
+                            <input id="prospect-contact-name" #prospectNameInput class="form-control" placeholder="por ejemplo, Juan Perez" [(ngModel)]="formNombre" name="formNombre" maxlength="180" />
                         </div>
                         <div class="col-12 col-lg-3 mb-3">
                             <label class="form-label">NIT</label>
@@ -627,8 +628,8 @@ export class CrmProspectsComponent {
     exportProspects(): void {
         const rows = this.filteredProspectRows;
         const cells = [
-            ["Nombre", "Empresa", "Correo electrónico", "Móvil", "Responsable", "Zona", "Estado", "Creado"],
-            ...rows.map((row) => [row.nombre, row.compania, row.correo, row.movil, row.empleado, row.zona, row.estado, row.creado]),
+            ["Empresa", "Nombre del contacto", "Correo electrónico", "Móvil", "Responsable", "Zona", "Estado", "Creado"],
+            ...rows.map((row) => [row.compania, row.nombre, row.correo, row.movil, row.empleado, row.zona, row.estado, row.creado]),
         ];
         const csv = cells.map((row) => row.map((value) => `"${String(value ?? "").replaceAll('"', '""')}"`).join(",")).join("\n");
         const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }));
@@ -1108,7 +1109,7 @@ export class CrmProspectsComponent {
     private doSaveProspect(keepOpen: boolean): void {
         const nombre = this.formNombre.trim();
         if (!nombre) {
-            this.prospectSaveErrorMessage = "El nombre del prospecto es requerido.";
+            this.prospectSaveErrorMessage = "El nombre del contacto es requerido.";
             return;
         }
 

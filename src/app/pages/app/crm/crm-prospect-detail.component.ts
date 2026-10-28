@@ -896,13 +896,13 @@ type EditableProfileFieldConfig = {
 
                             <div class="row gx-3 gy-3">
                                 <div class="col-12 col-lg-6">
-                                    <label class="form-label">Nombre Del Cliente Potencial</label>
-                                    <div class="form-control bg-light">{{ prospect.nombre }}</div>
+                                    <label class="form-label">Empresa asociada</label>
+                                    <div class="form-control bg-light">{{ commercialActionDraft.companyName || "Sin empresa" }}</div>
                                 </div>
 
                                 <div class="col-12 col-lg-6">
-                                    <label class="form-label">Empresa asociada</label>
-                                    <div class="form-control bg-light">{{ commercialActionDraft.companyName || "Sin empresa" }}</div>
+                                    <label class="form-label">Nombre del contacto</label>
+                                    <div class="form-control bg-light">{{ prospect.nombre }}</div>
                                 </div>
 
                                 <div class="col-12 col-lg-6">
@@ -1012,9 +1012,9 @@ export class CrmProspectDetailComponent {
     profileFieldErrorMessage = "";
     profileFieldSuccessMessage = "";
     readonly profileEditableFields: EditableProfileFieldConfig[] = [
-        { key: "nombre", label: "Nombre del prospecto" },
+        { key: "compania", label: "Empresa" },
         { key: "correo", label: "Correo electronico", inputType: "email" },
-        { key: "compania", label: "Nombre de la compania" },
+        { key: "nombre", label: "Nombre del contacto" },
         { key: "sitioWeb", label: "Sitio web", inputType: "url" },
         { key: "movil", label: "Movil" },
         { key: "telefonoOficina", label: "Telefono de oficina" },
@@ -1470,7 +1470,7 @@ export class CrmProspectDetailComponent {
         const normalizedValue = this.normalizeProfileFieldValue(this.editingProfileFieldValue);
         if (field === "nombre" && !normalizedValue) {
             this.profileFieldSuccessMessage = "";
-            this.profileFieldErrorMessage = "El nombre del prospecto es requerido.";
+            this.profileFieldErrorMessage = "El nombre del contacto es requerido.";
             return;
         }
 
