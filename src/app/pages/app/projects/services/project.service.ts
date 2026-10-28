@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { BehaviorSubject, Observable, combineLatest, firstValueFrom, from, throwError } from 'rxjs';
+import { BehaviorSubject, Observable, combineLatest, firstValueFrom, from, of, throwError } from 'rxjs';
 import { filter, map, shareReplay, switchMap } from 'rxjs/operators';
 import { Attachment, BoardColumn, Project, ProjectBoard, PropertyType } from '../models';
 import {
@@ -423,10 +423,13 @@ export class ProjectService {
   }
 
   loadProjects(boardId: string): Observable<Project[]> {
+    const reload = this.bootstrapDoneSubject.value;
     this.loadingSubject.next(true);
 
     return from(this.ensureBootstrapped()).pipe(
-      switchMap(() => from(this.fetchProjectsIntoSubject())),
+      // Bootstrap already fetched the first snapshot. Only subsequent visits
+      // need a fresh request; fetching twice doubled first-load normalization.
+      switchMap(() => reload ? from(this.fetchProjectsIntoSubject()) : of(void 0)),
       map(() => {
         this.loadingSubject.next(false);
         return this.projectsSubject.value.filter((project) => project.boardId === boardId);

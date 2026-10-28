@@ -172,6 +172,7 @@ export function buildBusinessCalendar(labels: WorkDayLabel[], holidays: HolidayE
 
 let cachedHolidays: HolidayEntry[] = [];
 let holidaysInFlight: Promise<HolidayEntry[]> | null = null;
+let holidaysLoadKey: string | null = null;
 
 export function getHolidayCache(): HolidayEntry[] {
     return cachedHolidays.map((holiday) => ({ ...holiday }));
@@ -250,9 +251,17 @@ export async function refreshHolidaysFromServer(): Promise<HolidayEntry[]> {
 
 /** Dispara la carga en segundo plano una sola vez por sesion de pagina. */
 export function ensureHolidaysLoaded(): void {
-    if (typeof window === "undefined" || holidaysInFlight || cachedHolidays.length > 0) {
+    if (typeof window === "undefined" || holidaysInFlight) {
         return;
     }
+
+    const token = readStoredAccessToken();
+    if (!token) return;
+    const loadKey = `${token}:${new Date().getFullYear()}`;
+    // An empty list is a valid response. Testing its length caused every
+    // compact-card render to fetch again and schedule another Angular render.
+    if (holidaysLoadKey === loadKey) return;
+    holidaysLoadKey = loadKey;
 
     holidaysInFlight = refreshHolidaysFromServer().finally(() => {
         holidaysInFlight = null;

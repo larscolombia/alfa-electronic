@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, Input, OnDestroy, OnInit, QueryList, ViewChild, ViewChildren } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, Injector, Input, OnDestroy, OnInit, QueryList, ViewChild, ViewChildren } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
-import { BrowserMultiFormatReader } from '@zxing/browser';
+import type { BrowserMultiFormatReader } from '@zxing/browser';
 import { Subscription } from 'rxjs';
 import { filter, switchMap, take } from 'rxjs/operators';
 import { AuthService } from '../../../services/auth.service';
@@ -25,6 +25,7 @@ import { PROJECT_TEST_TYPE_OPTIONS, getProjectTechnicalTestTypeLabel, resolvePro
 import { SlaSummaryChip, accumulateQuarterHours, buildSlaSummary, requiresAccessoriesConfirmation, resolveWarrantyBoardStatus } from './kanban-extras.logic';
 import { resolveStatusAfterPartsRequest, validateReadyForDelivery } from './project-auto-transitions.logic';
 import { ProjectEquipmentOption, ProjectEquipmentService, ProjectService } from './services';
+import { PROJECT_REPAIR_STATUS_OPTIONS } from './services/project-equipment-options';
 import { ProjectCardComponent } from './components/project-card/project-card.component';
 import { ProjectTransitionCheckModalComponent } from './components/project-transition-check-modal.component';
 import { WorkTestBatchRun, WorkTestTransitionPrompt } from '../work/work-test-batch.models';
@@ -3243,7 +3244,7 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
   private slaColumnHighlightTimeoutId?: number;
 
   readonly board$ = this.projectService.board$;
-  readonly repairStatusOptions = this.projectEquipmentService.repairStatusOptions;
+  readonly repairStatusOptions = PROJECT_REPAIR_STATUS_OPTIONS;
   readonly technicalTestTypeOptions = PROJECT_TEST_TYPE_OPTIONS;
 
   /**
@@ -3319,7 +3320,7 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
   newMemberName = '';
   saving = false;
   equipmentOptions: ProjectEquipmentOption[] = [];
-  equipmentLocationOptions = this.projectEquipmentService.getLocations();
+  equipmentLocationOptions: ReturnType<ProjectEquipmentService['getLocations']> = [];
   inventoryReferences: StockReference[] = [];
   materialTechnicianOptions: string[] = [];
   materialReservations: ReservationRecord[] = [];
@@ -3382,16 +3383,22 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
   private routeParamsSubscription?: Subscription;
   detailRouteMode = false;
   private inventoryStateSubscription?: Subscription;
+  private equipmentOptionsSubscription?: Subscription;
   private readonly emptyColumnProjects: Project[] = [];
   private readonly projectsByColumn = new Map<string, Project[]>();
   private readonly visibleProjectLimitByColumn = new Map<string, number>();
-  private readonly initialProjectsPerColumn = 40;
+  private readonly initialProjectsPerColumn = 12;
   private readonly filteredColumnProjects = new Map<string, Project[]>();
   private readonly visibleColumnProjects = new Map<string, Project[]>();
   private slaSummaryBoard: ProjectBoard | null = null;
   private slaSummaryChips: SlaSummaryChip[] = [];
   private dragulaInstance: any;
-  private readonly equipmentBarcodeReader = new BrowserMultiFormatReader();
+  private equipmentBarcodeReader?: BrowserMultiFormatReader;
+  private detailDataInitialized = false;
+  private destroyed = false;
+
+  private get projectEquipmentService(): ProjectEquipmentService { return this.injector.get(ProjectEquipmentService); }
+  private get inventoryWorkflowService(): InventoryWorkflowService { return this.injector.get(InventoryWorkflowService); }
   private equipmentScannerControls: { stop: () => void } | null = null;
   private scannerDetectionLocked = false;
   private equipmentQrGenerationToken = 0;
@@ -3401,13 +3408,12 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
 
   constructor(
     private projectService: ProjectService,
-    private projectEquipmentService: ProjectEquipmentService,
+    private injector: Injector,
     private crmEquipmentApi: CrmEquipmentApiService,
     private hrPeople: HrPeoplePickerService,
     private projectsApi: ProjectsApiService,
     private emailsApi: EmailsApiService,
     private authService: AuthService,
-    private inventoryWorkflowService: InventoryWorkflowService,
     private inventoryRbacService: InventoryRbacService,
     private inventoryApiService: InventoryApiService,
     private workTestBatchService: WorkTestBatchService,
@@ -3439,6 +3445,18 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
       });
     });
 
+  }
+
+  private initializeDetailData(): void {
+    if (this.detailDataInitialized) return;
+    this.detailDataInitialized = true;
+    this.equipmentOptionsSubscription = this.projectEquipmentService.optionsChanged$.subscribe(() => {
+      if (this.destroyed) return;
+      this.refreshEquipmentOptions();
+      if (this.detailProject && this.selectedEquipmentReference && !this.linkedEquipment) this.initializeEquipmentContext();
+      this.cdr.markForCheck();
+    });
+    this.equipmentLocationOptions = this.projectEquipmentService.getLocations();
     this.inventoryStateSubscription = this.inventoryWorkflowService.state$.subscribe((state) => {
       this.inventoryReferences = [...state.references].sort((left, right) => left.reference.localeCompare(right.reference));
       this.syncSelectedMaterialReference();
@@ -3451,6 +3469,7 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
     // Contexto tecnica: ficha de proyecto y solicitud de repuestos son trabajo
     // técnico — un comercial no tiene nada que hacer en estos selects.
     void this.hrPeople.refresh('tecnica').then((names) => {
+      if (this.destroyed) return;
       this.peopleNames = names;
       this.cdr.detectChanges();
     });
@@ -3569,12 +3588,14 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
   }
 
   ngOnDestroy(): void {
+    this.destroyed = true;
     this.finalizeEquipmentSessionTimer();
     this.columnDropZonesChangesSubscription?.unsubscribe();
     this.projectsWithTasksSubscription?.unsubscribe();
     this.queryParamsSubscription?.unsubscribe();
     this.routeParamsSubscription?.unsubscribe();
     this.inventoryStateSubscription?.unsubscribe();
+    this.equipmentOptionsSubscription?.unsubscribe();
     this.projectsByColumn.clear();
     this.visibleProjectLimitByColumn.clear();
     this.destroyDragAndDrop();
@@ -3891,6 +3912,7 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
   }
 
   openProjectDetail(project: Project): void {
+    this.initializeDetailData();
     this.finalizeEquipmentSessionTimer();
     this.newMemberName = '';
     this.showOtherDetails = true;
@@ -5539,6 +5561,11 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
 
     try {
       this.stopEquipmentScannerSession();
+      if (!this.equipmentBarcodeReader) {
+        const { BrowserMultiFormatReader } = await import('@zxing/browser');
+        if (this.destroyed || !this.showEquipmentScanner) return;
+        this.equipmentBarcodeReader = new BrowserMultiFormatReader();
+      }
       this.equipmentScannerControls = await this.equipmentBarcodeReader.decodeFromVideoDevice(undefined, videoElement, (result) => {
         if (!result || this.scannerDetectionLocked) {
           return;

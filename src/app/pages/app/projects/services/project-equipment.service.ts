@@ -1,5 +1,8 @@
 import { Injectable } from '@angular/core';
+import { Subject } from 'rxjs';
 import { take } from 'rxjs/operators';
+import { PROJECT_REPAIR_STATUS_OPTIONS } from './project-equipment-options';
+export type { ProjectRepairStatusOption } from './project-equipment-options';
 
 import { EquipmentLocationRecord, getEquipmentLocations } from '../../company/company-equipment-config.store';
 import { CrmEquipmentApiService } from '../../../../services/crm-equipment-api.service';
@@ -16,11 +19,6 @@ import {
   updateProspectEquipmentWorkflow,
 } from '../../crm/crm-prospect-equipment.store';
 
-export interface ProjectRepairStatusOption {
-  id: ProspectEquipmentRepairStatus;
-  label: string;
-}
-
 export interface ProjectEquipmentOption extends ProspectEquipmentSummary {
   reference: string;
   searchableText: string;
@@ -30,24 +28,14 @@ export interface ProjectEquipmentOption extends ProspectEquipmentSummary {
   providedIn: 'root',
 })
 export class ProjectEquipmentService {
+  private readonly optionsChangedSubject = new Subject<void>();
+  readonly optionsChanged$ = this.optionsChangedSubject.asObservable();
   private readonly apiCacheTtlMs = 45_000;
   private readonly apiOptionsByReference = new Map<string, ProjectEquipmentOption>();
   private apiCacheLoadedAt = 0;
   private loadingApiCache = false;
 
-  readonly repairStatusOptions: ProjectRepairStatusOption[] = [
-    { id: 'recibido', label: 'Recibido' },
-    { id: 'diagnostico', label: 'Diagnostico' },
-    { id: 'por-cotizar', label: 'Por cotizar' },
-    { id: 'pedir-repuestos', label: 'Pedir componentes' },
-    { id: 'esperando-proveedor', label: 'Esperando proveedor' },
-    { id: 'reparacion', label: 'En reparacion' },
-    { id: 'garantia', label: 'Garantia' },
-    { id: 'garantia-espera-repuestos', label: 'Garantia esp. repuestos' },
-    { id: 'prestamo', label: 'Material en prestamo' },
-    { id: 'listo-entrega', label: 'Listo para entrega' },
-    { id: 'entregado', label: 'Entregado' },
-  ];
+  readonly repairStatusOptions = PROJECT_REPAIR_STATUS_OPTIONS;
 
   constructor(private readonly crmEquipmentApi: CrmEquipmentApiService) {
     this.refreshEquipmentOptionsFromApi(true);
@@ -212,6 +200,7 @@ export class ProjectEquipmentService {
           });
           this.apiCacheLoadedAt = Date.now();
           this.loadingApiCache = false;
+          this.optionsChangedSubject.next();
         },
         error: () => {
           this.loadingApiCache = false;

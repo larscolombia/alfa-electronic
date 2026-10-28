@@ -7,10 +7,13 @@ type EnhancedSelect = {
     optionsObserver: MutationObserver;
 };
 
+const ENHANCE_DEBOUNCE_MS = 50;
+
 @Injectable({ providedIn: "root" })
 export class SelectEnhancementService {
     private readonly enhanced = new Map<HTMLSelectElement, EnhancedSelect>();
     private pageObserver: MutationObserver | null = null;
+    private scheduleTimer: ReturnType<typeof setTimeout> | null = null;
 
     constructor(@Inject(DOCUMENT) private readonly document: Document, private readonly zone: NgZone) {}
 
@@ -21,15 +24,23 @@ export class SelectEnhancementService {
         // and an endless microtask loop that starves painting and user input.
         this.zone.runOutsideAngular(() => {
             this.enhanceAll();
-            this.pageObserver = new MutationObserver(() => {
-                this.removeDisconnected();
-                this.enhanceAll();
+            this.pageObserver = new MutationObserver((records) => {
+                // Sin selects añadidos/retirados no hay nada que enhancer: la
+                // mayoría de mutaciones son texto o clases. Re-escanear todo el
+                // documento en cada mutación saturaba el hilo principal y dejaba
+                // los desplegables (y toda la página) congelados tras interactuar.
+                if (!(records ?? []).some((record) => this.isSelectRelevant(record))) return;
+                this.scheduleEnhanceAll();
             });
             this.pageObserver.observe(this.document.body, { childList: true, subtree: true });
         });
     }
 
     stop(): void {
+        if (this.scheduleTimer) {
+            clearTimeout(this.scheduleTimer);
+            this.scheduleTimer = null;
+        }
         this.pageObserver?.disconnect();
         this.pageObserver = null;
         for (const { choices, optionsObserver } of this.enhanced.values()) {
@@ -39,7 +50,24 @@ export class SelectEnhancementService {
         this.enhanced.clear();
     }
 
+    private scheduleEnhanceAll(): void {
+        if (this.scheduleTimer) return;
+        this.scheduleTimer = setTimeout(() => {
+            this.scheduleTimer = null;
+            this.enhanceAll();
+        }, ENHANCE_DEBOUNCE_MS);
+    }
+
+    private isSelectRelevant(record: MutationRecord): boolean {
+        const nodes = Array.from(record.addedNodes).concat(Array.from(record.removedNodes));
+        return nodes.some((node) => {
+            if (!(node instanceof HTMLElement)) return false;
+            return node.tagName === "SELECT" || node.querySelector("select") !== null;
+        });
+    }
+
     private enhanceAll(): void {
+        this.removeDisconnected();
         this.document.querySelectorAll<HTMLSelectElement>("select").forEach((select) => this.enhance(select));
     }
 
