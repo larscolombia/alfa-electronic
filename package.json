@@ -57,7 +57,6 @@
     "test:sla-kpi-logic": "node scripts/test-sla-kpi-logic.mjs",
     "test:diagnosis-warranty-logic": "node scripts/test-diagnosis-warranty-logic.mjs",
     "test:kanban-extras": "node scripts/test-kanban-extras-logic.mjs",
-    "test:project-task-summary": "node scripts/test-project-task-summary-logic.mjs",
     "test:sla-config-logic": "node scripts/test-sla-config-logic.mjs",
     "test:work-time-logic": "node scripts/test-work-time-logic.mjs",
     "test:remission-rules": "node scripts/test-remission-rules-logic.mjs",

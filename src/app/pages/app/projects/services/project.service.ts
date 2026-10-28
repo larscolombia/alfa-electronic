@@ -22,7 +22,6 @@ import {
 } from '../../../../services/projects-api.service';
 import { TaskService } from './task.service';
 import { HrPeoplePickerService } from '../../../../services/hr-people-picker.service';
-import { enrichProjectsWithTaskSummary } from '../project-task-summary.logic';
 
 /**
  * Project Service - estado del tablero tecnico respaldado por el servidor.
@@ -110,7 +109,26 @@ export class ProjectService {
     this.projectsSubject.asObservable(),
     this.taskService.tasks$
   ]).pipe(
-    map(([projects, tasks]) => enrichProjectsWithTaskSummary(projects, tasks))
+    map(([projects, tasks]) => {
+      return projects.map(project => {
+        const projectTasks = tasks.filter(t => t.projectId === project.id);
+        const completedTasks = projectTasks.filter(t => t.completed).length;
+        const totalTasks = projectTasks.length;
+        const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+        return {
+          ...project,
+          tasks: projectTasks,
+          completedTasks,
+          totalTasks,
+          progress,
+          properties: {
+            ...project.properties,
+            progress // Update progress property
+          }
+        };
+      });
+    })
   );
 
   constructor() {
