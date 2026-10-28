@@ -1,5 +1,5 @@
 import { NgFor, NgIf } from "@angular/common";
-import { ChangeDetectorRef, Component, ElementRef, ViewChild } from "@angular/core";
+import { ChangeDetectorRef, Component, ElementRef, ViewChild, inject } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { Router, RouterLink } from "@angular/router";
 import { catchError, forkJoin, map, of } from "rxjs";
@@ -14,6 +14,7 @@ import { CrmProspectContact, CrmProspectRecord, CrmProspectsApiService, CrmUpser
 import { FormDraftService } from "../../../services/form-draft.service";
 import { HrPeoplePickerService } from "../../../services/hr-people-picker.service";
 import { SearchableSelectDirective } from "../../../components/input-fields/searchable-select/searchable-select.directive";
+import { ConfirmationModalService } from "../../../services/confirmation-modal.service";
 
 type QuickAddTarget = "fuentes" | "categorias" | "servicios";
 
@@ -196,6 +197,8 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
                                                 <li><button class="dropdown-item" type="button" (click)="openEquipmentModal(row)">Asociar equipo{{ associatedEquipmentCount(row) > 0 ? ' (' + associatedEquipmentCount(row) + ')' : '' }}</button></li>
                                                 <li><button class="dropdown-item" type="button" [disabled]="isConvertingProspect(row.id) || isProspectConverted(row.id)" (click)="convertProspectToClient(row)">{{ isProspectConverted(row.id) ? 'Convertido' : isConvertingProspect(row.id) ? 'Convirtiendo...' : 'Convertir a cliente' }}</button></li>
                                                 <li><a class="dropdown-item" routerLink="/app/crm-cotizaciones">Ver cotizaciones</a></li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li><button class="dropdown-item text-danger" type="button" [disabled]="isDeletingProspect(row.id)" (click)="deleteProspect(row)">{{ isDeletingProspect(row.id) ? 'Eliminando...' : 'Eliminar prospecto' }}</button></li>
                                             </ul>
                                         </div>
                                     </td>
@@ -263,8 +266,9 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
                             <input id="prospect-contact-name" #prospectNameInput class="form-control" placeholder="por ejemplo, Juan Perez" [(ngModel)]="formNombre" name="formNombre" maxlength="180" />
                         </div>
                         <div class="col-12 col-lg-3 mb-3">
-                            <label class="form-label">NIT</label>
-                            <input class="form-control" placeholder="por ejemplo, 900123456-7" [(ngModel)]="formNit" name="formNit" maxlength="80" />
+                            <label class="form-label" for="prospect-nit">NIT *</label>
+                            <input id="prospect-nit" class="form-control" [class.is-invalid]="nitTouched && !isValidNit(formNit)" placeholder="por ejemplo, 900123456-7" [ngModel]="formNit" (ngModelChange)="onNitInput($event)" name="formNit" inputmode="numeric" maxlength="80" aria-describedby="prospect-nit-help" />
+                            <div id="prospect-nit-help" class="invalid-feedback">Ingresa el NIT con guion, por ejemplo 900123456-7.</div>
                         </div>
                         <div class="col-12 col-lg-3 mb-3">
                             <label class="form-label">Móvil</label>
@@ -462,8 +466,8 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
                 </div>
                 <div class="card-footer">
                     <div class="alert alert-danger border mb-3" *ngIf="prospectSaveErrorMessage">{{ prospectSaveErrorMessage }}</div>
-                    <button class="btn btn-theme me-2" type="button" data-testid="prospect-save-btn" [disabled]="isSavingProspect" (click)="saveProspect()"><i class="bi bi-check2 me-1"></i> {{ isSavingProspect ? 'Guardando...' : 'Guardar' }}</button>
-                    <button class="btn btn-outline-secondary me-2" type="button" [disabled]="isSavingProspect" (click)="saveProspectAndAddMore()">Guardar y agregar otro</button>
+                    <button class="btn btn-theme me-2" type="button" data-testid="prospect-save-btn" [disabled]="isSavingProspect || !isValidNit(formNit)" (click)="saveProspect()"><i class="bi bi-check2 me-1"></i> {{ isSavingProspect ? 'Guardando...' : 'Guardar' }}</button>
+                    <button class="btn btn-outline-secondary me-2" type="button" [disabled]="isSavingProspect || !isValidNit(formNit)" (click)="saveProspectAndAddMore()">Guardar y agregar otro</button>
                     <button class="btn btn-link" type="button" (click)="closeProspectForm()">Cancelar</button>
                 </div>
             </div>
@@ -690,6 +694,7 @@ export class CrmProspectsComponent {
     formCorreo = "";
     formCompania = "";
     formNit = "";
+    nitTouched = false;
     formMovil = "";
     formSitioWeb = "";
     formTelefonoOficina = "";
@@ -706,6 +711,8 @@ export class CrmProspectsComponent {
     private stopDraftWatch: () => void = () => undefined;
     private readonly convertingProspectIds = new Set<string>();
     private readonly convertedProspectIds = new Set<string>();
+    private readonly deletingProspectIds = new Set<string>();
+    private readonly confirmationModal = inject(ConfirmationModalService);
 
     private equipmentCountMap: Record<string, number> = {};
     private nextFollowupByProspectId: Record<string, ProspectFollowupBadge> = {};
@@ -856,6 +863,37 @@ export class CrmProspectsComponent {
     onProspectCompanyInputChange(value: string): void {
         this.formCompania = String(value ?? "");
         this.resetCompanyRelatedContactsContext();
+    }
+
+    onNitInput(value: string): void {
+        this.formNit = String(value ?? "");
+        this.nitTouched = true;
+    }
+
+    isValidNit(value: string): boolean {
+        return /^\d+-\d+$/.test(String(value ?? "").trim());
+    }
+
+    isDeletingProspect(prospectId: string): boolean {
+        return this.deletingProspectIds.has(prospectId);
+    }
+
+    async deleteProspect(prospect: ProspectRecord): Promise<void> {
+        const backendId = prospect.backendId.trim();
+        if (!backendId || this.isDeletingProspect(prospect.id)) return;
+        const confirmed = await this.confirmationModal.open({
+            title: "Eliminar prospecto",
+            message: `¿Eliminar el prospecto "${prospect.nombre}"? Esta acción no se puede deshacer.`,
+            confirmText: "Sí, eliminar",
+            cancelText: "Cancelar",
+            variant: "danger",
+        });
+        if (!confirmed) return;
+        this.deletingProspectIds.add(prospect.id);
+        this.crmProspectsApi.deleteProspect(backendId).subscribe({
+            next: () => { this.deletingProspectIds.delete(prospect.id); this.loadProspectsFromApi(); this.cdr.detectChanges(); },
+            error: (error) => { this.deletingProspectIds.delete(prospect.id); this.prospectsLoadErrorMessage = this.resolveErrorMessage(error, "No se pudo eliminar el prospecto."); this.cdr.detectChanges(); },
+        });
     }
 
     addProspectBranch(): void {
@@ -1028,6 +1066,12 @@ export class CrmProspectsComponent {
         if (!nombre) {
             this.prospectConvertSuccessMessage = "";
             this.prospectConvertErrorMessage = "El prospecto debe tener nombre para convertirlo a cliente.";
+            return;
+        }
+
+        if (!this.isValidNit(this.formNit)) {
+            this.nitTouched = true;
+            this.prospectSaveErrorMessage = "El NIT es obligatorio y debe incluir un guion, por ejemplo 900123456-7.";
             return;
         }
 
@@ -1259,6 +1303,7 @@ export class CrmProspectsComponent {
         this.formCorreo = "";
         this.formCompania = "";
         this.formNit = "";
+        this.nitTouched = false;
         this.formMovil = "";
         this.formSitioWeb = "";
         this.formTelefonoOficina = "";

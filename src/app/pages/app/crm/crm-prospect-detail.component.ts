@@ -1190,6 +1190,7 @@ export class CrmProspectDetailComponent {
         this.attachments = [];
         this.attachmentUploadError = "";
         if (prospect?.backendId) {
+            this.refreshTimelineFromCommercialActions();
             this.loadContactsFromApi(prospect.backendId);
             this.loadFollowupsFromApi(prospect.backendId);
             this.loadLinkedPurchaseOrderFromApi(prospect);
@@ -1629,7 +1630,7 @@ export class CrmProspectDetailComponent {
             },
             error: () => {
                 this.commercialActions = [];
-                this.timelineItems = [];
+                this.refreshTimelineFromCommercialActions();
                 this.commercialActionLoadErrorMessage = "No se pudieron cargar los seguimientos desde backend.";
                 this.cdr.detectChanges();
             },
@@ -2044,7 +2045,15 @@ export class CrmProspectDetailComponent {
     }
 
     private refreshTimelineFromCommercialActions(): void {
-        this.timelineItems = [...this.commercialActions]
+        const lifecycleEvent = this.prospect ? [{
+            id: `prospect-created-${this.prospect.backendId || this.prospect.id}`,
+            fecha: this.prospect.creado || "Fecha no disponible",
+            titulo: "Prospecto creado",
+            descripcion: `Se registró el prospecto${this.prospect.compania ? ` para ${this.prospect.compania}` : ""}. Estado inicial: ${this.prospect.estado || "Pendiente"}.`,
+            responsable: this.prospect.empleado || "Sin asignar",
+            icono: "bi bi-person-plus",
+        }] : [];
+        const followupEvents = [...this.commercialActions]
             .sort((a, b) => this.followupSortValue(a.followUpDate, a.startTime) - this.followupSortValue(b.followUpDate, b.startTime))
             .map((action) => ({
                 id: action.id,
@@ -2054,6 +2063,7 @@ export class CrmProspectDetailComponent {
                 responsable: action.relatedContactName || this.prospect?.empleado || "Sin asignar",
                 icono: this.resolveTimelineIcon(action.actionType),
             }));
+        this.timelineItems = [...lifecycleEvent, ...followupEvents];
     }
 
     private resolveTimelineIcon(actionType: string): string {

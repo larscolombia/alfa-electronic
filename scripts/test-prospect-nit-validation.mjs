@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const component = fs.readFileSync('src/app/pages/app/crm/crm-prospects.component.ts', 'utf8');
+assert.match(component, /id="prospect-nit"/);
+assert.match(component, /\[class\.is-invalid\]="nitTouched && !isValidNit\(formNit\)"/);
+assert.match(component, /return \/\^\\d\+-\\d\+\$\/\.test/);
+assert.match(component, /!this\.isValidNit\(this\.formNit\)/);
+assert.match(component, /Eliminar prospecto/);
+assert.match(component, /deleteProspect\(backendId\)/);
+console.log('PASS: live NIT validation and confirmed prospect deletion are wired');
