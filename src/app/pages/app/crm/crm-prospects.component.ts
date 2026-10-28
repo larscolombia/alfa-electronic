@@ -171,7 +171,6 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
                                             <span class="badge text-bg-secondary" *ngIf="isProspectConverted(row.id)" data-testid="prospect-converted-badge" title="Este prospecto ya fue convertido en cliente">Convertido</span>
                                             <span class="badge text-bg-success" *ngIf="row.cotizaciones">{{ row.cotizaciones }} cot.</span>
                                             <span class="badge text-bg-info" *ngIf="row.zona">{{ row.zona }}</span>
-                                            <span class="badge text-bg-warning" *ngIf="row.valor">COP ($) {{ row.valor }}</span>
                                         </div>
                                         <div class="mt-1" *ngIf="nextFollowupBadge(row.id) as badge">
                                             <span class="badge" [class.text-bg-danger]="badge.overdue" [class.text-bg-warning]="!badge.overdue && badge.dueToday" [class.text-bg-info]="!badge.overdue && !badge.dueToday">
@@ -434,15 +433,8 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
                             }
                         </div>
 
-                        <div class="col-12"><hr class="my-2"><h6 class="text-uppercase text-secondary small fw-bold my-3">Valor, estado y servicio</h6></div>
-                        <div class="col-12 col-lg-4 mb-3">
-                            <label class="form-label">Valor del Prospecto</label>
-                            <div class="input-group">
-                                <span class="input-group-text">COP ($)</span>
-                                <input class="form-control" type="number" min="0" [(ngModel)]="formValor" name="formValor" />
-                            </div>
-                        </div>
-                        <div class="col-12 col-lg-4 mb-3">
+                        <div class="col-12"><hr class="my-2"><h6 class="text-uppercase text-secondary small fw-bold my-3">Estado y servicio</h6></div>
+                        <div class="col-12 col-lg-6 mb-3">
                             <label class="form-label" for="prospect-status">Estado</label>
                             <select appSearchableSelect id="prospect-status" class="form-select" [(ngModel)]="formEstado" name="formEstado">
                                 <option value="Pendiente">Pendiente</option>
@@ -451,7 +443,7 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
                             </select>
                         </div>
 
-                        <div class="col-12 col-lg-4 mb-3">
+                        <div class="col-12 col-lg-6 mb-3">
                             <label class="form-label" for="prospect-service">Servicios</label>
                             <div class="input-group">
                                 <select appSearchableSelect id="prospect-service" class="form-select" [(ngModel)]="formServicio" name="formServicio">
@@ -707,7 +699,6 @@ export class CrmProspectsComponent {
     formEmpleado = "";
     formFuente = "";
     formCategoria = "";
-    formValor = 0;
     formEstado = "Pendiente";
     formServicio = "";
     formNota = "";
@@ -755,7 +746,6 @@ export class CrmProspectsComponent {
             formEmpleado?: string;
             formFuente?: string;
             formCategoria?: string;
-            formValor?: number;
             formEstado?: string;
             formServicio?: string;
             formNota?: string;
@@ -779,7 +769,6 @@ export class CrmProspectsComponent {
             this.formEmpleado = String(draft.formEmpleado ?? this.formEmpleado);
             this.formFuente = String(draft.formFuente ?? this.formFuente);
             this.formCategoria = String(draft.formCategoria ?? this.formCategoria);
-            this.formValor = Number.isFinite(Number(draft.formValor)) ? Number(draft.formValor) : this.formValor;
             this.formEstado = String(draft.formEstado ?? this.formEstado);
             this.formServicio = String(draft.formServicio ?? this.formServicio);
             this.formNota = String(draft.formNota ?? this.formNota);
@@ -803,7 +792,6 @@ export class CrmProspectsComponent {
             formEmpleado: this.formEmpleado,
             formFuente: this.formFuente,
             formCategoria: this.formCategoria,
-            formValor: this.formValor,
             formEstado: this.formEstado,
             formServicio: this.formServicio,
             formNota: this.formNota,
@@ -1165,7 +1153,7 @@ export class CrmProspectsComponent {
             source: this.formFuente,
             category: this.formCategoria,
             zone: this.selectedProspectZone,
-            prospectValue: Math.max(0, Number(this.formValor) || 0),
+            prospectValue: 0,
             allowFollowUp: true,
             status: this.formEstado,
             service: this.formServicio,
@@ -1280,7 +1268,6 @@ export class CrmProspectsComponent {
         this.formEmpleado = "";
         this.formFuente = "";
         this.formCategoria = "";
-        this.formValor = 0;
         this.formEstado = "Pendiente";
         this.formServicio = "";
         this.formNota = "";

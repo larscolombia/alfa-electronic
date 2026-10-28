@@ -181,7 +181,6 @@ type EditableProfileFieldConfig = {
                                             [class.text-bg-warning]="prospect.estado === 'Pendiente'"
                                             [class.text-bg-info]="prospect.estado === 'En proceso'"
                                             [class.text-bg-success]="prospect.estado === 'Cerrado'">{{ prospect.estado }}</span>
-                                        · Valor potencial <strong>COP $ {{ prospect.valor | number:'1.0-0' }}</strong>
                                         · Empresa <strong>{{ profileFieldDisplayValue("compania") }}</strong>
                                     </p>
                                 </div>
