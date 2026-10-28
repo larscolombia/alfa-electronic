@@ -30,6 +30,7 @@ import { ProjectTransitionCheckModalComponent } from './components/project-trans
 import { WorkTestBatchRun, WorkTestTransitionPrompt } from '../work/work-test-batch.models';
 import { WorkTestBatchService } from '../work/work-test-batch.service';
 import { setPurchaseWorkflowHandoff } from '../inventory/purchase-workflow-handoff.store';
+import { BoardAudience, visibleBoardColumns } from './board-audience.logic';
 
 declare const dragula: any;
 
@@ -115,8 +116,6 @@ type ProjectPaymentCondition = 'contra-entrega' | 'credito';
 
 type ProjectPaymentStatus = 'pendiente' | 'parcial' | 'confirmado';
 
-type BoardAudience = 'tecnico' | 'administrativo' | 'todos';
-
 interface DiagnosisInspection {
   disassembled: boolean;
   staticTest: boolean;
@@ -183,7 +182,7 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
       </div>
 
       <div class="kanban-board d-flex flex-nowrap overflow-x-auto pb-3 gap-3" *ngIf="!detailRouteMode">
-        <section class="kanban-column flex-shrink-0" style="width: 320px;" *ngFor="let column of board.columns">
+        <section class="kanban-column flex-shrink-0" style="width: 320px;" *ngFor="let column of getVisibleBoardColumns(board.columns)">
           @let columnProjects = getProjectsByColumn(column.id);
           <header class="column-header">
             <div class="board-column-header d-flex justify-content-between align-items-center px-2 py-1" [attr.data-testid]="'column-header-' + column.id">
@@ -3638,6 +3637,10 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
     this.invalidateBoardProjection();
   }
 
+  getVisibleBoardColumns(columns: BoardColumn[]): BoardColumn[] {
+    return visibleBoardColumns(columns, this.boardAudience);
+  }
+
   toggleOnlyMyProjects(): void {
     this.onlyMyProjects = !this.onlyMyProjects;
     this.invalidateBoardProjection();
@@ -3678,8 +3681,9 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
 
   getSlaSummaryChips(board: ProjectBoard): SlaSummaryChip[] {
     if (this.slaSummaryBoard === board) return this.slaSummaryChips;
-    const projects = board.columns.flatMap((column) => this.getProjectsByColumn(column.id));
-    this.slaSummaryChips = buildSlaSummary(board.columns, projects, (project, column) => {
+    const columns = this.getVisibleBoardColumns(board.columns);
+    const projects = columns.flatMap((column) => this.getProjectsByColumn(column.id));
+    this.slaSummaryChips = buildSlaSummary(columns, projects, (project, column) => {
       return this.getCompactSlaSeverity(project as Project, column as BoardColumn);
     });
     this.slaSummaryBoard = board;

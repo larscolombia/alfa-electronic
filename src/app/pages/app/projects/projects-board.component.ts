@@ -191,7 +191,7 @@ export class ProjectsBoardComponent implements OnInit {
   loading$ = this.projectService.loading$;
   serverError$ = this.projectService.error$;
   projectCount$ = this.projectService.projects$.pipe(map((projects) => projects.length));
-  compactMode = false;
+  compactMode = true;
 
   constructor(private projectService: ProjectService) {}
 
