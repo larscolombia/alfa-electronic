@@ -146,9 +146,9 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
                             <thead>
                                 <tr>
                                     <th>
-                                        <button class="btn btn-link p-0 text-decoration-none fw-semibold" type="button" (click)="toggleSort('nombre')">
-                                            Nombre del contacto
-                                            <i class="bi" [class.bi-sort-alpha-down]="sortKey === 'nombre' && sortDirection === 'asc'" [class.bi-sort-alpha-up]="sortKey === 'nombre' && sortDirection === 'desc'" [class.bi-arrow-down-up]="sortKey !== 'nombre'"></i>
+                                        <button class="btn btn-link p-0 text-decoration-none fw-semibold" type="button" (click)="toggleSort('compania')">
+                                            Empresa
+                                            <i class="bi" [class.bi-sort-alpha-down]="sortKey === 'compania' && sortDirection === 'asc'" [class.bi-sort-alpha-up]="sortKey === 'compania' && sortDirection === 'desc'" [class.bi-arrow-down-up]="sortKey !== 'compania'"></i>
                                         </button>
                                     </th>
                                     <th>Correo electrónico</th>
@@ -166,7 +166,8 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
                             <tbody>
                                 <tr *ngFor="let row of visibleProspectRows">
                                     <td>
-                                        <a class="text-decoration-none fw-semibold" [routerLink]="['/app/crm-prospectos', row.id]">{{ row.nombre }}</a>
+                                        <a class="text-decoration-none fw-semibold" [routerLink]="['/app/crm-prospectos', row.id]">{{ prospectDisplayCompany(row) }}</a>
+                                        <div class="small text-secondary mt-1" *ngIf="row.compania">Contacto: {{ row.nombre }}</div>
                                         <div class="d-flex flex-wrap gap-1 mt-1">
                                             <span class="badge text-bg-primary" *ngIf="row.empleado">{{ row.empleado }}</span>
                                             <span class="badge text-bg-secondary" *ngIf="isProspectConverted(row.id)" data-testid="prospect-converted-badge" title="Este prospecto ya fue convertido en cliente">Convertido</span>
@@ -562,7 +563,7 @@ export class CrmProspectsComponent {
     pageSize = 10;
     currentPage = 1;
 
-    sortKey: "nombre" | "creado" | null = null;
+    sortKey: "compania" | "creado" | null = null;
     sortDirection: "asc" | "desc" = "asc";
 
     get visibleProspectRows(): ProspectRecord[] {
@@ -599,7 +600,7 @@ export class CrmProspectsComponent {
         return [...rows].sort((a, b) => this.compareProspectRows(a, b, this.sortKey!) * (this.sortDirection === "asc" ? 1 : -1));
     }
 
-    toggleSort(key: "nombre" | "creado"): void {
+    toggleSort(key: "compania" | "creado"): void {
         if (this.sortKey === key) {
             this.sortDirection = this.sortDirection === "asc" ? "desc" : "asc";
         } else {
@@ -640,11 +641,15 @@ export class CrmProspectsComponent {
         return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLocaleLowerCase("es");
     }
 
-    private compareProspectRows(a: ProspectRecord, b: ProspectRecord, key: "nombre" | "creado"): number {
+    prospectDisplayCompany(row: ProspectRecord): string {
+        return row.compania.trim() || row.nombre;
+    }
+
+    private compareProspectRows(a: ProspectRecord, b: ProspectRecord, key: "compania" | "creado"): number {
         if (key === "creado") {
             return this.parseDisplayDate(a.creado) - this.parseDisplayDate(b.creado);
         }
-        return (a.nombre || "").localeCompare(b.nombre || "", "es", { sensitivity: "base" });
+        return this.prospectDisplayCompany(a).localeCompare(this.prospectDisplayCompany(b), "es", { sensitivity: "base" });
     }
 
     private parseDisplayDate(value: string): number {

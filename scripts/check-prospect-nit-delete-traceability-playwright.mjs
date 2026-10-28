@@ -29,6 +29,9 @@ try {
   });
   await page.route('**/api/v1/crm/prospects', route => route.fulfill({ json: { items: deletedId ? [] : [prospect] } }));
   await page.goto(`${base}/app/crm-prospectos`, { waitUntil: 'networkidle' });
+  const prospectRow = page.locator('tr', { hasText: 'Pepito QA' });
+  await prospectRow.getByText('Empresa QA', { exact: true }).waitFor();
+  assert.equal(await prospectRow.getByText('Contacto: Pepito QA', { exact: true }).count(), 1);
   await page.locator('button').filter({ hasText: /Agregar Prospecto/i }).click();
   const nit = page.locator('#prospect-nit');
   await nit.fill('9001234567');
@@ -38,7 +41,7 @@ try {
   assert.equal(await nit.evaluate(node => node.classList.contains('is-invalid')), false);
   assert.equal(await page.getByTestId('prospect-save-btn').isDisabled(), false);
   await page.locator('button').filter({ hasText: /Cerrar/i }).click();
-  await page.locator('tr', { hasText: 'Pepito QA' }).locator('button.dropdown-toggle').click();
+  await prospectRow.locator('button.dropdown-toggle').click();
   await page.getByRole('button', { name: 'Eliminar prospecto' }).click();
   await page.getByRole('dialog', { name: 'Eliminar prospecto' }).getByRole('button', { name: 'Sí, eliminar' }).click();
   await page.waitForFunction(() => document.body.textContent?.includes('No encontramos prospectos'));
