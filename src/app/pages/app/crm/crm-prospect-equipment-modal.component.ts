@@ -23,10 +23,8 @@ import {
     isAccessoriesEvidenceMissing,
     isSerialPlateEvidenceMissing,
     isSerieExceptionReasonMissing,
-    isSoftwareSuspicionAckRequired,
     isVisibleDamageSaveBlocked,
     SERIE_EXCEPTION_REASON_ERROR,
-    SOFTWARE_SUSPICION_ACK_ERROR,
     validateTransportadoraReception,
     VISIBLE_DAMAGE_ERROR,
 } from "./crm-prospect-equipment-intake-validation.util";
@@ -204,14 +202,22 @@ type SoftwareBackupInfo = {
                             </button>
                         </div>
 
-                        <div class="wizard-steps-grid mb-3">
-                            <div class="wizard-step" *ngFor="let step of wizardSteps; let i = index; trackBy: trackByStepKey" [class.active]="currentStepIndex === i" [class.completed]="currentStepIndex > i">
+                        <div class="wizard-steps-grid mb-3" aria-label="Secciones de la asociación de equipo">
+                            <button
+                                class="wizard-step text-start"
+                                type="button"
+                                *ngFor="let step of wizardSteps; let i = index; trackBy: trackByStepKey"
+                                [class.active]="currentStepIndex === i"
+                                [class.completed]="currentStepIndex > i"
+                                [disabled]="i > currentStepIndex"
+                                [attr.aria-expanded]="currentStepIndex === i"
+                                (click)="openWizardSection(i)">
                                 <span class="wizard-step-number">{{ i + 1 }}</span>
                                 <div class="wizard-step-content">
                                     <div class="fw-semibold wizard-step-title">{{ step.title }}</div>
                                     <div class="small wizard-step-description">{{ step.description }}</div>
                                 </div>
-                            </div>
+                            </button>
                         </div>
 
                         <div class="d-flex justify-content-end mb-3">
@@ -621,9 +627,6 @@ type SoftwareBackupInfo = {
                                                 </div>
                                             </div>
                                             <div class="col-12 col-lg-6">
-                                                <label class="form-label">Accesorios</label>
-                                                <input class="form-control" [(ngModel)]="item.accessories" [ngModelOptions]="{ standalone: true }" placeholder="USB, cables, CD, caja original..." />
-
                                                 <app-crm-equipment-borrowed-list [item]="item" [itemIndex]="i"></app-crm-equipment-borrowed-list>
                                             </div>
                                             <div class="col-12 col-lg-6">
@@ -867,8 +870,35 @@ type SoftwareBackupInfo = {
                                         <app-crm-equipment-evidence-damage [item]="item"></app-crm-equipment-evidence-damage>
 
                                         <div class="row gx-4 gy-4 align-items-start">
-                                            <div class="col-12 col-xxl-4">
+                                            <div class="col-12 col-lg-6">
                                                 <div class="border rounded p-3 bg-white h-100 evidence-side-panel">
+                                                    <div class="mb-4">
+                                                        <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                                                            <div>
+                                                                <h6 class="mb-0">Fotos obligatorias</h6>
+                                                                <p class="small text-secondary mb-0">Carga una foto por cada cara del equipo.</p>
+                                                            </div>
+                                                            <span class="badge" [class.text-bg-success]="hasRequiredFaceEvidence(item)" [class.text-bg-warning]="!hasRequiredFaceEvidence(item)">
+                                                                {{ hasRequiredFaceEvidence(item) ? 'Completas' : 'Pendientes' }}
+                                                            </span>
+                                                        </div>
+                                                        <div class="required-evidence-grid">
+                                                            <label class="required-evidence-slot" *ngFor="let faceType of requiredFaceEvidenceTypes" [attr.for]="'evidence-face-' + item.id + '-' + faceType">
+                                                                <input
+                                                                    class="visually-hidden"
+                                                                    type="file"
+                                                                    accept="image/*"
+                                                                    capture="environment"
+                                                                    [id]="'evidence-face-' + item.id + '-' + faceType"
+                                                                    (change)="handleRequiredFaceEvidenceSelected(item, faceType, $event)" />
+                                                                <img *ngIf="faceEvidenceFor(item, faceType) as evidence; else emptyFaceSlot" [src]="evidence.thumbnailDataUrl" [alt]="getFaceEvidenceLabel(faceType)" />
+                                                                <ng-template #emptyFaceSlot><span class="required-evidence-placeholder"><i class="bi bi-image" aria-hidden="true"></i></span></ng-template>
+                                                                <span class="required-evidence-label">{{ getFaceEvidenceLabel(faceType) }}</span>
+                                                                <span class="required-evidence-overlay"><i class="bi bi-cloud-arrow-up-fill" aria-hidden="true"></i><span>Cargar foto</span></span>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+
                                                     <label class="form-label">Código interno del equipo</label>
                                                     <input class="form-control mb-2" [value]="internalEquipmentCode(item)" readonly [attr.data-testid]="'equipment-internal-code-' + i" />
                                                     <p class="small text-secondary mb-3">ID inmutable generado por el sistema; este es el valor de la etiqueta QR.</p>
@@ -921,6 +951,15 @@ type SoftwareBackupInfo = {
                                                         <div class="d-flex align-items-center gap-2 small border rounded px-2 py-1" *ngFor="let attachment of intakeFormatAttachments(item); let attachmentIndex = index">
                                                             <i class="bi" [ngClass]="attachment.mimeType === 'application/pdf' ? 'bi-file-earmark-pdf' : 'bi-file-earmark-image'"></i>
                                                             <span class="text-truncate flex-grow-1">{{ attachment.fileName }}</span>
+                                                            <a
+                                                                class="btn btn-sm btn-outline-secondary"
+                                                                [href]="attachment.dataUrl"
+                                                                target="_blank"
+                                                                rel="noopener"
+                                                                [attr.aria-label]="'Vista previa de ' + attachment.fileName"
+                                                                [title]="'Abrir ' + attachment.fileName + ' en otra pestaña'">
+                                                                <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i><span class="visually-hidden">Vista previa</span>
+                                                            </a>
                                                             <button
                                                                 class="btn btn-sm btn-outline-danger"
                                                                 type="button"
@@ -928,16 +967,6 @@ type SoftwareBackupInfo = {
                                                                 (click)="removeIntakeFormatAttachment(item, attachment.id)">
                                                                 Quitar
                                                             </button>
-                                                        </div>
-                                                    </div>
-
-                                                    <div class="border rounded p-3 bg-light-subtle small mb-3" [class.border-success]="hasRequiredFaceEvidence(item)" [class.border-warning]="!hasRequiredFaceEvidence(item)">
-                                                        <div class="fw-semibold text-dark mb-2">Checklist de caras obligatorias</div>
-                                                        <div class="d-flex justify-content-between align-items-center mb-1" *ngFor="let faceType of requiredFaceEvidenceTypes">
-                                                            <span>{{ getFaceEvidenceLabel(faceType) }}</span>
-                                                            <span [class.text-success]="!getMissingRequiredFaceEvidence(item).includes(faceType)" [class.text-warning]="getMissingRequiredFaceEvidence(item).includes(faceType)">
-                                                                {{ getMissingRequiredFaceEvidence(item).includes(faceType) ? 'Pendiente' : 'OK' }}
-                                                            </span>
                                                         </div>
                                                     </div>
 
@@ -950,11 +979,11 @@ type SoftwareBackupInfo = {
                                                 </div>
                                             </div>
 
-                                            <div class="col-12 col-xxl-8">
+                                            <div class="col-12 col-lg-6">
                                                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
                                                     <div>
-                                                        <h6 class="mb-1">Galería y metadatos</h6>
-                                                        <p class="small text-secondary mb-0">Miniaturas, EXIF y huella del archivo listos para revisión operativa.</p>
+                                                        <h6 class="mb-1">Informe de fotografías</h6>
+                                                        <p class="small text-secondary mb-0">Clasifica y deja una nota breve para cada foto cargada.</p>
                                                     </div>
                                                     <div class="d-flex flex-wrap gap-2">
                                                         <span class="badge text-bg-light">{{ item.evidencePhotos.length }} foto(s)</span>
@@ -972,10 +1001,7 @@ type SoftwareBackupInfo = {
 
                                                 <div class="vstack gap-3" *ngIf="item.evidencePhotos.length > 0">
                                                     <div class="border rounded p-3 evidence-photo-card" *ngFor="let evidence of item.evidencePhotos; trackBy: trackByEvidenceId">
-                                                        <div class="d-flex gap-3 align-items-start flex-wrap flex-sm-nowrap">
-                                                            <img [src]="evidence.thumbnailDataUrl" alt="Evidencia" class="evidence-thumb rounded" />
-
-                                                            <div class="flex-grow-1 min-w-0">
+                                                        <div class="flex-grow-1 min-w-0">
                                                                 <div class="row gx-2 gy-2 align-items-start">
                                                                     <div class="col-12 col-md-6 col-xl-4">
                                                                         <label class="form-label small">Tipo de evidencia</label>
@@ -999,13 +1025,8 @@ type SoftwareBackupInfo = {
                                                                 <div class="small text-secondary mt-3 evidence-meta-grid">
                                                                     <span><strong>Archivo:</strong> {{ evidence.fileName }}</span>
                                                                     <span><strong>Peso:</strong> {{ formatBytes(evidence.sizeBytes) }}</span>
-                                                                    <span><strong>Resolución:</strong> {{ evidence.width }} x {{ evidence.height }}</span>
                                                                     <span><strong>Captura:</strong> {{ formatEvidenceDate(evidence.capturedAt) }} ({{ evidence.capturedAtSource === 'exif' ? 'EXIF' : 'archivo' }})</span>
-                                                                    <span><strong>Equipo:</strong> {{ evidence.deviceMake || '--' }} {{ evidence.deviceModel || '' }}</span>
-                                                                    <span><strong>GPS:</strong> {{ formatGps(evidence) }}</span>
-                                                                    <span class="w-100"><strong>SHA-256:</strong> {{ evidence.sha256 }}</span>
                                                                 </div>
-                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1379,6 +1400,67 @@ type SoftwareBackupInfo = {
             object-fit: cover;
             flex: 0 0 auto;
             border: 1px solid rgba(15, 23, 42, 0.08);
+        }
+
+        .required-evidence-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: .75rem;
+        }
+
+        .required-evidence-slot {
+            position: relative;
+            min-height: 130px;
+            overflow: hidden;
+            border: 1px dashed var(--bs-border-color);
+            border-radius: .65rem;
+            cursor: pointer;
+            background: var(--bs-tertiary-bg);
+        }
+
+        .required-evidence-slot img,
+        .required-evidence-placeholder {
+            display: block;
+            width: 100%;
+            height: 130px;
+            object-fit: cover;
+        }
+
+        .required-evidence-placeholder {
+            display: grid;
+            place-items: center;
+            color: var(--bs-secondary-color);
+            font-size: 1.75rem;
+        }
+
+        .required-evidence-label {
+            position: absolute;
+            inset: auto .4rem .4rem .4rem;
+            z-index: 1;
+            padding: .2rem .4rem;
+            border-radius: .3rem;
+            color: #fff;
+            background: rgba(15, 23, 42, .72);
+            font-size: .75rem;
+            text-align: center;
+        }
+
+        .required-evidence-overlay {
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-content: center;
+            gap: .35rem;
+            color: #fff;
+            background: rgba(15, 23, 42, .72);
+            opacity: 0;
+            transition: opacity .15s ease-in-out;
+            text-align: center;
+        }
+
+        .required-evidence-slot:hover .required-evidence-overlay,
+        .required-evidence-slot:focus-within .required-evidence-overlay {
+            opacity: 1;
         }
 
         .reception-qr-thumb {
@@ -2185,6 +2267,36 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
         }
     }
 
+    faceEvidenceFor(item: ProspectEquipmentItem, type: ProspectEquipmentEvidenceType): ProspectEquipmentEvidencePhoto | undefined {
+        return item.evidencePhotos.find((photo) => photo.evidenceType === type);
+    }
+
+    async handleRequiredFaceEvidenceSelected(item: ProspectEquipmentItem, type: ProspectEquipmentEvidenceType, event: Event): Promise<void> {
+        const input = event.target as HTMLInputElement | null;
+        const file = input?.files?.item(0);
+        if (!file) {
+            return;
+        }
+
+        this.evidenceLoadingItemId = item.id;
+        this.validationMessage = "";
+        try {
+            const [photo] = await buildEvidencePhotosFromFiles([file]);
+            if (!photo) {
+                throw new Error("invalid-photo");
+            }
+            photo.evidenceType = type;
+            item.evidencePhotos = [...item.evidencePhotos.filter((entry) => entry.evidenceType !== type), photo];
+        } catch {
+            this.validationMessage = "No fue posible procesar la foto. Selecciona una imagen válida e inténtalo de nuevo.";
+        } finally {
+            this.evidenceLoadingItemId = null;
+            if (input) {
+                input.value = "";
+            }
+        }
+    }
+
     removeEvidencePhoto(item: ProspectEquipmentItem, evidenceId: string): void {
         item.evidencePhotos = item.evidencePhotos.filter((photo) => photo.id !== evidenceId);
     }
@@ -2352,6 +2464,14 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
                 this.validationMessage = "No fue posible generar la etiqueta QR de uno o más equipos.";
             });
         }
+    }
+
+    openWizardSection(index: number): void {
+        if (index < 0 || index > this.currentStepIndex) {
+            return;
+        }
+        this.currentStepIndex = index;
+        this.validationMessage = "";
     }
 
     close(): void {
@@ -4250,8 +4370,7 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
             if (!this.validateIndustrialOverrides(this.getMeaningfulItems())) {
                 return false;
             }
-
-            return this.validateSoftwareSuspicionAcks(this.getMeaningfulItems());
+            return true;
         }
 
         if (this.currentWizardStep.key === "evidence") {
@@ -4337,16 +4456,6 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
         }
 
         return true;
-    }
-
-    private validateSoftwareSuspicionAcks(items: ProspectEquipmentItem[]): boolean {
-        const blockedItem = items.find((item) => isSoftwareSuspicionAckRequired(item));
-        if (!blockedItem) {
-            return true;
-        }
-
-        this.validationMessage = SOFTWARE_SUSPICION_ACK_ERROR;
-        return false;
     }
 
     private async startScanner(videoElement: HTMLVideoElement): Promise<void> {

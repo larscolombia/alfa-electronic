@@ -56,6 +56,7 @@ try {
 
   // 3. Panel de bolsas (en /app/inventory-movements): recepcion en custodia
   await page.goto(`${base}/app/inventory-movements`, { waitUntil: "networkidle" });
+  await page.getByTestId("inv-tab-bags").click();
   await page.locator("[data-testid='bag-code-input']").fill(bagCode); await wait(page);
   await page.locator("[data-testid='bag-tech-input']").fill(techName); await wait(page);
   await page.locator("[data-testid='bag-item-input']").fill(ref); await wait(page);
@@ -90,6 +91,7 @@ try {
 
   // 6. Liberar la bolsa declarando sobrante de 2 unidades
   await page.goto(`${base}/app/inventory-movements`, { waitUntil: "networkidle" });
+  await page.getByTestId("inv-tab-bags").click();
   await page.locator(`[data-testid='bag-release-open-${bagId}']`).click(); await wait(page);
   await page.locator("[data-testid='bag-leftover-input']").fill("2"); await wait(page);
   await page.locator("[data-testid='bag-release-btn']").click();

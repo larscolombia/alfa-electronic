@@ -31,6 +31,25 @@ async function login(page) {
   await page.goto(`${base}/auth/signin`,{waitUntil:"domcontentloaded"}); await fillFocus(page,page.locator("#emailadd"),process.env.PW_USER_EMAIL||"admin@alfa.com"); await fillFocus(page,page.locator("#passwd"),process.env.PW_USER_PASSWORD||"1234");
   await click(page,page.getByRole("button",{name:"Login"}),"Login"); await page.waitForURL(/\/app\//,{timeout:30000});
 }
+async function verifyReceptionAssignmentRoute(page) {
+  await page.goto(`${base}/app/work-equipment-reception`,{waitUntil:"domcontentloaded"});
+  const equipmentLink=page.locator(".equipment-preview .btn").first();
+  await visible(equipmentLink,"La columna Equipos no muestra el enlace del equipo");
+  const equipmentTextStyle=await equipmentLink.evaluate((element) => ({
+    whiteSpace: getComputedStyle(element).whiteSpace,
+    overflowWrap: getComputedStyle(element).overflowWrap,
+  }));
+  if(equipmentTextStyle.whiteSpace !== "normal" || !["anywhere","break-word"].includes(equipmentTextStyle.overflowWrap)) {
+    throw new Error(`La columna Equipos aún no permite saltos de línea: ${JSON.stringify(equipmentTextStyle)}`);
+  }
+  const assign=page.getByRole("button",{name:/Asignar técnico/i}).first();
+  await visible(assign,"La bandeja de recepción no expone la acción Asignar técnico");
+  await click(page,assign,"Ir a carga laboral para asignar técnico");
+  await page.waitForURL(/\/app\/work-workload/,{timeout:30000});
+  if(await page.locator(".modal-content",{hasText:/Asignar técnico/i}).count()) throw new Error("Asignar técnico abrió el modal retirado en vez de dirigir a Carga laboral");
+  await visible(page.getByText(/Carga laboral|Carga estimada/i).first(),"La vista de Carga laboral no quedó disponible para asignar el técnico");
+  await snap("2a-asignacion-dirige-carga-laboral");
+}
 async function diagnoseAndQuote(page) {
   await page.goto(`${base}/app/work-projects`,{waitUntil:"domcontentloaded"}); await ensureBoardFullView(page); let card=page.locator(".project-card",{hasText:data.serie}).first();
   if(!await card.waitFor({state:"visible",timeout:20000}).then(()=>true).catch(()=>false)){
@@ -50,9 +69,18 @@ async function diagnoseAndQuote(page) {
   }
   const d=page.locator(".project-detail-dialog").first();
   for(const x of ["Equipo desarmado","Prueba estatica realizada","Prueba de encendido realizada","Falla identificada"]){const l=d.locator("label.project-switch",{hasText:x}).first(); if(!await l.locator("input").isChecked()) await click(page,l,x);}
-  const fields=d.locator(".project-detail-field"); await fillFocus(page,fields.filter({hasText:"Memo diagnostico"}).locator("textarea,input"),"Diagnóstico de placa principal; reparación viable."); await fillFocus(page,fields.filter({hasText:"Memo reparacion"}).locator("textarea,input"),"Cambio de componentes y prueba funcional."); await fillFocus(page,fields.filter({hasText:"Horas hombre estimadas"}).locator("input"),"8"); await fillFocus(page,fields.filter({hasText:"Presupuesto repuestos"}).locator("input"),"10000000");
+  const fields=d.locator(".project-detail-field"); await fillFocus(page,fields.filter({hasText:"Memo diagnostico"}).locator("textarea,input"),"Diagnóstico de placa principal; reparación viable."); await fillFocus(page,fields.filter({hasText:"Horas hombre estimadas"}).locator("input"),"8"); await fillFocus(page,fields.filter({hasText:"Presupuesto repuestos"}).locator("input"),"10000000");
   await click(page,d.getByRole("button",{name:/Cerrar diagnóstico/}),"Cerrar diagnóstico"); await page.waitForTimeout(1000); await click(page,d.getByRole("button",{name:/Crear cotización con diagnóstico/}),"Crear cotización con diagnóstico"); await page.waitForURL(/crm-cotizaciones/,{timeout:30000});
-  const form=page.locator("[data-testid=quote-form-card]"); await visible(form,"No llegó la cotización precargada"); await visible(form.getByText(`Servicio: ${data.serviceType}`,{exact:true}),"El servicio no llegó desde recepción a cotización"); const equipment=form.locator("label.form-check",{hasText:data.serie}).first(); await click(page,equipment,"Seleccionar equipo en cotización"); const row=form.locator("table tbody tr").first(); await selectFocus(page,row.locator("td").first().locator("select").first(),{index:1},{force:true}); await fillFocus(page,row.locator("input[placeholder='Descripcion del servicio']"),"Reparación placa base industrial"); await fillFocus(page,row.locator("td").nth(1).locator("input:not(.choices__input)"),"1"); await fillFocus(page,row.locator("td").nth(2).locator("input:not(.choices__input)"),"10000000"); await selectFocus(page,row.locator("td").nth(3).locator("select"),{label:"0%"},{force:true}); await fillFocus(page,form.locator("textarea").nth(0),"Reparación aprobada de placa base."); await fillFocus(page,form.locator("textarea").nth(1),"Vigencia 15 días.");
+  const form=page.locator("[data-testid=quote-form-card]"); await visible(form,"No llegó la cotización precargada"); await visible(form.getByText(`Servicio: ${data.serviceType}`,{exact:true}),"El servicio no llegó desde recepción a cotización");
+  if(!await form.getByText("Empresa",{exact:true}).isVisible().catch(()=>false)) throw new Error("La cotización no muestra el campo Empresa");
+  const companyValue=await form.locator("select").first().inputValue().catch(()=>"");
+  if(!companyValue) throw new Error("La cotización no quedó vinculada a una empresa de la recepción");
+  const equipment=form.locator("label.form-check",{hasText:data.serie}).first();
+  if(!await equipment.locator("input[type=checkbox]").isChecked()) await click(page,equipment,"Seleccionar equipo en cotización");
+  const row=form.locator("table tbody tr").first();
+  await selectFocus(page,row.locator("td").first().locator("select").first(),{label:"Reparación"},{force:true});
+  await fillFocus(page,row.locator("td").nth(2).locator("input[type=number]").first(),"10000000");
+  await fillFocus(page,form.locator("textarea").nth(0),"Reparación aprobada de placa base."); await fillFocus(page,form.locator("textarea").nth(1),"Vigencia 15 días.");
   await click(page,form.locator("button.dropdown-toggle").first(),"Opciones de guardado"); await snap("3a-menu-guardado-cotizacion"); await click(page,form.locator(".dropdown-menu button",{hasText:/Guardar y marcar como enviado/}).first(),"Guardar y enviar cotización"); await page.waitForTimeout(1500);
 }
 async function order(page) {
@@ -136,8 +164,12 @@ async function repairAndClose(page) {
   if((await d.getByTestId("equipment-location-select").inputValue())!==updatedLocation) throw new Error("La ubicación del equipo no persistió al reabrir la ficha");
   await moveAndSave(page,d,"Esperando proveedor");
   d=await openCard(page);
-  await moveAndSave(page,d,"Reparacion");
+  await click(page,d.getByRole("button",{name:/Registrar llegada de componentes/}),"Registrar llegada de componentes y pasar a reparación");
+  await page.waitForTimeout(900);
+  await click(page,d.getByRole("button",{name:"Guardar cambios"}),"Guardar transición a reparación");
   d=await openCard(page); await snap("6a-ficha-reparacion");
+  if(await d.locator("textarea[placeholder*='Memo diagnostico']").count()) throw new Error("El memo diagnóstico sigue editable durante reparación");
+  await visible(d.getByText("Diagnóstico de placa principal; reparación viable.",{exact:false}),"El memo diagnóstico no quedó visible como historial durante reparación");
   const sessionTimer=d.getByTestId("equipment-session-timer");
   const accumulatedTimer=d.getByTestId("equipment-accumulated-repair-time");
   await visible(sessionTimer,"No aparece el contador de reparación de la sesión");
@@ -204,6 +236,7 @@ let browser; let page; try { browser=await chromium.launch({headless,slowMo:0});
   console.log("UI_ONLY login"); await login(page); await snap("1-login");
   console.log("UI_ONLY catálogo de recepción"); await stages.ensureReceptionCatalog(page); await snap("1b-catalogo-recepcion");
   console.log("UI_ONLY reception"); await stages.reception(page); await snap("2-recepcion");
+  console.log("UI_ONLY ruta de asignación a carga laboral"); await verifyReceptionAssignmentRoute(page);
   console.log("UI_ONLY commercial action"); await stages.commercialAction(page);
   console.log("UI_ONLY account relations"); await stages.completeAccountRelations(page);
   console.log("UI_ONLY prospect tabs"); await stages.verifyProspectTabs(page);
@@ -216,4 +249,4 @@ let browser; let page; try { browser=await chromium.launch({headless,slowMo:0});
   console.log("UI_ONLY emit invoice"); await emitInvoice(page);
   console.log("UI_ONLY payment"); await payInvoice(page); await snap("8-pago");
   console.log("UI_ONLY remission"); await stages.remitAndDeliver(page); await snap("9-remision");
-  console.log(`UI_ONLY_SUCCESS ${JSON.stringify(data)}`); } catch(e) { if(page) await page.screenshot({path:`playwright-artifacts/ui-journey-${stamp}-FAILURE.png`,fullPage:true}).catch(()=>{}); console.error(`UI_ONLY_FAILURE ${e.stack||e}`); process.exitCode=1; } finally { if(browser) await browser.close(); }
+  console.log(`UI_ONLY_SUCCESS ${JSON.stringify(data)}`); } catch(e) { if(page) await page.screenshot({path:`playwright-artifacts/ui-journey-${stamp}-FAILURE.png`,fullPage:true}).catch(()=>{}); await fs.writeFile(`playwright-artifacts/ui-journey-${stamp}-FAILURE.txt`,String(e.stack||e)).catch(()=>{}); console.error(`UI_ONLY_FAILURE ${e.stack||e}`); process.exitCode=1; } finally { if(browser) await browser.close(); }

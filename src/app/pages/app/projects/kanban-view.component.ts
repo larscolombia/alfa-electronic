@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, Injector, Input, OnDestroy, OnInit, QueryList, ViewChild, ViewChildren } from '@angular/core';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import type { BrowserMultiFormatReader } from '@zxing/browser';
@@ -373,7 +374,12 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
                 <div class="project-detail-field project-detail-field--workflow">
                   <span class="project-detail-field__label">Lectura QR / codigo</span>
 
-                  <div class="equipment-scan-row">
+                  <div class="equipment-linked-code" *ngIf="linkedEquipment; else equipmentIdentifierSearch">
+                    <strong>{{ linkedEquipment.equipmentCode || equipmentIdentifierDraft }}</strong>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" (click)="selectLinkedEquipment('')">Cambiar equipo</button>
+                  </div>
+
+                  <ng-template #equipmentIdentifierSearch><div class="equipment-scan-row">
                     <input
                       type="text"
                       class="project-detail-field__input"
@@ -396,7 +402,7 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
                       [disabled]="!cameraScannerSupported">
                       Escanear QR
                     </button>
-                  </div>
+                  </div></ng-template>
 
                   <small class="text-secondary" *ngIf="!cameraScannerSupported">
                     El navegador actual no permite lectura continua por camara. Puedes usar el campo manual.
@@ -454,6 +460,16 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
                         {{ photo.evidenceType || 'evidencia' }}{{ photo.notes ? ' · ' + photo.notes : '' }}
                       </figcaption>
                     </figure>
+                  </div>
+
+                  <div class="equipment-document-preview mt-3" *ngFor="let attachment of linkedEquipmentIntakeFormatAttachments">
+                    <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
+                      <span class="project-detail-field__label mb-0">Formato de recepción: {{ attachment.fileName }}</span>
+                      <a class="btn btn-sm btn-outline-secondary" [href]="attachment.dataUrl" target="_blank" rel="noopener">Abrir en otra pestaña</a>
+                    </div>
+                    <object [data]="safeAttachmentPreview(attachment)" [type]="attachment.mimeType" class="equipment-document-preview__content">
+                      <a [href]="attachment.dataUrl" target="_blank" rel="noopener">Abrir documento</a>
+                    </object>
                   </div>
 
                   <div class="helper-box" *ngIf="!linkedEquipmentEvidenceLoading && !linkedEquipmentEvidenceError && linkedEquipmentEvidencePhotos.length === 0">
@@ -695,7 +711,7 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
             </div>
 
             <div class="project-form-grid project-form-grid--2 mb-3">
-              <div class="diagnosis-inspection-card">
+              <div class="diagnosis-inspection-card" *ngIf="detailProject.status === 'diagnostico'">
                 <div class="section-heading mb-2">
                   <div>
                     <h5>Diagnostico (Posicion 0)</h5>
@@ -734,7 +750,7 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
                 </div>
               </div>
 
-              <label class="project-detail-field">
+              <label class="project-detail-field" *ngIf="detailProject.status === 'diagnostico'">
                 <span class="project-detail-field__label">Memo diagnostico</span>
                 <textarea
                   class="project-detail-field__textarea"
@@ -744,7 +760,17 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
                 ></textarea>
               </label>
 
-              <label class="project-detail-field">
+              <div class="project-detail-field" *ngIf="detailProject.status === 'reparacion'">
+                <span class="project-detail-field__label">Memo diagnostico</span>
+                <div class="project-detail-field__readonly">
+                  {{ detailProject.properties['diagnosticNotes'] || 'Sin memo diagnostico registrado.' }}
+                </div>
+                <small class="text-secondary" *ngIf="detailProject.properties['diagnosisClosedAt']">
+                  Cerrado el {{ detailProject.properties['diagnosisClosedAt'] | date:'dd/MM/yyyy HH:mm' }}
+                </small>
+              </div>
+
+              <label class="project-detail-field" *ngIf="detailProject.status === 'reparacion'">
                 <span class="project-detail-field__label">Memo reparacion / intervencion</span>
                 <textarea
                   class="project-detail-field__textarea"
@@ -1763,6 +1789,7 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
               <button
                 type="button"
                 class="btn btn-theme"
+                *ngIf="detailProject.status !== 'por-cotizar'"
                 [disabled]="saving || !detailProject.title.trim()"
                 (click)="saveProjectDetail()">
                 {{ saving ? 'Guardando...' : 'Guardar cambios' }}
@@ -2670,6 +2697,27 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
       gap: 0.65rem;
     }
 
+    .equipment-linked-code {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .75rem;
+      min-height: 2.5rem;
+      padding: .55rem .75rem;
+      border: 1px solid var(--bs-border-color);
+      border-radius: .5rem;
+      background: var(--bs-tertiary-bg);
+    }
+
+    .project-detail-field__readonly {
+      min-height: 7.5rem;
+      padding: .75rem;
+      border: 1px solid var(--bs-border-color);
+      border-radius: .5rem;
+      background: var(--bs-tertiary-bg);
+      white-space: pre-wrap;
+    }
+
     .equipment-scan-row .project-detail-field__input {
       flex: 1;
       min-width: 14rem;
@@ -2756,6 +2804,14 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
       display: grid;
       gap: 0.75rem;
       grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .equipment-document-preview__content {
+      width: 100%;
+      min-height: 32rem;
+      border: 1px solid var(--bs-border-color);
+      border-radius: .5rem;
+      background: var(--bs-tertiary-bg);
     }
 
     .equipment-evidence-item {
@@ -3421,6 +3477,7 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private cdr: ChangeDetectorRef,
+    private sanitizer: DomSanitizer,
   ) { }
 
   ngOnInit(): void {
@@ -4239,8 +4296,8 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
     const partsBudgetUsd = this.normalizeNumber(properties['partsBudgetUsd']);
     const pendingRequirements: string[] = [];
 
-    if (!diagnosisInspection.faultIdentified) {
-      pendingRequirements.push('marcar la falla identificada');
+    if (!Object.values(diagnosisInspection).some(Boolean)) {
+      pendingRequirements.push('marcar al menos un punto del checklist de diagnóstico');
     }
 
     if (!diagnosticNotes) {
@@ -4576,6 +4633,16 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
       .map((entry) => (typeof entry === 'string' ? entry.trim() : String((entry as { description?: string; code?: string })?.description ?? (entry as { code?: string })?.code ?? '').trim()))
       .filter((label) => label !== '');
     return labels.length ? labels.join(', ') : 'sin equipos prestados';
+  }
+
+  get linkedEquipmentIntakeFormatAttachments(): ProspectEquipmentAttachment[] {
+    return this.linkedEquipmentAttachments.filter((attachment) =>
+      String(attachment.attachmentType ?? '').trim().toLowerCase() === 'intake-format',
+    );
+  }
+
+  safeAttachmentPreview(attachment: ProspectEquipmentAttachment): SafeResourceUrl {
+    return this.sanitizer.bypassSecurityTrustResourceUrl(attachment.dataUrl);
   }
 
   getLatestDispatchRecord(): ProjectDispatchRecord | null {

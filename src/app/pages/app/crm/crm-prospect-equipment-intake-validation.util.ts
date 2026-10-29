@@ -10,8 +10,6 @@ export const ACCESSORIES_EVIDENCE_ERROR =
     "El equipo tiene accesorios reportados: se requiere evidencia fotográfica de accesorios.";
 export const VISIBLE_DAMAGE_ERROR =
     "Daño visible reportado: se requiere evidencia de daño visible con nota y confirmación del cliente.";
-export const SOFTWARE_SUSPICION_ACK_ERROR =
-    "Posible falla de software: confirma que el cliente fue informado antes de continuar a evidencia.";
 
 export function validateTransportadoraReception(
     draft: Pick<ProspectEquipmentRecord, "intakeMethod" | "intakeCarrier" | "intakeTrackingNumber" | "intakeReceivedAt">,
@@ -64,14 +62,6 @@ export function hasVisibleDamageEvidenceWithNote(item: ProspectEquipmentItem): b
 
 export function isVisibleDamageSaveBlocked(item: ProspectEquipmentItem): boolean {
     return Boolean(item.visibleDamageReported) && (!hasVisibleDamageEvidenceWithNote(item) || !item.visibleDamageConfirmed);
-}
-
-export function isSoftwareSuspicionAckRequired(item: ProspectEquipmentItem): boolean {
-    return String(item.answers?.["softwareIssueRuledOut"] ?? "").trim() === "No" && !item.softwareSuspicionAcknowledged;
-}
-
-export function requiresSoftwareSuspicionWarning(item: ProspectEquipmentItem): boolean {
-    return String(item.answers?.["softwareIssueRuledOut"] ?? "").trim() === "No";
 }
 
 export function requiresPreviousInterventionWarning(item: ProspectEquipmentItem): boolean {

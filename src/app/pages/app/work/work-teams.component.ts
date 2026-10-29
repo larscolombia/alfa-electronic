@@ -1,11 +1,8 @@
 import { CommonModule } from "@angular/common";
 import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, NgZone, OnDestroy, ViewChild } from "@angular/core";
-import { FormsModule } from "@angular/forms";
 import { ActivatedRoute, Router, RouterLink } from "@angular/router";
 import DataTable from "datatables.net-dt";
 import "datatables.net-responsive-dt";
-import { forkJoin, of } from "rxjs";
-import { catchError } from "rxjs/operators";
 
 import { CrmProspectEquipmentModalComponent } from "../crm/crm-prospect-equipment-modal.component";
 import {
@@ -16,8 +13,7 @@ import {
     getProspectEquipmentWarnings,
 } from "../crm/crm-prospect-equipment.store";
 import { ProspectRecord, getProspectById } from "../crm/crm-prospects.store";
-import { CrmEquipmentApiService, EquipmentTechnicianOption } from "../../../services/crm-equipment-api.service";
-import { AuthService } from "../../../services/auth.service";
+import { CrmEquipmentApiService } from "../../../services/crm-equipment-api.service";
 import { ConfirmationModalService } from "../../../services/confirmation-modal.service";
 import { WorkEquipmentHistoryContextService } from "../../../services/work-equipment-history-context.service";
 
@@ -59,7 +55,7 @@ const WORK_DIRECT_PROSPECT: ProspectRecord = {
 @Component({
     selector: "app-work-teams",
     standalone: true,
-    imports: [CommonModule, RouterLink, FormsModule, CrmProspectEquipmentModalComponent],
+    imports: [CommonModule, RouterLink, CrmProspectEquipmentModalComponent],
     styles: [
         `
             .work-equipment-filter {
@@ -77,12 +73,30 @@ const WORK_DIRECT_PROSPECT: ProspectRecord = {
                 overflow-y: visible;
             }
 
+            .work-equipment-table-wrap table {
+                table-layout: fixed;
+                min-width: 1080px;
+            }
+
+            .work-equipment-table-wrap th:nth-child(4),
+            .work-equipment-table-wrap td:nth-child(4) {
+                width: min(22vw, 19rem);
+            }
+
             .equipment-preview,
             .service-preview,
             .warning-preview {
                 display: flex;
                 flex-direction: column;
                 gap: 0.2rem;
+            }
+
+            .equipment-preview .btn {
+                display: block;
+                max-width: 100%;
+                white-space: normal;
+                overflow-wrap: anywhere;
+                line-height: 1.35;
             }
 
             .warning-badge {
@@ -348,62 +362,6 @@ const WORK_DIRECT_PROSPECT: ProspectRecord = {
                 (saved)="handleSaved()"></app-crm-prospect-equipment-modal>
         }
 
-        @if (showAssignModal && assignmentRecord) {
-            <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.55);" (click)="closeAssignModal()">
-                <div class="modal-dialog modal-lg modal-dialog-scrollable" (click)="$event.stopPropagation()">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <div>
-                                <h5 class="modal-title mb-1">Asignar técnico</h5>
-                                <p class="small text-secondary mb-0">Recepción {{ formatReception(assignmentRecord) }} · {{ assignmentRecord.companyName || '--' }}</p>
-                            </div>
-                            <button type="button" class="btn-close" (click)="closeAssignModal()"></button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="alert alert-danger border mb-3" *ngIf="assignErrorMessage">{{ assignErrorMessage }}</div>
-                            <div class="alert alert-info border mb-3" *ngIf="assignLoading">Cargando técnicos por especialidad...</div>
-
-                            <div class="vstack gap-3" *ngIf="!assignLoading">
-                                <div class="border rounded p-3" *ngFor="let item of assignmentRecord.items; trackBy: trackByItemId">
-                                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
-                                        <div>
-                                            <div class="fw-semibold">{{ buildItemLabel(item) }}</div>
-                                            <div class="small text-secondary">Especialidad: {{ itemSpeciality(item) }}</div>
-                                        </div>
-                                        <div class="small text-secondary">Actual: {{ item.assignedTo || 'Sin asignar' }}</div>
-                                    </div>
-
-                                    <div class="row gx-2 gy-2 align-items-end">
-                                        <div class="col-12 col-lg-8">
-                                            <label class="form-label mb-1">Técnico responsable</label>
-                                            <select
-                                                class="form-select"
-                                                [ngModel]="assignmentByItemId[item.id] || ''"
-                                                [ngModelOptions]="{ standalone: true }"
-                                                (ngModelChange)="assignmentByItemId[item.id] = $event">
-                                                <option value="">Sin cambios</option>
-                                                <option *ngFor="let technician of assignmentOptionsForItem(item)" [value]="technician.id">
-                                                    {{ technician.name }} · {{ technician.role || 'Sin rol' }} · carga {{ technician.activeItems }}
-                                                </option>
-                                            </select>
-                                        </div>
-                                        <div class="col-12 col-lg-4">
-                                            <button class="btn btn-outline-secondary w-100" type="button" (click)="reloadTechniciansForItem(item)">Actualizar lista</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-outline-secondary" (click)="closeAssignModal()">Cancelar</button>
-                            <button type="button" class="btn btn-theme" [disabled]="assignSaving || assignLoading" (click)="saveAssignments()">
-                                {{ assignSaving ? 'Asignando...' : 'Guardar asignación' }}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        }
     `,
 })
 export class WorkTeamsComponent implements AfterViewInit, OnDestroy {
@@ -418,14 +376,6 @@ export class WorkTeamsComponent implements AfterViewInit, OnDestroy {
     tableVisible = true;
     editorRecord: ProspectEquipmentRecord | null = null;
     editorProspect: ProspectRecord = WORK_DIRECT_PROSPECT;
-    showAssignModal = false;
-    assignLoading = false;
-    assignSaving = false;
-    assignErrorMessage = "";
-    assignmentRecord: ProspectEquipmentRecord | null = null;
-    assignmentByItemId: Record<string, string> = {};
-    assignmentTechniciansBySpeciality = new Map<string, EquipmentTechnicianOption[]>();
-    assignmentTechniciansAll: EquipmentTechnicianOption[] = [];
     pageTitle = "Trabajo - Equipos";
     pageSubtitle = "CRUD de recepciones de equipos usando el mismo formulario operativo de CRM y una lista tipo datatable.";
     breadcrumbLabel = "Equipos";
@@ -444,7 +394,6 @@ export class WorkTeamsComponent implements AfterViewInit, OnDestroy {
         private readonly crmEquipmentApi: CrmEquipmentApiService,
         private readonly changeDetectorRef: ChangeDetectorRef,
         private readonly ngZone: NgZone,
-        private readonly authService: AuthService,
         private readonly confirmationModal: ConfirmationModalService,
         private readonly equipmentHistoryContextService: WorkEquipmentHistoryContextService,
         private readonly activatedRoute: ActivatedRoute,
@@ -590,158 +539,14 @@ export class WorkTeamsComponent implements AfterViewInit, OnDestroy {
         this.editorProspect = { ...WORK_DIRECT_PROSPECT };
     }
 
-    openAssignModal(recordId: string): void {
-        const normalizedID = String(recordId ?? "").trim();
-        if (!normalizedID) {
+    openWorkloadForAssignment(recordId: string): void {
+        const record = this.records.find((entry) => entry.id === String(recordId ?? "").trim());
+        if (!record) {
             return;
         }
 
-        this.assignLoading = true;
-        this.assignSaving = false;
-        this.assignErrorMessage = "";
-        this.assignmentRecord = null;
-        this.assignmentByItemId = {};
-        this.assignmentTechniciansBySpeciality.clear();
-        this.assignmentTechniciansAll = [];
-        this.showAssignModal = true;
-
-        this.crmEquipmentApi.getRecord(normalizedID, true).subscribe({
-            next: (record) => {
-                this.assignmentRecord = this.cloneRecord(record);
-                this.assignmentByItemId = this.assignmentRecord.items.reduce<Record<string, string>>((acc, item) => {
-                    acc[item.id] = String(item.assignedToId ?? "").trim();
-                    return acc;
-                }, {});
-
-                const specialityKeys = Array.from(new Set(this.assignmentRecord.items.map((item) => this.itemSpeciality(item).toLowerCase()).filter(Boolean)));
-                const specialityRequests = specialityKeys.map((speciality) =>
-                    this.crmEquipmentApi.listTechnicians({ speciality }).pipe(catchError(() => of([] as EquipmentTechnicianOption[]))),
-                );
-
-                forkJoin({
-                    all: this.crmEquipmentApi.listTechnicians().pipe(catchError(() => of([] as EquipmentTechnicianOption[]))),
-                    bySpeciality: specialityRequests.length > 0 ? forkJoin(specialityRequests) : of([] as EquipmentTechnicianOption[][]),
-                }).subscribe({
-                    next: ({ all, bySpeciality }) => {
-                        this.assignmentTechniciansAll = all;
-                        this.assignmentTechniciansBySpeciality.clear();
-                        bySpeciality.forEach((items, index) => {
-                            this.assignmentTechniciansBySpeciality.set(specialityKeys[index], items);
-                        });
-                        this.assignLoading = false;
-                        this.changeDetectorRef.detectChanges();
-                    },
-                    error: () => {
-                        this.assignLoading = false;
-                        this.assignErrorMessage = "No se pudieron cargar los técnicos para asignación.";
-                        this.changeDetectorRef.detectChanges();
-                    },
-                });
-            },
-            error: () => {
-                this.assignLoading = false;
-                this.assignErrorMessage = "No se pudo abrir la recepción para asignación.";
-                this.changeDetectorRef.detectChanges();
-            },
-        });
-    }
-
-    closeAssignModal(): void {
-        this.showAssignModal = false;
-        this.assignLoading = false;
-        this.assignSaving = false;
-        this.assignErrorMessage = "";
-        this.assignmentRecord = null;
-        this.assignmentByItemId = {};
-        this.assignmentTechniciansAll = [];
-        this.assignmentTechniciansBySpeciality.clear();
-    }
-
-    itemSpeciality(item: ProspectEquipmentItem): string {
-        return (item.serviceTypeName || item.familyName || item.tipo || "general").trim() || "general";
-    }
-
-    assignmentOptionsForItem(item: ProspectEquipmentItem): EquipmentTechnicianOption[] {
-        const specialityKey = this.itemSpeciality(item).toLowerCase();
-        const specific = this.assignmentTechniciansBySpeciality.get(specialityKey) ?? [];
-        if (specific.length > 0) {
-            return specific;
-        }
-        return this.assignmentTechniciansAll;
-    }
-
-    buildItemLabel(item: ProspectEquipmentItem): string {
-        return buildProspectEquipmentLabel(item);
-    }
-
-    reloadTechniciansForItem(item: ProspectEquipmentItem): void {
-        const speciality = this.itemSpeciality(item);
-        const specialityKey = speciality.toLowerCase();
-        this.crmEquipmentApi.listTechnicians({ speciality }).subscribe({
-            next: (items) => {
-                this.assignmentTechniciansBySpeciality.set(specialityKey, items);
-                this.changeDetectorRef.detectChanges();
-            },
-            error: () => {
-                this.assignErrorMessage = "No se pudo recargar la lista de técnicos para esta especialidad.";
-                this.changeDetectorRef.detectChanges();
-            },
-        });
-    }
-
-    saveAssignments(): void {
-        if (!this.assignmentRecord) {
-            return;
-        }
-
-        const pendingUpdates = this.assignmentRecord.items
-            .map((item) => ({
-                item,
-                selectedID: String(this.assignmentByItemId[item.id] ?? "").trim(),
-            }))
-            .filter(({ item, selectedID }) => selectedID.length > 0 && selectedID !== String(item.assignedToId ?? "").trim());
-
-        if (pendingUpdates.length === 0) {
-            this.closeAssignModal();
-            return;
-        }
-
-        this.assignSaving = true;
-        this.assignErrorMessage = "";
-        const assignedBy = this.authService.getCurrentUserName() || "jefe-tecnico";
-
-        const requests = pendingUpdates.map(({ item, selectedID }) => {
-            const selectedTechnician = this.assignmentOptionsForItem(item).find((technician) => technician.id === selectedID)
-                ?? this.assignmentTechniciansAll.find((technician) => technician.id === selectedID);
-
-            return this.crmEquipmentApi.assignItemTechnician(this.assignmentRecord!.id, item.id, {
-                assignedToId: selectedID,
-                assignedTo: selectedTechnician?.name || "",
-                assignedAt: new Date().toISOString(),
-                assignedBy,
-            }).pipe(catchError(() => of(null)));
-        });
-
-        forkJoin(requests).subscribe({
-            next: (responses) => {
-                this.assignSaving = false;
-
-                if (responses.some((entry) => entry === null)) {
-                    this.assignErrorMessage = "Una o más asignaciones fallaron. Revisa la disponibilidad del técnico y reintenta.";
-                    this.changeDetectorRef.detectChanges();
-                    return;
-                }
-
-                this.closeAssignModal();
-                this.loadRecords();
-                this.message = "Asignación técnica actualizada correctamente.";
-                this.errorMessage = "";
-            },
-            error: () => {
-                this.assignSaving = false;
-                this.assignErrorMessage = "No se pudo guardar la asignación técnica.";
-                this.changeDetectorRef.detectChanges();
-            },
+        void this.router.navigate(["/app/work-workload"], {
+            queryParams: { reception: record.id, focus: "assign" },
         });
     }
 
@@ -1108,7 +913,7 @@ export class WorkTeamsComponent implements AfterViewInit, OnDestroy {
         }
 
         if (testId.startsWith("work-equipment-assign-")) {
-            this.openAssignModal(testId.slice("work-equipment-assign-".length));
+            this.openWorkloadForAssignment(testId.slice("work-equipment-assign-".length));
             return;
         }
 

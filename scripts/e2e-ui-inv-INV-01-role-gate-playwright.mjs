@@ -73,10 +73,10 @@ async function technicianEntryRejected(page) {
   await assertRoleHint(page, "roleHintOnMovements");
   await page.locator("select:has(option[value='entrada'])").selectOption("entrada"); await wait(page);
   await page.locator(`select:has(option[value='${ref}'])`).selectOption(ref); await wait(page);
-  const formCard = page.locator(".card", { hasText: "Nuevo movimiento" }).first();
+  const formCard = page.locator(".card", { hasText: "Registrar movimiento" }).first();
   await formCard.locator("input[type='number']").fill("1");
   await formCard.locator("input[placeholder='Explica por que se hace el movimiento']").fill(`Entrada de prueba INV-01 ${id}`);
-  await page.getByRole("button", { name: "Solicitar aprobacion" }).click();
+  await page.getByRole("button", { name: "Enviar solicitud" }).click();
   result.approvalButtonUsed = true; await wait(page);
 
   const alert = page.locator("[data-testid='inv-role-rejected-alert']");
