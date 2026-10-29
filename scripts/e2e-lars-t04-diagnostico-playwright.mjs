@@ -186,7 +186,9 @@ try {
     }
   }
   await fieldInput(page, "Memo diagnostico").fill(memoText);
-  await fieldInput(page, "Memo reparacion / intervencion").fill(`Reparacion planificada: reemplazo de capacitor y prueba funcional. t04 ${now}`);
+  if (await page.getByText("Memo reparacion / intervencion", { exact: true }).count()) {
+    throw new Error("El memo de reparación no debe ser visible durante la etapa Diagnóstico.");
+  }
   await fieldInput(page, "Horas hombre estimadas").fill("6");
   await fieldInput(page, "Presupuesto repuestos (USD)").fill("150");
   await setRangeValue(page, 85);

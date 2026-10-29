@@ -24,63 +24,40 @@ import { ProjectService } from "../../app/projects/services/project.service";
     standalone: true,
     imports: [CommonModule, FormsModule, RouterLink, InvRoleHintComponent, InvBackendAlertComponent, TechnicianBagsPanelComponent],
     template: `
-        <div class="container-fluid py-3">
-            <div class="row gx-3 gx-lg-4 align-items-center page-title">
-                <div class="col col-sm mb-3 mb-sm-0">
-                    <h5 class="mb-0">Inventario - Entradas, salidas y ajustes</h5>
-                    <p class="text-secondary small mb-0">Control de movimientos con politicas de rol para proteger la calidad de stock.</p>
+        <main class="container-fluid py-3 inventory-workspace" id="main-content">
+            <header class="d-flex justify-content-between align-items-start gap-3 mb-2">
+                <div>
+                    <h5 class="mb-0">Movimientos de inventario</h5>
+                    <p class="small text-secondary mb-0">Rol actual: <strong>{{ roleLabel }}</strong></p>
                 </div>
-                <div class="col-12 col-sm-auto text-sm-end">
-                    <a class="btn btn-outline-secondary" routerLink="/app/inventory-dashboard">Volver al panel</a>
-                </div>
-            </div>
+                <a class="btn btn-sm btn-outline-secondary" routerLink="/app/inventory-dashboard">Volver al panel</a>
+            </header>
 
-            <nav aria-label="breadcrumb" class="breadcrumb-theme mt-3 rounded">
-                <ol class="breadcrumb mb-0">
-                    <li class="breadcrumb-item bi"><a routerLink="/app/dashboard"><i class="bi bi-house-door me-2"></i>AdminUX</a></li>
-                    <li class="breadcrumb-item bi"><a routerLink="/app/inventory-dashboard">Inventario</a></li>
-                    <li class="breadcrumb-item bi active" aria-current="page">Movimientos</li>
-                </ol>
-            </nav>
-        </div>
+            <details class="mb-2" *ngIf="showDemoRole">
+                <summary class="small text-secondary">Modo demo / QA: simular rol</summary>
+                <select class="form-select form-select-sm mt-2 demo-role-select" [(ngModel)]="rolePreset" data-testid="inv-demo-role-select">
+                    <option value="tecnico">Tecnico</option><option value="responsable">Responsable de inventario</option>
+                    <option value="administrativo">Administrativo</option><option value="compras">Compras</option><option value="auditor">Auditor</option>
+                </select>
+            </details>
+            <button *ngIf="!showDemoRole" class="btn btn-link btn-sm p-0 mb-2 text-secondary" type="button" (click)="showDemoRole = true">Modo demo / QA</button>
 
-        <div class="container mt-3" id="main-content">
-            <div class="card adminuiux-card mb-3">
-                <div class="card-body">
-                    <div class="row gx-3 gy-2 align-items-end">
-                        <div class="col-12 col-md-4">
-                            <label class="form-label">Perfil operativo</label>
-                            <select class="form-select" [(ngModel)]="rolePreset">
-                                <option value="tecnico">Tecnico</option>
-                                <option value="responsable">Responsable de inventario</option>
-                                <option value="administrativo">Administrativo</option>
-                                <option value="compras">Compras</option>
-                                <option value="auditor">Auditor</option>
-                            </select>
-                        </div>
-                        <div class="col-12 col-md">
-                            <div class="alert mb-0" [ngClass]="rolePreset === 'tecnico' ? 'alert-warning border' : 'alert-success border'">
-                                <strong>Regla activa:</strong>
-                                <span *ngIf="rolePreset === 'tecnico'"> el tecnico puede registrar salida. Entrada y ajuste requieren aprobacion.</span>
-                                <span *ngIf="rolePreset === 'responsable'"> el responsable puede registrar entrada, salida y ajuste.</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <app-inv-role-hint></app-inv-role-hint>
             <app-inv-backend-alert></app-inv-backend-alert>
+            <div *ngIf="feedback" class="alert py-2 mb-2" [ngClass]="feedbackClass" [attr.data-testid]="feedbackTestId" aria-live="polite">{{ feedback }}</div>
 
-            <div *ngIf="feedback" class="alert mb-3" [ngClass]="feedbackClass" [attr.data-testid]="feedbackTestId">
-                {{ feedback }}
-            </div>
+            <nav class="nav nav-tabs workspace-tabs" role="tablist" aria-label="Tareas de movimientos">
+                <button class="nav-link" type="button" role="tab" data-testid="inv-tab-register" [class.active]="activeTab === 'register'" [attr.aria-selected]="activeTab === 'register'" (click)="activeTab = 'register'">Registrar</button>
+                <button class="nav-link" type="button" role="tab" data-testid="inv-tab-activity" [class.active]="activeTab === 'activity'" [attr.aria-selected]="activeTab === 'activity'" (click)="openActivity()">Actividad <span *ngIf="pendingCount" class="badge text-bg-warning ms-1">{{ pendingCount }}</span></button>
+                <button class="nav-link" type="button" role="tab" data-testid="inv-tab-bags" [class.active]="activeTab === 'bags'" [attr.aria-selected]="activeTab === 'bags'" (click)="activeTab = 'bags'">Bolsas</button>
+            </nav>
 
-            <div class="card adminuiux-card mb-3 mb-lg-4">
-                <div class="card-header">
-                    <h6 class="mb-0">Nuevo movimiento</h6>
-                </div>
+            <section *ngIf="activeTab === 'register'" class="card adminuiux-card workspace-panel" role="tabpanel">
+                <div class="card-header py-2 d-flex justify-content-between align-items-center"><h6 class="mb-0">Registrar movimiento</h6><span class="small text-secondary">Categoria: {{ inferredCategory }}</span></div>
                 <div class="card-body">
+                    <app-inv-role-hint></app-inv-role-hint>
+                    <div class="alert py-2 small" [ngClass]="requiresApproval(draft.type) ? 'alert-warning border' : 'alert-success border'">
+                        {{ requiresApproval(draft.type) ? 'Esta accion se enviara a aprobacion.' : 'Tu rol puede registrar esta accion directamente.' }}
+                    </div>
                     <div class="row gx-3 gy-2">
                         <div class="col-12 col-md-3">
                             <label class="form-label">Tipo</label>
@@ -101,7 +78,10 @@ import { ProjectService } from "../../app/projects/services/project.service";
                             <label class="form-label">Cantidad</label>
                             <input class="form-control" type="number" min="1" [(ngModel)]="draft.quantity" />
                         </div>
-                        <!-- MEJORA C: Selector de proyecto que auto-llena ODS/equipo/cliente -->
+                        <div class="col-12 col-md-4">
+                            <label class="form-label">Motivo</label>
+                            <input class="form-control" [(ngModel)]="draft.reason" placeholder="Explica por que se hace el movimiento" />
+                        </div>
                         <div class="col-12 col-md-4">
                             <label class="form-label">Proyecto asociado (opcional)</label>
                             <select class="form-select" [(ngModel)]="selectedProjectId" (ngModelChange)="onProjectChange($event)">
@@ -111,102 +91,69 @@ import { ProjectService } from "../../app/projects/services/project.service";
                                 </option>
                             </select>
                         </div>
-                        <div class="col-12 col-md-4">
-                            <label class="form-label">ODS / Orden</label>
-                            <input class="form-control" [(ngModel)]="draft.workOrder" placeholder="Ej: ODS-2026-0411" [readonly]="!!selectedProjectId" />
-                        </div>
-                        <div class="col-12 col-md-4">
-                            <label class="form-label">Tag equipo</label>
-                            <input class="form-control" [(ngModel)]="draft.equipmentTag" placeholder="EQ-PLANTA-009" [readonly]="!!selectedProjectId" />
-                        </div>
-                        <div class="col-12 col-md-4">
-                            <label class="form-label">Cliente / Planta</label>
-                            <input class="form-control" [(ngModel)]="draft.customerSite" placeholder="Planta Acme - Linea 3" [readonly]="!!selectedProjectId" />
-                        </div>
-                        <!-- MEJORA H: Categoria inferida automaticamente -->
-                        <div class="col-12 col-md-4">
-                            <label class="form-label">Categoria <span class="badge text-bg-secondary ms-1">auto</span></label>
-                            <input class="form-control" [value]="inferredCategory" readonly />
-                        </div>
-                        <div class="col-12 col-md-4">
-                            <label class="form-label">Soporte / evidencia</label>
-                            <input class="form-control" [(ngModel)]="draft.evidenceRef" placeholder="Ticket #4521 / Acta AJ-77" />
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label">Motivo</label>
-                            <input class="form-control" [(ngModel)]="draft.reason" placeholder="Explica por que se hace el movimiento" />
-                        </div>
                     </div>
-
+                    <details class="mt-3" [open]="showTraceability" (toggle)="showTraceability = $any($event.target).open">
+                        <summary>Detalles de trazabilidad</summary>
+                        <div class="row gx-3 gy-2 mt-1">
+                            <div class="col-12 col-md-4"><label class="form-label">ODS / Orden</label><input class="form-control" [(ngModel)]="draft.workOrder" placeholder="Ej: ODS-2026-0411" [readonly]="!!selectedProjectId" /></div>
+                            <div class="col-12 col-md-4"><label class="form-label">Tag equipo</label><input class="form-control" [(ngModel)]="draft.equipmentTag" placeholder="EQ-PLANTA-009" [readonly]="!!selectedProjectId" /></div>
+                            <div class="col-12 col-md-4"><label class="form-label">Cliente / Planta</label><input class="form-control" [(ngModel)]="draft.customerSite" placeholder="Planta Acme - Linea 3" [readonly]="!!selectedProjectId" /></div>
+                            <div class="col-12 col-md-4"><label class="form-label">Soporte / evidencia</label><input class="form-control" [(ngModel)]="draft.evidenceRef" placeholder="Ticket #4521 / Acta AJ-77" /></div>
+                        </div>
+                    </details>
                     <div class="mt-3 d-flex gap-2 flex-wrap">
                         <button class="btn btn-theme" type="button" (click)="submitMovement()">
-                            {{ requiresApproval(draft.type) ? 'Solicitar aprobacion' : 'Registrar movimiento' }}
+                            {{ requiresApproval(draft.type) ? 'Enviar solicitud' : 'Registrar ' + movementTypeLabel(draft.type).toLowerCase() }}
                         </button>
                         <button class="btn btn-outline-secondary" type="button" (click)="resetDraft()">Limpiar</button>
                     </div>
                 </div>
-            </div>
+            </section>
 
-            <div class="row gx-3 gx-lg-4">
-                <div class="col-12 col-xl-7 mb-3 mb-xl-0">
-                    <div class="card adminuiux-card h-100">
-                        <div class="card-header">
-                            <h6 class="mb-0">Movimientos registrados</h6>
-                        </div>
-                        <div class="card-body p-0">
-                            <div class="table-responsive">
-                                <table class="table align-middle mb-0">
+            <section *ngIf="activeTab === 'activity'" class="card adminuiux-card workspace-panel" role="tabpanel">
+                <div class="card-header py-2 d-flex justify-content-between align-items-center gap-2 flex-wrap">
+                    <div class="btn-group" role="group" aria-label="Actividad">
+                        <button type="button" class="btn btn-sm" [class.btn-theme]="activityView === 'history'" [class.btn-outline-secondary]="activityView !== 'history'" (click)="activityView = 'history'">Historial</button>
+                        <button type="button" class="btn btn-sm" [class.btn-theme]="activityView === 'requests'" [class.btn-outline-secondary]="activityView !== 'requests'" (click)="activityView = 'requests'">Solicitudes <span *ngIf="pendingCount" class="badge text-bg-warning ms-1">{{ pendingCount }}</span></button>
+                    </div>
+                    <input *ngIf="activityView === 'history'" class="form-control form-control-sm activity-search" [(ngModel)]="historySearch" (ngModelChange)="historyPage = 0" placeholder="Buscar referencia u ODS" data-testid="inv-history-search" />
+                </div>
+                <div class="card-body p-0 table-panel">
+                    <div class="table-responsive" *ngIf="activityView === 'history'">
+                        <table class="table align-middle mb-0">
                                     <thead>
                                         <tr>
                                             <th>Fecha</th>
                                             <th>Tipo</th>
                                             <th>Referencia</th>
                                             <th>Cantidad</th>
-                                            <th>Orden</th>
-                                            <th>Equipo</th>
-                                            <th>Cliente/Planta</th>
-                                            <th>Categoria</th>
                                             <th>Solicitado por</th>
+                                            <th class="text-end">Detalle</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr *ngFor="let item of movementHistory">
+                                        <tr *ngFor="let item of pagedHistory">
                                             <td>{{ item.requestedAt | date: 'dd/MM/yyyy HH:mm' }}</td>
                                             <td>{{ movementTypeLabel(item.type) }}</td>
                                             <td>{{ item.reference }}</td>
                                             <td>{{ item.quantity }}</td>
-                                            <td>{{ item.workOrder || '--' }}</td>
-                                            <td>{{ item.equipmentTag || '--' }}</td>
-                                            <td>{{ item.customerSite || '--' }}</td>
-                                            <td>{{ item.movementCategory || '--' }}</td>
                                             <td>{{ item.requestedBy }}</td>
+                                            <td class="text-end"><button class="btn btn-sm btn-outline-secondary" type="button" (click)="selectedMovement = item">Ver detalle</button></td>
                                         </tr>
                                         <tr *ngIf="movementHistory.length === 0">
-                                            <td colspan="9" class="text-center text-secondary py-4">Aun no hay movimientos registrados.</td>
+                                            <td colspan="6" class="text-center text-secondary py-4">Aun no hay movimientos registrados.</td>
                                         </tr>
                                     </tbody>
                                 </table>
-                            </div>
-                        </div>
                     </div>
-                </div>
-
-                <div class="col-12 col-xl-5">
-                    <div class="card adminuiux-card h-100">
-                        <div class="card-header">
-                            <h6 class="mb-0">Solicitudes de ajuste/entrada</h6>
-                            <p class="small text-secondary mb-0">Cola para evitar cuello de botella y mantener trazabilidad.</p>
-                        </div>
-                        <div class="card-body p-0">
-                            <div class="table-responsive">
-                                <table class="table align-middle mb-0">
+                    <div class="table-responsive" *ngIf="activityView === 'requests'">
+                        <table class="table align-middle mb-0">
                                     <thead>
                                         <tr>
                                             <th>Fecha</th>
                                             <th>Referencia</th>
                                             <th>Tipo</th>
                                             <th>Estado</th>
-                                            <th>Orden</th>
                                             <th class="text-end">Accion</th>
                                         </tr>
                                     </thead>
@@ -218,30 +165,52 @@ import { ProjectService } from "../../app/projects/services/project.service";
                                             <td>
                                                 <span class="badge" [ngClass]="request.status === 'aprobada' ? 'text-bg-success' : 'text-bg-warning'">{{ request.status }}</span>
                                             </td>
-                                            <td>{{ request.workOrder || '--' }}</td>
                                             <td class="text-end">
-                                                <button class="btn btn-sm btn-outline-theme" type="button" [disabled]="request.status !== 'pendiente' || !canApproveRequests" (click)="approveRequest(request.id)">
+                                                <button class="btn btn-sm btn-outline-theme" type="button" [disabled]="request.status !== 'pendiente' || !canApproveRequests" (click)="approveRequest(request.id)" [title]="canApproveRequests ? '' : 'Tu rol no puede aprobar solicitudes'">
                                                     Aprobar
                                                 </button>
                                             </td>
                                         </tr>
                                         <tr *ngIf="pendingRequests.length === 0">
-                                            <td colspan="6" class="text-center text-secondary py-4">Sin solicitudes pendientes.</td>
+                                            <td colspan="5" class="text-center text-secondary py-4">Sin solicitudes pendientes.</td>
                                         </tr>
                                     </tbody>
                                 </table>
-                            </div>
-                        </div>
                     </div>
                 </div>
-            </div>
+                <footer class="card-footer py-2 d-flex justify-content-between" *ngIf="activityView === 'history'">
+                    <span class="small text-secondary">{{ filteredHistory.length }} movimientos</span>
+                    <div class="btn-group"><button class="btn btn-sm btn-outline-secondary" type="button" [disabled]="historyPage === 0" (click)="historyPage = historyPage - 1">Anterior</button><button class="btn btn-sm btn-outline-secondary" type="button" [disabled]="(historyPage + 1) * pageSize >= filteredHistory.length" (click)="historyPage = historyPage + 1">Siguiente</button></div>
+                </footer>
+                <aside *ngIf="selectedMovement" class="movement-detail border-top p-3" aria-label="Detalle del movimiento">
+                    <div class="d-flex justify-content-between"><strong>Detalle de {{ selectedMovement.reference }}</strong><button class="btn-close" type="button" aria-label="Cerrar" (click)="selectedMovement = null"></button></div>
+                    <div class="row small mt-2"><div class="col-md-4">ODS: {{ selectedMovement.workOrder || '--' }}</div><div class="col-md-4">Equipo: {{ selectedMovement.equipmentTag || '--' }}</div><div class="col-md-4">Cliente: {{ selectedMovement.customerSite || '--' }}</div><div class="col-md-4">Categoria: {{ selectedMovement.movementCategory || '--' }}</div><div class="col-md-8">Evidencia: {{ selectedMovement.evidenceRef || '--' }}</div><div class="col-12 mt-1">Motivo: {{ selectedMovement.reason || '--' }}</div></div>
+                </aside>
+            </section>
 
-            <app-technician-bags-panel></app-technician-bags-panel>
-        </div>
+            <section *ngIf="activeTab === 'bags'" class="workspace-panel" role="tabpanel"><app-technician-bags-panel></app-technician-bags-panel></section>
+        </main>
     `,
+    styles: [`
+        .inventory-workspace { max-width: 1320px; }
+        .workspace-tabs { margin-bottom: .75rem; }
+        .workspace-panel { max-height: calc(100vh - 210px); overflow: hidden; }
+        .table-panel { max-height: calc(100vh - 330px); overflow: auto; }
+        .activity-search { width: min(18rem, 100%); }
+        .demo-role-select { max-width: 20rem; }
+        @media (max-width: 767.98px) { .workspace-panel, .table-panel { max-height: none; overflow: visible; } .workspace-tabs { overflow-x: auto; flex-wrap: nowrap; } }
+    `],
 })
 export class InventoryMovementsComponent implements OnInit, OnDestroy {
     private readonly subscriptions = new Subscription();
+    activeTab: "register" | "activity" | "bags" = "register";
+    activityView: "history" | "requests" = "history";
+    showDemoRole = false;
+    showTraceability = false;
+    historySearch = "";
+    historyPage = 0;
+    readonly pageSize = 8;
+    selectedMovement: MovementRecord | null = null;
     movementHistory: MovementRecord[] = [];
     pendingRequests: AdjustmentRequest[] = [];
     inventoryReferences: StockReference[] = [];
@@ -308,6 +277,37 @@ export class InventoryMovementsComponent implements OnInit, OnDestroy {
         return this.inventoryRbac.hasPermission("inventory.movements.approve");
     }
 
+    get roleLabel(): string {
+        const labels: Record<InventoryRole, string> = {
+            tecnico: "Tecnico",
+            responsable: "Responsable de inventario",
+            administrativo: "Administrativo",
+            compras: "Compras",
+            auditor: "Auditor",
+        };
+        return labels[this.rolePreset];
+    }
+
+    get pendingCount(): number {
+        return this.pendingRequests.filter((request) => request.status === "pendiente").length;
+    }
+
+    get filteredHistory(): MovementRecord[] {
+        const query = this.historySearch.trim().toLocaleLowerCase();
+        if (!query) {
+            return this.movementHistory;
+        }
+        return this.movementHistory.filter((item) =>
+            [item.reference, item.workOrder, item.equipmentTag, item.customerSite]
+                .some((value) => value?.toLocaleLowerCase().includes(query))
+        );
+    }
+
+    get pagedHistory(): MovementRecord[] {
+        const start = this.historyPage * this.pageSize;
+        return this.filteredHistory.slice(start, start + this.pageSize);
+    }
+
     get feedbackTestId(): string {
         if (this.feedback.includes("No hay stock suficiente")) {
             return "inv-insufficient-stock-alert";
@@ -346,6 +346,7 @@ export class InventoryMovementsComponent implements OnInit, OnDestroy {
     }
 
     onProjectChange(projectId: string): void {
+        this.showTraceability = !projectId;
         if (!projectId) {
             this.draft.workOrder = "";
             this.draft.equipmentTag = "";
@@ -392,6 +393,11 @@ export class InventoryMovementsComponent implements OnInit, OnDestroy {
         }
     }
 
+    openActivity(): void {
+        this.activeTab = "activity";
+        this.activityView = this.canApproveRequests && this.pendingCount > 0 ? "requests" : "history";
+    }
+
     movementTypeLabel(type: MovementType): string {
         if (type === "entrada") {
             return "Entrada";
@@ -425,6 +431,8 @@ export class InventoryMovementsComponent implements OnInit, OnDestroy {
         const snapshot = this.inventoryWorkflow.getSnapshot();
         this.movementHistory = snapshot.movements;
         this.pendingRequests = snapshot.adjustmentRequests;
+        const maxPage = Math.max(0, Math.ceil(this.filteredHistory.length / this.pageSize) - 1);
+        this.historyPage = Math.min(this.historyPage, maxPage);
     }
 
     private hasMovementPermission(type: MovementType): boolean {

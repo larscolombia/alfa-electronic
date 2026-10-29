@@ -12,6 +12,9 @@ const result = {
   insufficientStockBlocked: false,
   insufficientStockMessage: "",
   salidaRegistered: false,
+  workspaceTabsVisible: false,
+  activityHistoryShowsMovement: false,
+  movementDetailVisible: false,
   availableAfterSalida: null,
   error: "",
 };
@@ -48,9 +51,9 @@ try {
   // ── Entrada de stock 2 unidades (tab "Entrada a stock existente") ─────────
   await page.getByRole("button", { name: /Entrada a stock existente/i }).click(); await wait(page);
   const entrySelect = page.locator("select.form-select", { has: page.locator("option", { hasText: "Selecciona referencia" }) });
-  await entrySelect.waitFor({ state: "visible" });
+  await entrySelect.waitFor({ state: "attached" });
   await page.locator(`select.form-select option[value='${REF}']`).waitFor({ state: "attached", timeout: 15000 });
-  await entrySelect.selectOption({ value: REF }); await wait(page);
+  await entrySelect.selectOption({ value: REF }, { force: true }); await wait(page);
   await page.locator("input[type='number']").first().fill("2"); await wait(page);
   await page.getByRole("button", { name: /^Registrar entrada$/ }).click();
   await assertText(page.getByTestId("inv-feedback-alert"), /Entrada registrada: 2 unidad/i, "entrada de stock");
@@ -64,12 +67,16 @@ try {
 
   // ── (2) Salida tecnica de 5 -> debe bloquearse con inv-insufficient-stock-alert ──
   await page.goto(`${base}/app/inventory-movements`, { waitUntil: "networkidle" });
+  await page.getByTestId("inv-tab-register").waitFor({ state: "visible", timeout: 15000 });
+  await page.getByTestId("inv-tab-activity").waitFor({ state: "visible", timeout: 15000 });
+  await page.getByTestId("inv-tab-bags").waitFor({ state: "visible", timeout: 15000 });
+  result.workspaceTabsVisible = true;
   const refSelect = page.locator("select.form-select", { has: page.locator("option", { hasText: "Selecciona referencia" }) });
   await page.locator(`select.form-select option[value='${REF}']`).waitFor({ state: "attached", timeout: 15000 });
-  await refSelect.selectOption({ value: REF }); await wait(page);
+  await refSelect.selectOption({ value: REF }, { force: true }); await wait(page);
   await page.locator("input[type='number']").first().fill("5"); await wait(page);
   await page.locator("input[placeholder='Explica por que se hace el movimiento']").fill(`Salida excesiva QA ${id}`); await wait(page);
-  await page.getByRole("button", { name: /^Registrar movimiento$/ }).click();
+  await page.getByRole("button", { name: /^Registrar salida$/ }).click();
   result.insufficientStockMessage = await assertText(
     page.getByTestId("inv-insufficient-stock-alert"),
     /No hay stock suficiente: disponible 2.*requerido 5/i,
@@ -79,9 +86,21 @@ try {
 
   // ── (3) Ruta correcta: salida tecnica de 1 ────────────────────────────────
   await page.locator("input[type='number']").first().fill("1"); await wait(page);
-  await page.getByRole("button", { name: /^Registrar movimiento$/ }).click();
+  await page.getByRole("button", { name: /^Registrar salida$/ }).click();
   await assertText(page.getByTestId("inv-movements-feedback"), /Movimiento registrado correctamente/i, "salida de 1");
   result.salidaRegistered = true;
+
+  // ── (4) Actividad compacta: historial, búsqueda y detalle expandible ──────
+  await page.getByTestId("inv-tab-activity").click(); await wait(page);
+  const search = page.getByTestId("inv-history-search");
+  await search.waitFor({ state: "visible", timeout: 15000 });
+  await search.fill(REF); await wait(page);
+  const movementRow = page.locator("table tbody tr", { hasText: REF }).first();
+  await movementRow.waitFor({ state: "visible", timeout: 15000 });
+  result.activityHistoryShowsMovement = true;
+  await movementRow.getByRole("button", { name: "Ver detalle" }).click();
+  await page.getByRole("complementary", { name: "Detalle del movimiento" }).waitFor({ state: "visible", timeout: 15000 });
+  result.movementDetailVisible = true;
 
   // ── Disponible baja a 1 en /app/inventory-stock ───────────────────────────
   await page.goto(`${base}/app/inventory-stock`, { waitUntil: "networkidle" });

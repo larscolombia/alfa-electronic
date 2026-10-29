@@ -28,6 +28,7 @@ type QuoteStatus = "Borrador" | "Enviado" | "Aprobado";
 type QuoteRow = {
     codigo: string;
     prospecto: string;
+    empresa: string;
     total: number;
     fecha: string;
     validoHasta: string;
@@ -89,7 +90,7 @@ type QuoteLine = {
                         <div class="col-12 col-md-7">
                             <label class="form-label small mb-1" for="quotesSearch">Buscar cotizaciones</label>
                             <input id="quotesSearch" class="form-control" type="search" data-testid="quotes-search"
-                                placeholder="Código, prospecto u orden de compra"
+                                placeholder="Código, empresa, contacto u orden de compra"
                                 [(ngModel)]="quotesSearch" (ngModelChange)="quotesPage = 1" autocomplete="off" />
                         </div>
                         <div class="col-12 col-md-5">
@@ -117,15 +118,13 @@ type QuoteLine = {
                     <div class="alert alert-success border mb-3" *ngIf="quoteConversionMessage" data-testid="quote-conversion-success">{{ quoteConversionMessage }}</div>
                     <div class="alert alert-danger border mb-3" *ngIf="quoteConversionError" data-testid="quote-conversion-error">{{ quoteConversionError }}</div>
 
-                    <div class="table-responsive border rounded">
-                        <table class="table align-middle mb-0">
+                    <div class="table-responsive quotes-table-wrap border rounded">
+                        <table class="table align-middle mb-0 quotes-table">
                             <thead>
                                 <tr>
                                     <th>Cotizacion</th>
-                                    <th>Prospecto</th>
+                                    <th>Empresa</th>
                                     <th>Total</th>
-                                    <th>Fecha</th>
-                                    <th>Valido Hasta</th>
                                     <th>OC</th>
                                     <th>Estado</th>
                                     <th class="text-end">Accion</th>
@@ -133,11 +132,9 @@ type QuoteLine = {
                             </thead>
                             <tbody>
                                 <tr *ngFor="let row of displayedQuoteRows">
-                                    <td>{{ row.codigo }}</td>
-                                    <td>{{ row.prospecto }}</td>
-                                    <td>{{ row.total | number: '1.0-0' }}</td>
-                                    <td>{{ row.fecha }}</td>
-                                    <td>{{ row.validoHasta }}</td>
+                                    <td><strong>{{ row.codigo }}</strong><small class="d-block text-secondary">{{ row.fecha }} · vence {{ row.validoHasta }}</small></td>
+                                    <td><strong>{{ row.empresa || 'Sin empresa' }}</strong><small class="d-block text-secondary">Contacto: {{ row.prospecto }}</small></td>
+                                    <td><strong>{{ row.total | number: '1.0-0' }}</strong></td>
                                     <td>
                                         <span class="badge text-bg-success" *ngIf="row.purchaseOrderNumber; else noPurchaseOrder">OC {{ row.purchaseOrderNumber }}</span>
                                         <ng-template #noPurchaseOrder>
@@ -151,31 +148,33 @@ type QuoteLine = {
                                         </span>
                                     </td>
                                     <td class="text-end">
-                                        <button class="btn btn-sm btn-outline-primary me-2" type="button" (click)="openPurchaseOrderModal(row)">
-                                            <i class="bi bi-file-earmark-arrow-up me-1"></i>{{ row.purchaseOrderNumber ? 'Actualizar OC' : 'Cargar OC' }}
+                                      <div class="quote-row-actions">
+                                        <button class="btn btn-sm btn-outline-primary" type="button" (click)="openPurchaseOrderModal(row)" [title]="row.purchaseOrderNumber ? 'Actualizar orden de compra' : 'Cargar orden de compra'">
+                                            <i class="bi bi-file-earmark-arrow-up"></i><span class="visually-hidden">{{ row.purchaseOrderNumber ? 'Actualizar OC' : 'Cargar OC' }}</span>
                                         </button>
                                         <button
-                                            class="btn btn-sm btn-outline-success me-2"
+                                            class="btn btn-sm btn-outline-success"
                                             type="button"
                                             *ngIf="row.estado === 'Aprobado' && !row.invoiceId"
                                             [disabled]="convertingQuoteToken === row.token"
                                             (click)="convertQuoteToInvoice(row)"
                                             data-testid="convert-to-invoice-btn">
-                                            <i class="bi bi-receipt me-1"></i>{{ convertingQuoteToken === row.token ? 'Convirtiendo…' : 'Convertir en factura' }}
+                                            <i class="bi bi-receipt"></i><span class="visually-hidden">{{ convertingQuoteToken === row.token ? 'Convirtiendo' : 'Convertir en factura' }}</span>
                                         </button>
                                         <a
-                                            class="btn btn-sm btn-outline-secondary me-2"
+                                            class="btn btn-sm btn-outline-secondary"
                                             [routerLink]="['/estimate', row.token]"
                                             target="_blank"
                                             rel="noopener noreferrer">
-                                            <i class="bi bi-eye me-1"></i>Vista previa
+                                            <i class="bi bi-eye"></i><span class="visually-hidden">Vista previa</span>
                                         </a>
-                                        <button class="btn btn-sm btn-outline-theme me-1" type="button" (click)="openEditQuoteForm(row)"><i class="bi bi-pencil me-1"></i>Editar</button>
-                                        <button class="btn btn-sm btn-outline-danger" type="button" (click)="openDeleteModal(row)"><i class="bi bi-trash me-1"></i>Eliminar</button>
+                                        <button class="btn btn-sm btn-outline-theme" type="button" (click)="openEditQuoteForm(row)" title="Editar"><i class="bi bi-pencil"></i><span class="visually-hidden">Editar</span></button>
+                                        <button class="btn btn-sm btn-outline-danger" type="button" (click)="openDeleteModal(row)" title="Eliminar"><i class="bi bi-trash"></i><span class="visually-hidden">Eliminar</span></button>
+                                      </div>
                                     </td>
                                 </tr>
                                 <tr *ngIf="filteredQuoteRows.length === 0">
-                                    <td colspan="8" class="text-center py-5 text-secondary">No encontramos cotizaciones. Cambia los filtros o crea la primera.</td>
+                                    <td colspan="6" class="text-center py-5 text-secondary">No encontramos cotizaciones. Cambia los filtros o crea la primera.</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -240,10 +239,10 @@ type QuoteLine = {
                     </div>
                     <div class="row gx-3">
                         <div class="col-12 col-lg-3 mb-3">
-                            <label class="form-label">Prospecto</label>
+                            <label class="form-label">Empresa</label>
                             <select class="form-select" [(ngModel)]="selectedProspecto" (ngModelChange)="handleProspectChange($event)">
                                 <option value="" disabled>--</option>
-                                <option *ngFor="let prospecto of prospectOptions" [value]="prospecto">{{ prospecto }}</option>
+                                <option *ngFor="let prospecto of prospectRecords" [value]="prospecto.nombre">{{ prospecto.compania || prospecto.nombre }}</option>
                             </select>
                         </div>
                         <div class="col-12 col-lg-3 mb-3">
@@ -530,6 +529,15 @@ type QuoteLine = {
             <div class="modal-backdrop fade show" *ngIf="showDeleteModal"></div>
         </div>
     `,
+    styles: [`
+        .quotes-table thead th { background: var(--bs-tertiary-bg); color: var(--bs-secondary-color); font-size: .75rem; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
+        .quotes-table tbody tr { transition: background-color .15s ease; }
+        .quotes-table tbody tr:hover { background: var(--bs-tertiary-bg); }
+        .quotes-table td { padding-block: 1rem; }
+        .quote-row-actions { display: inline-flex; flex-wrap: wrap; justify-content: flex-end; gap: .4rem; min-width: 9.5rem; }
+        .quote-row-actions .btn { width: 2.25rem; height: 2.25rem; display: inline-grid; place-items: center; padding: 0; }
+        @media (max-width: 991.98px) { .quotes-table-wrap { border: 0 !important; } }
+    `],
 })
 export class CrmQuotesComponent implements OnInit {
     quotesRows: QuoteRow[] = [];
@@ -633,7 +641,8 @@ export class CrmQuotesComponent implements OnInit {
     termsAndConditions = "Gracias por confiar en nuestros servicios.";
 
     private quoteIdByToken: Record<string, string> = {};
-    private prospectRecords: CrmProspectRecord[] = [];
+    /** Catálogo visible para el selector de empresa de la cotización. */
+    prospectRecords: CrmProspectRecord[] = [];
     private availableEquipmentItemsApi: ProspectEquipmentSummary[] = [];
     private editingQuotePurchaseOrderDataUrl = "";
     private editingQuotePurchaseOrderUploadedAt = "";
@@ -738,6 +747,7 @@ export class CrmQuotesComponent implements OnInit {
             const matchesStatus = this.quotesStatus === "Todos" || row.estado === this.quotesStatus;
             const haystack = this.normalizeQuoteSearch([
                 row.codigo,
+                row.empresa,
                 row.prospecto,
                 row.purchaseOrderNumber ?? "",
                 row.invoiceCode ?? "",
@@ -763,10 +773,15 @@ export class CrmQuotesComponent implements OnInit {
         return Math.min(this.quotesPage * this.quotesPageSize, this.filteredQuoteRows.length);
     }
 
+    get selectedCompanyName(): string {
+        return this.findProspectByName(this.selectedProspecto)?.compania.trim() || this.selectedProspecto;
+    }
+
     exportQuotesToCsv(): void {
         const escape = (value: unknown) => `"${String(value ?? "").replaceAll('"', '""')}"`;
         const rows = this.filteredQuoteRows.map((row) => [
             row.codigo,
+            row.empresa,
             row.prospecto,
             row.total,
             row.fecha,
@@ -774,7 +789,7 @@ export class CrmQuotesComponent implements OnInit {
             row.purchaseOrderNumber ?? "",
             row.estado,
         ]);
-        const csv = [["Cotización", "Prospecto", "Total", "Fecha", "Válido hasta", "OC", "Estado"], ...rows]
+        const csv = [["Cotización", "Empresa", "Contacto", "Total", "Fecha", "Válido hasta", "OC", "Estado"], ...rows]
             .map((row) => row.map(escape).join(","))
             .join("\n");
         const link = document.createElement("a");
@@ -1395,6 +1410,7 @@ export class CrmQuotesComponent implements OnInit {
         const newRow: QuoteRow = {
             codigo: finalCode,
             prospecto: this.selectedProspecto || "Prospecto sin nombre",
+            empresa: this.selectedCompanyName || "Empresa sin nombre",
             total: Math.round(this.total),
             fecha: dateLabel,
             validoHasta: this.formatIsoToDdMmYyyy(this.validUntil),
@@ -1501,14 +1517,14 @@ export class CrmQuotesComponent implements OnInit {
                 // de bloquear — la decisión D2 aprobada.
                 if (this.projectPrefillPending && this.prefillProspectName) {
                     const wanted = this.normalizeProspectMatchKey(this.prefillProspectName);
-                    const match = this.prospectOptions.find((name) => this.normalizeProspectMatchKey(name) === wanted);
+                    const match = this.prospectRecords.find((prospect) => this.normalizeProspectMatchKey(prospect.compania) === wanted);
                     if (match) {
-                        this.selectedProspecto = match;
+                        this.selectedProspecto = match.nombre;
                         // Re-correr el handler: equipos y preview deben corresponder
                         // al prospecto correcto, no al default de la lista.
-                        this.handleProspectChange(match);
+                        this.handleProspectChange(match.nombre);
                     } else {
-                        this.prefillNotice = `El cliente "${this.prefillProspectName}" del proyecto aún no existe como prospecto en CRM. Se abrió el formulario con "${this.selectedProspecto || 'sin prospecto'}"; verifica el prospecto antes de guardar.`;
+                        this.prefillNotice = `La empresa "${this.prefillProspectName}" del proyecto aún no existe como prospecto en CRM. Se abrió el formulario con "${this.selectedCompanyName || 'sin empresa'}"; verifica la empresa antes de guardar.`;
                     }
                 }
 
@@ -1674,6 +1690,7 @@ export class CrmQuotesComponent implements OnInit {
         return {
             codigo: item.codigo,
             prospecto: item.prospecto,
+            empresa: String(item.empresa ?? "").trim(),
             total: Math.round(Number(item.total ?? 0)),
             fecha: item.fecha,
             validoHasta: item.validoHasta,

@@ -74,15 +74,22 @@ export function makeStages({ base, pause, data, stamp, snap, utils }) {
     await selectCustomModal(page, techTrigger, { index: 1 });
     await click(page,w.locator("[data-testid=equipment-modal-next]"),"Siguiente equipo");
     const ask=async(label)=>{const q=w.locator(".border.rounded.p-3",{hasText:label}).first(); const box=q.locator("input[type=checkbox]").first(); if(await box.isChecked().catch(()=>true)===false) await click(page,box,`Pregunta ${label}`);};
-    await ask("superior a $ 2'000.000"); await ask("no es un problema de programación");
+    await ask("superior a $ 2'000.000");
+    if(await w.getByText(/Posible falla de software/i).count()) throw new Error("Volvió a aparecer la alerta/validación retirada de posible falla de software");
     const override=w.locator("input[placeholder='Nombre del jefe']"); if(await override.isVisible().catch(()=>false)){await fillFocus(page,override,"Jefe técnico");await fillFocus(page,w.locator("input[placeholder='Justificación operativa']"),"Caso de prueba UI.");} await click(page,w.locator("[data-testid=equipment-modal-next]"),"Siguiente preguntas");
-    const fileInput=w.locator("input[type=file]").first();
+    const evidenceInputs=w.locator("input[type=file]");
+    const requiredFaceInputs=evidenceInputs;
+    for(let i=0;i<4;i++) await attachFocus(page,requiredFaceInputs.nth(i),{name:`cara-${i}.png`,mimeType:"image/png",buffer:png()});
+    const fileInput=evidenceInputs.nth(4);
     if(!await fileInput.waitFor({state:"attached",timeout:15000}).then(()=>true).catch(()=>false)){
       const step=await w.locator(".wizard-step.active").innerText().catch(()=>"?");
       const msg=await w.locator("[data-testid=equipment-modal-validation-message]").innerText().catch(()=>"(sin mensaje)");
       throw new Error(`No se encontró input de evidencias. Paso activo: ${step} | Validación: ${msg}`);
     }
-    await attachFocus(page,fileInput,[0,1,2,3,4].map(i=>({name:`evidencia-${i}.png`,mimeType:"image/png",buffer:png()}))); await page.waitForTimeout(600); const photos=w.locator(".evidence-photo-card"); for(let i=0;i<5;i++) await selectCustomModal(page,photos.nth(i).getByTestId("equipment-modal-evidence-type"),{label:["Cara frente","Cara atrás","Cara izquierda","Cara derecha","Accesorios"][i]}); await click(page,w.locator("[data-testid=equipment-modal-next]"),"Siguiente evidencias");
+    await attachFocus(page,fileInput,{name:"accesorios.png",mimeType:"image/png",buffer:png()}); await page.waitForTimeout(600); const photos=w.locator(".evidence-photo-card");
+    const accessoryPhoto=photos.filter({hasText:"accesorios.png"}).first();
+    await selectCustomModal(page,accessoryPhoto.getByTestId("equipment-modal-evidence-type"),{label:"Accesorios"});
+    await click(page,w.locator("[data-testid=equipment-modal-next]"),"Siguiente evidencias");
     const summary=w.locator(".modal-body",{hasText:"Resumen de la recepción"}).first();
     await visible(summary,"No se muestra el resumen de recepción");
     if(!(await summary.innerText()).includes(receptionDateLabel)) throw new Error(`El snapshot de recepción no conserva la fecha ${receptionDateLabel}`);
