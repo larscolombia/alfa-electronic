@@ -1,5 +1,6 @@
 import { chromium } from "playwright";
 import { writeFileSync } from "node:fs";
+import { selectCustomModal } from "./ui-modal-controls.mjs";
 
 const base = (process.env.PW_BASE_URL || "http://127.0.0.1:4200").replace(/\/$/, "");
 const id = String(Date.now()).slice(-8);
@@ -41,7 +42,7 @@ try {
   await modal.getByTestId("equipment-modal-next").click(); await wait(page);
 
   // Paso Equipos: modo manual + datos del equipo.
-  await modal.locator("select[data-testid^='equipment-modal-registration-mode-']").first().selectOption("manual");
+  await selectCustomModal(page, modal.locator("[data-testid^='equipment-modal-registration-mode-']").first(), "manual");
   for (const [placeholder, value] of [["Familia libre", "Instrumento"], ["Marca del equipo", "Marca QA"], ["Tipo / referencia", "Osciloscopio"], ["Serie o referencia visible", `SER-${id}`]]) await modal.locator(`input[placeholder='${placeholder}']`).fill(value);
 
   // Paso Preguntas: costo > 2M = Sí (libera gate REC-01) y software descartado = Sí.
@@ -54,8 +55,7 @@ try {
   const facePaths = FACES.map((_, i) => { const p = `/tmp/rec10-face-${i}-${id}.png`; writeFileSync(p, PNG_1X1); return p; });
   await modal.locator("input[type='file'][accept='image/*'][capture]").first().setInputFiles(facePaths);
   await modal.locator(".evidence-photo-card").nth(3).waitFor({ state: "visible", timeout: 30000 });
-  const selects = modal.locator(".evidence-photo-card select.form-select");
-  for (let i = 0; i < FACES.length; i++) await selects.nth(i).selectOption({ label: FACES[i] });
+  for (let i = 0; i < FACES.length; i++) await selectCustomModal(page, modal.locator(".evidence-photo-card").nth(i).getByTestId("equipment-modal-evidence-type"), { label: FACES[i] });
   await wait(page);
 
   // REC-10: activar daño visible exige evidencia "Daño visible" con nota + confirmación.
@@ -82,7 +82,7 @@ try {
   writeFileSync(damagePath, PNG_1X1);
   await modal.locator("input[type='file'][accept='image/*'][capture]").first().setInputFiles(damagePath);
   await modal.locator(".evidence-photo-card").nth(4).waitFor({ state: "visible", timeout: 30000 });
-  await selects.nth(4).selectOption({ label: "Daño visible" });
+  await selectCustomModal(page, modal.locator(".evidence-photo-card").nth(4).getByTestId("equipment-modal-evidence-type"), { label: "Daño visible" });
   await modal.locator(`.evidence-photo-card input[placeholder='${NOTES_PLACEHOLDER}']`).nth(4).fill("Golpe en esquina superior derecha");
   await wait(page);
   result.damagePhotoAccepted = !(await requiredAlert.isVisible());

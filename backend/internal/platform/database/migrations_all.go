@@ -10,6 +10,7 @@ func migrationStatements() []string {
 	statements = append(statements, migrationStatementsCRMEquipmentAndQuotes()...)
 	statements = append(statements, migrationStatementsCRMEquipmentProspectIDText()...)
 	statements = append(statements, migrationStatementsCRMClients()...)
+	statements = append(statements, migrationStatementsCRMAccounts()...)
 	statements = append(statements, migrationStatementsCRMBranches()...)
 	statements = append(statements, migrationStatementsFinanceAndCalendar()...)
 	statements = append(statements, migrationStatementsCRMContacts()...)
@@ -34,5 +35,6 @@ func migrationStatements() []string {
 	statements = append(statements, migrationStatementsEquipmentCatalog()...)
 	statements = append(statements, migrationStatementsEmployeeAccounts()...)
 	statements = append(statements, migrationStatementsRemissionRules()...)
+	statements = append(statements, migrationStatementsCRMAccountsBackfill()...)
 	return statements
 }

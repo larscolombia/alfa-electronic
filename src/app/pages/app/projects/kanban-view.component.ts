@@ -22,7 +22,7 @@ import { QuotePrefillFromProject, setQuotePrefill } from '../crm/quote-prefill.s
 import { ProspectEquipmentAttachment, ProspectEquipmentEvidencePhoto, ProspectEquipmentItem, ProspectEquipmentRepairStatus } from '../crm/crm-prospect-equipment.store';
 import { Attachment, BoardColumn, Project, ProjectBoard } from './models';
 import { PROJECT_TEST_TYPE_OPTIONS, getProjectTechnicalTestTypeLabel, resolveProjectSlaSeverity } from './project-workflow.config';
-import { SlaSummaryChip, accumulateQuarterHours, buildSlaSummary, requiresAccessoriesConfirmation, resolveWarrantyBoardStatus } from './kanban-extras.logic';
+import { SlaSummaryChip, buildSlaSummary, requiresAccessoriesConfirmation, resolveWarrantyBoardStatus } from './kanban-extras.logic';
 import { resolveStatusAfterPartsRequest, validateReadyForDelivery } from './project-auto-transitions.logic';
 import { ProjectEquipmentOption, ProjectEquipmentService, ProjectService } from './services';
 import { PROJECT_REPAIR_STATUS_OPTIONS } from './services/project-equipment-options';
@@ -298,7 +298,7 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
 
             <div class="d-flex align-items-start gap-2">
               <span class="badge bg-secondary align-self-center" data-testid="equipment-session-timer">
-                Sesion {{ equipmentSessionElapsed }}
+                Tiempo de reparación {{ equipmentRepairElapsed }}
               </span>
 
               <button
@@ -795,15 +795,13 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
                 </div>
               </div>
 
-              <label class="project-detail-field">
-                <span class="project-detail-field__label">Horas reales acumuladas</span>
-                <input
-                  type="number"
-                  min="0"
-                  class="project-detail-field__input"
-                  [(ngModel)]="detailProject.properties['actualHours']"
-                  placeholder="0" />
-              </label>
+              <div class="project-detail-field">
+                <span class="project-detail-field__label">Tiempo real acumulado</span>
+                <output class="project-detail-field__input d-flex align-items-center bg-body-tertiary" data-testid="equipment-accumulated-repair-time">
+                  {{ accumulatedRepairTime }}
+                </output>
+                <small class="text-secondary">Se registra automáticamente mientras este equipo está abierto.</small>
+              </div>
 
               <label class="project-detail-field">
                 <span class="project-detail-field__label">Prueba de cierre</span>
@@ -3372,7 +3370,7 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
   testsCloseError = '';
   testsCloseMessage = '';
   pendingTransition: PendingProjectTransition | null = null;
-  equipmentSessionElapsed = '00:00';
+  equipmentRepairElapsed = '00:00:00';
   private equipmentSessionStartedAt = 0;
   private equipmentSessionProjectId = '';
   private equipmentSessionTimerId: number | null = null;
@@ -3967,7 +3965,7 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
     this.stopEquipmentSessionTicker();
     this.equipmentSessionStartedAt = Date.now();
     this.equipmentSessionProjectId = this.detailProject?.id ?? '';
-    this.equipmentSessionElapsed = '00:00';
+    this.tickEquipmentSessionTimer();
 
     if (typeof window !== 'undefined') {
       this.equipmentSessionTimerId = window.setInterval(() => {
@@ -3981,7 +3979,16 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
       return;
     }
 
-    this.equipmentSessionElapsed = this.formatEquipmentSessionElapsed(Date.now() - this.equipmentSessionStartedAt);
+    this.equipmentRepairElapsed = this.formatEquipmentSessionElapsed(this.currentEquipmentRepairElapsedMs());
+  }
+
+  get accumulatedRepairTime(): string {
+    const savedMs = this.normalizeNumber(this.detailProject?.properties?.['actualHours']) * 3_600_000;
+    return this.formatEquipmentSessionElapsed(savedMs + this.currentEquipmentRepairElapsedMs());
+  }
+
+  private currentEquipmentRepairElapsedMs(): number {
+    return this.equipmentSessionStartedAt ? Math.max(0, Date.now() - this.equipmentSessionStartedAt) : 0;
   }
 
   private formatEquipmentSessionElapsed(elapsedMs: number): string {
@@ -4016,7 +4023,7 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
 
     const startedAt = this.equipmentSessionStartedAt;
     this.equipmentSessionStartedAt = 0;
-    this.equipmentSessionElapsed = '00:00';
+    this.equipmentRepairElapsed = '00:00:00';
 
     const project = this.detailProject;
     if (!project || project.id !== this.equipmentSessionProjectId) {
@@ -4027,8 +4034,9 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
     this.equipmentSessionProjectId = '';
 
     const endedAt = Date.now();
-    const elapsedMinutes = (endedAt - startedAt) / 60000;
-    const extraHours = accumulateQuarterHours(elapsedMinutes);
+    // Guardamos la duración exacta. Redondear a cuartos transformaba unos
+    // segundos de consulta en 15 minutos y descartaba sesiones cortas.
+    const extraHours = (endedAt - startedAt) / 3_600_000;
     if (extraHours <= 0) {
       return;
     }

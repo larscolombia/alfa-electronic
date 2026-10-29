@@ -1,8 +1,9 @@
 import type { ProspectEquipmentItem, ProspectEquipmentRecord } from "../crm/crm-prospect-equipment.store";
+import { buildInternalEquipmentCode } from "../crm/equipment-qr.util";
 
 export interface EquipmentJourneySnapshot {
     owner: { prospectId: string; prospectName: string; companyName: string; nit: string; contactName: string; contactEmail: string };
-    equipment: { recordId: string; itemId: string; identifier: string; serie: string; displayName: string; failure: string; accessories: string };
+    equipment: { recordId: string; itemId: string; equipmentCode: string; identifier: string; serie: string; displayName: string; serviceTypeId: string; serviceTypeName: string; failure: string; accessories: string };
     technical: { assignedTo: string; assignedToId: string; assignedAt: string; assignedBy: string };
     commercial: { quoteCode: string; purchaseOrderNumber: string; purchaseOrderDate: string };
 }
@@ -18,9 +19,10 @@ export function buildEquipmentJourneySnapshot(record: ProspectEquipmentRecord, i
             contactEmail: String(record.email ?? "").trim(),
         },
         equipment: {
-            recordId: String(record.id ?? "").trim(), itemId: String(item.id ?? "").trim(),
+            recordId: String(record.id ?? "").trim(), itemId: String(item.id ?? "").trim(), equipmentCode: buildInternalEquipmentCode(item.id),
             identifier: String(item.receivedIdentifier ?? "").trim(), serie: String(item.serie ?? "").trim(),
             displayName: [item.marca, item.tipo].filter(Boolean).join(" ").trim(),
+            serviceTypeId: String(item.serviceTypeId ?? "").trim(), serviceTypeName: String(item.serviceTypeName ?? "").trim(),
             failure: String(item.failureDescription ?? "").trim(), accessories: String(item.accessories ?? "").trim(),
         },
         technical: {

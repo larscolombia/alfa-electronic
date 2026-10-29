@@ -1,5 +1,6 @@
 import { writeFileSync } from "node:fs";
 import { chromium } from "playwright";
+import { selectCustomModal } from "./ui-modal-controls.mjs";
 
 const base = (process.env.PW_BASE_URL || "http://127.0.0.1:4200").replace(/\/$/, "");
 const id = String(Date.now()).slice(-8);
@@ -49,7 +50,7 @@ try {
   await page.getByTestId("equipment-modal-next").click(); await wait(page);
   const modal = page.locator("app-crm-prospect-equipment-modal");
 
-  await modal.locator("select[data-testid^='equipment-modal-registration-mode-']").first().selectOption("manual");
+  await selectCustomModal(page, modal.locator("[data-testid^='equipment-modal-registration-mode-']").first(), "manual");
   for (const [placeholder, value] of [["Familia libre", "Control"], ["Marca del equipo", "Marca QA"], ["Tipo / referencia", "Tipo QA"], ["Serie o referencia visible", `SER-${id}`]]) await modal.locator(`input[placeholder='${placeholder}']`).fill(value);
 
   await modal.getByLabel(/Etiqueta rota o ilegible/i).check(); await wait(page);
@@ -87,7 +88,7 @@ try {
   await modal.locator("input[capture='environment']").setInputFiles(files);
   await modal.locator(".evidence-photo-card").nth(4).waitFor({ state: "visible", timeout: 30000 });
   for (let i = 0; i < evidenceTypes.length; i++) {
-    await modal.locator(".evidence-photo-card").nth(i).locator("select").selectOption({ label: typeLabels[evidenceTypes[i]] });
+    await selectCustomModal(page, modal.locator(".evidence-photo-card").nth(i).getByTestId("equipment-modal-evidence-type"), { label: typeLabels[evidenceTypes[i]] });
     await wait(page);
   }
   await modal.getByText("Caras completas").waitFor({ state: "visible", timeout: 10000 });

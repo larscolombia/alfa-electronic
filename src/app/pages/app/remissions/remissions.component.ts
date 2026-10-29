@@ -24,6 +24,7 @@ interface RemissionItem {
     equipmentId: string;
     identifier: string;
     description: string;
+    serviceTypeName: string;
     accessories: string;
     anchoredNote: string;
     warrantyMonths: number;
@@ -42,6 +43,7 @@ interface Remission {
     consecutive: string;
     clientName: string;
     clientNit: string;
+    contactName: string;
     dispatchType: string;
     carrierName: string;
     guideNumber: string;
@@ -155,7 +157,7 @@ const REMISSIONS_TEMPLATE = `
                     <div *ngFor="let eq of group.equipments" class="d-flex justify-content-between align-items-center border-top py-2">
                         <div>
                             <div class="mb-1">
-                                <span class="badge bg-dark fs-6" data-testid="equipment-code">{{ eq.receivedIdentifier || eq.identifier || eq.serie || 'Sin codigo' }}</span>
+                                <span class="badge bg-dark fs-6" data-testid="equipment-code">{{ equipmentInternalCode(eq) }}</span>
                                 <span class="badge bg-info ms-2">{{ eq.repairStatus || eq.status }}</span>
                             </div>
                             <div class="fw-semibold">{{ eq.displayName || eq.description || ((eq.marca || '') + ' ' + (eq.tipo || '')) }}</div>
@@ -285,6 +287,7 @@ const REMISSIONS_TEMPLATE = `
                 <div class="col-md-2"><input class="form-control form-control-sm" [(ngModel)]="item.identifier" placeholder="Identificador" /></div>
                 <div class="col-md-2"><input class="form-control form-control-sm" [(ngModel)]="item.sourceSeries" placeholder="Serie origen" data-testid="source-series-input" /></div>
                 <div class="col-md-2"><input class="form-control form-control-sm" [(ngModel)]="item.description" placeholder="Descripcion" /></div>
+                <div class="col-md-2"><input class="form-control form-control-sm" [(ngModel)]="item.serviceTypeName" placeholder="Servicio" readonly data-testid="item-service-type" /></div>
                 <div class="col-md-2"><input class="form-control form-control-sm" [(ngModel)]="item.accessories" placeholder="Accesorios" data-testid="item-accessories" /></div>
                 <div class="col-md-3">
                     <input class="form-control form-control-sm" [(ngModel)]="item.anchoredNote"
@@ -345,11 +348,18 @@ const REMISSIONS_TEMPLATE = `
                 <tbody>
                     <tr *ngFor="let r of remissions">
                         <td><strong>{{ r.consecutive }}</strong></td>
-                        <td>{{ r.clientName }}</td>
+                        <td><span data-testid="remission-client-name">{{ r.clientName }}</span><div class="small text-secondary" data-testid="remission-contact-name-display">{{ r.contactName || '-' }}</div></td>
                         <td><span class="badge bg-info">{{ dispatchTypeLabel(r.dispatchType) }}</span></td>
                         <td>{{ r.carrierName }}</td>
                         <td>{{ r.guideNumber }}</td>
-                        <td>{{ r.items?.length || 0 }}</td>
+                        <td>
+                            <div>{{ r.items?.length || 0 }}</div>
+                            <div *ngFor="let item of r.items" class="small text-secondary" data-testid="remission-item-trace">
+                                <span data-testid="remission-item-code">{{ item.identifier }}</span>
+                                <span *ngIf="item.sourceSeries" class="ms-1" data-testid="remission-item-series">· {{ item.sourceSeries }}</span>
+                                <span *ngIf="item.serviceTypeName" class="ms-1" data-testid="remission-item-service">· {{ item.serviceTypeName }}</span>
+                            </div>
+                        </td>
                         <td *ngIf="r.valued">{{ getCurrencySymbol() }}{{ r.totalValue | number:'1.0-0' }}</td>
                         <td *ngIf="!r.valued">-</td>
                         <td><span class="badge bg-secondary">{{ r.status }}</span></td>
@@ -928,10 +938,14 @@ export class RemissionsComponent implements OnInit {
         }
     }
 
-    /** Codigo de equipo del proyecto (properties.equipmentIdentifier, con fallback al id). */
+    /** Código interno de Alfa; la serie y el identificador de placa no son código de equipo. */
     readyProjectCode(p: any): string {
         const props = (p && p.properties) || {};
-        return String(props.equipmentIdentifier || "") || (p?.id ? "#" + String(p.id).slice(-6) : "Sin codigo");
+        return String(props.equipmentCode || "") || (p?.id ? "#" + String(p.id).slice(-6) : "Sin codigo");
+    }
+
+    equipmentInternalCode(equipment: any): string {
+        return String(equipment?.equipmentCode || equipment?.itemId || equipment?.id || "").trim() || "Sin codigo";
     }
 
     readyProjectEquipmentName(p: any): string {
@@ -1033,13 +1047,14 @@ export class RemissionsComponent implements OnInit {
         }
         this.form.clientName = group.clientName;
         this.form.clientNit = group.clientNit;
-        const identifier = eq.receivedIdentifier || eq.identifier || eq.serie || "";
+        const identifier = eq.equipmentCode || eq.itemId || eq.id || "";
         const description = eq.displayName || eq.description || [eq.marca, eq.tipo, eq.serie].filter(Boolean).join(" ");
         const anchoredNote = buildAnchoredAlert(eq);
         const item: RemissionItem = {
             equipmentId: eq.itemId || eq.id || "",
             identifier,
             description,
+            serviceTypeName: String(eq.serviceTypeName || eq.service || "").trim(),
             accessories: eq.accessories || "",
             anchoredNote,
             warrantyMonths: 0,
@@ -1079,7 +1094,7 @@ export class RemissionsComponent implements OnInit {
             this.itemAddBlocked = `máximo ${MAX_ITEMS_PER_REMISSION} equipos por remisión: divida el despacho en varias remisiones independientes`;
             return;
         }
-        this.form.items.push({ equipmentId: "", identifier: "", description: "", accessories: "", anchoredNote: "", warrantyMonths: 0, unitPrice: 0, quantity: 1 });
+        this.form.items.push({ equipmentId: "", identifier: "", description: "", serviceTypeName: "", accessories: "", anchoredNote: "", warrantyMonths: 0, unitPrice: 0, quantity: 1 });
     }
     removeItem(i: number) {
         this.form.items.splice(i, 1);

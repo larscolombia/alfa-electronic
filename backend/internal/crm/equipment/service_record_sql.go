@@ -74,6 +74,7 @@ func scanRecord(scanner interface{ Scan(dest ...any) error }) (Record, error) {
 		&record.Phone,
 		&record.Address,
 		&record.City,
+		&record.Country,
 		&record.ContactName,
 		&record.ContactRole,
 		&record.Cellphone,

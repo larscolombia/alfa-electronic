@@ -1,5 +1,6 @@
 import { chromium } from "playwright";
 import { writeFileSync } from "node:fs";
+import { selectCustomModal } from "./ui-modal-controls.mjs";
 
 const base = (process.env.PW_BASE_URL || "http://127.0.0.1:4200").replace(/\/$/, "");
 const id = String(Date.now()).slice(-8);
@@ -29,7 +30,7 @@ try {
   await modal.getByTestId("equipment-modal-next").click(); await wait(page);
 
   // Paso Equipos: modo manual + datos del equipo (sin falla declarada: REC-11 queda para otro caso).
-  await modal.locator("select[data-testid^='equipment-modal-registration-mode-']").first().selectOption("manual");
+  await selectCustomModal(page, modal.locator("[data-testid^='equipment-modal-registration-mode-']").first(), "manual");
   for (const [placeholder, value] of [["Familia libre", "Instrumento"], ["Marca del equipo", "Marca QA"], ["Tipo / referencia", "Osciloscopio"], ["Serie o referencia visible", `SER-REC13-${id}`]]) await modal.locator(`input[placeholder='${placeholder}']`).fill(value);
 
   // Paso Preguntas: marcar Sí en "reparación previa" (REC-13) y liberar los gates REC-01 / REC-12.
@@ -50,8 +51,7 @@ try {
   await modal.locator("input[type='file'][accept='image/*'][capture]").setInputFiles(facePaths);
   await modal.locator(".evidence-photo-card").nth(3).waitFor({ state: "visible", timeout: 30000 });
   const faceLabels = ["Cara frente", "Cara atrás", "Cara izquierda", "Cara derecha"];
-  const selects = modal.locator(".evidence-photo-card select.form-select");
-  for (let i = 0; i < faceLabels.length; i++) await selects.nth(i).selectOption({ label: faceLabels[i] });
+  for (let i = 0; i < faceLabels.length; i++) await selectCustomModal(page, modal.locator(".evidence-photo-card").nth(i).getByTestId("equipment-modal-evidence-type"), { label: faceLabels[i] });
   await wait(page);
 
   // Paso Cierre (signatures): el banner debe seguir visible y la respuesta conservada (switch sigue en Sí).

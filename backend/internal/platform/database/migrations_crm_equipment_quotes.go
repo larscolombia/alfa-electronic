@@ -248,6 +248,7 @@ func migrationStatementsCRMEquipmentAndQuotes() []string {
 		`ALTER TABLE crm_equipment_records ADD COLUMN IF NOT EXISTS intake_received_at TIMESTAMPTZ NULL;`,
 		`ALTER TABLE crm_equipment_records ADD COLUMN IF NOT EXISTS source_branch_name VARCHAR(180) NOT NULL DEFAULT '';`,
 		`ALTER TABLE crm_equipment_records ADD COLUMN IF NOT EXISTS alfa_signature TEXT NOT NULL DEFAULT '';`,
+		`ALTER TABLE crm_equipment_records ADD COLUMN IF NOT EXISTS country VARCHAR(120) NOT NULL DEFAULT '';`,
 		`ALTER TABLE IF EXISTS company_equipment_models ADD COLUMN IF NOT EXISTS is_industrial BOOLEAN NOT NULL DEFAULT true;`,
 	}
 }

@@ -1,5 +1,6 @@
 import { chromium } from "playwright";
 import { writeFileSync } from "node:fs";
+import { selectCustomModal } from "./ui-modal-controls.mjs";
 
 const base = (process.env.PW_BASE_URL || "http://127.0.0.1:4200").replace(/\/$/, "");
 const id = String(Date.now()).slice(-8);
@@ -30,7 +31,7 @@ try {
   await modal.getByTestId("equipment-modal-next").click(); await wait(page);
 
   // Paso Equipos: modo manual + datos del equipo.
-  await modal.locator("select[data-testid^='equipment-modal-registration-mode-']").first().selectOption("manual");
+  await selectCustomModal(page, modal.locator("[data-testid^='equipment-modal-registration-mode-']").first(), "manual");
   for (const [placeholder, value] of [["Familia libre", "Instrumento"], ["Marca del equipo", "Marca QA"], ["Tipo / referencia", "Multímetro"], ["Serie o referencia visible", `SER-${id}`]]) await modal.locator(`input[placeholder='${placeholder}']`).fill(value);
 
   // Paso Preguntas: >2M = Sí (evita gate REC-01); softwareIssueRuledOut queda en "No".
@@ -60,8 +61,7 @@ try {
   const facePaths = FACE_LABELS.map((_, i) => { const p = `/tmp/rec12-face-${i}-${id}.png`; writeFileSync(p, PNG_1X1); return p; });
   await modal.locator("input[type='file'][accept='image/*'][capture]").setInputFiles(facePaths);
   await modal.locator(".evidence-photo-card").nth(3).waitFor({ state: "visible", timeout: 30000 });
-  const selects = modal.locator(".evidence-photo-card select.form-select");
-  for (let i = 0; i < FACE_LABELS.length; i++) await selects.nth(i).selectOption({ label: FACE_LABELS[i] });
+  for (let i = 0; i < FACE_LABELS.length; i++) await selectCustomModal(page, modal.locator(".evidence-photo-card").nth(i).getByTestId("equipment-modal-evidence-type"), { label: FACE_LABELS[i] });
   await wait(page);
 
   // Paso Cierre: el warning persiste y el guardado completo tiene éxito.

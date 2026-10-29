@@ -109,6 +109,37 @@ WHERE company_id = $1
 	return item, nil
 }
 
+// ensureActiveNITAvailable bloquea crear/renombrar una cuenta con un NIT que
+// ya ocupa otra cuenta activa (prospecto o cliente) de la misma empresa.
+// Es la guarda de "Duplicados activos por company_id + NIT: 0" de la
+// unificación de cuentas: el índice existe, pero la unicidad real la impone
+// el servicio hasta que los datos legados se fusionen explícitamente.
+func (s *Service) ensureActiveNITAvailable(ctx context.Context, companyID, nit, excludeProspectID string) error {
+	trimmed := strings.TrimSpace(nit)
+	if trimmed == "" {
+		return nil
+	}
+	var occupied bool
+	err := s.db.QueryRowContext(ctx, `
+SELECT EXISTS(
+    SELECT 1 FROM crm_accounts
+    WHERE company_id = $1 AND soft_delete = false AND lifecycle_status <> 'inactivo'
+      AND LOWER(TRIM(nit)) = LOWER(TRIM($2))
+) OR EXISTS(
+    SELECT 1 FROM crm_prospects
+    WHERE company_id = $1 AND soft_delete = false
+      AND ($3 = '' OR id <> $3)
+      AND LOWER(TRIM(nit)) = LOWER(TRIM($2))
+)`, companyID, trimmed, excludeProspectID).Scan(&occupied)
+	if err != nil {
+		return err
+	}
+	if occupied {
+		return newValidationError(fmt.Sprintf("ya existe una cuenta activa con el NIT %s: no se puede crear otra cuenta con el mismo NIT", trimmed))
+	}
+	return nil
+}
+
 func (s *Service) CreateProspect(companyID string, req UpsertProspectRequest) (Prospect, error) {
 	ctx := context.Background()
 	if err := s.ensureCatalogDefaults(ctx, companyID); err != nil {
@@ -117,6 +148,10 @@ func (s *Service) CreateProspect(companyID string, req UpsertProspectRequest) (P
 
 	payload, err := s.normalizeProspectPayload(req)
 	if err != nil {
+		return Prospect{}, err
+	}
+
+	if err := s.ensureActiveNITAvailable(ctx, companyID, payload.Nit, ""); err != nil {
 		return Prospect{}, err
 	}
 
@@ -180,6 +215,10 @@ func (s *Service) UpdateProspect(companyID, prospectID string, req UpsertProspec
 
 	payload, err := s.normalizeProspectPayload(req)
 	if err != nil {
+		return Prospect{}, err
+	}
+
+	if err := s.ensureActiveNITAvailable(ctx, companyID, payload.Nit, normalizedID); err != nil {
 		return Prospect{}, err
 	}
 

@@ -61,7 +61,7 @@ const remissionJoins = `
 		  AND cc.soft_delete = false
 		  AND (
 			(r.client_nit <> '' AND lower(cc.nit) = lower(r.client_nit))
-			OR (r.client_nit = '' AND r.client_name <> ''
+			OR (r.client_name <> ''
 				AND (lower(cc.empresa) = lower(r.client_name) OR lower(cc.nombre) = lower(r.client_name)))
 		  )
 		ORDER BY cc.updated_at DESC

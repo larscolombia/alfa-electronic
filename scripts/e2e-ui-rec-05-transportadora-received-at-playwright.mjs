@@ -1,4 +1,5 @@
 import { chromium } from "playwright";
+import { selectCustomModal, setCustomModalDateTime } from "./ui-modal-controls.mjs";
 
 const base = (process.env.PW_BASE_URL || "http://127.0.0.1:4200").replace(/\/$/, "");
 const id = String(Date.now()).slice(-8);
@@ -24,7 +25,7 @@ try {
   await row.getByRole("button", { name: /Asociar equipo/i }).click(); await wait(page);
 
   const modal = page.locator("app-crm-prospect-equipment-modal");
-  await modal.getByTestId("equipment-modal-intake-method").selectOption("transportadora"); await wait(page);
+  await selectCustomModal(page, modal.getByTestId("equipment-modal-intake-method"), "transportadora"); await wait(page);
   await modal.locator("input[placeholder='Ej: Coordinadora']").fill("Transportadora QA");
   await modal.locator("input[placeholder='Número de guía']").fill(`GUIA-${id}`); await wait(page);
 
@@ -33,15 +34,15 @@ try {
   await modal.getByTestId("equipment-modal-next").click(); await wait(page);
   const validationText = await modal.getByTestId("equipment-modal-validation-message").innerText();
   const stillOnReception = await modal.getByTestId("intake-received-at-required").isVisible();
-  const onEquipmentStep = await modal.locator("select[data-testid^='equipment-modal-registration-mode-']").first().isVisible().catch(() => false);
+  const onEquipmentStep = await modal.locator("[data-testid^='equipment-modal-registration-mode-']").first().isVisible().catch(() => false);
   result.nextBlocked = stillOnReception && /transportadora exige/i.test(validationText) && !onEquipmentStep;
   if (!result.alertVisible || !result.nextBlocked) throw new Error(`Ruta bloqueada falló: alert=${result.alertVisible} blocked=${result.nextBlocked} validation="${validationText}"`);
 
   // Ruta desbloqueada: llenar datetime-local y avanzar al paso Equipos
-  await modal.locator("input[type='datetime-local']").fill("2026-10-26T09:30"); await wait(page);
+  await setCustomModalDateTime(page, modal.getByTestId("equipment-modal-intake-received-at"), "2026-10-26T09:30"); await wait(page);
   result.alertCleared = !(await modal.getByTestId("intake-received-at-required").isVisible().catch(() => false));
   await modal.getByTestId("equipment-modal-next").click(); await wait(page);
-  await modal.locator("select[data-testid^='equipment-modal-registration-mode-']").first().waitFor({ state: "visible", timeout: 5000 });
+  await modal.locator("[data-testid^='equipment-modal-registration-mode-']").first().waitFor({ state: "visible", timeout: 5000 });
   result.advanced = true;
   if (!result.alertCleared || !result.advanced) throw new Error(`Ruta desbloqueada falló: cleared=${result.alertCleared} advanced=${result.advanced}`);
 } catch (error) { result.error = String(error?.stack || error); }

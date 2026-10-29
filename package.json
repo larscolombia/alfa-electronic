@@ -41,6 +41,7 @@
     "test:remission-features": "node scripts/test-remission-features-logic.mjs",
     "test:equipment-journey-snapshot": "node scripts/test-remission-features-logic.mjs",
     "test:ui-journey": "node scripts/e2e-ui-equipment-journey-playwright.mjs",
+    "test:ui-journey-headed": "PW_HEADLESS=false PW_SLOW_MO_MS=350 node scripts/e2e-ui-equipment-journey-playwright.mjs",
     "check:dashboard-priorities": "node scripts/check-dashboard-priorities-playwright.mjs",
     "check:sla-config-summary": "node scripts/check-sla-config-summary-playwright.mjs",
     "check:projects-sla-chips": "node scripts/check-projects-sla-chips-playwright.mjs",

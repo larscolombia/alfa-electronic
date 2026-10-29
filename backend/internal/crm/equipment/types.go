@@ -108,6 +108,7 @@ type Record struct {
 	Phone                string `json:"phone"`
 	Address              string `json:"address"`
 	City                 string `json:"city"`
+	Country              string `json:"country"`
 	ContactName          string `json:"contactName"`
 	ContactRole          string `json:"contactRole"`
 	Cellphone            string `json:"cellphone"`

@@ -10,7 +10,7 @@ import (
 const equipmentRecordSelectColumns = `id, prospect_id, prospect_name,
 	reception_day, reception_month, reception_year,
 	intake_method, intake_carrier, intake_tracking_number, intake_received_at,
-	company_name, source_branch_name, nit, phone, address, city,
+	company_name, source_branch_name, nit, phone, address, city, country,
 	contact_name, contact_role, cellphone, email,
 	client_signature, alfa_signature,
 	items_json, archived, archived_at,

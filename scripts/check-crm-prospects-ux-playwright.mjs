@@ -4,7 +4,9 @@ import { chromium } from "playwright";
 const baseUrl = process.env["APP_URL"] || "http://127.0.0.1:4200";
 const email = process.env["PW_ADMIN_EMAIL"] || "admin@alfa.com";
 const password = process.env["PW_ADMIN_PASSWORD"] || "1234";
-const browser = await chromium.launch({ headless: true });
+const headless = process.env["PW_HEADLESS"] !== "false";
+const slowMo = Number(process.env["PW_SLOW_MO_MS"] || 0);
+const browser = await chromium.launch({ headless, slowMo });
 
 try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
@@ -35,10 +37,24 @@ try {
     const formTop = await page.getByRole("heading", { name: "Nuevo prospecto" }).evaluate((element) => element.getBoundingClientRect().top);
     assert.ok(formTop < 400, `El formulario apareció demasiado abajo: ${formTop}px`);
     assert.equal(await page.getByRole("button", { name: /Cerrar/i }).count(), 1);
+    const country = page.getByTestId("prospect-country");
+    const city = page.getByTestId("prospect-city");
+    await expectDisabled(city, true);
+    await country.selectOption("Colombia", { force: true });
+    await expectDisabled(city, false);
+    assert.ok(await city.locator('option[value="Bogotá"]').count(), "Colombia debe cargar sus ciudades relacionadas");
+    await city.selectOption("Bogotá", { force: true });
+    await country.selectOption("El Salvador", { force: true });
+    assert.equal(await city.inputValue(), "", "Al cambiar país se debe limpiar una ciudad incompatible");
+    assert.ok(await city.locator('option[value="San Salvador"]').count(), "El Salvador debe cargar sus ciudades relacionadas");
     assert.equal(errors.length, 0, errors.join("; "));
 
     console.log(JSON.stringify({ initialRows, formTop, errors }, null, 2));
     console.log("OK: listado y alta de CRM Prospectos verificados con datos reales.");
 } finally {
     await browser.close();
+}
+
+async function expectDisabled(locator, expected) {
+    assert.equal(await locator.isDisabled(), expected, `Estado disabled esperado: ${expected}`);
 }

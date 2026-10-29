@@ -9,6 +9,7 @@ import { CrmBranchRecord, CrmClientRecord, CrmClientsApiService, UpsertCrmClient
 import { CrmProspectContact, CrmProspectRecord, CrmProspectsApiService } from "../../../services/crm-prospects-api.service";
 import { replaceCrmClients } from "./crm-clients.store";
 import { CrmClientsImportComponent } from "./crm-clients-import.component";
+import { COUNTRY_OPTIONS, citiesForCountry } from "./country-city.dataset";
 import * as XLSX from "xlsx";
 
 interface ClientBranchDraft {
@@ -313,11 +314,11 @@ interface ClientDraft {
                         </div>
                         <div class="col-12 col-lg-4 mb-3">
                             <label class="form-label">Pais</label>
-                            <input class="form-control" placeholder="por ejemplo, Colombia" [(ngModel)]="draft.country" name="country" maxlength="120" />
+                            <select class="form-select" [(ngModel)]="draft.country" (ngModelChange)="onDraftCountryChange($event)" name="country" data-testid="client-country"><option value="">Seleccionar país</option><option *ngFor="let country of countryOptions" [value]="country">{{ country }}</option></select>
                         </div>
                         <div class="col-12 col-lg-4 mb-3">
                             <label class="form-label">Ciudad</label>
-                            <input class="form-control" placeholder="por ejemplo, Bogota" [(ngModel)]="draft.city" name="city" maxlength="120" />
+                            <select class="form-select" [(ngModel)]="draft.city" [disabled]="!draft.country" name="city" data-testid="client-city"><option value="">Seleccionar ciudad</option><option *ngFor="let city of draftCityOptions" [value]="city">{{ city }}</option></select>
                         </div>
                         <div class="col-12 col-lg-8 mb-3">
                             <label class="form-label">Direccion</label>
@@ -443,11 +444,11 @@ interface ClientDraft {
                                         </div>
                                         <div class="col-12 col-lg-4">
                                             <label class="form-label">Pais</label>
-                                            <input class="form-control" [(ngModel)]="branch.country" [name]="'branchCountry-' + branchIndex" placeholder="Ej: Colombia" />
+                                            <select class="form-select" [(ngModel)]="branch.country" (ngModelChange)="onBranchCountryChange(branch, $event)" [name]="'branchCountry-' + branchIndex"><option value="">Seleccionar país</option><option *ngFor="let country of countryOptions" [value]="country">{{ country }}</option></select>
                                         </div>
                                         <div class="col-12 col-lg-4">
                                             <label class="form-label">Ciudad</label>
-                                            <input class="form-control" [(ngModel)]="branch.city" [name]="'branchCity-' + branchIndex" placeholder="Ej: Bogota" />
+                                            <select class="form-select" [(ngModel)]="branch.city" [disabled]="!branch.country" [name]="'branchCity-' + branchIndex"><option value="">Seleccionar ciudad</option><option *ngFor="let city of citiesForBranch(branch)" [value]="city">{{ city }}</option></select>
                                         </div>
                                         <div class="col-12 col-lg-8">
                                             <label class="form-label">Direccion</label>
@@ -472,6 +473,7 @@ interface ClientDraft {
     `,
 })
 export class CrmClientsComponent {
+    readonly countryOptions = COUNTRY_OPTIONS;
     clients: CrmClientRecord[] = [];
     clientSearchTerm = "";
     clientPage = 1;
@@ -513,6 +515,20 @@ export class CrmClientsComponent {
     isSavingClient = false;
     isDeletingClient = false;
     draft: ClientDraft = this.getDefaultDraft();
+
+    get draftCityOptions(): readonly string[] { return citiesForCountry(this.draft.country); }
+
+    onDraftCountryChange(country: string): void {
+        this.draft.country = country;
+        if (!this.draftCityOptions.includes(this.draft.city)) this.draft.city = "";
+    }
+
+    citiesForBranch(branch: ClientBranchDraft): readonly string[] { return citiesForCountry(branch.country); }
+
+    onBranchCountryChange(branch: ClientBranchDraft, country: string): void {
+        branch.country = country;
+        if (!this.citiesForBranch(branch).includes(branch.city)) branch.city = "";
+    }
     companyContactLoading = false;
     companyContactError = "";
     creatingBranchContactIndex: number | null = null;

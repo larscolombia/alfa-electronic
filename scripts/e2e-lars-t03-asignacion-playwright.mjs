@@ -19,6 +19,7 @@ import path from "node:path";
 import { promises as fs } from "node:fs";
 import zlib from "node:zlib";
 import { chromium } from "playwright";
+import { openCustomSelectMenu, selectCustomModal } from "./ui-modal-controls.mjs";
 
 const baseUrl = (process.env.PW_BASE_URL || "https://alfa.software.net.co").replace(/\/+$/, "");
 const apiBaseUrl = process.env.PW_API_BASE_URL
@@ -369,35 +370,26 @@ try {
     await page.locator("[data-testid='equipment-modal-next']").click();
 
     // Paso 2/5 Equipos (modo manual)
-    await page.locator("[data-testid='equipment-modal-registration-mode-0']").selectOption("manual");
     const card = wizard.locator(".equipment-card").first();
+    await selectCustomModal(page, card.getByTestId("equipment-modal-registration-mode-0"), "manual");
     await card.locator("input[placeholder='Familia libre']").fill(familia);
-    await selectByLabel(card, /Tipo de servicio$/, { label: "Reparación" });
-    await selectByLabel(card, /Ubicación de almacenamiento/, { label: "Estantería" });
+    await selectCustomModal(page, card.getByTestId("equipment-modal-service-type-0"), { label: "Reparación" });
+    await selectCustomModal(page, card.getByTestId("equipment-modal-storage-location-0"), { label: "Estantería" });
     await card.locator("input[placeholder='Marca del equipo']").fill(marca);
     await card.locator("input[placeholder='Tipo / referencia']").fill(tipo);
     await card.locator("input[placeholder='Serie o referencia visible']").fill(serie);
     await card.locator("textarea").first().fill(falla);
 
     // Asignación técnica en el wizard (Técnico responsable)
-    await page.waitForFunction(
-        () => {
-            const select = Array.from(document.querySelectorAll("app-crm-prospect-equipment-modal select"))
-                .find((s) => Array.from(s.options).some((o) => (o.textContent || "").includes("carga")));
-            return !!select;
-        },
-        null, { timeout: timeoutMs },
-    );
-    const techSelect = page.locator("app-crm-prospect-equipment-modal select").filter({
-        has: page.locator("option", { hasText: "carga" }),
-    }).first();
-    const techOptionValue = await techSelect.evaluate((selectEl) => {
-        const opt = Array.from(selectEl.options).find((o) => (o.textContent || "").includes("Tecnico PW T03"));
-        return opt ? opt.value : "";
-    });
-    if (!techOptionValue) throw new Error("La opción 'Tecnico PW T03' no está en el select de técnico responsable del wizard.");
-    await techSelect.selectOption({ value: techOptionValue });
-    await page.waitForTimeout(500);
+    const techTrigger = card.getByTestId("equipment-modal-technician-0");
+    await techTrigger.waitFor({ state: "visible", timeout: timeoutMs });
+    const techMenu = await openCustomSelectMenu(page, techTrigger);
+    const techOption = techMenu.locator(".crm-modal-select-option", { hasText: /Tecnico PW T03/ }).first();
+    if (!(await techOption.isVisible().catch(() => false))) {
+        throw new Error("La opción 'Tecnico PW T03' no está en el select de técnico responsable del wizard.");
+    }
+    await techOption.click();
+    await page.waitForTimeout(300);
     result.checks.technicianAssignedInWizard = true;
     await screenshot(page, "03-wizard-asignacion-tecnico");
     await page.locator("[data-testid='equipment-modal-next']").click();
@@ -432,7 +424,7 @@ try {
     const faceLabels = ["Cara frente", "Cara atrás", "Cara izquierda", "Cara derecha"];
     for (let i = 0; i < 4; i += 1) {
         const photoCard = wizard.locator(".evidence-photo-card").nth(i);
-        await photoCard.locator("select").first().selectOption({ label: faceLabels[i] });
+        await selectCustomModal(page, photoCard.getByTestId("equipment-modal-evidence-type"), { label: faceLabels[i] });
     }
     await screenshot(page, "04-wizard-evidencias");
     await page.locator("[data-testid='equipment-modal-next']").click();

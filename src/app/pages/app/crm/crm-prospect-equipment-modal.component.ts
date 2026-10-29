@@ -37,6 +37,8 @@ import { CrmEquipmentEvidenceDamageComponent } from "./crm-equipment-evidence-da
 import { CrmEquipmentQuestionAlertsComponent } from "./crm-equipment-question-alerts.component";
 import { CrmEquipmentSenderIncidentComponent } from "./crm-equipment-sender-incident.component";
 import { CrmEquipmentSerieExceptionComponent } from "./crm-equipment-serie-exception.component";
+import { CrmModalDateTimeComponent } from "./crm-modal-datetime.component";
+import { CrmModalSelectComponent, CrmModalSelectOption } from "./crm-modal-select.component";
 import {
     PROSPECT_EQUIPMENT_QUESTION_DEFINITIONS,
     ProspectEquipmentRepairStatus,
@@ -52,7 +54,8 @@ import {
     createEquipmentAnswers,
     getProspectEquipmentWarnings,
 } from "./crm-prospect-equipment.store";
-import { buildEquipmentQrShortCode, estimateDataUrlBinarySize, generateEquipmentQrDataUrl } from "./equipment-qr.util";
+import { COUNTRY_OPTIONS, citiesForCountry } from "./country-city.dataset";
+import { buildEquipmentQrShortCode, buildInternalEquipmentCode, estimateDataUrlBinarySize, generateEquipmentQrDataUrl } from "./equipment-qr.util";
 import { resolveEquipmentProspectId } from "./crm-prospect-equipment-match.logic";
 import { ProspectRecord } from "./crm-prospects.store";
 import { Project } from "../projects/models";
@@ -108,6 +111,7 @@ type CompanyCatalogOption = {
     phone: string;
     cellphone: string;
     city: string;
+    country: string;
     address: string;
     zone: string;
 };
@@ -173,6 +177,8 @@ type SoftwareBackupInfo = {
         CrmEquipmentQuestionAlertsComponent,
         CrmEquipmentSenderIncidentComponent,
         CrmEquipmentSerieExceptionComponent,
+        CrmModalDateTimeComponent,
+        CrmModalSelectComponent,
     ],
     template: `
         <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" (click)="close()">
@@ -218,18 +224,14 @@ type SoftwareBackupInfo = {
                             <div class="border rounded p-3">
                                 <div class="row gx-3 gy-2 form-compact">
                                     <div class="col-12 col-lg-3">
-                                        <label class="form-label d-block">Fecha</label>
-                                        <div class="row gx-2">
-                                            <div class="col-4">
-                                                <input class="form-control text-center" maxlength="2" placeholder="DD" [(ngModel)]="draft.receptionDay" [ngModelOptions]="{ standalone: true }" />
-                                            </div>
-                                            <div class="col-4">
-                                                <input class="form-control text-center" maxlength="2" placeholder="MM" [(ngModel)]="draft.receptionMonth" [ngModelOptions]="{ standalone: true }" />
-                                            </div>
-                                            <div class="col-4">
-                                                <input class="form-control text-center" maxlength="4" placeholder="AAAA" [(ngModel)]="draft.receptionYear" [ngModelOptions]="{ standalone: true }" />
-                                            </div>
-                                        </div>
+                                        <label class="form-label">Fecha de recepción</label>
+                                        <input
+                                            class="form-control"
+                                            type="date"
+                                            [ngModel]="receptionDateInput"
+                                            [ngModelOptions]="{ standalone: true }"
+                                            (ngModelChange)="setReceptionDate($event)"
+                                            aria-label="Fecha de recepción" />
                                     </div>
                                     <div class="col-12 col-lg-5">
                                         <label class="form-label">Empresa</label>
@@ -288,20 +290,14 @@ type SoftwareBackupInfo = {
                                     </div>
                                     <div class="col-12 col-lg-4">
                                         <label class="form-label">Sucursal de envío</label>
-                                        <select
-                                            class="form-select"
+                                        <app-crm-modal-select
+                                            [options]="companyBranchSelectOptions"
                                             [ngModel]="selectedCompanyBranchOption"
                                             [ngModelOptions]="{ standalone: true }"
                                             (ngModelChange)="onCompanyBranchSelectionChange($event)"
                                             [disabled]="!draft.companyName.trim()"
-                                            data-testid="equipment-modal-company-branch-select">
-                                            <option value="">
-                                                {{ companyBranchOptions.length > 0 ? 'Seleccionar sucursal' : 'Sin sucursales registradas para esta empresa' }}
-                                            </option>
-                                            <option *ngFor="let option of companyBranchOptions; trackBy: trackByCompanyBranchOption" [value]="option.value">
-                                                {{ option.name }}{{ option.isPrimary ? ' · Principal' : '' }}{{ option.sourceLabel ? ' · ' + option.sourceLabel : '' }}
-                                            </option>
-                                        </select>
+                                            testId="equipment-modal-company-branch-select">
+                                        </app-crm-modal-select>
                                         <div class="small text-secondary mt-1" *ngIf="!draft.companyName.trim()">
                                             Selecciona una empresa para cargar sus sucursales.
                                         </div>
@@ -320,33 +316,31 @@ type SoftwareBackupInfo = {
                                         <input class="form-control" [(ngModel)]="draft.address" [ngModelOptions]="{ standalone: true }" />
                                     </div>
                                     <div class="col-12 col-lg-4">
+                                        <label class="form-label">País</label>
+                                        <select class="form-select" [(ngModel)]="draft.country" [ngModelOptions]="{ standalone: true }" (ngModelChange)="onEquipmentCountryChange($event)" data-testid="equipment-modal-country-select">
+                                            <option value="">Seleccionar país</option>
+                                            <option *ngFor="let country of equipmentCountryOptions" [value]="country">{{ country }}</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12 col-lg-4">
                                         <label class="form-label">Ciudad</label>
-                                        <input class="form-control" [(ngModel)]="draft.city" [ngModelOptions]="{ standalone: true }" />
+                                        <select class="form-select" [(ngModel)]="draft.city" [ngModelOptions]="{ standalone: true }" [disabled]="!draft.country" data-testid="equipment-modal-city-select">
+                                            <option value="">Seleccionar ciudad</option>
+                                            <option *ngFor="let city of equipmentCityOptions" [value]="city">{{ city }}</option>
+                                        </select>
                                     </div>
 
                                     <div class="col-12">
                                         <label class="form-label">Contacto remitente (empresa)</label>
                                         <div class="d-flex gap-2 align-items-stretch">
-                                            <select
-                                                class="form-select"
+                                            <app-crm-modal-select
+                                                [options]="companyContactSelectOptions"
                                                 [ngModel]="selectedCompanyContactOption"
                                                 [ngModelOptions]="{ standalone: true }"
                                                 (ngModelChange)="onCompanyContactSelectionChange($event)"
                                                 [disabled]="!draft.companyName.trim() || companyContactsLoading"
-                                                data-testid="equipment-modal-company-contact-select">
-                                                <option value="">
-                                                    {{
-                                                        companyContactsLoading
-                                                            ? 'Cargando contactos...'
-                                                            : companyContactOptions.length > 0
-                                                                ? 'Seleccionar contacto de la empresa'
-                                                                : 'Sin contactos registrados para esta empresa'
-                                                    }}
-                                                </option>
-                                                <option *ngFor="let option of companyContactOptions; trackBy: trackByCompanyContactOption" [value]="option.value">
-                                                    {{ option.name }}{{ option.role ? ' · ' + option.role : '' }}{{ option.sourceLabel ? ' · ' + option.sourceLabel : '' }}
-                                                </option>
-                                            </select>
+                                                testId="equipment-modal-company-contact-select">
+                                            </app-crm-modal-select>
                                             <button
                                                 class="btn btn-outline-theme flex-shrink-0"
                                                 type="button"
@@ -413,15 +407,13 @@ type SoftwareBackupInfo = {
 
                                     <div class="col-12 col-lg-4">
                                         <label class="form-label">Método de envío</label>
-                                        <select
-                                            class="form-select"
+                                        <app-crm-modal-select
+                                            [options]="intakeMethodSelectOptions"
                                             [ngModel]="draft.intakeMethod || 'personal'"
                                             [ngModelOptions]="{ standalone: true }"
                                             (ngModelChange)="onIntakeMethodChange($event)"
-                                            data-testid="equipment-modal-intake-method">
-                                            <option value="personal">Entrega personal</option>
-                                            <option value="transportadora">Transportadora</option>
-                                        </select>
+                                            testId="equipment-modal-intake-method">
+                                        </app-crm-modal-select>
                                     </div>
 
                                     <div class="col-12 col-lg-4" *ngIf="draft.intakeMethod === 'transportadora'">
@@ -436,12 +428,13 @@ type SoftwareBackupInfo = {
 
                                     <div class="col-12 col-lg-4">
                                         <label class="form-label">Fecha y hora de recepción física</label>
-                                        <input
-                                            class="form-control"
-                                            type="datetime-local"
-                                            [ngModel]="toDateTimeLocalInput(draft.intakeReceivedAt || '')"
+                                        <app-crm-modal-datetime
+                                            [ngModel]="draft.intakeReceivedAt || ''"
                                             [ngModelOptions]="{ standalone: true }"
-                                            (ngModelChange)="onIntakeReceivedAtChange($event)" />
+                                            (ngModelChange)="onIntakeReceivedAtChange($event)"
+                                            placeholder="Seleccionar fecha y hora"
+                                            testId="equipment-modal-intake-received-at">
+                                        </app-crm-modal-datetime>
                                         <div
                                             class="alert alert-warning py-2 mt-2 mb-0"
                                             *ngIf="(draft.intakeMethod || 'personal') === 'transportadora' && !(draft.intakeReceivedAt || '').trim()"
@@ -502,8 +495,7 @@ type SoftwareBackupInfo = {
                                                     [ngModelOptions]="{ standalone: true }"
                                                     [attr.data-testid]="'equipment-modal-registration-mode-' + i"
                                                     (ngModelChange)="applyRegistrationMode(item, $event)">
-                                                    <option value="catalog">Modelo del catálogo</option>
-                                                    <option value="manual">Manual / no homologado</option>
+                                                    <option *ngFor="let option of registrationModeSelectOptions" [value]="option.value">{{ option.label }}</option>
                                                 </select>
                                                 <p class="small text-secondary mb-0 mt-2">
                                                     {{ item.registrationMode === "manual" ? "Captura libre de familia, marca, tipo y serie aunque aún no exista en el maestro." : "Usa el maestro central para conservar la homologación del equipo." }}
@@ -511,10 +503,13 @@ type SoftwareBackupInfo = {
                                             </div>
                                             <div class="col-12 col-lg-4">
                                                 <label class="form-label">Modelo industrial</label>
-                                                <select class="form-select" [(ngModel)]="item.equipmentModelId" [ngModelOptions]="{ standalone: true }" [disabled]="item.registrationMode === 'manual'" (ngModelChange)="applyEquipmentModel(item, $event)">
-                                                    <option value="">Seleccionar modelo del catálogo</option>
-                                                    <option *ngFor="let model of activeEquipmentModels; trackBy: trackByModelId" [value]="model.id">{{ equipmentModelLabel(model) }}</option>
-                                                </select>
+                                                <app-crm-modal-select
+                                                    [options]="equipmentModelSelectOptions"
+                                                    [(ngModel)]="item.equipmentModelId"
+                                                    [ngModelOptions]="{ standalone: true }"
+                                                    [disabled]="item.registrationMode === 'manual'"
+                                                    (ngModelChange)="applyEquipmentModel(item, $event)">
+                                                </app-crm-modal-select>
                                                 <p class="small text-secondary mb-0 mt-2">{{ item.registrationMode === "manual" ? "El modo manual omite el catálogo y deja el equipo marcado para homologación." : "Si necesitas otro modelo, créalo antes en Config. Equipos." }}</p>
                                             </div>
                                             <div class="col-12 col-lg-2">
@@ -529,16 +524,26 @@ type SoftwareBackupInfo = {
                                             </div>
                                             <div class="col-12 col-lg-3">
                                                 <label class="form-label">Tipo de servicio</label>
-                                                <select class="form-select" [(ngModel)]="item.serviceTypeId" [ngModelOptions]="{ standalone: true }" (ngModelChange)="applyServiceType(item, $event)">
+                                                <select
+                                                    class="form-select"
+                                                    [(ngModel)]="item.serviceTypeId"
+                                                    [ngModelOptions]="{ standalone: true }"
+                                                    [attr.data-testid]="'equipment-modal-service-type-' + i"
+                                                    (ngModelChange)="applyServiceType(item, $event)">
                                                     <option value="">Seleccionar tipo de servicio</option>
-                                                    <option *ngFor="let serviceType of activeEquipmentServiceTypes; trackBy: trackByServiceTypeId" [value]="serviceType.id">{{ serviceType.name }}</option>
+                                                    <option *ngFor="let option of serviceTypeSelectOptions" [value]="option.value">{{ option.label }}</option>
                                                 </select>
                                             </div>
                                             <div class="col-12 col-lg-3">
                                                 <label class="form-label">Ubicación de almacenamiento</label>
-                                                <select class="form-select" [(ngModel)]="item.storageLocationId" [ngModelOptions]="{ standalone: true }" (ngModelChange)="applyStorageLocation(item, $event)">
+                                                <select
+                                                    class="form-select"
+                                                    [(ngModel)]="item.storageLocationId"
+                                                    [ngModelOptions]="{ standalone: true }"
+                                                    [attr.data-testid]="'equipment-modal-storage-location-' + i"
+                                                    (ngModelChange)="applyStorageLocation(item, $event)">
                                                     <option value="">Seleccionar ubicación</option>
-                                                    <option *ngFor="let location of activeEquipmentLocations; trackBy: trackByLocationId" [value]="location.id">{{ location.name }}</option>
+                                                    <option *ngFor="let option of storageLocationSelectOptions" [value]="option.value">{{ option.label }}</option>
                                                 </select>
                                             </div>
                                             <div class="col-12 col-lg-3">
@@ -644,11 +649,9 @@ type SoftwareBackupInfo = {
                                                                 [ngModel]="item.assignedToId || ''"
                                                                 [ngModelOptions]="{ standalone: true }"
                                                                 (ngModelChange)="assignDraftTechnicianToItem(item, $event)"
+                                                                [attr.data-testid]="'equipment-modal-technician-' + i"
                                                                 [disabled]="draft.senderUnknown === true">
-                                                                <option value="">Sin asignar</option>
-                                                                <option *ngFor="let technician of technicianOptionsForItem(item)" [value]="technician.id">
-                                                                    {{ technician.name }} · {{ technician.role || 'Sin rol' }} · carga {{ technician.activeItems }}
-                                                                </option>
+                                                                <option *ngFor="let option of technicianSelectOptionsForItem(item)" [value]="option.value">{{ option.label }}</option>
                                                             </select>
                                                             <div class="small text-warning mt-1" *ngIf="draft.senderUnknown" data-testid="technician-assignment-blocked">
                                                                 Incidencia de custodia: identifica empresa/contacto antes de asignar técnico.
@@ -973,8 +976,12 @@ type SoftwareBackupInfo = {
                                                                 <div class="row gx-2 gy-2 align-items-start">
                                                                     <div class="col-12 col-md-6 col-xl-4">
                                                                         <label class="form-label small">Tipo de evidencia</label>
-                                                                        <select class="form-select form-select-sm" [(ngModel)]="evidence.evidenceType" [ngModelOptions]="{ standalone: true }">
-                                                                            <option *ngFor="let option of evidenceTypeOptions; trackBy: trackByEvidenceType" [ngValue]="option.value">{{ option.label }}</option>
+                                                                        <select
+                                                                            class="form-select form-select-sm"
+                                                                            [(ngModel)]="evidence.evidenceType"
+                                                                            [ngModelOptions]="{ standalone: true }"
+                                                                            data-testid="equipment-modal-evidence-type">
+                                                                            <option *ngFor="let option of evidenceTypeOptions" [value]="option.value">{{ option.label }}</option>
                                                                         </select>
                                                                     </div>
                                                                     <div class="col-12 col-md-6 col-xl-4">
@@ -1047,6 +1054,10 @@ type SoftwareBackupInfo = {
                                             <div class="col-12 col-md-6">
                                                 <div class="text-secondary mb-1">Fecha</div>
                                                 <div class="fw-semibold">{{ draft.receptionDay || "--" }}/{{ draft.receptionMonth || "--" }}/{{ draft.receptionYear || "----" }}</div>
+                                            </div>
+                                            <div class="col-12 col-md-6">
+                                                <div class="text-secondary mb-1">País</div>
+                                                <div class="fw-semibold">{{ draft.country || "--" }}</div>
                                             </div>
                                             <div class="col-12 col-md-6">
                                                 <div class="text-secondary mb-1">Ciudad</div>
@@ -1623,6 +1634,74 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
         { value: "other", label: "Otra" },
     ];
 
+    readonly intakeMethodSelectOptions: CrmModalSelectOption[] = [
+        { label: "Entrega personal", value: "personal" },
+        { label: "Transportadora", value: "transportadora" },
+    ];
+
+    readonly registrationModeSelectOptions: CrmModalSelectOption[] = [
+        { label: "Modelo del catálogo", value: "catalog" },
+        { label: "Manual / no homologado", value: "manual" },
+    ];
+
+    get companyBranchSelectOptions(): CrmModalSelectOption[] {
+        const placeholder = this.companyBranchOptions.length > 0 ? "Seleccionar sucursal" : "Sin sucursales registradas para esta empresa";
+        return [
+            { label: placeholder, value: "" },
+            ...this.companyBranchOptions.map((option) => ({
+                label: `${option.name}${option.isPrimary ? " · Principal" : ""}${option.sourceLabel ? " · " + option.sourceLabel : ""}`,
+                value: option.value,
+            })),
+        ];
+    }
+
+    get companyContactSelectOptions(): CrmModalSelectOption[] {
+        const placeholder = this.companyContactsLoading
+            ? "Cargando contactos..."
+            : this.companyContactOptions.length > 0
+              ? "Seleccionar contacto de la empresa"
+              : "Sin contactos registrados para esta empresa";
+        return [
+            { label: placeholder, value: "" },
+            ...this.companyContactOptions.map((option) => ({
+                label: `${option.name}${option.role ? " · " + option.role : ""}${option.sourceLabel ? " · " + option.sourceLabel : ""}`,
+                value: option.value,
+            })),
+        ];
+    }
+
+    get equipmentModelSelectOptions(): CrmModalSelectOption[] {
+        return [
+            { label: "Seleccionar modelo del catálogo", value: "" },
+            ...this.activeEquipmentModels.map((model) => ({ label: this.equipmentModelLabel(model), value: model.id })),
+        ];
+    }
+
+    get serviceTypeSelectOptions(): CrmModalSelectOption[] {
+        return [
+            { label: "Seleccionar tipo de servicio", value: "" },
+            ...this.activeEquipmentServiceTypes.map((serviceType) => ({ label: serviceType.name, value: serviceType.id })),
+        ];
+    }
+
+    get storageLocationSelectOptions(): CrmModalSelectOption[] {
+        return [
+            { label: "Seleccionar ubicación", value: "" },
+            ...this.activeEquipmentLocations.map((location) => ({ label: location.name, value: location.id })),
+        ];
+    }
+
+    technicianSelectOptionsForItem(item: ProspectEquipmentItem): CrmModalSelectOption[] {
+        return [
+            { label: "Sin asignar", value: "" },
+            ...this.technicianOptionsForItem(item).map((technician) => ({
+                label: `${technician.name} · ${technician.role || "Sin rol"} · carga ${technician.activeItems}`,
+                value: technician.id,
+            })),
+        ];
+    }
+
+
     @Input({ required: true }) prospect: ProspectRecord | null = null;
     @Input() initialRecord: ProspectEquipmentRecord | null = null;
     @Input() navigateToProjectsOnSave = true;
@@ -1972,6 +2051,20 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
         const fallbackMonth = String(now.getMonth() + 1).padStart(2, "0");
         const fallbackDay = String(now.getDate()).padStart(2, "0");
         return `${now.getFullYear()}-${fallbackMonth}-${fallbackDay}`;
+    }
+
+    /** A single ISO date control keeps the UI standard while preserving the
+     * existing day/month/year fields used by reception records and reports. */
+    get receptionDateInput(): string {
+        return this.draftReceptionIsoDate();
+    }
+
+    setReceptionDate(value: string): void {
+        const match = String(value ?? "").trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (!match) return;
+        this.draft.receptionYear = match[1];
+        this.draft.receptionMonth = match[2];
+        this.draft.receptionDay = match[3];
     }
 
     warrantyEntryDateLabel(item: ProspectEquipmentItem): string {
@@ -2404,6 +2497,7 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
             phone: this.draft.phone.trim(),
             address: this.draft.address.trim(),
             city: this.draft.city.trim(),
+            country: this.draft.country.trim(),
             contactName: this.draft.contactName.trim(),
             contactRole: this.draft.contactRole.trim(),
             cellphone: this.draft.cellphone.trim(),
@@ -2550,14 +2644,6 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
 
     trackByCompanyOption(_: number, option: CompanyCatalogOption): string {
         return String(option.company ?? "").trim().toLowerCase();
-    }
-
-    trackByCompanyBranchOption(_: number, option: CompanyBranchOption): string {
-        return option.value;
-    }
-
-    trackByCompanyContactOption(_: number, option: CompanyContactOption): string {
-        return option.value;
     }
 
     onCompanySearchInput(value: string): void {
@@ -2752,6 +2838,33 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
         return this.normalizeCompanyKey(option.company) === this.normalizeCompanyKey(this.draft.companyName);
     }
 
+    get equipmentCountryOptions(): string[] {
+        const country = this.draft.country.trim();
+        return country && !COUNTRY_OPTIONS.includes(country) ? [country, ...COUNTRY_OPTIONS] : [...COUNTRY_OPTIONS];
+    }
+
+    get equipmentCityOptions(): string[] {
+        const cities = Array.from(citiesForCountry(this.draft.country));
+        const city = this.draft.city.trim();
+        if (city && !cities.includes(city)) {
+            cities.push(city);
+        }
+        return cities;
+    }
+
+    onEquipmentCountryChange(country: string): void {
+        this.draft.country = String(country ?? "").trim();
+        const validCities = citiesForCountry(this.draft.country);
+        if (this.draft.city && !validCities.includes(this.draft.city)) {
+            this.draft.city = "";
+        }
+    }
+
+    private normalizeProspectCountryValue(value: string | undefined): string {
+        const normalized = this.normalizeEmpty(value);
+        return normalized === "--" ? "" : normalized;
+    }
+
     selectCompanyOption(company: string): void {
         const normalized = String(company ?? "").trim();
         const previousCompanyKey = this.normalizeCompanyKey(this.draft.companyName);
@@ -2795,6 +2908,7 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
             this.draft.nit = resolveAutocompleteValue(this.draft.nit, selected.nit);
             this.draft.phone = resolveAutocompleteValue(this.draft.phone, selected.phone);
             this.draft.address = resolveAutocompleteValue(this.draft.address, selected.address);
+            this.draft.country = resolveAutocompleteValue(this.draft.country, selected.country);
             this.draft.city = resolveAutocompleteValue(this.draft.city, selected.city);
             this.draft.contactName = resolveAutocompleteValue(this.draft.contactName, selected.contactName);
             this.draft.contactRole = resolveAutocompleteValue(this.draft.contactRole, selected.contactRole);
@@ -2834,7 +2948,7 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
             estado: "Activo" as const,
             website: "",
             officePhone: "",
-            country: "",
+            country: this.draft.country.trim(),
             city: this.draft.city?.trim() ?? "",
             address: this.draft.address?.trim() ?? "",
             credito: {
@@ -2887,7 +3001,7 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
         const createRequests = repairItems.map((item, index) =>
             this.projectService
                 .createProject(
-                    "recibido",
+                    item.assignedToId?.trim() ? "diagnostico" : "recibido",
                     this.buildRepairProjectTitle(item, index),
                     this.buildRepairProjectDescription(record, item),
                     {
@@ -2948,22 +3062,6 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
 
     trackByEvidenceId(_: number, evidence: ProspectEquipmentEvidencePhoto): string {
         return evidence.id;
-    }
-
-    trackByEvidenceType(_: number, option: EvidenceTypeOption): ProspectEquipmentEvidenceType {
-        return option.value;
-    }
-
-    trackByModelId(_: number, model: IndustrialEquipmentModelRecord): string {
-        return model.id;
-    }
-
-    trackByServiceTypeId(_: number, serviceType: EquipmentServiceTypeRecord): string {
-        return serviceType.id;
-    }
-
-    trackByLocationId(_: number, location: EquipmentLocationRecord): string {
-        return location.id;
     }
 
     equipmentModelLabel(model: IndustrialEquipmentModelRecord): string {
@@ -3036,24 +3134,6 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
             this.draft.intakeCarrier = "";
             this.draft.intakeTrackingNumber = "";
         }
-    }
-
-    toDateTimeLocalInput(value: string): string {
-        if (!value) {
-            return "";
-        }
-
-        const date = new Date(value);
-        if (Number.isNaN(date.getTime())) {
-            return "";
-        }
-
-        const year = date.getFullYear();
-        const month = `${date.getMonth() + 1}`.padStart(2, "0");
-        const day = `${date.getDate()}`.padStart(2, "0");
-        const hours = `${date.getHours()}`.padStart(2, "0");
-        const minutes = `${date.getMinutes()}`.padStart(2, "0");
-        return `${year}-${month}-${day}T${hours}:${minutes}`;
     }
 
     onIntakeReceivedAtChange(value: string): void {
@@ -3315,6 +3395,7 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
             phone: this.normalizeEmpty(this.prospect?.telefonoOficina),
             address: this.normalizeEmpty(primaryProspectBranch?.address) || this.normalizeEmpty(this.prospect?.direccion),
             city: this.normalizeEmpty(primaryProspectBranch?.city) || this.normalizeEmpty(this.prospect?.ciudad),
+            country: this.normalizeProspectCountryValue(primaryProspectBranch?.country) || this.normalizeProspectCountryValue(this.prospect?.pais),
             contactName: this.normalizeEmpty(primaryProspectBranch?.contactName) || this.normalizeEmpty(this.prospect?.nombre),
             contactRole: this.normalizeEmpty(primaryProspectBranch?.contactRole),
             cellphone: this.normalizeEmpty(primaryProspectBranch?.phone) || this.normalizeEmpty(this.prospect?.movil),
@@ -3887,6 +3968,10 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
                 existing.nit = existing.nit || this.normalizeEmpty(client.nit).trim();
                 existing.contactName = existing.contactName || client.nombre.trim();
                 existing.email = existing.email || client.correo.trim();
+                existing.phone = existing.phone || this.normalizeEmpty(client.officePhone).trim();
+                existing.city = existing.city || this.normalizeEmpty(client.city).trim();
+                existing.country = existing.country || this.normalizeEmpty(client.country).trim();
+                existing.address = existing.address || this.normalizeEmpty(client.address).trim();
                 existing.zone = existing.zone || client.zona.trim();
                 return;
             }
@@ -3898,10 +3983,11 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
                 contactName: client.nombre.trim(),
                 contactRole: "",
                 email: client.correo.trim(),
-                phone: "",
+                phone: this.normalizeEmpty(client.officePhone).trim(),
                 cellphone: "",
-                city: "",
-                address: "",
+                city: this.normalizeEmpty(client.city).trim(),
+                country: this.normalizeEmpty(client.country).trim(),
+                address: this.normalizeEmpty(client.address).trim(),
                 zone: client.zona.trim(),
             });
         });
@@ -3922,6 +4008,7 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
                 existing.phone = existing.phone || this.normalizeEmpty(prospect.telefonoOficina).trim();
                 existing.cellphone = existing.cellphone || this.normalizeEmpty(prospect.movil).trim();
                 existing.city = existing.city || this.normalizeEmpty(prospect.ciudad).trim();
+                existing.country = existing.country || this.normalizeProspectCountryValue(prospect.pais);
                 existing.address = existing.address || this.normalizeEmpty(prospect.direccion).trim();
                 existing.zone = existing.zone || prospect.zona.trim();
                 return;
@@ -3937,6 +4024,7 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
                 phone: this.normalizeEmpty(prospect.telefonoOficina).trim(),
                 cellphone: this.normalizeEmpty(prospect.movil).trim(),
                 city: this.normalizeEmpty(prospect.ciudad).trim(),
+                country: this.normalizeProspectCountryValue(prospect.pais),
                 address: this.normalizeEmpty(prospect.direccion).trim(),
                 zone: prospect.zona.trim(),
             });
@@ -3974,6 +4062,7 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
                     phone: this.normalizeEmpty(record.phone).trim(),
                     cellphone: this.normalizeEmpty(record.cellphone).trim(),
                     city: this.normalizeEmpty(record.city).trim(),
+                    country: this.normalizeEmpty(record.country).trim(),
                     address: this.normalizeEmpty(record.address).trim(),
                     zone: "",
                 });
@@ -3988,6 +4077,7 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
             existing.phone = this.normalizeEmpty(record.phone).trim() || existing.phone;
             existing.cellphone = this.normalizeEmpty(record.cellphone).trim() || existing.cellphone;
             existing.city = this.normalizeEmpty(record.city).trim() || existing.city;
+            existing.country = this.normalizeEmpty(record.country).trim() || existing.country;
             existing.address = this.normalizeEmpty(record.address).trim() || existing.address;
 
             appliedRecordByCompany.add(key);
@@ -4012,6 +4102,7 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
             phone: this.draft.phone.trim(),
             cellphone: this.draft.cellphone.trim(),
             city: this.draft.city.trim(),
+            country: this.draft.country.trim(),
             address: this.draft.address.trim(),
             zone: String(client.zona ?? "").trim(),
         };
@@ -4033,6 +4124,7 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
                         phone: current.phone || option.phone,
                         cellphone: current.cellphone || option.cellphone,
                         city: current.city || option.city,
+                        country: current.country || option.country,
                         address: current.address || option.address,
                         zone: current.zone || option.zone,
                     },
@@ -4437,6 +4529,7 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
             equipmentProspectId: record.prospectId,
             equipmentProspectName: record.prospectName,
             equipmentDisplayName: this.equipmentCardTitle(item, 0).replace(/^Equipo\s+\d+\s+·\s+/, "") || "Equipo",
+            equipmentCode: buildInternalEquipmentCode(item.id),
             equipmentIdentifier: item.receivedIdentifier.trim(),
             equipmentSerie: item.serie.trim(),
             equipmentReceptionLabel: `${record.receptionDay || "--"}/${record.receptionMonth || "--"}/${record.receptionYear || "----"}`,

@@ -57,7 +57,7 @@ func (s *Service) InvoiceOptions(companyID, remissionID string) ([]InvoiceOption
 	}
 
 	rows, err := s.db.Query(`
-SELECT fi.id, ` + invoiceDisplayCodeSQL + `, COALESCE(fi.external_number, ''),
+SELECT fi.id, `+invoiceDisplayCodeSQL+`, COALESCE(fi.external_number, ''),
 	COALESCE(fi.client_name, ''),
 	COALESCE(to_char(fi.issue_date, 'YYYY-MM-DD'), ''),
 	COALESCE(fi.total, 0), COALESCE(fi.balance_amount, 0), fi.status
@@ -65,15 +65,22 @@ FROM finance_invoices fi
 WHERE fi.company_id = $1
   AND fi.soft_delete = false
   AND COALESCE(fi.document_type, 'factura') <> 'nota_credito'
-  AND EXISTS (
-	SELECT 1 FROM crm_clients cc
-	WHERE cc.company_id = fi.company_id
-	  AND (cc.id = fi.client_id OR ('crm-client-' || cc.id) = fi.client_id)
-	  AND cc.soft_delete = false
-	  AND (
-		($2 <> '' AND lower(cc.nit) = lower($2))
-		OR ($2 = '' AND $3 <> '' AND (lower(cc.empresa) = lower($3) OR lower(cc.nombre) = lower($3)))
-	  )
+  AND (
+	EXISTS (
+	  SELECT 1 FROM crm_clients cc
+	  WHERE cc.company_id = fi.company_id
+	    AND (cc.id = fi.client_id OR ('crm-client-' || cc.id) = fi.client_id)
+	    AND cc.soft_delete = false
+	    AND (
+	      ($2 <> '' AND lower(cc.nit) = lower($2))
+	      OR ($3 <> '' AND (lower(cc.empresa) = lower($3) OR lower(cc.nombre) = lower($3)))
+	    )
+	)
+	-- Las facturas antiguas o recién convertidas desde cotización pueden
+	-- conservar crm-quote-* antes de que el cliente se reconcilie. Dentro de
+	-- la misma empresa, el nombre exacto mantiene el vínculo operativo sin
+	-- ocultar una factura válida al despacho.
+	OR ($3 <> '' AND lower(trim(fi.client_name)) = lower($3))
   )
 ORDER BY fi.issue_date DESC NULLS LAST, fi.id DESC
 LIMIT 100`, companyID, clientNIT, clientName)

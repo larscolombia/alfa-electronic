@@ -1,5 +1,6 @@
 import { chromium } from "playwright";
 import { writeFileSync } from "node:fs";
+import { selectCustomModal } from "./ui-modal-controls.mjs";
 
 const base = (process.env.PW_BASE_URL || "http://127.0.0.1:4200").replace(/\/$/, "");
 const id = String(Date.now()).slice(-8);
@@ -58,12 +59,12 @@ try {
     await modal.getByTestId("equipment-modal-next").click(); await wait(page);
 
     // Paso Equipos: técnico bloqueado + equipo manual.
-    result.technicianDisabled = (await modal.locator("select[disabled]").count()) > 0;
+    result.technicianDisabled = await modal.getByTestId("equipment-modal-technician-0").isDisabled().catch(() => false);
     result.technicianHintVisible = await modal.getByTestId("technician-assignment-blocked").isVisible();
     if (!result.technicianDisabled || !result.technicianHintVisible) {
         throw new Error("La asignación de técnico no quedó bloqueada con su hint");
     }
-    await modal.locator("select[data-testid^='equipment-modal-registration-mode-']").first().selectOption("manual");
+    await selectCustomModal(page, modal.locator("[data-testid^='equipment-modal-registration-mode-']").first(), "manual");
     for (const [placeholder, value] of [["Familia libre", "Control"], ["Marca del equipo", "Marca QA"], ["Tipo / referencia", "Tipo QA"], ["Serie o referencia visible", `SER-${id}`]]) await modal.locator(`input[placeholder='${placeholder}']`).fill(value);
     await modal.getByTestId("equipment-modal-next").click(); await wait(page);
 
@@ -81,7 +82,7 @@ try {
     await modal.locator("input[type='file'][multiple]").setInputFiles(facePaths);
     await modal.locator(".evidence-photo-card").nth(3).waitFor({ state: "visible", timeout: 30000 }); await wait(page);
     for (let i = 0; i < FACE_LABELS.length; i += 1) {
-        await modal.locator(".evidence-photo-card").nth(i).locator("select").selectOption({ label: FACE_LABELS[i] }); await wait(page);
+        await selectCustomModal(page, modal.locator(".evidence-photo-card").nth(i).getByTestId("equipment-modal-evidence-type"), { label: FACE_LABELS[i] }); await wait(page);
     }
     result.facesReady = true;
     await modal.getByTestId("equipment-modal-next").click(); await wait(page);

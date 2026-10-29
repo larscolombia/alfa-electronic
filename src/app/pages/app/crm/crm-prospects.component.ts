@@ -15,6 +15,7 @@ import { FormDraftService } from "../../../services/form-draft.service";
 import { HrPeoplePickerService } from "../../../services/hr-people-picker.service";
 import { SearchableSelectDirective } from "../../../components/input-fields/searchable-select/searchable-select.directive";
 import { ConfirmationModalService } from "../../../services/confirmation-modal.service";
+import { COUNTRY_OPTIONS, citiesForCountry } from "./country-city.dataset";
 
 type QuickAddTarget = "fuentes" | "categorias" | "servicios";
 
@@ -285,11 +286,11 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
                         </div>
                         <div class="col-12 col-lg-3 mb-3">
                             <label class="form-label">País</label>
-                            <input class="form-control" placeholder="por ejemplo, Colombia" [(ngModel)]="formPais" name="formPais" maxlength="120" />
+                            <select data-testid="prospect-country" class="form-select" [(ngModel)]="formPais" (ngModelChange)="onProspectCountryChange($event)" name="formPais"><option value="">Seleccionar país</option><option *ngFor="let country of countryOptions" [value]="country">{{ country }}</option></select>
                         </div>
                         <div class="col-12 col-lg-3 mb-3">
                             <label class="form-label">Ciudad</label>
-                            <input class="form-control" placeholder="por ejemplo, Bogota" [(ngModel)]="formCiudad" name="formCiudad" maxlength="120" />
+                            <select data-testid="prospect-city" class="form-select" [(ngModel)]="formCiudad" [disabled]="!formPais" name="formCiudad"><option value="">Seleccionar ciudad</option><option *ngFor="let city of prospectCityOptions" [value]="city">{{ city }}</option></select>
                         </div>
                         <div class="col-12 mb-3">
                             <label class="form-label">Dirección</label>
@@ -423,11 +424,11 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
                                         </div>
                                         <div class="col-12 col-lg-4">
                                             <label class="form-label">País</label>
-                                            <input class="form-control" [(ngModel)]="branch.country" [name]="'prospectBranchCountry-' + branchIndex" placeholder="Ej: Colombia" />
+                                            <select class="form-select" [(ngModel)]="branch.country" (ngModelChange)="onProspectBranchCountryChange(branch, $event)" [name]="'prospectBranchCountry-' + branchIndex"><option value="">Seleccionar país</option><option *ngFor="let country of countryOptions" [value]="country">{{ country }}</option></select>
                                         </div>
                                         <div class="col-12 col-lg-4">
                                             <label class="form-label">Ciudad</label>
-                                            <input class="form-control" [(ngModel)]="branch.city" [name]="'prospectBranchCity-' + branchIndex" placeholder="Ej: Bogota" />
+                                            <select class="form-select" [(ngModel)]="branch.city" [disabled]="!branch.country" [name]="'prospectBranchCity-' + branchIndex"><option value="">Seleccionar ciudad</option><option *ngFor="let city of prospectBranchCityOptions(branch)" [value]="city">{{ city }}</option></select>
                                         </div>
                                         <div class="col-12 col-lg-8">
                                             <label class="form-label">Dirección</label>
@@ -705,6 +706,25 @@ export class CrmProspectsComponent {
     formTelefonoOficina = "";
     formPais = "";
     formCiudad = "";
+    readonly countryOptions = COUNTRY_OPTIONS;
+
+    get prospectCityOptions(): readonly string[] {
+        return citiesForCountry(this.formPais);
+    }
+
+    onProspectCountryChange(country: string): void {
+        this.formPais = country;
+        if (!this.prospectCityOptions.includes(this.formCiudad)) this.formCiudad = "";
+    }
+
+    prospectBranchCityOptions(branch: ProspectBranchDraft): readonly string[] {
+        return citiesForCountry(branch.country);
+    }
+
+    onProspectBranchCountryChange(branch: ProspectBranchDraft, country: string): void {
+        branch.country = country;
+        if (!this.prospectBranchCityOptions(branch).includes(branch.city)) branch.city = "";
+    }
     formDireccion = "";
     formEmpleado = "";
     formFuente = "";

@@ -21,6 +21,7 @@
 import path from "node:path";
 import { promises as fs } from "node:fs";
 import { chromium } from "playwright";
+import { openCustomSelectMenu, selectCustomModal, setCustomModalDateTime } from "./ui-modal-controls.mjs";
 
 const baseUrl = (process.env.PW_BASE_URL || "https://alfa.software.net.co").replace(/\/+$/, "");
 const apiBaseUrl = (process.env.PW_API_BASE_URL || baseUrl).replace(/\/+$/, "");
@@ -194,36 +195,22 @@ async function setRequiredFaceEvidence(page) {
         inputElement.dispatchEvent(new Event("change", { bubbles: true }));
     });
 
-    const faceTypes = ["face-front", "face-back", "face-left", "face-right"];
-    const faceTypeLabels = ["cara frente", "cara atrás", "cara izquierda", "cara derecha"];
-    const evidenceTypeSelects = page.locator(".evidence-photo-card select.form-select-sm");
+    const faceTypeLabels = ["Cara frente", "Cara atrás", "Cara izquierda", "Cara derecha"];
+    const photoCards = page.locator(".evidence-photo-card");
 
     const waitStart = Date.now();
     while ((Date.now() - waitStart) < timeoutMs) {
-        if ((await evidenceTypeSelects.count()) >= faceTypes.length) break;
+        if ((await photoCards.count()) >= faceTypeLabels.length) break;
         await page.waitForTimeout(250);
     }
 
-    const availableSelects = await evidenceTypeSelects.count();
-    if (availableSelects < faceTypes.length) {
-        throw new Error(`No se encontraron ${faceTypes.length} selectores de evidencia. Detectados: ${availableSelects}`);
+    const availableCards = await photoCards.count();
+    if (availableCards < faceTypeLabels.length) {
+        throw new Error(`No se encontraron ${faceTypeLabels.length} tarjetas de evidencia. Detectadas: ${availableCards}`);
     }
 
-    for (let index = 0; index < faceTypes.length; index += 1) {
-        const desiredValue = faceTypes[index];
-        const desiredLabel = faceTypeLabels[index];
-        await evidenceTypeSelects.nth(index).evaluate((element, payload) => {
-            if (!(element instanceof HTMLSelectElement)) throw new Error("selector de evidencia invalido");
-            const resolvedOption = Array.from(element.options).find((option) => {
-                const normalizedValue = String(option.value || "").trim().toLowerCase();
-                const normalizedLabel = String(option.textContent || "").trim().toLowerCase();
-                return normalizedValue === payload.desiredValue || normalizedLabel.includes(payload.desiredLabel);
-            });
-            if (!resolvedOption) throw new Error(`opcion de evidencia no encontrada para ${payload.desiredValue}`);
-            element.value = resolvedOption.value;
-            element.dispatchEvent(new Event("input", { bubbles: true }));
-            element.dispatchEvent(new Event("change", { bubbles: true }));
-        }, { desiredValue, desiredLabel });
+    for (let index = 0; index < faceTypeLabels.length; index += 1) {
+        await selectCustomModal(page, photoCards.nth(index).getByTestId("equipment-modal-evidence-type"), { label: faceTypeLabels[index] });
     }
 }
 
@@ -347,7 +334,7 @@ try {
     }
 
     console.log("STEP 2: paso Recepción (transportadora/guía/fecha) …");
-    await receptionSelect(page, "Método de envío").selectOption("transportadora");
+    await selectCustomModal(page, page.getByTestId("equipment-modal-intake-method"), "transportadora");
     await receptionInput(page, "Transportadora").fill(intakeCarrier);
     await receptionInput(page, "Guía / tracking").fill(trackingNumber);
     await fillDateIfEmpty(page);
@@ -358,10 +345,7 @@ try {
     const dd = String(currentDate.getDate()).padStart(2, "0");
     const hh = String(currentDate.getHours()).padStart(2, "0");
     const min = String(currentDate.getMinutes()).padStart(2, "0");
-    const intakeDateInput = page.locator("label.form-label:has-text('Fecha y hora de recepción física') + input.form-control").first();
-    if (await intakeDateInput.isVisible().catch(() => false)) {
-        await intakeDateInput.fill(`${yyyy}-${mm}-${dd}T${hh}:${min}`);
-    }
+    await setCustomModalDateTime(page, page.getByTestId("equipment-modal-intake-received-at"), `${yyyy}-${mm}-${dd}T${hh}:${min}`);
 
     await screenshotStep(page, "02-reception-step");
     await page.getByTestId("equipment-modal-next").click();
@@ -369,26 +353,29 @@ try {
     result.checks.receptionStepCompleted = true;
 
     console.log("STEP 3: paso Equipos (PLC Siemens) …");
-    await page.getByTestId("equipment-modal-registration-mode-0").selectOption("manual");
+    await selectCustomModal(page, page.getByTestId("equipment-modal-registration-mode-0"), "manual");
     await page.locator("label.form-label:has-text('Familia') + input.form-control").first().fill("PLC");
     await page.locator("label.form-label:has-text('Marca') + input.form-control").first().fill("Siemens");
     await page.locator("label.form-label:has-text('Tipo') + input.form-control").first().fill("Autómata programable (PLC)");
     await page.locator("label.form-label:has-text('Serie') + input.form-control").first().fill(uniqueSerie);
 
     // Tipo de servicio: primera opción que indique reparación
-    const serviceTypeSelect = receptionSelect(page, "Tipo de servicio");
-    const serviceOptions = await serviceTypeSelect.locator("option").allTextContents();
+    const serviceTypeTrigger = page.getByTestId("equipment-modal-service-type-0");
+    const serviceMenu = await openCustomSelectMenu(page, serviceTypeTrigger);
+    const serviceOptions = await serviceMenu.locator(".crm-modal-select-option").allTextContents();
     const repairOption = serviceOptions.find((label) => /repar/i.test(label)) || serviceOptions.find((label) => label.trim() !== "");
-    await serviceTypeSelect.selectOption({ label: repairOption });
+    if (!repairOption) throw new Error("No hay opciones de tipo de servicio disponibles");
+    await selectCustomModal(page, serviceTypeTrigger, { label: repairOption });
     result.observations.push(`DATO: tipo de servicio seleccionado: "${String(repairOption).trim()}".`);
 
     // Ubicación / estantería: primera ubicación real del catálogo
-    const locationSelect = receptionSelect(page, "Ubicación de almacenamiento");
-    const locationOptions = (await locationSelect.locator("option").allTextContents()).filter((label) => label.trim() !== "" && !/seleccionar/i.test(label));
+    const locationTrigger = page.getByTestId("equipment-modal-storage-location-0");
+    const locationMenu = await openCustomSelectMenu(page, locationTrigger);
+    const locationOptions = (await locationMenu.locator(".crm-modal-select-option").allTextContents()).filter((label) => label.trim() !== "" && !/seleccionar/i.test(label));
     if (locationOptions.length === 0) {
         result.observations.push("HALLAZGO: no hay ubicaciones/estanterías configuradas en el catálogo; el equipo quedará sin ubicación de almacenamiento.");
     } else {
-        await locationSelect.selectOption({ label: locationOptions[0] });
+        await selectCustomModal(page, locationTrigger, { label: locationOptions[0] });
         result.observations.push(`DATO: ubicación de almacenamiento seleccionada: "${String(locationOptions[0]).trim()}".`);
     }
 

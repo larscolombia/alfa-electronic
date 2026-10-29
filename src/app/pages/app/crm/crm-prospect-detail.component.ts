@@ -18,6 +18,7 @@ import { WorkEquipmentHistoryContextService } from "../../../services/work-equip
 import { CrmAttachmentsApiService, ProspectAttachment } from "../../../services/crm-attachments-api.service";
 import { AuthService } from "../../../services/auth.service";
 import { HrPeoplePickerService } from "../../../services/hr-people-picker.service";
+import { COUNTRY_OPTIONS, citiesForCountry } from "./country-city.dataset";
 
 type DetailTab = "perfil" | "contactos-relacionados" | "acciones-comerciales" | "equipos" | "cotizacion" | "archivos" | "notas" | "trazabilidad" | "sucursales";
 type ActivityTab = "actividad" | "notas" | "correos" | "llamadas" | "tareas" | "reuniones";
@@ -713,11 +714,11 @@ type EditableProfileFieldConfig = {
                                         </div>
                                         <div class="col-12 col-lg-4">
                                             <label class="form-label">Pais</label>
-                                            <input class="form-control" [(ngModel)]="branchDraft.country" [ngModelOptions]="{ standalone: true }" placeholder="Ej: Colombia" />
+                                            <select class="form-select" [(ngModel)]="branchDraft.country" (ngModelChange)="onDetailBranchCountryChange($event)" [ngModelOptions]="{ standalone: true }"><option value="">Seleccionar país</option><option *ngFor="let country of countryOptions" [value]="country">{{ country }}</option></select>
                                         </div>
                                         <div class="col-12 col-lg-4">
                                             <label class="form-label">Ciudad</label>
-                                            <input class="form-control" [(ngModel)]="branchDraft.city" [ngModelOptions]="{ standalone: true }" placeholder="Ej: Bogota" />
+                                            <select class="form-select" [(ngModel)]="branchDraft.city" [disabled]="!branchDraft.country" [ngModelOptions]="{ standalone: true }"><option value="">Seleccionar ciudad</option><option *ngFor="let city of detailBranchCityOptions" [value]="city">{{ city }}</option></select>
                                         </div>
                                         <div class="col-12 col-lg-8">
                                             <label class="form-label">Direccion</label>
@@ -996,6 +997,7 @@ type EditableProfileFieldConfig = {
     `,
 })
 export class CrmProspectDetailComponent {
+    readonly countryOptions = COUNTRY_OPTIONS;
     technicalAssignee = "";
     technicalSla = "";
     technicalStatus = "Pendiente";
@@ -1064,6 +1066,13 @@ export class CrmProspectDetailComponent {
     branchSaveErrorMessage = "";
     branchSaveSuccessMessage = "";
     branchDraft = { name: "", contactName: "", contactRole: "", email: "", phone: "", country: "", city: "", address: "", isPrimary: false };
+
+    get detailBranchCityOptions(): readonly string[] { return citiesForCountry(this.branchDraft.country); }
+
+    onDetailBranchCountryChange(country: string): void {
+        this.branchDraft.country = country;
+        if (!this.detailBranchCityOptions.includes(this.branchDraft.city)) this.branchDraft.city = "";
+    }
 
     private readonly crmFollowupsApi = inject(CrmFollowupsApiService);
     private readonly authService = inject(AuthService);

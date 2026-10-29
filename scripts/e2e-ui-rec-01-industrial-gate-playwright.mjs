@@ -1,4 +1,5 @@
 import { chromium } from "playwright";
+import { selectCustomModal } from "./ui-modal-controls.mjs";
 
 const base = (process.env.PW_BASE_URL || "http://127.0.0.1:4200").replace(/\/$/, "");
 const id = String(Date.now()).slice(-8);
@@ -24,7 +25,7 @@ try {
   await row.getByRole("button", { name: /Asociar equipo/i }).click(); await wait(page);
   await page.getByTestId("equipment-modal-next").click(); await wait(page);
   const modal = page.locator("app-crm-prospect-equipment-modal");
-  await modal.locator("select[data-testid^='equipment-modal-registration-mode-']").first().selectOption("manual");
+  await selectCustomModal(page, modal.locator("[data-testid^='equipment-modal-registration-mode-']").first(), "manual");
   for (const [placeholder, value] of [["Familia libre", "Control"], ["Marca del equipo", "Marca QA"], ["Tipo / referencia", "Tipo QA"], ["Serie o referencia visible", `SER-${id}`]]) await modal.locator(`input[placeholder='${placeholder}']`).fill(value);
   await modal.getByTestId("equipment-modal-next").click(); await wait(page);
   const text = await modal.innerText();

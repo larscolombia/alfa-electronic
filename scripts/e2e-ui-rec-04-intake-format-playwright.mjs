@@ -1,5 +1,6 @@
 import { chromium } from "playwright";
 import { writeFileSync } from "node:fs";
+import { selectCustomModal } from "./ui-modal-controls.mjs";
 
 const base = (process.env.PW_BASE_URL || "http://127.0.0.1:4200").replace(/\/$/, "");
 const id = String(Date.now()).slice(-8);
@@ -42,7 +43,7 @@ try {
   await row.getByRole("button", { name: /Asociar equipo/i }).click(); await wait(page);
   const modal = page.locator("app-crm-prospect-equipment-modal");
   await page.getByTestId("equipment-modal-next").click(); await wait(page);
-  await modal.locator("select[data-testid^='equipment-modal-registration-mode-']").first().selectOption("manual");
+  await selectCustomModal(page, modal.locator("[data-testid^='equipment-modal-registration-mode-']").first(), "manual");
   for (const [placeholder, value] of [["Familia libre", "Control"], ["Marca del equipo", "Marca QA"], ["Tipo / referencia", "Tipo QA"], ["Serie o referencia visible", `SER-${id}`]]) await modal.locator(`input[placeholder='${placeholder}']`).fill(value);
   await modal.getByTestId("equipment-modal-next").click(); await wait(page);
   const costSwitch = modal.locator("input[id$='-costAboveTwoMillion']");
@@ -58,7 +59,7 @@ try {
   await modal.locator('input[type="file"][accept="image/*"]').setInputFiles(pngPaths);
   await modal.locator(".evidence-photo-card").nth(3).waitFor({ state: "visible" });
   const faceLabels = ["Cara frente", "Cara atrás", "Cara izquierda", "Cara derecha"];
-  for (let i = 0; i < faceLabels.length; i += 1) await modal.locator(".evidence-photo-card select").nth(i).selectOption({ label: faceLabels[i] });
+  for (let i = 0; i < faceLabels.length; i += 1) await selectCustomModal(page, modal.locator(".evidence-photo-card").nth(i).getByTestId("equipment-modal-evidence-type"), { label: faceLabels[i] });
   await wait(page);
   result.facesComplete = await modal.getByText("Caras completas").first().isVisible();
   if (!result.facesComplete) throw new Error("El checklist de caras no quedó completo tras subir las 4 fotos");

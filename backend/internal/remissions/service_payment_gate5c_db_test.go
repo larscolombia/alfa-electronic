@@ -455,3 +455,38 @@ func TestInvoiceOptionsMatchPrefixedAndPlainClientID(t *testing.T) {
 		t.Error("la factura manual (client_id puro) dejó de aparecer en el selector")
 	}
 }
+
+// Caso real del recorrido UI (recepción → remisión "Completar"): el prospecto
+// trae NIT, pero el cliente en crm_clients quedó sin NIT (la alta rápida no lo
+// propaga). La remisión guarda client_nit <> '' que no matchea a ningún
+// cliente y, con el criterio exclusivo, el selector "Vincular factura" quedaba
+// vacío aunque la factura pagada existiera. El fallback por nombre/empresa lo
+// resuelve, con el mismo criterio que la puerta de crédito.
+func TestInvoiceOptionsFallsBackToClientNameWhenNITMatchesNoOne(t *testing.T) {
+	db := openTestDB(t)
+	s := NewService(db)
+	companyID := testCompany(t, db, "gate-options-nitfallback")
+
+	clientID := seedClient(t, db, companyID, "", "UI Industria Prueba", false)
+	invoiceID := seedInvoice(t, db, companyID, "crm-client-"+clientID, InvoiceStatusPaid, 10000000)
+
+	req := sampleRequest()
+	req.DispatchType = contraEntrega
+	req.ClientName = "UI Industria Prueba"
+	req.ClientNIT = "900123456-7" // NIT que ningún cliente tiene en catálogo.
+	created, err := s.Create(companyID, req, "tester")
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	options, err := s.InvoiceOptions(companyID, created.ID)
+	if err != nil {
+		t.Fatalf("InvoiceOptions: %v", err)
+	}
+	if len(options) != 1 || options[0].ID != invoiceID {
+		t.Fatalf("InvoiceOptions = %+v, esperaba la factura pagada del cliente vía fallback de nombre", options)
+	}
+	if !options[0].Paid {
+		t.Error("paid=false para una factura en estado Pagado")
+	}
+}

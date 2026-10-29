@@ -15,6 +15,10 @@ assert.doesNotMatch(source, /<th[^>]*><input type="checkbox"/);
 assert.doesNotMatch(source, /<td><input type="checkbox"/);
 assert.match(source, /Información básica/);
 assert.match(source, /Clasificación y responsable/);
-assert.match(source, /Valor, estado y servicio/);
+assert.match(source, /data-testid="prospect-country"/);
+assert.match(source, /\(ngModelChange\)="onProspectCountryChange\(\$event\)"/);
+assert.match(source, /data-testid="prospect-city"/);
+assert.match(source, /citiesForCountry\(this\.formPais\)/);
+assert.doesNotMatch(source, /Valor, estado y servicio/);
 
 console.log("OK: estructura UX de CRM Prospectos lista para verificación funcional.");

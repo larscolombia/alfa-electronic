@@ -173,6 +173,7 @@ export interface ProspectEquipmentRecord {
     phone: string;
     address: string;
     city: string;
+    country: string;
     contactName: string;
     contactRole: string;
     cellphone: string;
@@ -756,6 +757,7 @@ function normalizeStoredRecord(record: Partial<ProspectEquipmentRecord>): Prospe
         phone: String(record.phone ?? "").trim(),
         address: String(record.address ?? "").trim(),
         city: String(record.city ?? "").trim(),
+        country: String(record.country ?? "").trim(),
         contactName: String(record.contactName ?? "").trim(),
         contactRole: String(record.contactRole ?? "").trim(),
         cellphone: String(record.cellphone ?? "").trim(),

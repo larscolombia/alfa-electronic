@@ -61,6 +61,7 @@ type RemissionItem struct {
 	EquipmentID    string  `json:"equipmentId"`
 	Identifier     string  `json:"identifier"`
 	Description    string  `json:"description"`
+	ServiceTypeName string `json:"serviceTypeName"`
 	WarrantyMonths int     `json:"warrantyMonths"`
 	UnitPrice      float64 `json:"unitPrice"`
 	Quantity       int     `json:"quantity"`

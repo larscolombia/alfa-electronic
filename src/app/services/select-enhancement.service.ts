@@ -5,6 +5,7 @@ import Choices from "choices.js";
 type EnhancedSelect = {
     choices: Choices;
     optionsObserver: MutationObserver;
+    onChange: () => void;
 };
 
 const ENHANCE_DEBOUNCE_MS = 50;
@@ -43,8 +44,9 @@ export class SelectEnhancementService {
         }
         this.pageObserver?.disconnect();
         this.pageObserver = null;
-        for (const { choices, optionsObserver } of this.enhanced.values()) {
+        for (const [select, { choices, optionsObserver, onChange }] of this.enhanced) {
             optionsObserver.disconnect();
+            select.removeEventListener("change", onChange);
             choices.destroy();
         }
         this.enhanced.clear();
@@ -103,17 +105,26 @@ export class SelectEnhancementService {
             refreshQueued = true;
             queueMicrotask(() => {
                 refreshQueued = false;
-                if (select.isConnected) choices.refresh();
+                if (!select.isConnected) return;
+                choices.refresh();
+                if (select.disabled) choices.disable();
+                else choices.enable();
             });
         });
-        optionsObserver.observe(select, { childList: true, subtree: true });
-        this.enhanced.set(select, { choices, optionsObserver });
+        optionsObserver.observe(select, { childList: true, subtree: true, attributes: true, attributeFilter: ["disabled"] });
+        // Choices dispara el cambio desde la zona externa usada para decorar
+        // el DOM. Volvemos a entrar a Angular para que ngModel y los selectores
+        // dependientes (por ejemplo País → Ciudad) se rendericen de inmediato.
+        const onChange = () => this.zone.run(() => undefined);
+        select.addEventListener("change", onChange);
+        this.enhanced.set(select, { choices, optionsObserver, onChange });
     }
 
     private removeDisconnected(): void {
         for (const [select, enhanced] of this.enhanced) {
             if (select.isConnected) continue;
             enhanced.optionsObserver.disconnect();
+            select.removeEventListener("change", enhanced.onChange);
             enhanced.choices.destroy();
             this.enhanced.delete(select);
         }

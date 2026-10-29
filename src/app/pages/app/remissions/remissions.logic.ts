@@ -101,7 +101,11 @@ export function validateRemissionDraft(form: any): string {
         return "la orden de compra debe acompañar el envio: registre el numero de OC antes de guardar";
     }
     for (const item of items) {
-        if (item?.sourceSeries && String(item.identifier || "").trim() !== String(item.sourceSeries).trim()) {
+        const identifier = String(item?.identifier || "").trim();
+        // El identificador operativo es el código interno EQ-*. La serie se
+        // conserva como trazabilidad separada, por lo que no debe bloquear la
+        // remisión cuando ambos valores son deliberadamente distintos.
+        if (item?.sourceSeries && !/^EQ-[A-Z0-9]+$/i.test(identifier) && identifier !== String(item.sourceSeries).trim()) {
             return "marca, tipo y serie deben coincidir exactamente con el equipo origen; no se aceptan coincidencias parciales";
         }
     }
@@ -154,11 +158,13 @@ export interface RemissionPrefill {
         equipmentId: string;
         identifier: string;
         description: string;
+        serviceTypeName: string;
         accessories: string;
         anchoredNote: string;
         warrantyMonths: number;
         unitPrice: number;
         quantity: number;
+        sourceSeries: string;
     }>;
 }
 
@@ -180,7 +186,9 @@ export function buildRemissionPrefillFromProject(project: any, equipmentItem?: a
     }
 
     const identifier = String(
-        props.equipmentIdentifier
+        props.equipmentCode
+        || equipment.equipmentCode
+        || props.equipmentIdentifier
         || (equipmentItem && (equipmentItem.receivedIdentifier || equipmentItem.identifier))
         || (equipmentItem && equipmentItem.serie)
         || equipment.identifier || equipment.serie || "",
@@ -209,11 +217,18 @@ export function buildRemissionPrefillFromProject(project: any, equipmentItem?: a
             equipmentId: String(props.equipmentItemId || (equipmentItem && (equipmentItem.itemId || equipmentItem.id)) || ""),
             identifier,
             description,
+            serviceTypeName: String(props.equipmentServiceType || equipment.serviceTypeName || (equipmentItem && equipmentItem.serviceTypeName) || "").trim(),
             accessories: String(props.accessories || (equipmentItem && equipmentItem.accessories) || "").trim(),
             anchoredNote: buildAnchoredAlert({ borrowedEquipments: borrowed }),
             warrantyMonths: itemWarranty,
             unitPrice: 0,
             quantity: 1,
+            sourceSeries: String(
+                props.equipmentSerie
+                || equipment.serie
+                || (equipmentItem && (equipmentItem.serie || equipmentItem.receivedIdentifier))
+                || "",
+            ).trim(),
         }],
     };
 }

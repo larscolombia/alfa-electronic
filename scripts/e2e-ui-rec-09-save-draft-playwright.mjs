@@ -1,4 +1,5 @@
 import { chromium } from "playwright";
+import { selectCustomModal } from "./ui-modal-controls.mjs";
 
 const base = (process.env.PW_BASE_URL || "http://127.0.0.1:4200").replace(/\/$/, "");
 const id = String(Date.now()).slice(-8);
@@ -39,7 +40,7 @@ try {
   await modal.getByTestId("equipment-modal-next").click(); await wait(page);
 
   // Paso Equipos: modo manual + datos del equipo (sin fotos en todo el flujo).
-  await modal.locator("select[data-testid^='equipment-modal-registration-mode-']").first().selectOption("manual");
+  await selectCustomModal(page, modal.locator("[data-testid^='equipment-modal-registration-mode-']").first(), "manual");
   for (const [placeholder, value] of [["Familia libre", "Instrumento"], ["Marca del equipo", "Marca QA"], ["Tipo / referencia", "Multímetro"], ["Serie o referencia visible", serie]]) await modal.locator(`input[placeholder='${placeholder}']`).fill(value);
 
   // Paso Preguntas: costo > 2M = Sí (libera gate REC-01) y software descartado = Sí.

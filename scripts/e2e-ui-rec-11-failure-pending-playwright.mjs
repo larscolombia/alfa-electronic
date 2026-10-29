@@ -1,5 +1,6 @@
 import { chromium } from "playwright";
 import { writeFileSync } from "node:fs";
+import { selectCustomModal } from "./ui-modal-controls.mjs";
 
 const base = (process.env.PW_BASE_URL || "http://127.0.0.1:4200").replace(/\/$/, "");
 const id = String(Date.now()).slice(-8);
@@ -44,7 +45,7 @@ try {
   await page.getByTestId("equipment-modal-next").click(); await wait(page);
 
   const modal = page.locator("app-crm-prospect-equipment-modal");
-  await modal.locator("select[data-testid^='equipment-modal-registration-mode-']").first().selectOption("manual");
+  await selectCustomModal(page, modal.locator("[data-testid^='equipment-modal-registration-mode-']").first(), "manual");
   for (const [placeholder, value] of [
     ["Familia libre", "Control"],
     ["Marca del equipo", "Marca QA"],
@@ -72,7 +73,7 @@ try {
   await photoInput.setInputFiles(faces.map(f => f.path));
   await modal.locator(".evidence-photo-card").nth(3).waitFor({ state: "visible" }); await wait(page);
   const cards = modal.locator(".evidence-photo-card");
-  for (let i = 0; i < faces.length; i++) await cards.nth(i).locator("select.form-select").selectOption({ label: faces[i].label });
+  for (let i = 0; i < faces.length; i++) await selectCustomModal(page, cards.nth(i).getByTestId("equipment-modal-evidence-type"), { label: faces[i].label });
   await wait(page);
 
   await modal.getByTestId("equipment-modal-next").click(); await wait(page);

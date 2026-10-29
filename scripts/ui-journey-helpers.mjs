@@ -8,18 +8,81 @@ export function png() {
   return Buffer.concat([Buffer.from([137,80,78,71,13,10,26,10]),chunk("IHDR",h),chunk("IDAT",zlib.deflateSync(raw)),chunk("IEND",Buffer.alloc(0))]);
 }
 
+const FOCUS_OUTLINE = "4px solid #ff00aa";
+function paint(locator) { return locator.evaluate(e=>{e.classList.add("ui-journey-focus"); e.style.outline=FOCUS_OUTLINE; e.style.outlineOffset="3px";}).catch(()=>{}); }
+
 export function makeUtils({ base, pause, data }) {
   async function visible(locator, message) { if (!await locator.waitFor({state:"visible",timeout:30000}).then(()=>true).catch(()=>false)) throw new Error(message); return locator; }
   async function click(page, locator, label) {
     await visible(locator, `No encontré CTA: ${label}`); await locator.scrollIntoViewIfNeeded(); const b=await locator.boundingBox();
     if (b) await page.mouse.move(b.x+b.width/2,b.y+b.height/2,{steps:12});
-    await locator.evaluate(e=>{e.classList.add("ui-journey-cta"); e.style.outline="4px solid #ff00aa"; e.style.outlineOffset="4px";});
+    await paint(locator);
     await page.waitForTimeout(pause); await locator.click(); await page.waitForTimeout(pause);
   }
-  async function selectLabel(scope, pattern, option) { const label=scope.locator("label.form-label").filter({hasText:pattern}).first(); const s=label.locator("xpath=..").locator("select"); await s.selectOption(option,{force:true}); }
-  async function fillLabel(scope, text, value) { const label=scope.locator("label.form-label").filter({hasText:new RegExp(`^\\s*${text}\\s*$`)}).first(); await label.locator("xpath=following-sibling::input").fill(value); }
+  async function mark(page, locator) {
+    const target=locator.first();
+    if (!await target.waitFor({state:"attached",timeout:5000}).then(()=>true).catch(()=>false)) return;
+    let painted=target;
+    if (await target.isVisible().catch(()=>false)) {
+      await target.scrollIntoViewIfNeeded().catch(()=>{});
+      const b=await target.boundingBox().catch(()=>null);
+      if (b) await page.mouse.move(b.x+b.width/2,b.y+b.height/2,{steps:8});
+    } else {
+      // Choices.js oculta el <select> nativo: se resalta el control visible.
+      const wrapper=target.locator("xpath=ancestor::div[contains(@class,'choices')][1]");
+      if (await wrapper.count().catch(()=>0)) painted=wrapper.first();
+    }
+    await paint(painted);
+    await page.waitForTimeout(pause);
+  }
+  async function fillFocus(page, locator, value) { await mark(page,locator); await locator.fill(value); await page.waitForTimeout(pause); }
+  async function selectFocus(page, locator, option, opts) {
+    const select = locator.first();
+    await mark(page, select);
+    // Los selectores mejorados con Choices.js esconden el <select> original.
+    // Elegimos la opción del control visible para que Angular reciba el mismo
+    // evento de usuario que en producción, en vez de mutar el nodo oculto.
+    if ((await select.getAttribute("data-choice").catch(() => null)) === "active") {
+      const label = typeof option === "string"
+        ? option
+        : option?.index !== undefined
+          ? (await select.locator("option").nth(Number(option.index)).innerText()).trim()
+          : String(option?.label ?? option?.value ?? "");
+      if (!label) throw new Error("No se pudo determinar la opción visible del selector");
+      const name = await select.getAttribute("name");
+      const wrapper = name
+        ? page.locator(`.choices:has(select[name="${escapeCssAttribute(name)}"])`).first()
+        : select.locator("xpath=ancestor::*[contains(@class, 'choices')][1]");
+      if (await wrapper.count()) {
+        const trigger = wrapper.locator(".choices__inner").first();
+        if (await trigger.isVisible().catch(() => false)) {
+          await trigger.click();
+          const choice = wrapper.locator(".choices__list--dropdown .choices__item--choice").filter({ hasText: new RegExp(`^\\s*${escapeRegExp(label)}\\s*$`) }).first();
+          await visible(choice, `No encontré la opción visible: ${label}`);
+          await choice.click();
+        } else {
+          await select.selectOption(option, { ...opts, force: true });
+        }
+      } else {
+        await select.selectOption(option, { ...opts, force: true });
+      }
+    } else {
+      await select.selectOption(option, opts);
+    }
+    await page.waitForTimeout(pause);
+  }
+  async function checkFocus(page, locator) { await mark(page,locator); if (!await locator.isChecked().catch(()=>false)) await locator.check(); await page.waitForTimeout(pause); }
+  async function attachFocus(page, locator, files) { await mark(page,locator); await locator.setInputFiles(files); await page.waitForTimeout(pause); }
+  async function selectLabel(scope, pattern, option) { const label=scope.locator("label.form-label").filter({hasText:pattern}).first(); const s=label.locator("xpath=..").locator("select"); await paint(s.first()); await s.selectOption(option,{force:true}); }
+  async function fillLabel(scope, text, value) { const label=scope.locator("label.form-label").filter({hasText:new RegExp(`^\\s*${text}\\s*$`)}).first(); const input=label.locator("xpath=following-sibling::input"); await paint(input.first()); await input.fill(value); }
+  async function ensureBoardFullView(page) {
+    const box=page.locator(".compact-mode-toggle input[type=checkbox]").first();
+    if(!await box.waitFor({state:"attached",timeout:20000}).then(()=>true).catch(()=>false)) return;
+    if(await box.isChecked().catch(()=>false)){ await mark(page,box); await box.uncheck(); await page.waitForTimeout(pause); await page.waitForTimeout(600); }
+  }
   async function openCard(page) {
     await page.goto(`${base}/app/work-projects`,{waitUntil:"domcontentloaded"});
+    await ensureBoardFullView(page);
     const card=page.locator(".project-card",{hasText:data.serie}).first();
     if(!await card.waitFor({state:"visible",timeout:20000}).then(()=>true).catch(()=>false)) await page.waitForTimeout(8000);
     await visible(card,"La tarjeta del proyecto no aparece en el tablero");
@@ -45,5 +108,13 @@ export function makeUtils({ base, pause, data }) {
     await click(page,d.getByRole("button",{name:"Guardar cambios"}),"Guardar cambios");
     await page.waitForTimeout(1000);
   }
-  return { visible, click, selectLabel, fillLabel, openCard, confirmTransitionIfAsked, moveAndSave };
+  return { visible, click, mark, fillFocus, selectFocus, checkFocus, attachFocus, selectLabel, fillLabel, openCard, ensureBoardFullView, confirmTransitionIfAsked, moveAndSave };
+}
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function escapeCssAttribute(value) {
+  return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 }

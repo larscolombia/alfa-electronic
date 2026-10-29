@@ -7,6 +7,13 @@ export interface EquipmentQrPayload {
     shortCode: string;
 }
 
+/** Código interno, estable y legible que identifica al equipo dentro de Alfa.
+ * No reutiliza la serie ni un código leído de la placa del fabricante. */
+export function buildInternalEquipmentCode(itemId: string): string {
+    const normalized = String(itemId ?? "").trim().replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+    return normalized ? `EQ-${normalized.slice(-8)}` : "";
+}
+
 export function buildEquipmentQrShortCode(recordId: string, itemId: string): string {
     const recordPart = String(recordId ?? "").trim().slice(-6).toUpperCase();
     const itemPart = String(itemId ?? "").trim().slice(-4).toUpperCase();

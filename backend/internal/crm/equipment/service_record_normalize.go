@@ -24,6 +24,7 @@ func normalizeRecord(record Record) Record {
 	record.Phone = strings.TrimSpace(record.Phone)
 	record.Address = strings.TrimSpace(record.Address)
 	record.City = strings.TrimSpace(record.City)
+	record.Country = strings.TrimSpace(record.Country)
 	record.ContactName = strings.TrimSpace(record.ContactName)
 	record.ContactRole = strings.TrimSpace(record.ContactRole)
 	record.Cellphone = strings.TrimSpace(record.Cellphone)

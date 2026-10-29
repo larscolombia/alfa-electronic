@@ -2,8 +2,11 @@ package remissions
 
 import (
 	"errors"
+	"regexp"
 	"strings"
 )
+
+var internalEquipmentCodePattern = regexp.MustCompile(`(?i)^EQ-[A-Z0-9]+$`)
 
 // Reglas duras del requerimiento de despacho, validadas en el SERVIDOR.
 // El navegador sólo propone: si estas reglas vivieran en el cliente, un fetch
@@ -74,7 +77,10 @@ func validateUpsert(req UpsertRemissionRequest) error {
 		return errPurchaseOrderRequired
 	}
 	for _, item := range req.Items {
-		if strings.TrimSpace(item.SourceSeries) != "" && strings.TrimSpace(item.Identifier) != strings.TrimSpace(item.SourceSeries) {
+		identifier := strings.TrimSpace(item.Identifier)
+		// EQ-* es el código interno del software. La serie de origen se
+		// mantiene como trazabilidad separada y puede ser diferente.
+		if strings.TrimSpace(item.SourceSeries) != "" && !internalEquipmentCodePattern.MatchString(identifier) && identifier != strings.TrimSpace(item.SourceSeries) {
 			return errEquipmentMismatch
 		}
 	}
