@@ -71,7 +71,7 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
     standalone: true,
     imports: [RouterLink, NgFor, NgIf, FormsModule, CrmProspectEquipmentModalComponent, SearchableSelectDirective],
     template: `
-        <div class="container-fluid py-3">
+        <div class="container-fluid py-3" *ngIf="!showProspectForm">
             <div class="row gx-3 gx-lg-4 align-items-center page-title">
                 <div class="col mb-3 mb-sm-0 d-flex align-items-start gap-2">
                     <button class="btn btn-outline-secondary" type="button" (click)="goBack()" data-testid="back-btn">
@@ -95,7 +95,7 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
             </nav>
         </div>
 
-        <div class="container-fluid mt-3" id="main-content">
+        <div class="container-fluid" [class.mt-3]="!showProspectForm" [class.mt-2]="showProspectForm" id="main-content">
             <div class="card adminuiux-card mb-3 mb-lg-4" *ngIf="!showProspectForm">
                 <div class="card-body">
                     <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
@@ -226,7 +226,7 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
                 </div>
             </div>
 
-            <div #prospectFormCard class="card adminuiux-card mb-3 mb-lg-4" *ngIf="showProspectForm">
+            <div #prospectFormCard class="card adminuiux-card prospect-form-card mb-3" *ngIf="showProspectForm">
                 <div class="card-header border-bottom">
                     <div class="d-flex align-items-center justify-content-between gap-2">
                         <div>
@@ -236,11 +236,11 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
                         <button class="btn btn-outline-secondary" type="button" (click)="closeProspectForm()" [disabled]="isSavingProspect"><i class="bi bi-x-lg me-1"></i> Cerrar</button>
                     </div>
                 </div>
-                <div class="card-body">
+                <div class="card-body prospect-form-body">
                     <div class="alert alert-danger border mb-3" *ngIf="catalogsLoadErrorMessage">{{ catalogsLoadErrorMessage }}</div>
                     <h6 class="text-uppercase text-secondary small fw-bold mb-3">Información básica</h6>
-                    <div class="row gx-3">
-                        <div class="col-12 col-lg-3 mb-3">
+                    <div class="row gx-3 prospect-form-grid">
+                        <div class="col-12 col-sm-6 col-lg-3 mb-2">
                             <label class="form-label" for="prospect-salutation">Saludo</label>
                             <select appSearchableSelect id="prospect-salutation" class="form-select" [(ngModel)]="formSaludo" name="formSaludo">
                                 <option value="--">--</option>
@@ -248,7 +248,7 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
                                 <option value="Sra.">Sra.</option>
                             </select>
                         </div>
-                        <div class="col-12 col-lg-3 mb-3">
+                        <div class="col-12 col-sm-6 col-lg-3 mb-2">
                             <label class="form-label" for="prospect-company">Empresa</label>
                             <input
                                 id="prospect-company"
@@ -259,46 +259,46 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
                                 name="formCompania"
                                 maxlength="180" />
                         </div>
-                        <div class="col-12 col-lg-3 mb-3">
+                        <div class="col-12 col-sm-6 col-lg-3 mb-2">
                             <label class="form-label">Correo electrónico del contacto</label>
                             <input class="form-control" type="email" placeholder="por ejemplo, juanperez@example.com" [(ngModel)]="formCorreo" name="formCorreo" maxlength="180" />
                         </div>
-                        <div class="col-12 col-lg-3 mb-3">
+                        <div class="col-12 col-sm-6 col-lg-3 mb-2">
                             <label class="form-label" for="prospect-contact-name">Nombre del contacto *</label>
                             <input id="prospect-contact-name" #prospectNameInput class="form-control" placeholder="por ejemplo, Juan Perez" [(ngModel)]="formNombre" name="formNombre" maxlength="180" />
                         </div>
-                        <div class="col-12 col-lg-3 mb-3">
+                        <div class="col-12 col-sm-6 col-lg-3 mb-2">
                             <label class="form-label" for="prospect-nit">NIT *</label>
                             <input id="prospect-nit" class="form-control" [class.is-invalid]="nitTouched && !isValidNit(formNit)" placeholder="por ejemplo, 900123456-7" [ngModel]="formNit" (ngModelChange)="onNitInput($event)" name="formNit" inputmode="numeric" maxlength="80" aria-describedby="prospect-nit-help" />
                             <div id="prospect-nit-help" class="invalid-feedback">Ingresa el NIT con guion, por ejemplo 900123456-7.</div>
                         </div>
-                        <div class="col-12 col-lg-3 mb-3">
+                        <div class="col-12 col-sm-6 col-lg-3 mb-2">
                             <label class="form-label">Móvil</label>
                             <input class="form-control" placeholder="por ejemplo, 3001234567" [(ngModel)]="formMovil" name="formMovil" maxlength="40" />
                         </div>
-                        <div class="col-12 col-lg-3 mb-3">
+                        <div class="col-12 col-sm-6 col-lg-3 mb-2">
                             <label class="form-label">Sitio web</label>
                             <input class="form-control" type="url" placeholder="https://empresa.com" [(ngModel)]="formSitioWeb" name="formSitioWeb" maxlength="255" />
                         </div>
-                        <div class="col-12 col-lg-3 mb-3">
+                        <div class="col-12 col-sm-6 col-lg-3 mb-2">
                             <label class="form-label">Telefono de oficina</label>
                             <input class="form-control" placeholder="por ejemplo, 6011234567" [(ngModel)]="formTelefonoOficina" name="formTelefonoOficina" maxlength="40" />
                         </div>
-                        <div class="col-12 col-lg-3 mb-3">
+                        <div class="col-12 col-sm-6 col-lg-3 mb-2">
                             <label class="form-label">País</label>
                             <select data-testid="prospect-country" class="form-select" [(ngModel)]="formPais" (ngModelChange)="onProspectCountryChange($event)" name="formPais"><option value="">Seleccionar país</option><option *ngFor="let country of countryOptions" [value]="country">{{ country }}</option></select>
                         </div>
-                        <div class="col-12 col-lg-3 mb-3">
+                        <div class="col-12 col-sm-6 col-lg-3 mb-2">
                             <label class="form-label">Ciudad</label>
                             <select data-testid="prospect-city" class="form-select" [(ngModel)]="formCiudad" [disabled]="!formPais" name="formCiudad"><option value="">Seleccionar ciudad</option><option *ngFor="let city of prospectCityOptions" [value]="city">{{ city }}</option></select>
                         </div>
-                        <div class="col-12 mb-3">
+                        <div class="col-12 col-lg-6 mb-2">
                             <label class="form-label">Dirección</label>
                             <input class="form-control" placeholder="Direccion principal" [(ngModel)]="formDireccion" name="formDireccion" maxlength="500" />
                         </div>
 
                         <div class="col-12"><hr class="my-2"><h6 class="text-uppercase text-secondary small fw-bold my-3">Clasificación y responsable</h6></div>
-                        <div class="col-12 col-lg-4 mb-3">
+                        <div class="col-12 col-lg-4 mb-2">
                             <label class="form-label" for="prospect-owner">Empleado responsable</label>
                             <select appSearchableSelect id="prospect-owner" class="form-select" [(ngModel)]="formEmpleado" name="formEmpleado">
                                 <option value="">--</option>
@@ -306,7 +306,7 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
                             </select>
                             <div class="form-text text-secondary">Solo empleados activos de RRHH con rol comercial. Si no aparece quien necesitas, créalo en el directorio de RRHH.</div>
                         </div>
-                        <div class="col-12 col-lg-4 mb-3">
+                        <div class="col-12 col-lg-4 mb-2">
                             <label class="form-label" for="prospect-source">Fuente del Prospecto</label>
                             <div class="input-group">
                                 <select appSearchableSelect id="prospect-source" class="form-select" [(ngModel)]="formFuente" name="formFuente">
@@ -316,7 +316,7 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
                                 <button class="btn btn-outline-secondary" type="button" (click)="openQuickAddModal('fuentes')">Agregar</button>
                             </div>
                         </div>
-                        <div class="col-12 col-lg-4 mb-3">
+                        <div class="col-12 col-lg-4 mb-2">
                             <label class="form-label" for="prospect-category">Categoría del prospecto</label>
                             <div class="input-group">
                                 <select appSearchableSelect id="prospect-category" class="form-select" [(ngModel)]="formCategoria" name="formCategoria">
@@ -327,7 +327,7 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
                             </div>
                         </div>
 
-                        <div class="col-12 col-lg-12 mb-3">
+                        <div class="col-12 mb-2">
                             <label class="form-label d-block">Zona</label>
                             <div class="d-flex flex-wrap gap-3">
                                 @for (zone of zoneOptions; track zone.id) {
@@ -344,8 +344,12 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
                             </div>
                         </div>
 
-                        <div class="col-12"><hr class="my-2"><h6 class="text-uppercase text-secondary small fw-bold my-3">Sedes y contactos</h6></div>
-                        <div class="col-12 mb-3">
+                        <div class="col-12 mb-2">
+                            <details class="prospect-branches-details">
+                                <summary class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                                    <span class="text-uppercase text-secondary small fw-bold">Sedes y contactos <span class="fw-normal">(opcional)</span></span>
+                                    <span class="small text-secondary">{{ prospectBranches.length ? prospectBranches.length + ' registrada' + (prospectBranches.length === 1 ? '' : 's') : 'Agregar solo si aplica' }}</span>
+                                </summary>
                             <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
                                 <label class="form-label mb-0">Sucursales del prospecto</label>
                                 <button class="btn btn-sm btn-outline-theme" type="button" (click)="addProspectBranch()">
@@ -437,10 +441,11 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
                                     </div>
                                 </div>
                             }
+                            </details>
                         </div>
 
                         <div class="col-12"><hr class="my-2"><h6 class="text-uppercase text-secondary small fw-bold my-3">Estado y servicio</h6></div>
-                        <div class="col-12 col-lg-6 mb-3">
+                        <div class="col-12 col-lg-4 mb-2">
                             <label class="form-label" for="prospect-status">Estado</label>
                             <select appSearchableSelect id="prospect-status" class="form-select" [(ngModel)]="formEstado" name="formEstado">
                                 <option value="Pendiente">Pendiente</option>
@@ -449,7 +454,7 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
                             </select>
                         </div>
 
-                        <div class="col-12 col-lg-6 mb-3">
+                        <div class="col-12 col-lg-4 mb-2">
                             <label class="form-label" for="prospect-service">Servicios</label>
                             <div class="input-group">
                                 <select appSearchableSelect id="prospect-service" class="form-select" [(ngModel)]="formServicio" name="formServicio">
@@ -460,9 +465,9 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
                             </div>
                         </div>
 
-                        <div class="col-12 mb-3">
+                        <div class="col-12 col-lg-4 mb-2">
                             <label class="form-label">Nota</label>
-                            <textarea class="form-control" rows="5" placeholder="Escribe observaciones sobre el prospecto..." [(ngModel)]="formNota" name="formNota" maxlength="5000"></textarea>
+                            <textarea class="form-control" rows="2" placeholder="Escribe observaciones sobre el prospecto..." [(ngModel)]="formNota" name="formNota" maxlength="5000"></textarea>
                         </div>
                     </div>
                 </div>
@@ -553,6 +558,21 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
             (closed)="closeEquipmentModal()"
             (saved)="handleEquipmentSaved()"></app-crm-prospect-equipment-modal>
     `,
+    styles: [`
+        .prospect-form-card .card-header { padding-block: .75rem; }
+        .prospect-form-body { padding-block: 1rem; }
+        .prospect-form-grid .form-label { margin-bottom: .25rem; font-size: .875rem; }
+        .prospect-form-grid .form-text { margin-top: .2rem; line-height: 1.2; }
+        .prospect-branches-details { border-top: 1px solid var(--bs-border-color); padding-top: .65rem; }
+        .prospect-branches-details summary { cursor: pointer; list-style: none; }
+        .prospect-branches-details summary::-webkit-details-marker { display: none; }
+        .prospect-branches-details summary::before { content: '\\F282'; font-family: bootstrap-icons; margin-right: .45rem; }
+        .prospect-branches-details[open] summary::before { content: '\\F286'; }
+        .prospect-branches-details > div { margin-top: .75rem; }
+        @media (min-width: 1200px) {
+            .prospect-form-card { max-width: 1600px; margin-inline: auto; }
+        }
+    `],
 })
 export class CrmProspectsComponent {
     @ViewChild("prospectFormCard") private prospectFormCardRef?: ElementRef<HTMLDivElement>;
