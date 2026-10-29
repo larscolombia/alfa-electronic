@@ -869,6 +869,9 @@ type SoftwareBackupInfo = {
                                         <div class="row gx-4 gy-4 align-items-start">
                                             <div class="col-12 col-xxl-4">
                                                 <div class="border rounded p-3 bg-white h-100 evidence-side-panel">
+                                                    <label class="form-label">Código interno del equipo</label>
+                                                    <input class="form-control mb-2" [value]="internalEquipmentCode(item)" readonly [attr.data-testid]="'equipment-internal-code-' + i" />
+                                                    <p class="small text-secondary mb-3">ID inmutable generado por el sistema; este es el valor de la etiqueta QR.</p>
                                                     <label class="form-label">Identificador recibido / código escaneado</label>
                                                     <input
                                                         class="form-control"
@@ -1192,6 +1195,12 @@ type SoftwareBackupInfo = {
 
                 <div class="scanner-video-frame mb-3">
                     <video #scannerVideo autoplay playsinline muted></video>
+                </div>
+
+                <label class="form-label">QR leído (respaldo sin cámara)</label>
+                <div class="input-group mb-3">
+                    <input class="form-control" [(ngModel)]="scannerManualValue" [ngModelOptions]="{ standalone: true }" data-testid="equipment-modal-scanner-manual" placeholder="Pega aquí el contenido del QR" />
+                    <button class="btn btn-outline-theme" type="button" data-testid="equipment-modal-scanner-apply" (click)="applyScannedQr(scannerManualValue, 'manual-qr')">Usar QR</button>
                 </div>
 
                 <p class="small text-secondary mb-2">{{ scannerStatus }}</p>
@@ -1720,6 +1729,7 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
     currentStepIndex = 0;
     evidenceLoadingItemId: string | null = null;
     showScannerModal = false;
+    scannerManualValue = "";
     scannerStatus = "";
     scannerError = "";
     scanningItemId: string | null = null;
@@ -2292,6 +2302,7 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
         }
 
         this.showScannerModal = true;
+        this.scannerManualValue = "";
         this.scanningItemId = item.id;
         this.scannerError = "";
         this.scannerStatus = "Solicita permisos de cámara y apunta al QR o código de barras del equipo.";
@@ -2308,6 +2319,7 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
         this.scannerStatus = "";
         this.scannerError = "";
         this.scanningItemId = null;
+        this.scannerManualValue = "";
         this.stopScannerSession();
     }
 
@@ -3287,7 +3299,7 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
         const uploadedBy = this.authService.getCurrentUserName() || "recepcion";
 
         for (const item of items) {
-            const identifier = (item.receivedIdentifier || item.serie || item.id).trim();
+            const identifier = buildInternalEquipmentCode(item.id);
             if (!identifier) {
                 continue;
             }
@@ -3320,6 +3332,10 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
 
             item.attachments = [...nonQrAttachments, qrAttachment];
         }
+    }
+
+    internalEquipmentCode(item: ProspectEquipmentItem): string {
+        return buildInternalEquipmentCode(item.id);
     }
 
     private async sha256Hex(value: string): Promise<string> {
@@ -4349,17 +4365,37 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
                     return;
                 }
 
-                item.receivedIdentifier = result.getText().trim();
-                item.receivedIdentifierType = String(result.getBarcodeFormat()).toLowerCase();
-                item.receivedIdentifierSource = "camera-scan";
-                item.receivedIdentifierCapturedAt = new Date().toISOString();
-                this.scannerStatus = "Identificador capturado correctamente.";
-                this.closeScanner();
+                this.applyScannedQr(result.getText(), String(result.getBarcodeFormat()).toLowerCase());
             });
         } catch {
             this.scannerError = "No fue posible iniciar el escáner. Verifica permisos de cámara o usa el campo manual.";
             this.scannerStatus = "Escáner no disponible.";
         }
+    }
+
+    applyScannedQr(rawValue: string, source: string): void {
+        const target = this.draft.items.find((entry) => entry.id === this.scanningItemId);
+        if (!target) return;
+        const value = String(rawValue ?? "").trim();
+        if (!value) { this.scannerError = "El QR leído está vacío."; return; }
+        try {
+            const payload = JSON.parse(value);
+            const record = this.equipmentRecordsCache.find((entry) => entry.id === String(payload.recordId ?? "").trim());
+            const sourceItem = record?.items.find((entry) => entry.id === String(payload.itemId ?? "").trim());
+            if (!sourceItem || buildInternalEquipmentCode(sourceItem.id) !== String(payload.identifier ?? "").trim()) throw new Error("unknown");
+            const index = this.draft.items.findIndex((entry) => entry.id === target.id);
+            this.draft.items[index] = { ...sourceItem, attachments: [...(sourceItem.attachments ?? [])], evidencePhotos: [...(sourceItem.evidencePhotos ?? [])], borrowedEquipments: [...(sourceItem.borrowedEquipments ?? [])], receivedIdentifier: sourceItem.receivedIdentifier, receivedIdentifierType: "alfa-qr", receivedIdentifierSource: "camera-scan", receivedIdentifierCapturedAt: new Date().toISOString() };
+            this.scannerStatus = "QR interno reconocido: información del equipo precargada.";
+            this.changeDetectorRef.detectChanges();
+            this.closeScanner();
+            return;
+        } catch { /* QR externo: se conserva como identificador recibido. */ }
+        target.receivedIdentifier = value;
+        target.receivedIdentifierType = source;
+        target.receivedIdentifierSource = "camera-scan";
+        target.receivedIdentifierCapturedAt = new Date().toISOString();
+        this.scannerStatus = "Identificador capturado correctamente.";
+        this.closeScanner();
     }
 
     private stopScannerSession(): void {

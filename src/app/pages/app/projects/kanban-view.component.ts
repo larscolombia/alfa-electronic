@@ -352,7 +352,7 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
                 <div class="section-heading">
                   <div>
                     <h4>Equipo en reparacion</h4>
-                  <p>Relaciona el equipo recibido, escanea su QR y sincroniza estado tecnico con ubicacion.</p>
+                  <p>Consulta el equipo ya asociado por código interno, identificador recibido o QR; luego sincroniza su ubicación.</p>
                 </div>
               </div>
 
@@ -365,7 +365,7 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
                     (ngModelChange)="selectLinkedEquipment($event)">
                     <option value="">Selecciona un equipo recibido</option>
                     <option *ngFor="let equipment of equipmentOptions" [value]="equipment.reference">
-                      {{ equipment.displayName }} · {{ equipment.prospectName }} · {{ equipment.receivedIdentifier || 'Sin identificador' }}
+                      {{ equipment.displayName }} · {{ equipment.prospectName }} · {{ equipment.equipmentCode || 'Sin código interno' }}
                     </option>
                   </select>
                 </label>
@@ -386,7 +386,7 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
                       class="btn btn-theme btn-sm"
                       (click)="searchEquipmentByIdentifier()"
                       [disabled]="!equipmentIdentifierDraft.trim()">
-                      Vincular
+                      Buscar equipo
                     </button>
 
                     <button
@@ -409,7 +409,7 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
                 <div class="equipment-qr-preview__meta">
                   <span class="project-detail-field__label">QR del equipo vinculado</span>
                   <strong>{{ detailProject.properties['equipmentDisplayName'] || 'Equipo vinculado' }}</strong>
-                  <small>Identificador: {{ detailProject.properties['equipmentIdentifier'] || 'Sin identificador' }}</small>
+                  <small>Código interno: {{ detailProject.properties['equipmentCode'] || 'Sin código interno' }}</small>
                 </div>
               </div>
 
@@ -426,7 +426,7 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
                 </div>
 
                 <div class="equipment-linked-box__grid">
-                  <span><strong>Identificador:</strong> {{ equipment.receivedIdentifier || 'Sin identificador' }}</span>
+                  <span><strong>Código interno:</strong> {{ equipment.equipmentCode || 'Sin código interno' }}</span>
                   <span><strong>Serie:</strong> {{ equipment.serie || '--' }}</span>
                   <span><strong>Servicio:</strong> {{ equipment.serviceTypeName || '--' }}</span>
                   <span><strong>Recepcion:</strong> {{ equipment.receptionLabel }}</span>
@@ -469,7 +469,7 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
               <div class="project-form-grid mt-3">
                 <label class="project-detail-field">
                   <span class="project-detail-field__label">Ubicacion actual</span>
-                  <select class="project-detail-field__input" [(ngModel)]="equipmentLocationIdDraft">
+                  <select class="project-detail-field__input" [(ngModel)]="equipmentLocationIdDraft" data-testid="equipment-location-select">
                     <option value="">Selecciona una ubicacion</option>
                     <option *ngFor="let location of equipmentLocationOptions" [value]="location.id">{{ location.name }}</option>
                   </select>
@@ -481,8 +481,9 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
                   type="button"
                   class="btn btn-theme btn-sm"
                   (click)="updateLinkedEquipmentWorkflow()"
+                  data-testid="equipment-update-location-btn"
                   [disabled]="!canUpdateEquipmentWorkflow()">
-                  Actualizar estado y ubicacion
+                  Actualizar ubicación
                 </button>
 
                 <small class="text-secondary" *ngIf="detailProject.properties['equipmentLastWorkflowUpdate']">
@@ -5261,6 +5262,12 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
   private refreshEquipmentOptions(): void {
     this.equipmentOptions = this.projectEquipmentService.getEquipmentOptions();
     this.equipmentLocationOptions = this.projectEquipmentService.getLocations();
+    if (this.equipmentLocationOptions.length === 0) {
+      window.setTimeout(() => {
+        this.equipmentLocationOptions = this.projectEquipmentService.getLocations();
+        this.cdr.detectChanges();
+      }, 300);
+    }
   }
 
   private applyLinkedEquipment(
@@ -5277,7 +5284,7 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
 
     this.selectedEquipmentReference = equipment.reference;
     this.linkedEquipment = equipment;
-    this.equipmentIdentifierDraft = equipment.receivedIdentifier || this.equipmentIdentifierDraft;
+    this.equipmentIdentifierDraft = equipment.equipmentCode || this.equipmentIdentifierDraft;
     this.equipmentLocationIdDraft = equipment.storageLocationId;
     this.equipmentRepairStatusDraft = equipment.repairStatus;
 
@@ -5286,6 +5293,7 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
     properties['equipmentProspectId'] = equipment.prospectId;
     properties['equipmentProspectName'] = equipment.prospectName;
     properties['equipmentDisplayName'] = equipment.displayName;
+    properties['equipmentCode'] = equipment.equipmentCode;
     properties['equipmentIdentifier'] = equipment.receivedIdentifier;
     properties['equipmentSerie'] = equipment.serie;
     properties['equipmentReceptionLabel'] = equipment.receptionLabel;

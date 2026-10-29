@@ -23,6 +23,7 @@ func flattenSummaries(records []Record) []Summary {
 			summaries = append(summaries, Summary{
 				RecordID:                  record.ID,
 				ItemID:                    item.ID,
+				EquipmentCode:             internalEquipmentCode(item.ID),
 				ProspectID:                record.ProspectID,
 				ProspectName:              record.ProspectName,
 				ReceptionLabel:            receptionLabel,
@@ -49,6 +50,23 @@ func flattenSummaries(records []Record) []Summary {
 	}
 
 	return summaries
+}
+
+func internalEquipmentCode(itemID string) string {
+	var normalized strings.Builder
+	for _, char := range strings.ToUpper(strings.TrimSpace(itemID)) {
+		if (char >= 'A' && char <= 'Z') || (char >= '0' && char <= '9') {
+			normalized.WriteRune(char)
+		}
+	}
+	value := normalized.String()
+	if len(value) > 8 {
+		value = value[len(value)-8:]
+	}
+	if value == "" {
+		return ""
+	}
+	return "EQ-" + value
 }
 
 func borrowedDescriptions(items []BorrowedEquipment) []string {

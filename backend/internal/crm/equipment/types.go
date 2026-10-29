@@ -127,6 +127,7 @@ type Record struct {
 type Summary struct {
 	RecordID                  string   `json:"recordId"`
 	ItemID                    string   `json:"itemId"`
+	EquipmentCode             string   `json:"equipmentCode"`
 	ProspectID                string   `json:"prospectId"`
 	ProspectName              string   `json:"prospectName"`
 	ReceptionLabel            string   `json:"receptionLabel"`

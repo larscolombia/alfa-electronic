@@ -123,6 +123,17 @@ async function partsAndPurchases(page) {
 }
 async function repairAndClose(page) {
   let d=await openCard(page);
+  const locationSelect=d.getByTestId("equipment-location-select");
+  await visible(locationSelect,"No aparece el selector de ubicación del equipo");
+  const locationOptions=await locationSelect.locator("option").evaluateAll(options=>options.map(option=>option.value).filter(Boolean));
+  if(!locationOptions.length) throw new Error("El selector de ubicación no tiene opciones disponibles");
+  await selectFocus(page,locationSelect,locationOptions.at(-1),{force:true});
+  await click(page,d.getByTestId("equipment-update-location-btn"),"Actualizar ubicación");
+  await visible(d.locator(".alert-success",{hasText:/Estado actualizado/}),"Actualizar ubicación no produjo confirmación visible");
+  const updatedLocation=await locationSelect.inputValue();
+  await click(page,d.getByRole("button",{name:"Cerrar"}).first(),"Cerrar para verificar ubicación");
+  d=await openCard(page);
+  if((await d.getByTestId("equipment-location-select").inputValue())!==updatedLocation) throw new Error("La ubicación del equipo no persistió al reabrir la ficha");
   await moveAndSave(page,d,"Esperando proveedor");
   d=await openCard(page);
   await moveAndSave(page,d,"Reparacion");
@@ -195,6 +206,7 @@ let browser; let page; try { browser=await chromium.launch({headless,slowMo:0});
   console.log("UI_ONLY reception"); await stages.reception(page); await snap("2-recepcion");
   console.log("UI_ONLY commercial action"); await stages.commercialAction(page);
   console.log("UI_ONLY account relations"); await stages.completeAccountRelations(page);
+  console.log("UI_ONLY prospect tabs"); await stages.verifyProspectTabs(page);
   console.log("UI_ONLY diagnosis and quote"); await diagnoseAndQuote(page); await snap("3-cotizacion");
   console.log("UI_ONLY order"); await order(page); await snap("4-oc");
   console.log("UI_ONLY parts and purchases"); await partsAndPurchases(page); await snap("5-repuestos");

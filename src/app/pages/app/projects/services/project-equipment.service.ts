@@ -4,8 +4,9 @@ import { take } from 'rxjs/operators';
 import { PROJECT_REPAIR_STATUS_OPTIONS } from './project-equipment-options';
 export type { ProjectRepairStatusOption } from './project-equipment-options';
 
-import { EquipmentLocationRecord, getEquipmentLocations } from '../../company/company-equipment-config.store';
+import { EquipmentLocationRecord, ensureEquipmentCatalogLoaded, getEquipmentLocations } from '../../company/company-equipment-config.store';
 import { CrmEquipmentApiService } from '../../../../services/crm-equipment-api.service';
+import { buildInternalEquipmentCode } from '../../crm/equipment-qr.util';
 import {
   ProspectEquipmentItem,
   ProspectEquipmentRecord,
@@ -38,10 +39,12 @@ export class ProjectEquipmentService {
   readonly repairStatusOptions = PROJECT_REPAIR_STATUS_OPTIONS;
 
   constructor(private readonly crmEquipmentApi: CrmEquipmentApiService) {
+    void ensureEquipmentCatalogLoaded().then(() => this.optionsChangedSubject.next());
     this.refreshEquipmentOptionsFromApi(true);
   }
 
   getLocations(): EquipmentLocationRecord[] {
+    void ensureEquipmentCatalogLoaded().then(() => this.optionsChangedSubject.next());
     return getEquipmentLocations().filter((location) => location.active);
   }
 
@@ -78,7 +81,7 @@ export class ProjectEquipmentService {
     const normalizedIdentifier = this.normalizeSearchValue(identifier);
     if (normalizedIdentifier) {
       const cachedMatch = Array.from(this.apiOptionsByReference.values()).find((item) => {
-        const candidates = [item.receivedIdentifier, item.serie, item.customerShipmentReference];
+        const candidates = [item.equipmentCode, item.receivedIdentifier, item.serie, item.customerShipmentReference];
         return candidates.some((value) => this.normalizeSearchValue(value) === normalizedIdentifier);
       });
       if (cachedMatch) {
@@ -146,6 +149,7 @@ export class ProjectEquipmentService {
   private toOption(summary: ProspectEquipmentSummary): ProjectEquipmentOption {
     const searchableText = [
       summary.displayName,
+      summary.equipmentCode,
       summary.receivedIdentifier,
       summary.serie,
       summary.customerShipmentReference,
@@ -291,6 +295,7 @@ export class ProjectEquipmentService {
       const summary: ProspectEquipmentSummary = {
         recordId: record.id,
         itemId: item.id,
+        equipmentCode: buildInternalEquipmentCode(item.id),
         prospectId: record.prospectId,
         prospectName: record.prospectName,
         receptionLabel,

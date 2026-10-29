@@ -1,5 +1,6 @@
 import { getEquipmentFamilyName, getEquipmentLocationById, getEquipmentServiceTypeById, getIndustrialEquipmentModelById } from "../company/company-equipment-config.store";
 import { normalizeBorrowedEquipments } from "./crm-prospect-equipment-borrowed.util";
+import { buildInternalEquipmentCode } from "./equipment-qr.util";
 
 export type ProspectEquipmentAnswer = "" | "Sí" | "No";
 export type ProspectEquipmentQuestionType = "boolean" | "text";
@@ -192,6 +193,7 @@ export interface ProspectEquipmentRecord {
 export interface ProspectEquipmentSummary {
     recordId: string;
     itemId: string;
+    equipmentCode: string;
     prospectId: string;
     prospectName: string;
     receptionLabel: string;
@@ -580,6 +582,7 @@ function buildEquipmentSummaries(records: ProspectEquipmentRecord[]): ProspectEq
             return {
                 recordId: record.id,
                 itemId: item.id,
+                equipmentCode: buildInternalEquipmentCode(item.id),
                 prospectId: record.prospectId,
                 prospectName: record.prospectName,
                 receptionLabel: formatProspectEquipmentReception(record),

@@ -189,6 +189,46 @@ export function makeStages({ base, pause, data, stamp, snap, utils }) {
     await snap("2d-cuenta-con-contactos-y-sede");
   }
 
+  async function verifyProspectTabs(page) {
+    const detail=page.locator("app-crm-prospect-detail").first();
+    await click(page,detail.locator(".nav-link",{hasText:/Equipos/}).first(),"Tab Equipos");
+    await visible(detail.locator("table tbody tr",{hasText:data.serie}).first(),"La pestaña Equipos no conserva la serie recibida");
+    await visible(detail.getByText("Reparación",{exact:true}).first(),"La pestaña Equipos no conserva el servicio");
+    await snap("2e-tab-equipos-completa");
+
+    await click(page,detail.locator(".nav-link",{hasText:/Cotización/}).first(),"Tab Cotización");
+    await visible(detail.getByText(data.prospect,{exact:true}).first(),"La pestaña Cotización no conserva el prospecto");
+    await visible(detail.getByRole("link",{name:/Crear cotización/i}),"La pestaña Cotización no expone el flujo de creación");
+    await snap("2f-tab-cotizacion");
+
+    await click(page,detail.locator(".nav-link",{hasText:/Notas/}).first(),"Tab Notas");
+    await fillFocus(page,detail.locator("input[placeholder='Ingresa el titulo de una nota']"),"Seguimiento de recepción UI");
+    await checkFocus(page,detail.locator("#notePrivate"));
+    await selectFirst(page,detail.locator("select[name=noteEmployee]"));
+    await fillFocus(page,detail.locator("textarea[placeholder='Escribe el detalle de la nota']"),"Equipo recibido, diagnosticado y en flujo de cotización.");
+    await click(page,detail.locator(".card-footer button",{hasText:"Guardar"}).first(),"Guardar nota del prospecto");
+    await visible(detail.locator(".alert-success"),"La nota del prospecto no confirmó guardado");
+    await page.reload({waitUntil:"domcontentloaded"});
+    const reloaded=page.locator("app-crm-prospect-detail").first();
+    await click(page,reloaded.locator(".nav-link",{hasText:/Notas/}).first(),"Verificar nota tras recarga");
+    await visible(reloaded.locator("textarea[placeholder='Escribe el detalle de la nota']"),"La pestaña Notas no quedó disponible tras recargar");
+    await snap("2g-tab-notas-persistida");
+
+    await click(page,reloaded.locator(".nav-link",{hasText:/Archivos/}).first(),"Tab Archivos");
+    const fileControl=reloaded.locator("input[type=file]").first();
+    if (!await fileControl.waitFor({state:"attached",timeout:10000}).then(()=>true).catch(()=>false)) {
+      throw new Error("La pestaña Archivos no expone el control para adjuntar");
+    }
+    const fileName=`ficha-prospecto-${stamp}.pdf`;
+    await attachFocus(page,fileControl,{name:fileName,mimeType:"application/pdf",buffer:Buffer.from("%PDF-1.4\n%%EOF")});
+    await visible(reloaded.locator("table tbody tr",{hasText:fileName}).first(),"El archivo no aparece tras registrarlo");
+    await page.reload({waitUntil:"domcontentloaded"});
+    const attachmentsReloaded=page.locator("app-crm-prospect-detail").first();
+    await click(page,attachmentsReloaded.locator(".nav-link",{hasText:/Archivos/}).first(),"Verificar archivos tras recarga");
+    await visible(attachmentsReloaded.locator("table tbody tr",{hasText:fileName}).first(),"El archivo no persistió tras recargar la ficha");
+    await snap("2h-tab-archivos-persistido");
+  }
+
   async function promoteToClient(page) {
     await page.goto(`${base}/app/crm-prospectos`,{waitUntil:"domcontentloaded"});
     const row=page.locator("tbody tr",{hasText:data.prospect}).first();
@@ -319,5 +359,5 @@ export function makeStages({ base, pause, data, stamp, snap, utils }) {
     await visible(rowEnt.locator("[data-testid=remission-item-service]",{hasText:data.serviceType}),"El servicio no persistió en la remisión entregada");
   }
 
-  return { ensureReceptionCatalog, reception, commercialAction, completeAccountRelations, remitAndDeliver, promoteToClient };
+  return { ensureReceptionCatalog, reception, commercialAction, completeAccountRelations, verifyProspectTabs, remitAndDeliver, promoteToClient };
 }
