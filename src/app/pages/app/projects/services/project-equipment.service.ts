@@ -44,7 +44,6 @@ export class ProjectEquipmentService {
   }
 
   getLocations(): EquipmentLocationRecord[] {
-    void ensureEquipmentCatalogLoaded().then(() => this.optionsChangedSubject.next());
     return getEquipmentLocations().filter((location) => location.active);
   }
 

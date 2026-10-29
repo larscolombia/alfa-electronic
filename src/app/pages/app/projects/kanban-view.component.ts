@@ -5262,12 +5262,6 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
   private refreshEquipmentOptions(): void {
     this.equipmentOptions = this.projectEquipmentService.getEquipmentOptions();
     this.equipmentLocationOptions = this.projectEquipmentService.getLocations();
-    if (this.equipmentLocationOptions.length === 0) {
-      window.setTimeout(() => {
-        this.equipmentLocationOptions = this.projectEquipmentService.getLocations();
-        this.cdr.detectChanges();
-      }, 300);
-    }
   }
 
   private applyLinkedEquipment(
