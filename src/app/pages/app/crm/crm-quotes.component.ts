@@ -56,12 +56,6 @@ type QuoteLine = {
     imports: [RouterLink, NgFor, NgIf, FormsModule, DecimalPipe],
     template: `
         <div class="container-fluid py-3">
-            <div class="row gx-3 gx-lg-4 align-items-center page-title">
-                <div class="col mb-3 mb-sm-0">
-                    <h5 class="mb-0">Cotizaciones</h5>
-                    <p class="text-secondary small mb-0">Genera y administra cotizaciones para prospectos usando servicios.</p>
-                </div>
-            </div>
 
             <nav aria-label="breadcrumb" class="breadcrumb-theme mt-3 rounded">
                 <ol class="breadcrumb mb-0">

@@ -72,17 +72,6 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
     imports: [RouterLink, NgFor, NgIf, FormsModule, CrmProspectEquipmentModalComponent, SearchableSelectDirective],
     template: `
         <div class="container-fluid py-3" *ngIf="!showProspectForm">
-            <div class="row gx-3 gx-lg-4 align-items-center page-title">
-                <div class="col mb-3 mb-sm-0 d-flex align-items-start gap-2">
-                    <button class="btn btn-outline-secondary" type="button" (click)="goBack()" data-testid="back-btn">
-                        <i class="bi bi-arrow-left me-1"></i>Volver
-                    </button>
-                    <div>
-                        <h5 class="mb-0">Prospectos</h5>
-                        <p class="text-secondary small mb-0">Administra tus prospectos y su seguimiento comercial.</p>
-                    </div>
-                </div>
-            </div>
 
             <nav aria-label="breadcrumb" class="breadcrumb-theme mt-3 rounded">
                 <ol class="breadcrumb mb-0">

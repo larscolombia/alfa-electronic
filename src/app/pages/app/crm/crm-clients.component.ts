@@ -72,12 +72,6 @@ interface ClientDraft {
     imports: [RouterLink, CommonModule, FormsModule, CrmClientsImportComponent],
     template: `
         <div class="container-fluid py-3">
-            <div class="row gx-3 gx-lg-4 align-items-center page-title">
-                <div class="col mb-3 mb-sm-0">
-                    <h5 class="mb-0">Clientes</h5>
-                    <p class="text-secondary small mb-0">Gestion centralizada de cuentas y datos empresariales.</p>
-                </div>
-            </div>
 
             <nav aria-label="breadcrumb" class="breadcrumb-theme mt-3 rounded">
                 <ol class="breadcrumb mb-0">
@@ -473,6 +467,7 @@ interface ClientDraft {
     `,
 })
 export class CrmClientsComponent {
+
     readonly countryOptions = COUNTRY_OPTIONS;
     clients: CrmClientRecord[] = [];
     clientSearchTerm = "";

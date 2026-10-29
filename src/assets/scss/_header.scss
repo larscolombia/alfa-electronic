@@ -578,3 +578,129 @@ body:not(.adminuiux-header-fill-bg):not(.adminuiux-header-fill-theme):not(.admin
         }
     }
 }
+
+
+/* PIKA OS: cabecera horizontal, compacta y alineada a la izquierda */
+.navbar.fixed-top {
+    padding-top: 0.15rem;
+    padding-bottom: 0.15rem;
+}
+
+.navbar.fixed-top > .container-fluid {
+    justify-content: flex-start;
+    padding-left: 0.5rem;
+    padding-right: 0.75rem;
+}
+
+.pika-left-rail {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    align-self: center;
+    gap: 0.12rem;
+    flex: 0 0 auto;
+    margin: 0;
+}
+
+.pika-left-rail .pika-rail-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+}
+
+.pika-left-rail .logo-pika {
+    display: block;
+    max-width: 110px;
+    max-height: 36px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+}
+
+.pika-left-rail .pika-rail-menu {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    margin: 0;
+    padding: 0.2rem;
+}
+
+.pika-left-rail .pika-rail-back {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    margin: 0;
+    padding: 0.25rem 0.45rem;
+}
+
+@media (max-width: 575.98px) {
+    .pika-left-rail {
+        gap: 0.2rem;
+    }
+
+    .pika-left-rail .logo-pika {
+        max-width: 82px;
+        max-height: 32px;
+    }
+
+    .pika-left-rail .pika-rail-back {
+        padding: 0.25rem 0.4rem;
+    }
+
+    .navbar.fixed-top > .container-fluid {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+}
+
+
+/* PIKA OS: ajuste compacto definitivo de elementos de cabecera */
+.navbar.fixed-top > .container-fluid > .pika-left-rail {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.navbar.fixed-top > .container-fluid > .pika-left-rail > .pika-rail-logo {
+    margin-left: -3px !important;
+    margin-right: -3px !important;
+    padding: 0 !important;
+    flex: 0 0 auto !important;
+}
+
+.navbar.fixed-top > .container-fluid > .pika-left-rail > .pika-rail-menu,
+.navbar.fixed-top > .container-fluid > .pika-left-rail > .pika-rail-back {
+    margin: 0 !important;
+    flex: 0 0 auto !important;
+}
+
+.navbar.fixed-top > .container-fluid > .pika-left-rail > .pika-rail-menu {
+    padding: 0 !important;
+    min-width: 0 !important;
+}
+
+.navbar.fixed-top > .container-fluid > .pika-left-rail > .pika-rail-logo img {
+    margin-right: 0 !important;
+}
+
+.navbar.fixed-top > .container-fluid > .pika-left-rail > .pika-rail-back {
+    padding: 0.2rem 0.2rem !important;
+}
+
+.navbar.fixed-top > .container-fluid {
+    justify-content: flex-start !important;
+    column-gap: 0.25rem !important;
+    padding-left: 0.35rem !important;
+}
+
+@media (max-width: 575.98px) {
+    .navbar.fixed-top > .container-fluid > .pika-left-rail {
+        gap: 0 !important;
+    }
+}

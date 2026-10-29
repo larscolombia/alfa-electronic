@@ -11,14 +11,53 @@ import { AuthService } from "../../../services/auth.service";
         <!-- Fixed navbar -->
         <nav class="navbar navbar-expand-lg fixed-top">
             <div class="container-fluid">
-                <a class="btn btn-link btn-square btn-icon btn-link-header" routerLink="/app/main-menu" title="Menu principal" aria-label="Menu principal">
-                    <i class="bi bi-grid-3x3-gap-fill"></i>
-                </a>
+                <div class="pika-left-rail">
+                    @if (isClientsPage || showProspectsBackButton) {
+                        <button class="btn btn-outline-secondary btn-sm pika-rail-back"
+                                type="button"
+                                (click)="goBack()"
+                                title="Volver"
+                                aria-label="Volver">
+                            <i class="bi bi-arrow-left me-1"></i>Volver
+                        </button>
+                    }
 
-                <!-- logo -->
-                <a class="navbar-brand" routerLink="/app/dashboard">
-                    <img src="assets/img/logo-pika.png" alt="PIKA logo" class="logo-pika" />
-                </a>
+                    <a class="navbar-brand pika-rail-logo"
+                       routerLink="/app/dashboard"
+                       aria-label="PIKA OS - Inicio">
+                        <img src="assets/img/logo-pika.png" alt="PIKA OS" class="logo-pika" />
+                    </a>
+
+                    @if (!isClientsPage) {
+                        <a class="btn btn-link btn-square btn-icon btn-link-header pika-rail-menu"
+                           routerLink="/app/main-menu"
+                           title="Menú principal"
+                           aria-label="Menú principal">
+                            <i class="bi bi-grid-3x3-gap-fill"></i>
+                        </a>
+                    }
+
+                    @if (isClientsPage) {
+                        <div class="d-flex align-items-center gap-2 ms-3" style="white-space:nowrap;">
+                            <a class="btn btn-link btn-square btn-icon btn-link-header pika-rail-menu"
+                               routerLink="/app/main-menu"
+                               title="Menú principal"
+                               aria-label="Menú principal">
+                                <i class="bi bi-grid-3x3-gap-fill"></i>
+                            </a>
+                            <div class="d-flex flex-column justify-content-center">
+                                <h1 style="font-size:1rem; font-weight:600; line-height:1.25; margin:0;">Clientes</h1>
+                                <p class="text-secondary" style="font-size:0.75rem; line-height:1.25; margin:0;">Gestion centralizada de cuentas y datos empresariales.</p>
+                            </div>
+                        </div>
+                    }
+                </div>
+                @if (showProspectsBackButton) {
+                    <div class="pika-page-heading" style="display:flex; flex-direction:column; justify-content:center; gap:0; min-width:0; margin-left:0.5rem;">
+                        <h1 style="font-size:1rem; font-weight:600; line-height:1.25; margin:0;">{{ isQuotesPage ? 'Cotizaciones' : 'Prospectos' }}</h1>
+                        <p class="text-secondary" style="font-size:0.75rem; line-height:1.25; margin:0;">{{ isQuotesPage ? 'Genera y administra cotizaciones para prospectos usando servicios.' : 'Administra tus prospectos y tu seguimiento comercial.' }}</p>
+                    </div>
+                }
 
                 <!-- menu -->
                 <div class="navbar-expand-xl d-none d-xl-block ms-3">
@@ -479,6 +518,28 @@ export class MainHeaderComponent {
         private authService: AuthService,
         private router: Router
     ) { }
+
+    get isQuotesPage(): boolean {
+        return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/crm-cotizaciones";
+    }
+
+    get isClientsPage(): boolean {
+        return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/crm-clientes";
+    }
+
+    get showProspectsBackButton(): boolean {
+        const path = this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "");
+        return path === "/app/crm-prospectos" || path === "/app/crm-cotizaciones";
+    }
+
+    goBack(): void {
+        if (typeof window !== "undefined" && window.history.length > 1) {
+            window.history.back();
+            return;
+        }
+
+        this.router.navigateByUrl("/index", { replaceUrl: true });
+    }
 
     ngOnInit() {
         // dark light mode initial
