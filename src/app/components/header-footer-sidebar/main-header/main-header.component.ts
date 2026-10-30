@@ -854,9 +854,9 @@ export class MainHeaderComponent {
     goBack(): void {
         // Prioriza el historial de navegacion interna; sin historial, destino determinista
         // para que "Volver" nunca quede muerto (history.back() no hace nada en carga directa).
-        if (this.appNavigationHistory.length > 0) {
+        const previous = this.appNavigationHistory.pop();
+        if (previous) {
             this.navigatingBack = true;
-            const previous = this.appNavigationHistory.pop();
             this.router.navigateByUrl(previous);
             return;
         }
