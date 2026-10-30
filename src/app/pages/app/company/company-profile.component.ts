@@ -21,7 +21,6 @@ import { CompanyProfile, CompanySettingsApiService } from "../../../services/com
                     <li class="breadcrumb-item bi active" aria-current="page">Perfil de la empresa</li>
                 </ol>
             </nav>
-        </div>
 
         <!-- content -->
         <div class="container-fluid px-lg-4 py-3 py-lg-4">
