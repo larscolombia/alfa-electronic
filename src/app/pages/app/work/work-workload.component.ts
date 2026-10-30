@@ -134,13 +134,9 @@ interface StagePreview {
   ],
   template: `
     <div class="container-fluid py-3">
+      <!-- Titulo y subtitulo los pinta el encabezado global (isWorkWorkloadPage) -->
       <div class="row gx-3 align-items-center page-title">
-        <div class="col">
-          <h5 class="mb-0">Trabajo - Carga laboral y afectación</h5>
-          <p class="text-secondary small mb-0">
-            Decida la afectación con la carga real y las etapas de cada técnico.
-          </p>
-        </div>
+        <div class="col"></div>
         <div class="col-auto">
           <a
             class="btn btn-outline-secondary btn-sm"

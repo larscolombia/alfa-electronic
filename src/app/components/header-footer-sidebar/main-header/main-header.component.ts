@@ -1,6 +1,6 @@
-import { Component, HostListener, OnInit, Renderer2, Inject } from "@angular/core";
+import { Component, HostListener, OnInit, Renderer2, Inject, ChangeDetectorRef } from "@angular/core";
 import { DOCUMENT } from "@angular/common";
-import { Router, RouterLink } from "@angular/router";
+import { NavigationEnd, Router, RouterLink } from "@angular/router";
 import { AuthService } from "../../../services/auth.service";
 
 @Component({
@@ -12,7 +12,7 @@ import { AuthService } from "../../../services/auth.service";
         <nav class="navbar navbar-expand-lg fixed-top">
             <div class="container-fluid">
                 <div class="pika-left-rail">
-                    @if (isClientsPage || showProspectsBackButton) {
+                    @if (showGlobalBackButton) {
                         <button class="btn btn-outline-secondary btn-sm pika-rail-back"
                                 type="button"
                                 (click)="goBack()"
@@ -56,6 +56,180 @@ import { AuthService } from "../../../services/auth.service";
                     <div class="pika-page-heading" style="display:flex; flex-direction:column; justify-content:center; gap:0; min-width:0; margin-left:0.5rem;">
                         <h1 style="font-size:1rem; font-weight:600; line-height:1.25; margin:0;">{{ isQuotesPage ? 'Cotizaciones' : 'Prospectos' }}</h1>
                         <p class="text-secondary" style="font-size:0.75rem; line-height:1.25; margin:0;">{{ isQuotesPage ? 'Genera y administra cotizaciones para prospectos usando servicios.' : 'Administra tus prospectos y tu seguimiento comercial.' }}</p>
+                    </div>
+                }
+
+                @if (isInventoryStockPage) {
+    <div class="pika-page-heading" style="display:flex; flex-direction:column; justify-content:center; gap:0; min-width:0; margin-left:0.5rem;">
+        <h1 style="font-size:1rem; font-weight:600; line-height:1.25; margin:0;">Inventario - Stock y fichas</h1>
+        <p class="text-secondary" style="font-size:0.75rem; line-height:1.25; margin:0;">Crea fichas nuevas o registra entradas a referencias existentes.</p>
+    </div>
+}
+
+            @if (isInventoryMovementsPage) {
+    <div class="pika-page-heading" style="display:flex; flex-direction:column; justify-content:center; gap:0; min-width:0; margin-left:0.5rem;">
+        <h1 style="font-size:1rem; font-weight:600; line-height:1.25; margin:0;">Movimientos de inventario</h1>
+        <p class="text-secondary" style="font-size:0.75rem; line-height:1.25; margin:0;">Rol actual: <strong>Responsable de inventario</strong></p>
+    </div>
+}
+
+            @if (isInventoryOrdersPage) {
+    <div class="pika-page-heading" style="display:flex; flex-direction:column; justify-content:center; gap:0; min-width:0; margin-left:0.5rem;">
+        <h1 style="font-size:1rem; font-weight:600; line-height:1.25; margin:0;">Inventario - Cantidad insuficiente y reposicion</h1>
+        <p class="text-secondary" style="font-size:0.75rem; line-height:1.25; margin:0;">Priorizacion por antiguedad y trazabilidad de intentos de compra para evitar rezagos de meses.</p>
+    </div>
+}
+
+            @if (isInventoryReconciliationPage) {
+    <div class="pika-page-heading" style="display:flex; flex-direction:column; justify-content:center; gap:0; min-width:0; margin-left:0.5rem;">
+        <h1 style="font-size:1rem; font-weight:600; line-height:1.25; margin:0;">Inventario - Conciliacion anual y auditoria</h1>
+        <p class="text-secondary" style="font-size:0.75rem; line-height:1.25; margin:0;">Cierre de inventario fisico vs sistema con evidencia de aprobacion por diferencia.</p>
+    </div>
+}
+
+            @if (isInventoryReservationsPage) {
+    <div class="pika-page-heading" style="display:flex; flex-direction:column; justify-content:center; gap:0; min-width:0; margin-left:0.5rem;">
+        <h1 style="font-size:1rem; font-weight:600; line-height:1.25; margin:0;">Inventario - Reservas</h1>
+        <p class="text-secondary" style="font-size:0.75rem; line-height:1.25; margin:0;">Control de reservas para evitar componentes congelados por tiempo indefinido.</p>
+    </div>
+}
+@if (isFinanceDashboardPage) {
+    <div class="pika-page-heading" style="display:flex; flex-direction:column; justify-content:center; gap:0; min-width:0; margin-left:0.5rem;">
+        <h1 style="font-size:1rem; font-weight:600; line-height:1.25; margin:0;">Finance Dashboard</h1>
+        <p class="text-secondary" style="font-size:0.75rem; line-height:1.25; margin:0;">Potential with Income and Expense Tracking</p>
+    </div>
+}
+@if (isFinanceCuentasPage) {
+    <div class="pika-page-heading" style="display:flex; flex-direction:column; justify-content:center; gap:0; min-width:0; margin-left:0.5rem;">
+        <h1 style="font-size:1rem; font-weight:600; line-height:1.25; margin:0;">Cuentas</h1>
+        <p class="text-secondary" style="font-size:0.75rem; line-height:1.25; margin:0;">Administra cuentas bancarias y cuentas de efectivo para operacion financiera.</p>
+    </div>
+}
+@if (isFinancePagosPage) {
+    <div class="pika-page-heading" style="display:flex; flex-direction:column; justify-content:center; gap:0; min-width:0; margin-left:0.5rem;">
+        <h1 style="font-size:1rem; font-weight:600; line-height:1.25; margin:0;">Pagos</h1>
+        <p class="text-secondary" style="font-size:0.75rem; line-height:1.25; margin:0;">Gestiona cobros asociados a facturas y controla el estado de recaudo.</p>
+    </div>
+}
+@if (isFinanceFacturacionPage) {
+    <div class="pika-page-heading" style="display:flex; flex-direction:column; justify-content:center; gap:0; min-width:0; margin-left:0.5rem;">
+        <h1 style="font-size:1rem; font-weight:600; line-height:1.25; margin:0;">Facturación</h1>
+        <p class="text-secondary" style="font-size:0.75rem; line-height:1.25; margin:0;">Administra facturas emitidas, recurrentes y conversion de horas a cobro.</p>
+    </div>
+}
+@if (isFinanceRecurringInvoicesPage) {
+    <div class="pika-page-heading" style="display:flex; flex-direction:column; justify-content:center; gap:0; min-width:0; margin-left:0.5rem;">
+        <h1 style="font-size:1rem; font-weight:600; line-height:1.25; margin:0;">Facturas recurrentes</h1>
+        <p class="text-secondary" style="font-size:0.75rem; line-height:1.25; margin:0;">Programa cobros automáticos y monitorea próximas emisiones.</p>
+    </div>
+}
+@if (isFinanceCreditClientsPage) {
+    <div class="pika-page-heading" style="display:flex; flex-direction:column; justify-content:center; gap:0; min-width:0; margin-left:0.5rem;">
+        <h1 style="font-size:1rem; font-weight:600; line-height:1.25; margin:0;">Clientes a crédito</h1>
+        <p class="text-secondary" style="font-size:0.75rem; line-height:1.25; margin:0;">Asigna cupos de crédito y controla consumo y mora por cliente.</p>
+    </div>
+}
+@if (isFinanceGarantiasPage) {
+    <div class="pika-page-heading" style="display:flex; flex-direction:column; justify-content:center; gap:0; min-width:0; margin-left:0.5rem;">
+        <h1 style="font-size:1rem; font-weight:600; line-height:1.25; margin:0;">Garantias</h1>
+        <p class="text-secondary" style="font-size:0.75rem; line-height:1.25; margin:0;">Ciclo de garantias y seguimiento por vencimiento de servicios y equipos.</p>
+    </div>
+}
+@if (isCompanyHrDashboardPage) {
+    <div class="pika-page-heading" style="display:flex; flex-direction:column; justify-content:center; gap:0; min-width:0; margin-left:0.5rem;">
+        <h1 style="font-size:1rem; font-weight:600; line-height:1.25; margin:0;">Recursos Humanos</h1>
+        <p class="text-secondary" style="font-size:0.75rem; line-height:1.25; margin:0;">Vista general del modulo de talento humano</p>
+    </div>
+}
+@if (isCompanyHrEmployeesPage) {
+    <div class="pika-page-heading" style="display:flex; flex-direction:column; justify-content:center; gap:0; min-width:0; margin-left:0.5rem;">
+        <h1 style="font-size:1rem; font-weight:600; line-height:1.25; margin:0;">RRHH - Empleados</h1>
+        <p class="text-secondary" style="font-size:0.75rem; line-height:1.25; margin:0;">Gestion de fichas maestras y catalogos organizacionales</p>
+    </div>
+}
+@if (isWorkWorkloadPage) {
+    <div class="pika-page-heading" style="display:flex; flex-direction:column; justify-content:center; gap:0; min-width:0; margin-left:0.5rem;">
+        <h1 style="font-size:1rem; font-weight:600; line-height:1.25; margin:0;">Trabajo - Carga laboral</h1>
+        <p class="text-secondary" style="font-size:0.75rem; line-height:1.25; margin:0;">Carga operativa basada en el flujo tecnico configurado y los proyectos reales del tablero.</p>
+    </div>
+}
+@if (isCompanyHrCompensationPage) {
+    <div class="pika-page-heading" style="display:flex; flex-direction:column; justify-content:center; gap:0; min-width:0; margin-left:0.5rem;">
+        <h1 style="font-size:1rem; font-weight:600; line-height:1.25; margin:0;">RRHH - Nomina y compensacion</h1>
+        <p class="text-secondary" style="font-size:0.75rem; line-height:1.25; margin:0;">Liquidacion mock por empleado con costo prestacional e integral</p>
+    </div>
+}
+@if (isCompanyHrWorktimePage) {
+    <div class="pika-page-heading" style="display:flex; flex-direction:column; justify-content:center; gap:0; min-width:0; margin-left:0.5rem;">
+        <h1 style="font-size:1rem; font-weight:600; line-height:1.25; margin:0;">RRHH - Horarios y festivos</h1>
+        <p class="text-secondary" style="font-size:0.75rem; line-height:1.25; margin:0;">Configuracion de jornada laboral y calendario anual</p>
+    </div>
+}
+@if (isCompanyHrHealthPage) {
+    <div class="pika-page-heading" style="display:flex; flex-direction:column; justify-content:center; gap:0; min-width:0; margin-left:0.5rem;">
+        <h1 style="font-size:1rem; font-weight:600; line-height:1.25; margin:0;">RRHH - Salud ocupacional</h1>
+        <p class="text-secondary" style="font-size:0.75rem; line-height:1.25; margin:0;">Seguimiento de examenes y datos medicos sensibles</p>
+    </div>
+}
+@if (isCompanyHrLeavesPage) {
+    <div class="pika-page-heading" style="display:flex; flex-direction:column; justify-content:center; gap:0; min-width:0; margin-left:0.5rem;">
+        <h1 style="font-size:1rem; font-weight:600; line-height:1.25; margin:0;">RRHH - Vacaciones y licencias</h1>
+        <p class="text-secondary" style="font-size:0.75rem; line-height:1.25; margin:0;">Solicitud y aprobacion de ausencias del colaborador</p>
+    </div>
+}
+@if (isCompanyHrDocumentsPage) {
+    <div class="pika-page-heading" style="display:flex; flex-direction:column; justify-content:center; gap:0; min-width:0; margin-left:0.5rem;">
+        <h1 style="font-size:1rem; font-weight:600; line-height:1.25; margin:0;">RRHH - Documentos</h1>
+        <p class="text-secondary" style="font-size:0.75rem; line-height:1.25; margin:0;">Control de hoja de vida y soportes por empleado</p>
+    </div>
+}
+@if (isCompanyHrAuditPage) {
+    <div class="pika-page-heading" style="display:flex; flex-direction:column; justify-content:center; gap:0; min-width:0; margin-left:0.5rem;">
+        <h1 style="font-size:1rem; font-weight:600; line-height:1.25; margin:0;">RRHH - Auditoria</h1>
+        <p class="text-secondary" style="font-size:0.75rem; line-height:1.25; margin:0;">Bitacora de eventos y cambios en informacion de talento humano</p>
+    </div>
+}
+@if (isSuppliersDashboardPage) {
+    <div class="pika-page-heading" style="display:flex; flex-direction:column; justify-content:center; gap:0; min-width:0; margin-left:0.5rem;">
+        <h1 style="font-size:1rem; font-weight:600; line-height:1.25; margin:0;">Proveedores - Dashboard</h1>
+        <p class="text-secondary" style="font-size:0.75rem; line-height:1.25; margin:0;">Monitorea confiabilidad, clasificacion ABCD y desempeno operativo de proveedores.</p>
+    </div>
+}
+@if (isSuppliersCrudPage) {
+    <div class="pika-page-heading" style="display:flex; flex-direction:column; justify-content:center; gap:0; min-width:0; margin-left:0.5rem;">
+        <h1 style="font-size:1rem; font-weight:600; line-height:1.25; margin:0;">Proveedores - CRUD</h1>
+        <p class="text-secondary" style="font-size:0.75rem; line-height:1.25; margin:0;">Ficha maestra de proveedores con informacion legal, contable, contacto y calidad.</p>
+    </div>
+}
+@if (isSuppliersOrdersHistoryPage) {
+    <div class="pika-page-heading" style="display:flex; flex-direction:column; justify-content:center; gap:0; min-width:0; margin-left:0.5rem;">
+        <h1 style="font-size:1rem; font-weight:600; line-height:1.25; margin:0;">Proveedores - Historial de pedidos</h1>
+        <p class="text-secondary" style="font-size:0.75rem; line-height:1.25; margin:0;">Consulta compras por proveedor con foco en reparacion de placas y componentes electronicos.</p>
+    </div>
+}
+@if (isCompanyUserRolesPage) {
+    <div class="pika-page-heading" style="display:flex; flex-direction:column; justify-content:center; gap:0; min-width:0; margin-left:0.5rem;">
+        <h1 style="font-size:1rem; font-weight:600; line-height:1.25; margin:0;">Roles de usuario</h1>
+        <p class="text-secondary" style="font-size:0.75rem; line-height:1.25; margin:0;">Administra a tus usuarios y el acceso asignando roles</p>
+    </div>
+}
+@if (isCompanyProfilePage) {
+    <div class="pika-page-heading" style="display:flex; flex-direction:column; justify-content:center; gap:0; min-width:0; margin-left:0.5rem;">
+        <h1 style="font-size:1rem; font-weight:600; line-height:1.25; margin:0;">Perfil de la empresa</h1>
+        <p class="text-secondary" style="font-size:0.75rem; line-height:1.25; margin:0;">Estos datos se muestran en las cotizaciones, en las facturas impresas y en el navegador.</p>
+    </div>
+}
+@if (isInventoryDashboardPage) {
+                    <div class="pika-page-heading" style="display:flex; flex-direction:column; justify-content:center; gap:0; min-width:0; margin-left:0.5rem;">
+                        <h1 style="font-size:1rem; font-weight:600; line-height:1.25; margin:0;">Inventario - Centro de control tecnico</h1>
+                        <p class="text-secondary" style="font-size:0.75rem; line-height:1.25; margin:0;">Vista ejecutiva del plan acordado en la reunion del 30-mar para evitar reservas indefinidas, errores de captura y faltantes cronicos.</p>
+                    </div>
+                }
+
+                @if (isWorkTimesheetPage) {
+                    <div class="pika-page-heading" style="display:flex; flex-direction:column; justify-content:center; gap:0; min-width:0; margin-left:0.5rem;">
+                        <h1 style="font-size:1rem; font-weight:600; line-height:1.25; margin:0;">Trabajo - Hoja de tiempo</h1>
+                        <p class="text-secondary" style="font-size:0.75rem; line-height:1.25; margin:0;">Registra tiempo por proyecto y visualiza uso real de la plataforma por página.</p>
                     </div>
                 }
 
@@ -512,12 +686,41 @@ export class MainHeaderComponent {
     htmlElement: any | null = null;
     buttonElement: any | null = null;
 
+    private appNavigationHistory: string[] = [];
+    private currentAppUrl = "";
+    private navigatingBack = false;
+
     constructor(
         private renderer: Renderer2,
         @Inject(DOCUMENT) private document: Document,
         private authService: AuthService,
-        private router: Router
-    ) { }
+        private router: Router,
+        private changeDetector: ChangeDetectorRef
+    ) {
+        this.router.events.subscribe(event => {
+            if (!(event instanceof NavigationEnd)) return;
+
+            const nextUrl = event.urlAfterRedirects.split("?")[0].split("#")[0].replace(/\/$/, "");
+
+            if (!nextUrl.startsWith("/app/")) return;
+
+            if (this.currentAppUrl && this.currentAppUrl !== nextUrl) {
+                if (this.navigatingBack) {
+                    this.navigatingBack = false;
+                } else {
+                    this.appNavigationHistory.push(this.currentAppUrl);
+                }
+            }
+
+            this.currentAppUrl = nextUrl;
+            this.changeDetector.markForCheck();
+        });
+    }
+
+    get showGlobalBackButton(): boolean {
+        const path = this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "");
+        return path.startsWith("/app/") && !path.startsWith("/app/main-menu");
+    }
 
     get isQuotesPage(): boolean {
         return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/crm-cotizaciones";
@@ -527,12 +730,136 @@ export class MainHeaderComponent {
         return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/crm-clientes";
     }
 
+    get isRemissionsPage(): boolean {
+        return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/remissions";
+    }
+
+    get isWorkTimesheetPage(): boolean {
+        return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/work-timesheet";
+    }
+
+    get isInventoryStockPage(): boolean {
+    return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/inventory-stock";
+}
+
+    get isInventoryMovementsPage(): boolean {
+    return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/inventory-movements";
+}
+
+    get isInventoryOrdersPage(): boolean {
+    return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/inventory-orders";
+}
+
+    get isInventoryReconciliationPage(): boolean {
+    return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/inventory-order-details";
+}
+
+    get isInventoryReservationsPage(): boolean {
+        return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/inventory-reservations";
+    }
+
+    get isFinanceDashboardPage(): boolean {
+        return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/finance-dashboard";
+    }
+
+    get isFinanceCuentasPage(): boolean {
+        return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/finance-cuentas";
+    }
+
+    get isFinancePagosPage(): boolean {
+        return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/finance-pagos";
+    }
+
+    get isFinanceFacturacionPage(): boolean {
+        return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/finance-facturacion";
+    }
+
+    get isFinanceRecurringInvoicesPage(): boolean {
+        return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/finance-facturacion-recurrentes";
+    }
+
+    get isFinanceCreditClientsPage(): boolean {
+        return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/finance-clientes-credito";
+    }
+
+    get isFinanceGarantiasPage(): boolean {
+        return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/finance-garantias";
+    }
+
+    get isCompanyHrDashboardPage(): boolean {
+        return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/company-hr-dashboard";
+    }
+
+    get isCompanyHrEmployeesPage(): boolean {
+        return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/company-hr-employees";
+    }
+
+    get isWorkWorkloadPage(): boolean {
+        return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/work-workload";
+    }
+
+    get isCompanyHrCompensationPage(): boolean {
+        return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/company-hr-compensation";
+    }
+
+    get isCompanyHrWorktimePage(): boolean {
+        return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/company-hr-worktime";
+    }
+
+    get isCompanyHrHealthPage(): boolean {
+        return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/company-hr-health";
+    }
+
+    get isCompanyHrLeavesPage(): boolean {
+        return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/company-hr-leaves";
+    }
+
+    get isCompanyHrDocumentsPage(): boolean {
+        return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/company-hr-documents";
+    }
+
+    get isCompanyHrAuditPage(): boolean {
+        return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/company-hr-audit";
+    }
+
+    get isSuppliersDashboardPage(): boolean {
+        return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/suppliers-dashboard";
+    }
+
+    get isSuppliersCrudPage(): boolean {
+        return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/suppliers-crud";
+    }
+
+    get isSuppliersOrdersHistoryPage(): boolean {
+        return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/suppliers-orders-history";
+    }
+
+    get isCompanyUserRolesPage(): boolean {
+        return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/company-user-roles";
+    }
+
+    get isCompanyProfilePage(): boolean {
+        return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/company-profile";
+    }
+
+    get isInventoryDashboardPage(): boolean {
+        return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/inventory-dashboard";
+    }
+
     get showProspectsBackButton(): boolean {
         const path = this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "");
         return path === "/app/crm-prospectos" || path === "/app/crm-cotizaciones";
     }
 
     goBack(): void {
+        // Prioriza el historial de navegacion interna; sin historial, destino determinista
+        // para que "Volver" nunca quede muerto (history.back() no hace nada en carga directa).
+        if (this.appNavigationHistory.length > 0) {
+            this.navigatingBack = true;
+            const previous = this.appNavigationHistory.pop();
+            this.router.navigateByUrl(previous);
+            return;
+        }
         const path = this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "");
         const destination = path === "/app/crm-prospectos" || path === "/app/crm-clientes" || path === "/app/crm-cotizaciones"
             ? "/app/main-menu"

@@ -33,10 +33,6 @@ import { DoughnutChartjs180Component } from "../../../components/charts/doughnut
         <!-- page title -->
         <div class="container-fluid py-3">
             <div class="row gx-3 gx-lg-4 align-items-center page-title">
-                <div class="col col-sm mb-3 mb-sm-0 order-1">
-                    <h5 class="mb-0">Finance Dashboard</h5>
-                    <p class="text-secondary small">Potential with Income and Expense Tracking</p>
-                </div>
                 <div class="col-12 col-sm-auto order-3 order-sm-2">
                     <app-daterange-picker-ranges class="bg-none"></app-daterange-picker-ranges>
                 </div>

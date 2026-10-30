@@ -51,11 +51,7 @@ interface ChartBar {
     template: `
         <div class="container-fluid py-3">
             <div class="row gx-3 gx-lg-4 align-items-center page-title">
-                <div class="col col-sm mb-3 mb-sm-0">
-                    <h5 class="mb-0">Trabajo - Hoja de tiempo</h5>
-                    <p class="text-secondary small mb-0">Registra tiempo por proyecto y visualiza uso real de la plataforma por pagina.</p>
-                </div>
-                <div class="col-12 col-sm-auto text-sm-end">
+                <div class="col-12 text-sm-end">
                     <button class="btn btn-outline-secondary" type="button" (click)="resetDraft()">Limpiar formulario</button>
                 </div>
             </div>
@@ -63,6 +59,7 @@ interface ChartBar {
             <nav aria-label="breadcrumb" class="breadcrumb-theme mt-3 rounded">
                 <ol class="breadcrumb mb-0">
                     <li class="breadcrumb-item bi"><a routerLink="/app/dashboard"><i class="bi bi-house-door me-2"></i>AdminUX</a></li>
+                    <li class="breadcrumb-item bi"><a routerLink="/app/work-projects">Trabajo</a></li>
                     <li class="breadcrumb-item bi active" aria-current="page">Hoja de tiempo</li>
                 </ol>
             </nav>

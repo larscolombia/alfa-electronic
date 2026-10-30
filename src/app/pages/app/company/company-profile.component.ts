@@ -15,16 +15,6 @@ import { CompanyProfile, CompanySettingsApiService } from "../../../services/com
     standalone: true,
     imports: [FormsModule, RouterLink],
     template: `
-        <!-- page title -->
-        <div class="container-fluid py-3">
-            <div class="row gx-3 align-items-center page-title">
-                <div class="col col-sm mb-0 order-1">
-                    <h5 class="mb-0">Perfil de la empresa</h5>
-                    <p class="text-secondary small">
-                        Estos datos se muestran en las cotizaciones, en las facturas impresas y en el navegador.
-                    </p>
-                </div>
-            </div>
             <nav aria-label="breadcrumb" class="breadcrumb-theme mt-3 rounded">
                 <ol class="breadcrumb mb-0">
                     <li class="breadcrumb-item bi"><a routerLink="/app/dashboard"><i class="bi bi-house-door me-2"></i>Inicio</a></li>

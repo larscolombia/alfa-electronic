@@ -8,10 +8,7 @@ import { RouterLink } from "@angular/router";
     template: `
         <div class="container-fluid py-3">
             <div class="row gx-3 gx-lg-4 align-items-center page-title">
-                <div class="col col-sm mb-3 mb-sm-0">
-                    <h5 class="mb-0">RRHH - Auditoria</h5>
-                    <p class="text-secondary small mb-0">Bitacora de eventos y cambios en informacion de talento humano</p>
-                </div>
+
                 <div class="col-12 col-sm-auto text-sm-end">
                     <button class="btn btn-outline-secondary me-2" type="button">Limpiar filtros</button>
                     <a class="btn btn-outline-secondary me-2" routerLink="/app/profile-professional" [queryParams]="{ source: 'hr-audit' }">Ver ficha</a>

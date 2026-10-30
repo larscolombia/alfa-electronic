@@ -19,10 +19,6 @@ import { ReservationsTableComponent } from "./reservations-table.component";
     template: `
         <div class="container-fluid py-3">
             <div class="row gx-3 gx-lg-4 align-items-center page-title">
-                <div class="col col-sm mb-3 mb-sm-0">
-                    <h5 class="mb-0">Inventario - Reservas</h5>
-                    <p class="text-secondary small mb-0">Control de reservas para evitar componentes congelados por tiempo indefinido.</p>
-                </div>
                 <div class="col-12 col-sm-auto text-sm-end">
                     <a class="btn btn-outline-secondary" routerLink="/app/inventory-dashboard">Volver al panel</a>
                 </div>

@@ -31,10 +31,6 @@ interface PayrollRow {
     template: `
         <div class="container-fluid py-3">
             <div class="row gx-3 gx-lg-4 align-items-center page-title">
-                <div class="col col-sm mb-3 mb-sm-0">
-                    <h5 class="mb-0">RRHH - Nomina y compensacion</h5>
-                    <p class="text-secondary small mb-0">Liquidacion mock por empleado con costo prestacional e integral</p>
-                </div>
                 <div class="col-12 col-sm-auto text-sm-end">
                     <button class="btn btn-outline-secondary me-2" type="button" (click)="restoreDefaults()">Restaurar base</button>
                     <a class="btn btn-outline-secondary me-2" routerLink="/app/profile-professional" [queryParams]="{ source: 'hr-compensation' }">Ver ficha</a>

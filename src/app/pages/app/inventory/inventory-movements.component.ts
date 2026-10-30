@@ -27,8 +27,7 @@ import { ProjectService } from "../../app/projects/services/project.service";
         <main class="container-fluid py-3 inventory-workspace" id="main-content">
             <header class="d-flex justify-content-between align-items-start gap-3 mb-2">
                 <div>
-                    <h5 class="mb-0">Movimientos de inventario</h5>
-                    <p class="small text-secondary mb-0">Rol actual: <strong>{{ roleLabel }}</strong></p>
+                    
                 </div>
                 <a class="btn btn-sm btn-outline-secondary" routerLink="/app/inventory-dashboard">Volver al panel</a>
             </header>

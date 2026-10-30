@@ -30,21 +30,18 @@ interface InventoryTreeNode {
     template: `
         <div class="container-fluid py-3">
             <div class="row gx-3 gx-lg-4 align-items-center page-title">
-                <div class="col col-sm mb-3 mb-sm-0">
-                    <h5 class="mb-0">Inventario - Centro de control tecnico</h5>
-                    <p class="text-secondary small mb-0">Vista ejecutiva del plan acordado en la reunion del 30-mar para evitar reservas indefinidas, errores de captura y faltantes cronicos.</p>
-                </div>
                 <div class="col-12 col-sm-auto text-sm-end">
-                    <a class="btn btn-theme" routerLink="/app/inventory-stock">Ir a stock y fichas</a>
-                </div>
-            </div>
-
             <nav aria-label="breadcrumb" class="breadcrumb-theme mt-3 rounded">
                 <ol class="breadcrumb mb-0">
                     <li class="breadcrumb-item bi"><a routerLink="/app/dashboard"><i class="bi bi-house-door me-2"></i>AdminUX</a></li>
                     <li class="breadcrumb-item bi active" aria-current="page">Inventario</li>
                 </ol>
             </nav>
+                                        <a class="btn btn-theme" routerLink="/app/inventory-stock">Ir a stock y fichas</a>
+                </div>
+            </div>
+
+
         </div>
 
         <div class="container mt-3" id="main-content">

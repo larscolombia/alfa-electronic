@@ -101,9 +101,6 @@ const REMISSIONS_TEMPLATE = `
 <div class="container-fluid p-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <div class="d-flex align-items-center gap-2">
-            <button class="btn btn-outline-secondary" type="button" (click)="goBack()" data-testid="back-btn">
-                <i class="bi bi-arrow-left me-1"></i>Volver
-            </button>
             <h4 class="mb-0"><i class="bi bi-truck me-2"></i>Remisiones</h4>
         </div>
         <button class="btn btn-theme" (click)="openCreate()" data-testid="create-remission-btn">

@@ -14,10 +14,6 @@ import { FinanceBillingApiService } from "../../../services/finance-billing-api.
     template: `
         <div class="container-fluid py-3">
             <div class="row gx-3 gx-lg-4 align-items-center page-title">
-                <div class="col col-sm mb-3 mb-sm-0">
-                    <h5 class="mb-0">Facturas recurrentes</h5>
-                    <p class="text-secondary small mb-0">Programa cobros automáticos y monitorea próximas emisiones.</p>
-                </div>
                 <div class="col-12 col-sm-auto text-sm-end d-flex gap-2 justify-content-sm-end flex-wrap">
                     <a class="btn btn-theme" routerLink="/app/finance-facturacion-recurrentes-crear"><i class="bi bi-plus-lg me-1"></i>Agregar Factura Recurrente</a>
                     <button class="btn btn-outline-secondary" type="button" (click)="exportRecurringInvoices()"><i class="bi bi-file-earmark-arrow-down me-1"></i>Exportar</button>
