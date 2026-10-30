@@ -164,21 +164,12 @@ import { RouterLink } from "@angular/router";
             <div class="container-fluid px-3 px-lg-4">
                 <div class="mf-shell">
                     <p class="mf-copy">Copyright © 2026 · Desarrollado por: <a href="https://lars.net.co" target="_blank" rel="noopener noreferrer">LARS Software Company</a></p>
-                    <nav class="mf-links" aria-label="Enlaces de ayuda y legales">
-                        <a routerLink="company-help-center">Help</a>
-                        <span class="mf-sep" aria-hidden="true"></span>
-                        <a routerLink="terms-of-use">Terms of Use</a>
-                        <span class="mf-sep" aria-hidden="true"></span>
-                        <a routerLink="privacy-policy">Privacy Policy</a>
-                    </nav>
                 </div>
             </div>
         </footer>
 
         <!-- theming action-->
         <div class="position-fixed bottom-0 end-0 m-3 z-index-5 fixedbuttons" id="fixedbuttons">
-            <button class="btn btn-square btn-theme shadow rounded-circle" type="button" data-bs-toggle="offcanvas" data-bs-target="#theming" aria-controls="theming"><i class="bi bi-palette"></i></button>
-            <br />
             <button *ngIf="showScrollTop" (click)="scrollToTop()" class="btn btn-theme btn-square shadow mt-2 rounded-circle theme-black"><i class="bi bi-arrow-up"></i></button>
         </div>
 

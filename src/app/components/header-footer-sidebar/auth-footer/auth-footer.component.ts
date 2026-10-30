@@ -10,12 +10,6 @@ import { Location } from "@angular/common";
         <div class="container-fluid text-center">
             <span class="small">Copyright ©2026, Desarrollado por: <a href="https://lars.net.co" target="_blank" class="text-white">LARS Software Company</a></span>
         </div>
-        <!-- theming action-->
-        <div class="position-fixed bottom-0 end-0 m-3 z-index-5 fixedbuttons" id="fixedbuttons">
-            <button class="btn btn-square btn-theme shadow rounded-circle" type="button" data-bs-toggle="offcanvas" data-bs-target="#theming" aria-controls="theming"><i class="bi bi-palette"></i></button>
-            <br />
-        </div>
-
         <!-- liquid glass support image-->
         <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position: fixed; top: 0px; left: 0px; pointer-events: none; z-index: 9998;">
             <defs>

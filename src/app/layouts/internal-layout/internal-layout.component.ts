@@ -5,13 +5,12 @@ import { FormsModule } from "@angular/forms";
 import { Subscription } from "rxjs";
 import { MainHeaderComponent } from "../../components/header-footer-sidebar/main-header/main-header.component";
 import { MainFooterComponent } from "../../components/header-footer-sidebar/main-footer/main-footer.component";
-import { ThemingComponent } from "../../components/offcanvas/theming.component";
 import { NotificationComponent } from "../../components/offcanvas/notification.component";
 
 @Component({
     selector: "app-internal-layout",
     standalone: true,
-    imports: [RouterOutlet, CommonModule, FormsModule, MainHeaderComponent, MainFooterComponent, ThemingComponent, NotificationComponent],
+    imports: [RouterOutlet, CommonModule, FormsModule, MainHeaderComponent, MainFooterComponent, NotificationComponent],
     template: `
         <!-- header -->
         <app-main-header *ngIf="!hideHeader" class="adminuiux-header inner-page"></app-main-header>
@@ -22,9 +21,6 @@ import { NotificationComponent } from "../../components/offcanvas/notification.c
                 <router-outlet></router-outlet>
             </main>
         </div>
-
-        <!-- color change pallette -->
-        <app-theming class="offcanvas offcanvas-end shadow border-0 width-280" tabindex="-1" id="theming" data-bs-scroll="true" data-bs-backdrop="false" aria-labelledby="theminglabel"></app-theming>
 
         <!-- notification -->
         <app-notification class="offcanvas offcanvas-end shadow border-0 width-300" tabindex="-1" id="notification" data-bs-scroll="true" data-bs-backdrop="false" aria-labelledby="notificationlabel"></app-notification>
