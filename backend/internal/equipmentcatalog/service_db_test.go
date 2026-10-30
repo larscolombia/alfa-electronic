@@ -196,7 +196,7 @@ func TestDeleteRows(t *testing.T) {
 		t.Fatalf("UpsertLocation 2: %v", err)
 	}
 
-	if err := s.DeleteLocation(companyID, "loc-qa-1"); err != nil {
+	if err := s.DeleteLocation(companyID, "loc-qa-1", "loc-qa-2"); err != nil {
 		t.Fatalf("DeleteLocation: %v", err)
 	}
 	locations, _ := s.listLocations(companyID)
@@ -205,7 +205,7 @@ func TestDeleteRows(t *testing.T) {
 	}
 
 	// Borrar sin id debe rechazarse, no borrar todo.
-	if err := s.DeleteLocation(companyID, "  "); err == nil {
+	if err := s.DeleteLocation(companyID, "  ", "loc-qa-2"); err == nil {
 		t.Error("DeleteLocation con id vacío debería fallar")
 	}
 }

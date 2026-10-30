@@ -48,7 +48,7 @@ const WORK_DIRECT_PROSPECT: ProspectRecord = {
     ciudad: "",
     direccion: "",
     fuente: "Trabajo",
-    categoria: "Operativo",
+    ciiuCode: "",
     branches: [],
 };
 

@@ -6,13 +6,13 @@ package database
 func migrationStatementsCRMAccountsBackfill() []string {
 	return []string{
 		`INSERT INTO crm_accounts (
-			id, company_id, lifecycle_status, salutation, name, email, mobile, company, nit, zone,
-			website, office_phone, country, city, address, assigned_employee, source, category,
+			id, company_id, lifecycle_status, name, email, mobile, company, nit, zone,
+			website, office_phone, country, city, address, assigned_employee, source, ciiu_code,
 			service, prospect_status, prospect_value, allow_follow_up, note, quotations,
 			soft_delete, created_at, updated_at
 		)
-		SELECT id, company_id, 'prospecto', salutation, name, email, mobile, company, nit, zone,
-			website, office_phone, country, city, address, assigned_employee, source, category,
+		SELECT id, company_id, 'prospecto', name, email, mobile, company, nit, zone,
+			website, office_phone, country, city, address, assigned_employee, source, ciiu_code,
 			service, status, prospect_value, allow_follow_up, note, quotations,
 			soft_delete, created_at, updated_at
 		FROM crm_prospects

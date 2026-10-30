@@ -16,6 +16,7 @@ import {
     getEquipmentServiceTypes,
     getIndustrialEquipmentModels,
     subscribeEquipmentCatalog,
+    upsertEquipmentLocation,
 } from "../company/company-equipment-config.store";
 import { buildEvidencePhotosFromFiles } from "./crm-prospect-equipment-evidence.util";
 import {
@@ -69,6 +70,21 @@ import { resolveApiBaseUrl } from "../../../services/api-base-url.util";
 import { backupAvailableForModel, findPreviousReception, isUnderLegalWarranty, warrantyDaysStatus } from "./warranty.logic";
 
 const CRM_EQUIPMENT_MODAL_DRAFT_PREFIX = "app.crm.equipment-modal";
+
+const STANDARD_EQUIPMENT_FAMILIES = [
+    { id: "family-a-alimentacion", name: "A - Alimentacion" },
+    { id: "family-ce-tarjeta-electronica", name: "CE - Tarjeta Electrónica" },
+] as const;
+
+const STANDARD_SERVICE_TYPES = [
+    { id: "service-reparacion", name: "Reparación" },
+    { id: "service-intervencion-sitio", name: "intervención en sitio" },
+    { id: "service-venta-nuevo", name: "Venta Nuevo" },
+    { id: "service-venta-usado", name: "Venta Usado" },
+    { id: "service-prestamo", name: "Préstamo" },
+    { id: "service-manufactura", name: "Manufactura" },
+    { id: "service-intercambio", name: "Intercambio" },
+] as const;
 
 const REQUIRED_FACE_EVIDENCE_TYPES: readonly ProspectEquipmentEvidenceType[] = ["face-front", "face-back", "face-left", "face-right"];
 
@@ -228,18 +244,8 @@ type SoftwareBackupInfo = {
 
                         <ng-container *ngIf="currentWizardStep.key === 'reception'">
                             <div class="border rounded p-3">
-                                <div class="row gx-3 gy-2 form-compact">
-                                    <div class="col-12 col-lg-3">
-                                        <label class="form-label">Fecha de recepción</label>
-                                        <input
-                                            class="form-control"
-                                            type="date"
-                                            [ngModel]="receptionDateInput"
-                                            [ngModelOptions]="{ standalone: true }"
-                                            (ngModelChange)="setReceptionDate($event)"
-                                            aria-label="Fecha de recepción" />
-                                    </div>
-                                    <div class="col-12 col-lg-5">
+                                <div class="row gx-3 gy-2 form-compact reception-form">
+                                    <div class="col-12 reception-company">
                                         <label class="form-label">Empresa</label>
                                         <div class="company-combobox" (click)="$event.stopPropagation()">
                                             <div class="d-flex gap-2 align-items-stretch">
@@ -294,7 +300,17 @@ type SoftwareBackupInfo = {
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="col-12 col-lg-4">
+                                    <div class="col-12 col-lg-3 reception-date">
+                                        <label class="form-label">Fecha de recepción</label>
+                                        <input
+                                            class="form-control"
+                                            type="date"
+                                            [ngModel]="receptionDateInput"
+                                            [ngModelOptions]="{ standalone: true }"
+                                            (ngModelChange)="setReceptionDate($event)"
+                                            aria-label="Fecha de recepción" />
+                                    </div>
+                                    <div class="col-12 col-lg-5 reception-branch">
                                         <label class="form-label">Sucursal de envío</label>
                                         <app-crm-modal-select
                                             [options]="companyBranchSelectOptions"
@@ -328,15 +344,7 @@ type SoftwareBackupInfo = {
                                             <option *ngFor="let country of equipmentCountryOptions" [value]="country">{{ country }}</option>
                                         </select>
                                     </div>
-                                    <div class="col-12 col-lg-4">
-                                        <label class="form-label">Ciudad</label>
-                                        <select class="form-select" [(ngModel)]="draft.city" [ngModelOptions]="{ standalone: true }" [disabled]="!draft.country" data-testid="equipment-modal-city-select">
-                                            <option value="">Seleccionar ciudad</option>
-                                            <option *ngFor="let city of equipmentCityOptions" [value]="city">{{ city }}</option>
-                                        </select>
-                                    </div>
-
-                                    <div class="col-12">
+                                    <div class="col-12 reception-sender-contact">
                                         <label class="form-label">Contacto remitente (empresa)</label>
                                         <div class="d-flex gap-2 align-items-stretch">
                                             <app-crm-modal-select
@@ -393,25 +401,12 @@ type SoftwareBackupInfo = {
                                         </div>
                                     </div>
 
-                                    <div class="col-12 col-lg-4">
-                                        <label class="form-label">Contacto</label>
-                                        <input class="form-control" [(ngModel)]="draft.contactName" [ngModelOptions]="{ standalone: true }" />
-                                    </div>
-                                    <div class="col-12 col-lg-4">
-                                        <label class="form-label">Cargo</label>
-                                        <input class="form-control" [(ngModel)]="draft.contactRole" [ngModelOptions]="{ standalone: true }" />
-                                    </div>
-                                    <div class="col-12 col-lg-4">
-                                        <label class="form-label">Celular</label>
-                                        <input class="form-control" [(ngModel)]="draft.cellphone" [ngModelOptions]="{ standalone: true }" />
-                                    </div>
-
                                     <div class="col-12">
                                         <label class="form-label">E-mail</label>
                                         <input class="form-control" [(ngModel)]="draft.email" [ngModelOptions]="{ standalone: true }" />
                                     </div>
 
-                                    <div class="col-12 col-lg-4">
+                                    <div class="col-12 col-lg-4 reception-intake-method">
                                         <label class="form-label">Método de envío</label>
                                         <app-crm-modal-select
                                             [options]="intakeMethodSelectOptions"
@@ -430,6 +425,14 @@ type SoftwareBackupInfo = {
                                     <div class="col-12 col-lg-4" *ngIf="draft.intakeMethod === 'transportadora'">
                                         <label class="form-label">Guía / tracking</label>
                                         <input class="form-control" [(ngModel)]="draft.intakeTrackingNumber" [ngModelOptions]="{ standalone: true }" placeholder="Número de guía" />
+                                    </div>
+
+                                    <div class="col-12 col-lg-4">
+                                        <label class="form-label">Ciudad</label>
+                                        <select class="form-select" [(ngModel)]="draft.city" [ngModelOptions]="{ standalone: true }" [disabled]="!draft.country" data-testid="equipment-modal-city-select">
+                                            <option value="">Seleccionar ciudad</option>
+                                            <option *ngFor="let city of equipmentCityOptions" [value]="city">{{ city }}</option>
+                                        </select>
                                     </div>
 
                                     <div class="col-12 col-lg-4">
@@ -496,7 +499,7 @@ type SoftwareBackupInfo = {
                                             <div class="col-12 col-lg-4">
                                                 <label class="form-label">Ruta de registro</label>
                                                 <select
-                                                    class="form-select"
+                                                    class="form-control"
                                                     [(ngModel)]="item.registrationMode"
                                                     [ngModelOptions]="{ standalone: true }"
                                                     [attr.data-testid]="'equipment-modal-registration-mode-' + i"
@@ -520,13 +523,15 @@ type SoftwareBackupInfo = {
                                             </div>
                                             <div class="col-12 col-lg-2">
                                                 <label class="form-label">Familia</label>
-                                                <input
-                                                    class="form-control"
-                                                    [(ngModel)]="item.familyName"
+                                                <select
+                                                    class="form-select"
+                                                    [ngModel]="item.familyId"
                                                     [ngModelOptions]="{ standalone: true }"
-                                                    [readonly]="item.registrationMode !== 'manual'"
-                                                    [class.bg-light]="item.registrationMode !== 'manual'"
-                                                    [placeholder]="item.registrationMode === 'manual' ? 'Familia libre' : ''" />
+                                                    [attr.data-testid]="'equipment-modal-family-' + i"
+                                                    (ngModelChange)="applyFamily(item, $event)">
+                                                    <option value="">Seleccionar familia</option>
+                                                    <option *ngFor="let option of familySelectOptions" [value]="option.value">{{ option.label }}</option>
+                                                </select>
                                             </div>
                                             <div class="col-12 col-lg-3">
                                                 <label class="form-label">Tipo de servicio</label>
@@ -542,15 +547,18 @@ type SoftwareBackupInfo = {
                                             </div>
                                             <div class="col-12 col-lg-3">
                                                 <label class="form-label">Ubicación de almacenamiento</label>
-                                                <select
+                                                <input
                                                     class="form-select"
-                                                    [(ngModel)]="item.storageLocationId"
+                                                    [ngModel]="item.storageLocationName"
                                                     [ngModelOptions]="{ standalone: true }"
                                                     [attr.data-testid]="'equipment-modal-storage-location-' + i"
-                                                    (ngModelChange)="applyStorageLocation(item, $event)">
-                                                    <option value="">Seleccionar ubicación</option>
-                                                    <option *ngFor="let option of storageLocationSelectOptions" [value]="option.value">{{ option.label }}</option>
-                                                </select>
+                                                    [attr.list]="'storage-location-options-' + i"
+                                                    placeholder="Seleccionar o escribir ubicación"
+                                                    (ngModelChange)="item.storageLocationName = $event"
+                                                    (change)="resolveStorageLocation(item, item.storageLocationName)" />
+                                                <datalist [id]="'storage-location-options-' + i">
+                                                    <option *ngFor="let option of storageLocationSelectOptions" [value]="option.label"></option>
+                                                </datalist>
                                             </div>
                                             <div class="col-12 col-lg-3">
                                                 <label class="form-label">Marca</label>
@@ -1104,7 +1112,7 @@ type SoftwareBackupInfo = {
                                         <div class="vstack gap-2">
                                             <div class="border rounded px-3 py-2" *ngFor="let item of reviewItems; let i = index; trackBy: trackByItemId">
                                                 <div class="fw-semibold small mb-1">{{ equipmentCardTitle(item, i) }}</div>
-                                                <div class="small text-secondary">{{ item.serviceTypeName || "Sin tipo" }} · {{ item.storageLocationName || "Sin ubicación" }}</div>
+                                                <div class="small text-secondary">{{ item.familyName || "Sin familia" }} · {{ item.serviceTypeName || "Sin tipo" }} · {{ item.storageLocationName || "Sin ubicación" }}</div>
                                                 <div class="small text-secondary">Escaneo: {{ item.receivedIdentifier || "Sin identificador" }} · Evidencias: {{ item.evidencePhotos.length }}</div>
                                                 <div class="small text-secondary">Remisión: {{ item.customerShipmentReference || "Sin referencia" }} · Accesorios: {{ item.accessories || "Sin accesorios" }}</div>
                                                 <div class="small text-secondary">Prestados: {{ borrowedEquipmentsSummary(item) }}</div>
@@ -1700,6 +1708,54 @@ type SoftwareBackupInfo = {
             flex: 1 1 100%;
             min-width: 0;
         }
+
+        .reception-form .company-combobox > .d-flex,
+        .reception-form .reception-sender-contact > .d-flex {
+            min-width: 0;
+        }
+
+        /* El resto del modal usa etiquetas en línea; en recepción la densidad
+           hace que eso produzca columnas desalineadas. Aquí cada control ocupa
+           su columna y comparte la misma línea base visual. */
+        .reception-form > [class*="col-"] {
+            display: block;
+        }
+
+        .reception-form > [class*="col-"] > .form-label {
+            display: block;
+            width: auto;
+            margin-bottom: 0.35rem;
+        }
+
+        .reception-form > [class*="col-"] > .form-control,
+        .reception-form > [class*="col-"] > .form-select,
+        .reception-form > [class*="col-"] > app-crm-modal-select,
+        .reception-form > [class*="col-"] > app-crm-modal-datetime {
+            display: block;
+            width: 100%;
+        }
+
+        .reception-form > [class*="col-"] > .company-combobox,
+        .reception-form > [class*="col-"] > .d-flex {
+            width: 100%;
+        }
+
+        .reception-form .reception-sender-contact app-crm-modal-select {
+            flex: 1 1 10rem;
+            min-width: 0;
+        }
+
+        @media (max-width: 575.98px) {
+            .reception-form .company-combobox > .d-flex,
+            .reception-form .reception-sender-contact > .d-flex {
+                flex-wrap: wrap;
+            }
+
+            .reception-form .company-combobox > .d-flex > .position-relative,
+            .reception-form .reception-sender-contact app-crm-modal-select {
+                flex-basis: 100%;
+            }
+        }
     `],
 })
 export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy {
@@ -1768,10 +1824,14 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
         ];
     }
 
+    get familySelectOptions(): CrmModalSelectOption[] {
+        return STANDARD_EQUIPMENT_FAMILIES.map((family) => ({ label: family.name, value: family.id }));
+    }
+
     get serviceTypeSelectOptions(): CrmModalSelectOption[] {
         return [
             { label: "Seleccionar tipo de servicio", value: "" },
-            ...this.activeEquipmentServiceTypes.map((serviceType) => ({ label: serviceType.name, value: serviceType.id })),
+            ...STANDARD_SERVICE_TYPES.map((serviceType) => ({ label: serviceType.name, value: serviceType.id })),
         ];
     }
 
@@ -2061,8 +2121,14 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
         void this.refreshSoftwareBackup(item);
     }
 
+    applyFamily(item: ProspectEquipmentItem, familyId: string): void {
+        const family = STANDARD_EQUIPMENT_FAMILIES.find((entry) => entry.id === String(familyId ?? "").trim());
+        item.familyId = family?.id ?? "";
+        item.familyName = family?.name ?? "";
+    }
+
     applyServiceType(item: ProspectEquipmentItem, serviceTypeId: string): void {
-        const serviceType = this.equipmentServiceTypes.find((entry) => entry.id === serviceTypeId);
+        const serviceType = STANDARD_SERVICE_TYPES.find((entry) => entry.id === serviceTypeId);
 
         if (!serviceType) {
             item.serviceTypeId = "";
@@ -2086,6 +2152,39 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
 
         item.storageLocationId = location.id;
         item.storageLocationName = location.name;
+    }
+
+    async resolveStorageLocation(item: ProspectEquipmentItem, rawName: string): Promise<void> {
+        const name = String(rawName ?? "").trim();
+        if (!name) {
+            item.storageLocationId = "";
+            item.storageLocationName = "";
+            return;
+        }
+
+        const existing = this.equipmentLocations.find((location) => location.name.trim().toLocaleLowerCase() === name.toLocaleLowerCase());
+        if (existing) {
+            this.applyStorageLocation(item, existing.id);
+            return;
+        }
+
+        try {
+            const created = await upsertEquipmentLocation({
+                id: `location-${Date.now()}`,
+                name,
+                description: "Creada durante la recepción de un equipo.",
+                active: true,
+                updatedAt: "",
+            });
+            item.storageLocationId = created.id;
+            item.storageLocationName = created.name;
+            this.changeDetectorRef.detectChanges();
+        } catch (error) {
+            item.storageLocationId = "";
+            this.validationMessage = error instanceof Error && error.message.trim()
+                ? error.message
+                : "No se pudo crear la ubicación de almacenamiento.";
+        }
     }
 
     removeEquipmentItem(index: number): void {

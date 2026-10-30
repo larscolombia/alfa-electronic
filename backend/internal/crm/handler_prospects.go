@@ -4,8 +4,8 @@ import (
 	"errors"
 	"net/http"
 
-	"pika.software.net.co/backend/internal/platform/company"
 	"github.com/labstack/echo/v4"
+	"pika.software.net.co/backend/internal/platform/company"
 )
 
 func (h *Handler) listProspects(c echo.Context) error {
@@ -65,7 +65,7 @@ func (h *Handler) createProspect(c echo.Context) error {
 		var ve *validationError
 		switch {
 		case errors.As(err, &ve),
-			errors.Is(err, errProspectNameRequired),
+			errors.Is(err, errProspectCompanyRequired),
 			errors.Is(err, errProspectStatusInvalid),
 			errors.Is(err, errProspectValueInvalid),
 			errors.Is(err, errProspectQuotationsInvalid):
@@ -93,7 +93,7 @@ func (h *Handler) updateProspect(c echo.Context) error {
 		switch {
 		case errors.As(err, &ve),
 			errors.Is(err, errProspectIDRequired),
-			errors.Is(err, errProspectNameRequired),
+			errors.Is(err, errProspectCompanyRequired),
 			errors.Is(err, errProspectStatusInvalid),
 			errors.Is(err, errProspectValueInvalid),
 			errors.Is(err, errProspectQuotationsInvalid):

@@ -283,7 +283,11 @@ export async function upsertEquipmentLocation(location: EquipmentLocationRecord)
     return saved;
 }
 
-export async function deleteEquipmentLocation(locationId: string): Promise<void> {
-    await remove("/locations", locationId);
+export async function deleteEquipmentLocation(locationId: string, reassignToLocationId: string): Promise<void> {
+    const reassignTo = encodeURIComponent(reassignToLocationId.trim());
+    await financeStoreFetch<Record<string, never>>(
+        `${CATALOG_PATH}/locations/${encodeURIComponent(locationId)}?reassignTo=${reassignTo}`,
+        { method: "DELETE" },
+    );
     removeFromCache("locations", locationId);
 }

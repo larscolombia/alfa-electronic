@@ -105,7 +105,7 @@ func (s *Service) loadClients(ctx context.Context) ([]Document, error) {
 			Body:      strings.Join([]string{nombre, correo, empresa, zona, estado}, " "),
 			Fields: map[string]string{
 				"subtitle":  joinNonEmpty(" · ", empresa, zona),
-				"route":     "/app/crm-clientes",
+				"route":     "/app/crm-clientes/" + id,
 				"typeLabel": "Cliente",
 			},
 		})

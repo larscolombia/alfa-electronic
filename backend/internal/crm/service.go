@@ -7,11 +7,10 @@ import (
 )
 
 const (
-	CatalogTypeEmployees  = "employees"
-	CatalogTypeSources    = "sources"
-	CatalogTypeCategories = "categories"
-	CatalogTypeServices   = "services"
-	CatalogTypeZones      = "zones"
+	CatalogTypeEmployees = "employees"
+	CatalogTypeSources   = "sources"
+	CatalogTypeServices  = "services"
+	CatalogTypeZones     = "zones"
 
 	ProspectStatusPending   = "Pendiente"
 	ProspectStatusInProcess = "En proceso"
@@ -23,7 +22,7 @@ const (
 	maxProspectsListLimit = 500
 	maxClientsListLimit   = 500
 
-	prospectSelectColumns = `id, salutation, name, email, mobile, company, nit, assigned_employee, source, category,
+	prospectSelectColumns = `id, name, email, mobile, company, nit, assigned_employee, source, ciiu_code,
 	zone, prospect_value, allow_follow_up, status, service, note, website, office_phone,
 	country, city, address, quotations, created_at, updated_at`
 )
@@ -35,7 +34,7 @@ var (
 	errCatalogItemIDRequired     = errors.New("el id del item del catalogo es obligatorio")
 	errProspectIDRequired        = errors.New("el id del prospecto es obligatorio")
 	errProspectNotFound          = errors.New("prospecto no encontrado")
-	errProspectNameRequired      = errors.New("el nombre del prospecto es obligatorio")
+	errProspectCompanyRequired   = errors.New("la empresa del prospecto es obligatoria")
 	errProspectNoteTooLong       = errors.New("la nota no puede superar 5000 caracteres")
 	errProspectStatusInvalid     = errors.New("estado del prospecto invalido")
 	errProspectValueInvalid      = errors.New("el valor del prospecto no puede ser negativo")
@@ -60,25 +59,24 @@ var (
 var catalogTypeOrder = []string{
 	CatalogTypeEmployees,
 	CatalogTypeSources,
-	CatalogTypeCategories,
 	CatalogTypeServices,
 	CatalogTypeZones,
 }
 
 var defaultCatalogItems = map[string][]string{
-	CatalogTypeEmployees:  {"Ana Torres", "Carlos Mendez"},
-	CatalogTypeSources:    {"Formulario web", "Referido", "Campana"},
-	CatalogTypeCategories: {"Alto valor", "Medio", "Bajo"},
-	CatalogTypeServices:   {"Consultoria", "Implementacion", "Soporte"},
-	CatalogTypeZones:      {"Bogota", "Medellin", "Cali", "Barranquilla"},
+	CatalogTypeEmployees: {"Ana Torres", "Carlos Mendez"},
+	CatalogTypeSources:   {"Formulario web", "Referido", "Campana"},
+	CatalogTypeServices:  {"Consultoria", "Implementacion", "Soporte"},
+	CatalogTypeZones:     {"Bogota", "Medellin", "Cali", "Barranquilla"},
 }
 
 type Service struct {
 	db *sql.DB
 }
 
+var reCiiuCode = regexp.MustCompile(`^\d{4}$`)
+
 type normalizedProspectInput struct {
-	Salutation       string
 	Name             string
 	Email            string
 	Mobile           string
@@ -86,7 +84,7 @@ type normalizedProspectInput struct {
 	Nit              string
 	AssignedEmployee string
 	Source           string
-	Category         string
+	CiiuCode         string
 	Zone             string
 	ProspectValue    int64
 	AllowFollowUp    bool

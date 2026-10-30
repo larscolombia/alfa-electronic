@@ -6,11 +6,10 @@ type CatalogItem struct {
 }
 
 type CatalogsResponse struct {
-	Employees  []CatalogItem `json:"employees"`
-	Sources    []CatalogItem `json:"sources"`
-	Categories []CatalogItem `json:"categories"`
-	Services   []CatalogItem `json:"services"`
-	Zones      []CatalogItem `json:"zones"`
+	Employees []CatalogItem `json:"employees"`
+	Sources   []CatalogItem `json:"sources"`
+	Services  []CatalogItem `json:"services"`
+	Zones     []CatalogItem `json:"zones"`
 }
 
 type Branch struct {
@@ -42,7 +41,6 @@ type UpsertBranchRequest struct {
 
 type Prospect struct {
 	ID               string   `json:"id"`
-	Salutation       string   `json:"salutation"`
 	Name             string   `json:"name"`
 	Email            string   `json:"email"`
 	Mobile           string   `json:"mobile"`
@@ -50,7 +48,7 @@ type Prospect struct {
 	Nit              string   `json:"nit"`
 	AssignedEmployee string   `json:"assignedEmployee"`
 	Source           string   `json:"source"`
-	Category         string   `json:"category"`
+	CiiuCode         string   `json:"ciiuCode"`
 	Zone             string   `json:"zone"`
 	ProspectValue    int64    `json:"prospectValue"`
 	AllowFollowUp    bool     `json:"allowFollowUp"`
@@ -75,7 +73,6 @@ type ProspectListQuery struct {
 }
 
 type UpsertProspectRequest struct {
-	Salutation       string                `json:"salutation"`
 	Name             string                `json:"name"`
 	Email            string                `json:"email"`
 	Mobile           string                `json:"mobile"`
@@ -83,7 +80,7 @@ type UpsertProspectRequest struct {
 	Nit              string                `json:"nit"`
 	AssignedEmployee string                `json:"assignedEmployee"`
 	Source           string                `json:"source"`
-	Category         string                `json:"category"`
+	CiiuCode         string                `json:"ciiuCode"`
 	Zone             string                `json:"zone"`
 	ProspectValue    int64                 `json:"prospectValue"`
 	AllowFollowUp    *bool                 `json:"allowFollowUp,omitempty"`

@@ -62,11 +62,24 @@ export class GlobalSearchService {
     private clientDataSynced = false;
 
     search(query: string): Observable<GlobalSearchResult[]> {
+		return this.searchByTypes(query);
+	}
+
+	searchProspects(query: string): Observable<GlobalSearchResult[]> {
+		return this.searchByTypes(query, ["prospecto"]);
+	}
+
+	searchClients(query: string): Observable<GlobalSearchResult[]> {
+		return this.searchByTypes(query, ["cliente"]);
+	}
+
+	private searchByTypes(query: string, types: GlobalSearchResultType[] = []): Observable<GlobalSearchResult[]> {
         const q = query.trim();
         if (!q) {
             return of([]);
         }
-        const path = `/api/v1/search?q=${encodeURIComponent(q)}&limit=24`;
+		const typeFilter = types.length > 0 ? `&types=${encodeURIComponent(types.join(","))}` : "";
+		const path = `/api/v1/search?q=${encodeURIComponent(q)}&limit=24${typeFilter}`;
         return from(this.request<{ results: BackendSearchResult[] }>(path, { method: "GET" })).pipe(
             map((response) => (response.results ?? []).map((item) => this.mapResult(item))),
             catchError(() => of([] as GlobalSearchResult[])),

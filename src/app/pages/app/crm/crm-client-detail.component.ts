@@ -9,7 +9,7 @@ import { CrmProspectsApiService, CrmProspectRecord } from "../../../services/crm
 import { CrmFollowupsApiService, CrmProspectFollowup } from "../../../services/crm-followups-api.service";
 import { CrmAttachmentsApiService, ProspectAttachment } from "../../../services/crm-attachments-api.service";
 
-type ClientDetailTab = "perfil" | "contactos" | "credito" | "historial";
+type ClientDetailTab = "perfil" | "contactos" | "acciones" | "equipos" | "cotizacion" | "archivos" | "notas" | "sucursales" | "trazabilidad";
 type EditableClientField = "nombre" | "correo" | "empresa" | "nit" | "website" | "officePhone" | "country" | "city" | "address" | "zona";
 
 type EditableClientFieldConfig = {
@@ -25,16 +25,19 @@ type EditableClientFieldConfig = {
     template: `
         <div class="container-fluid py-3">
             <div class="row gx-3 gx-lg-4 align-items-center page-title">
-                <div class="col mb-3 mb-sm-0">
-                    <h5 class="mb-0">{{ client?.nombre || "Cliente" }}</h5>
+                <div class="col mb-3 mb-sm-0 d-flex align-items-start gap-2">
+                    <a class="btn btn-outline-secondary" routerLink="/app/crm-clientes"><i class="bi bi-arrow-left me-1"></i>Volver</a>
+                    <div>
+                    <h5 class="mb-0">{{ client?.empresa || "Cliente" }}</h5>
                     <p class="text-secondary small mb-0">Ficha comercial del cliente.</p>
+                    </div>
                 </div>
             </div>
             <nav aria-label="breadcrumb" class="breadcrumb-theme mt-3 rounded">
                 <ol class="breadcrumb mb-0">
                     <li class="breadcrumb-item bi"><a routerLink="/app/dashboard"><i class="bi bi-house-door me-2"></i> Home</a></li>
                     <li class="breadcrumb-item bi"><a routerLink="/app/crm-clientes">Clientes</a></li>
-                    <li class="breadcrumb-item bi active" aria-current="page">{{ client?.nombre || "Detalle" }}</li>
+                    <li class="breadcrumb-item bi active" aria-current="page">{{ client?.empresa || "Detalle" }}</li>
                 </ol>
             </nav>
         </div>
@@ -61,25 +64,29 @@ type EditableClientFieldConfig = {
                         <button class="nav-link" role="tab" type="button" [attr.aria-selected]="activeTab === 'perfil'" [class.active]="activeTab === 'perfil'" (click)="activeTab = 'perfil'">Perfil</button>
                     </li>
                     <li class="nav-item">
-                        <button class="nav-link" role="tab" type="button" [attr.aria-selected]="activeTab === 'contactos'" [class.active]="activeTab === 'contactos'" (click)="activeTab = 'contactos'">Contactos</button>
+                        <button class="nav-link" role="tab" type="button" [attr.aria-selected]="activeTab === 'contactos'" [class.active]="activeTab === 'contactos'" (click)="activeTab = 'contactos'">Contactos relacionados</button>
                     </li>
                     <li class="nav-item">
-                        <button class="nav-link" role="tab" type="button" [attr.aria-selected]="activeTab === 'credito'" [class.active]="activeTab === 'credito'" (click)="activeTab = 'credito'">Crédito</button>
+                        <button class="nav-link" role="tab" type="button" [attr.aria-selected]="activeTab === 'acciones'"
+                            [class.active]="activeTab === 'acciones'"
+                            (click)="activeTab = 'acciones'">Acciones comerciales</button>
                     </li>
-                    <li class="nav-item">
-                        <button class="nav-link" role="tab" type="button" [attr.aria-selected]="activeTab === 'historial'"
-                            [class.active]="activeTab === 'historial'"
-                            (click)="activeTab = 'historial'">Historial comercial</button>
-                    </li>
+                    <li class="nav-item"><button class="nav-link" role="tab" type="button" [class.active]="activeTab === 'equipos'" (click)="activeTab = 'equipos'">Equipos</button></li>
+                    <li class="nav-item"><button class="nav-link" role="tab" type="button" [class.active]="activeTab === 'cotizacion'" (click)="activeTab = 'cotizacion'">Cotización</button></li>
+                    <li class="nav-item"><button class="nav-link" role="tab" type="button" [class.active]="activeTab === 'archivos'" (click)="activeTab = 'archivos'">Archivos</button></li>
+                    <li class="nav-item"><button class="nav-link" role="tab" type="button" [class.active]="activeTab === 'notas'" (click)="activeTab = 'notas'">Notas</button></li>
+                    <li class="nav-item"><button class="nav-link" role="tab" type="button" [class.active]="activeTab === 'sucursales'" (click)="activeTab = 'sucursales'">Sucursales</button></li>
+                    <li class="nav-item"><button class="nav-link" role="tab" type="button" [class.active]="activeTab === 'trazabilidad'" (click)="activeTab = 'trazabilidad'">Trazabilidad</button></li>
                 </ul>
 
                 <div class="pt-3" role="tabpanel" aria-live="polite">
                     @if (activeTab === 'perfil') {
                         <div class="row gx-3 gx-lg-4">
-                            <div class="col-12 col-xl-4 mb-3 mb-xl-0">
+                            <div class="col-12 mb-3">
                                 <div class="card adminuiux-card h-100">
                                     <div class="card-header border-bottom">
-                                        <h6 class="mb-0">Información de perfil</h6>
+                                        <h5 class="mb-1">Información del perfil</h5>
+                                        <p class="text-secondary small mb-0">Estado <span class="badge" [class.text-bg-success]="client.estado === 'Activo'" [class.text-bg-secondary]="client.estado === 'Inactivo'">{{ client.estado }}</span> · Empresa <strong>{{ client.empresa }}</strong></p>
                                     </div>
                                     <div class="card-body">
                                         @if (profileFieldErrorMessage) {
@@ -89,7 +96,9 @@ type EditableClientFieldConfig = {
                                             <div class="alert alert-success border py-2 px-3 mb-3">{{ profileFieldSuccessMessage }}</div>
                                         }
 
+                                        <div class="row gx-3 gy-3">
                                         @for (field of editableFields; track field.key) {
+                                            <div class="col-12 col-md-6 col-xl-4"><div class="border rounded p-3 h-100">
                                             <div class="small text-secondary mb-1 d-flex justify-content-between align-items-center gap-2">
                                                 <span>{{ field.label }}</span>
                                                 <button class="btn btn-sm btn-link text-secondary p-0" type="button"
@@ -118,55 +127,13 @@ type EditableClientFieldConfig = {
                                                 </div>
                                             } @else {
                                                 @if (field.key === 'website' && clientFieldValue(field.key) !== '--') {
-                                                    <p class="mb-3"><a [href]="clientFieldValue(field.key)" target="_blank" rel="noopener noreferrer">{{ clientFieldValue(field.key) }}</a></p>
+                                                    <p class="mb-0"><a [href]="clientFieldValue(field.key)" target="_blank" rel="noopener noreferrer">{{ clientFieldValue(field.key) }}</a></p>
                                                 } @else {
-                                                    <p class="mb-3">{{ clientFieldValue(field.key) }}</p>
+                                                    <p class="mb-0">{{ clientFieldValue(field.key) }}</p>
                                                 }
-                                            }
+                                            }</div></div>
                                         }
-
-                                        <div class="small text-secondary mb-1">Estado</div>
-                                        <p class="mb-0">
-                                            <span class="badge" [class.text-bg-success]="client.estado === 'Activo'" [class.text-bg-secondary]="client.estado === 'Inactivo'">
-                                                {{ client.estado }}
-                                            </span>
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="col-12 col-xl-8">
-                                <div class="card adminuiux-card h-100">
-                                    <div class="card-header border-bottom">
-                                        <h6 class="mb-0">Sucursales</h6>
-                                    </div>
-                                    <div class="card-body">
-                                        @if ((client.branches ?? []).length === 0) {
-                                            <div class="border rounded p-4 text-center text-secondary">
-                                                <p class="mb-0">Este cliente no tiene sucursales registradas. Edítalo para agregar sedes.</p>
-                                            </div>
-                                        } @else {
-                                            @for (branch of client.branches; track branch.id) {
-                                                <div class="border rounded p-3 mb-3">
-                                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                                        <strong>{{ branch.name }}</strong>
-                                                        @if (branch.isPrimary) {
-                                                            <span class="badge text-bg-theme">Principal</span>
-                                                        }
-                                                    </div>
-                                                    <div class="row gx-3 small text-secondary">
-                                                        <div class="col-12 col-sm-6 mb-1"><i class="bi bi-person me-1"></i>{{ branch.contactName || '--' }}{{ branch.contactRole ? ' · ' + branch.contactRole : '' }}</div>
-                                                        <div class="col-12 col-sm-6 mb-1"><i class="bi bi-envelope me-1"></i>{{ branch.email || '--' }}</div>
-                                                        <div class="col-12 col-sm-6 mb-1"><i class="bi bi-telephone me-1"></i>{{ branch.phone || '--' }}</div>
-                                                        <div class="col-12 col-sm-6 mb-1"><i class="bi bi-geo-alt me-1"></i>{{ branch.city || '--' }}{{ branch.country ? ', ' + branch.country : '' }}</div>
-                                                        <div class="col-12 mb-1"><i class="bi bi-map me-1"></i>{{ branch.address || '--' }}</div>
-                                                    </div>
-                                                </div>
-                                            }
-                                        }
-                                        <a class="btn btn-outline-secondary btn-sm mt-1" [routerLink]="['/app/crm-clientes']" [queryParams]="{ editId: client.id }">
-                                            <i class="bi bi-pencil me-1"></i> Editar sucursales
-                                        </a>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -177,7 +144,7 @@ type EditableClientFieldConfig = {
                         <app-crm-client-contacts [clientId]="client.id" [empresa]="client.empresa" />
                     }
 
-                    @if (activeTab === 'historial') {
+                    @if (activeTab === 'acciones') {
                         <div class="row gx-3 gx-lg-4">
                             <div class="col-12">
                                 @if (historyLoading) {
@@ -303,60 +270,34 @@ type EditableClientFieldConfig = {
                         </div>
                     }
 
-                    @if (activeTab === 'credito') {
+                    @if (activeTab === 'sucursales') {
                         <div class="row gx-3 gx-lg-4">
                             <div class="col-12 col-xl-5 mb-3 mb-xl-0">
                                 <div class="card adminuiux-card h-100">
                                     <div class="card-header border-bottom">
-                                        <h6 class="mb-0">Estado de crédito</h6>
+                                        <h6 class="mb-0">Sucursales</h6>
                                     </div>
                                     <div class="card-body">
-                                        @if (!client.credito.enabled) {
+                                        @if ((client.branches ?? []).length === 0) {
                                             <div class="border rounded p-4 text-center text-secondary">
-                                                Este cliente no tiene crédito habilitado.
-                                                <a class="d-block mt-2 small" routerLink="/app/finance-clientes-credito">Configurar desde Clientes a crédito</a>
+                                                No hay sucursales registradas.
                                             </div>
                                         } @else {
-                                            <div class="row gx-3 gy-3">
-                                                <div class="col-6">
-                                                    <div class="border rounded p-3 text-center">
-                                                        <div class="small text-secondary mb-1">Cupo máximo</div>
-                                                        <div class="fw-semibold">{{ client.credito.creditLimit | currency: 'COP' : 'symbol' : '1.0-0' }}</div>
-                                                    </div>
-                                                </div>
-                                                <div class="col-6">
-                                                    <div class="border rounded p-3 text-center">
-                                                        <div class="small text-secondary mb-1">Cupo disponible</div>
-                                                        <div class="fw-semibold text-success">{{ availableCredit | currency: 'COP' : 'symbol' : '1.0-0' }}</div>
-                                                    </div>
-                                                </div>
-                                                <div class="col-6">
-                                                    <div class="border rounded p-3 text-center">
-                                                        <div class="small text-secondary mb-1">Cupo consumido</div>
-                                                        <div class="fw-semibold text-warning">{{ client.credito.consumed | currency: 'COP' : 'symbol' : '1.0-0' }}</div>
-                                                    </div>
-                                                </div>
-                                                <div class="col-6">
-                                                    <div class="border rounded p-3 text-center">
-                                                        <div class="small text-secondary mb-1">Días en mora</div>
-                                                        <div class="fw-semibold" [class.text-danger]="daysInArrears > 0" [class.text-success]="daysInArrears === 0">{{ daysInArrears }}</div>
-                                                    </div>
-                                                </div>
-                                                <div class="col-12">
-                                                    <div class="small text-secondary mb-1">Plazo de pago</div>
-                                                    <p class="mb-0">{{ client.credito.paymentTermDays }} días</p>
-                                                    <div class="small text-secondary mt-2 mb-1">Último pago</div>
-                                                    <p class="mb-0">{{ client.credito.lastPaymentDate || 'Sin registro' }}</p>
-                                                </div>
-                                            </div>
-                                            <div class="mt-3">
-                                                <a class="btn btn-outline-secondary btn-sm" routerLink="/app/finance-clientes-credito">
-                                                    <i class="bi bi-pencil me-1"></i> Editar crédito
-                                                </a>
-                                            </div>
+                                            @for (branch of client.branches; track branch.id) {
+                                                <div class="border rounded p-3 mb-2"><strong>{{ branch.name }}</strong><div class="small text-secondary">{{ branch.city || '--' }}{{ branch.country ? ', ' + branch.country : '' }} · {{ branch.address || '--' }}</div></div>
+                                            }
                                         }
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                    }
+
+                    @if (activeTab === 'equipos' || activeTab === 'cotizacion' || activeTab === 'archivos' || activeTab === 'notas' || activeTab === 'trazabilidad') {
+                        <div class="card adminuiux-card">
+                            <div class="card-body py-5 text-center text-secondary">
+                                <i class="bi bi-info-circle fs-3 d-block mb-2" aria-hidden="true"></i>
+                                Esta sección usa la misma ficha comercial y mostrará los registros relacionados cuando existan.
                             </div>
                         </div>
                     }

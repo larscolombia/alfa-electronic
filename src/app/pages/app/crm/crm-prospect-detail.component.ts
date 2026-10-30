@@ -94,7 +94,7 @@ type LinkedPurchaseOrderSummary = {
     fileName: string;
 };
 
-type EditableProfileField = "nombre" | "correo" | "compania" | "sitioWeb" | "movil" | "telefonoOficina" | "pais" | "ciudad" | "zona" | "direccion" | "empleado" | "fuente";
+type EditableProfileField = "correo" | "compania" | "sitioWeb" | "movil" | "telefonoOficina" | "pais" | "ciudad" | "zona" | "direccion" | "empleado" | "fuente";
 
 type EditableProfileFieldConfig = {
     key: EditableProfileField;
@@ -901,11 +901,6 @@ type EditableProfileFieldConfig = {
                                 </div>
 
                                 <div class="col-12 col-lg-6">
-                                    <label class="form-label">Nombre del contacto</label>
-                                    <div class="form-control bg-light">{{ prospect.nombre }}</div>
-                                </div>
-
-                                <div class="col-12 col-lg-6">
                                     <label class="form-label">Contacto relacionado <span class="text-danger">*</span></label>
                                     <select class="form-select" [(ngModel)]="commercialActionDraft.relatedContactKey" [ngModelOptions]="{ standalone: true }">
                                         <option value="">Seleccionar contacto</option>
@@ -1015,7 +1010,6 @@ export class CrmProspectDetailComponent {
     readonly profileEditableFields: EditableProfileFieldConfig[] = [
         { key: "compania", label: "Empresa" },
         { key: "correo", label: "Correo electronico", inputType: "email" },
-        { key: "nombre", label: "Nombre del contacto" },
         { key: "sitioWeb", label: "Sitio web", inputType: "url" },
         { key: "movil", label: "Movil" },
         { key: "telefonoOficina", label: "Telefono de oficina" },
@@ -1113,11 +1107,6 @@ export class CrmProspectDetailComponent {
     private readonly cdr = inject(ChangeDetectorRef);
 
     goBack(): void {
-        if (typeof window !== "undefined" && window.history.length > 1) {
-            window.history.back();
-            return;
-        }
-
         this.router.navigateByUrl("/app/crm-prospectos");
     }
 
@@ -1340,7 +1329,7 @@ export class CrmProspectDetailComponent {
 
     private persistBranches(prospect: ProspectRecord, branches: ProspectBranchRecord[], successMessage: string): void {
         // Build payload from the current prospect then override branches.
-        const base = this.buildProspectUpdatePayload(prospect, "nombre", prospect.nombre);
+        const base = this.buildProspectUpdatePayload(prospect, "compania", prospect.compania);
         const payload: CrmUpsertProspectPayload = {
             ...base,
             branches: branches.map((b) => ({
@@ -1477,12 +1466,6 @@ export class CrmProspectDetailComponent {
         }
 
         const normalizedValue = this.normalizeProfileFieldValue(this.editingProfileFieldValue);
-        if (field === "nombre" && !normalizedValue) {
-            this.profileFieldSuccessMessage = "";
-            this.profileFieldErrorMessage = "El nombre del contacto es requerido.";
-            return;
-        }
-
         if (field === "correo" && normalizedValue && !this.isValidEmail(normalizedValue)) {
             this.profileFieldSuccessMessage = "";
             this.profileFieldErrorMessage = "El correo electrónico no tiene un formato válido.";
@@ -2211,15 +2194,14 @@ export class CrmProspectDetailComponent {
         };
 
         return {
-            salutation: this.normalizeProfileFieldValue(prospect.salutation ?? "") || "--",
-            name: resolveFieldValue("nombre"),
+            name: this.normalizeProfileFieldValue(prospect.nombre) || resolveFieldValue("compania"),
             email: resolveFieldValue("correo"),
             mobile: resolveFieldValue("movil"),
             company: resolveFieldValue("compania"),
             nit: this.normalizeProfileFieldValue(prospect.nit),
             assignedEmployee: resolveFieldValue("empleado"),
             source: resolveFieldValue("fuente"),
-            category: this.normalizeProfileFieldValue(prospect.categoria) || "--",
+            ciiuCode: this.normalizeProfileFieldValue(prospect.ciiuCode),
             zone: resolveFieldValue("zona"),
             prospectValue: Math.max(0, Math.floor(Number(prospect.valor) || 0)),
             allowFollowUp: prospect.allowFollowUp ?? true,
@@ -2255,8 +2237,6 @@ export class CrmProspectDetailComponent {
 
     private readProspectFieldRawValue(prospect: ProspectRecord, field: EditableProfileField): string {
         switch (field) {
-            case "nombre":
-                return String(prospect.nombre ?? "");
             case "correo":
                 return String(prospect.correo ?? "");
             case "compania":

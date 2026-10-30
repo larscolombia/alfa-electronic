@@ -16,7 +16,6 @@ export interface ProspectBranchRecord {
 export interface ProspectRecord {
     id: string;
     backendId: string;
-    salutation?: string;
     nombre: string;
     correo: string;
     movil: string;
@@ -37,7 +36,7 @@ export interface ProspectRecord {
     ciudad: string;
     direccion: string;
     fuente: string;
-    categoria: string;
+    ciiuCode: string;
     branches: ProspectBranchRecord[];
     nota?: string;
 }
@@ -89,7 +88,6 @@ function normalizeProspect(record: Partial<ProspectRecord>, index: number): Pros
     return {
         id: normalizeText(record.id) || normalizeText(record.backendId) || String(index + 1),
         backendId: normalizeText(record.backendId),
-        salutation: normalizeText(record.salutation) || "--",
         nombre: normalizeText(record.nombre),
         correo: normalizeText(record.correo),
         movil: normalizeText(record.movil),
@@ -110,7 +108,7 @@ function normalizeProspect(record: Partial<ProspectRecord>, index: number): Pros
         ciudad: normalizeText(record.ciudad),
         direccion: normalizeText(record.direccion),
         fuente: normalizeText(record.fuente),
-        categoria: normalizeText(record.categoria),
+        ciiuCode: normalizeText(record.ciiuCode),
         branches: normalizeBranches(record.branches),
         nota: normalizeText(record.nota),
     };

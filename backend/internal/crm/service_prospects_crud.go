@@ -157,20 +157,19 @@ func (s *Service) CreateProspect(companyID string, req UpsertProspectRequest) (P
 
 	prospectID := uuid.NewString()
 	if _, err := s.db.ExecContext(ctx, `
-INSERT INTO crm_prospects (
-	id, company_id, salutation, name, email, mobile, company, nit, assigned_employee, source,
-	category, zone, prospect_value, allow_follow_up, status, service, note, website,
+	INSERT INTO crm_prospects (
+		id, company_id, name, email, mobile, company, nit, assigned_employee, source,
+		ciiu_code, zone, prospect_value, allow_follow_up, status, service, note, website,
 	office_phone, country, city, address, quotations, soft_delete, created_at, updated_at
 )
 VALUES (
-	$1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-	$11, $12, $13, $14, $15, $16, $17, $18,
-	$19, $20, $21, $22, $23, false, NOW(), NOW()
+	$1, $2, $3, $4, $5, $6, $7, $8, $9,
+	$10, $11, $12, $13, $14, $15, $16, $17,
+	$18, $19, $20, $21, $22, false, NOW(), NOW()
 );
 `,
 		prospectID,
 		companyID,
-		payload.Salutation,
 		payload.Name,
 		payload.Email,
 		payload.Mobile,
@@ -178,7 +177,7 @@ VALUES (
 		payload.Nit,
 		payload.AssignedEmployee,
 		payload.Source,
-		payload.Category,
+		payload.CiiuCode,
 		payload.Zone,
 		payload.ProspectValue,
 		payload.AllowFollowUp,
@@ -224,33 +223,31 @@ func (s *Service) UpdateProspect(companyID, prospectID string, req UpsertProspec
 
 	result, err := s.db.ExecContext(ctx, `
 UPDATE crm_prospects
-SET salutation = $1,
-	name = $2,
-	email = $3,
-	mobile = $4,
-	company = $5,
-	nit = $6,
-	assigned_employee = $7,
-	source = $8,
-	category = $9,
-	zone = $10,
-	prospect_value = $11,
-	allow_follow_up = $12,
-	status = $13,
-	service = $14,
-	note = $15,
-	website = $16,
-	office_phone = $17,
-	country = $18,
-	city = $19,
-	address = $20,
-	quotations = $21,
+	SET name = $1,
+	email = $2,
+	mobile = $3,
+	company = $4,
+	nit = $5,
+	assigned_employee = $6,
+	source = $7,
+	ciiu_code = $8,
+	zone = $9,
+	prospect_value = $10,
+	allow_follow_up = $11,
+	status = $12,
+	service = $13,
+	note = $14,
+	website = $15,
+	office_phone = $16,
+	country = $17,
+	city = $18,
+	address = $19,
+	quotations = $20,
 	updated_at = NOW()
-WHERE company_id = $22
-  AND id = $23
+WHERE company_id = $21
+  AND id = $22
   AND soft_delete = false;
 `,
-		payload.Salutation,
 		payload.Name,
 		payload.Email,
 		payload.Mobile,
@@ -258,7 +255,7 @@ WHERE company_id = $22
 		payload.Nit,
 		payload.AssignedEmployee,
 		payload.Source,
-		payload.Category,
+		payload.CiiuCode,
 		payload.Zone,
 		payload.ProspectValue,
 		payload.AllowFollowUp,

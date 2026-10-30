@@ -533,12 +533,11 @@ export class MainHeaderComponent {
     }
 
     goBack(): void {
-        if (typeof window !== "undefined" && window.history.length > 1) {
-            window.history.back();
-            return;
-        }
-
-        this.router.navigateByUrl("/index", { replaceUrl: true });
+        const path = this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "");
+        const destination = path === "/app/crm-prospectos" || path === "/app/crm-clientes" || path === "/app/crm-cotizaciones"
+            ? "/app/main-menu"
+            : "/app/dashboard";
+        this.router.navigateByUrl(destination);
     }
 
     ngOnInit() {

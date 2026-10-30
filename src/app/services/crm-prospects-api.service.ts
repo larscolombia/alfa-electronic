@@ -21,7 +21,6 @@ export interface CrmProspectContact {
 export interface CrmProspectRecord {
     id: string;
     backendId: string;
-    salutation: string;
     nombre: string;
     correo: string;
     movil: string;
@@ -42,7 +41,7 @@ export interface CrmProspectRecord {
     ciudad: string;
     direccion: string;
     fuente: string;
-    categoria: string;
+    ciiuCode: string;
     nota: string;
     branches: CrmBranchRecord[];
 }
@@ -60,7 +59,6 @@ export interface CrmUpsertBranchPayload {
 }
 
 export interface CrmUpsertProspectPayload {
-    salutation: string;
     name: string;
     email: string;
     mobile: string;
@@ -68,7 +66,7 @@ export interface CrmUpsertProspectPayload {
     nit: string;
     assignedEmployee: string;
     source: string;
-    category: string;
+    ciiuCode: string;
     zone: string;
     prospectValue: number;
     allowFollowUp: boolean;
@@ -87,7 +85,6 @@ export interface CrmUpsertProspectPayload {
 export interface CrmCatalogsResponse {
     employees: string[];
     sources: string[];
-    categories: string[];
     services: string[];
     zones: string[];
 }
@@ -95,14 +92,12 @@ export interface CrmCatalogsResponse {
 type CrmCatalogsApiResponse = {
     employees?: Array<{ id: string; name: string }>;
     sources?: Array<{ id: string; name: string }>;
-    categories?: Array<{ id: string; name: string }>;
     services?: Array<{ id: string; name: string }>;
     zones?: Array<{ id: string; name: string }>;
 };
 
 type CrmProspectApiRecord = {
     id: string;
-    salutation: string;
     name: string;
     email: string;
     mobile: string;
@@ -121,7 +116,7 @@ type CrmProspectApiRecord = {
     city: string;
     address: string;
     source: string;
-    category: string;
+    ciiuCode: string;
     note: string;
     createdAt: string;
     branches?: CrmBranchRecord[];
@@ -149,14 +144,13 @@ export class CrmProspectsApiService {
             map((response) => ({
                 employees: (response.employees ?? []).map((item) => item.name),
                 sources: (response.sources ?? []).map((item) => item.name),
-                categories: (response.categories ?? []).map((item) => item.name),
                 services: (response.services ?? []).map((item) => item.name),
                 zones: (response.zones ?? []).map((item) => item.name),
             }))
         );
     }
 
-    addCatalogItem(catalogType: "employees" | "sources" | "categories" | "services", name: string): Observable<void> {
+    addCatalogItem(catalogType: "employees" | "sources" | "services", name: string): Observable<void> {
         return from(
             this.request<Record<string, never>>(`/api/v1/crm/catalogs/${encodeURIComponent(catalogType)}`, {
                 method: "POST",
@@ -189,6 +183,12 @@ export class CrmProspectsApiService {
                 method: "DELETE",
             })
         ).pipe(map(() => void 0));
+    }
+
+    convertToClient(prospectId: string): Observable<void> {
+        return from(this.request<Record<string, unknown>>(`/api/v1/crm/prospects/${encodeURIComponent(prospectId)}/convert-to-client`, {
+            method: "POST",
+        })).pipe(map(() => void 0));
     }
 
     updateProspectNote(prospectId: string, note: string): Observable<string> {
@@ -240,7 +240,6 @@ export class CrmProspectsApiService {
         return {
             id: backendId,
             backendId,
-            salutation: String(item.salutation ?? "").trim() || "--",
             nombre: String(item.name ?? "").trim(),
             correo: String(item.email ?? "").trim(),
             movil: String(item.mobile ?? "").trim(),
@@ -261,7 +260,7 @@ export class CrmProspectsApiService {
             ciudad: String(item.city ?? "").trim() || "--",
             direccion: String(item.address ?? "").trim() || "--",
             fuente: String(item.source ?? "").trim() || "--",
-            categoria: String(item.category ?? "").trim() || "--",
+            ciiuCode: String(item.ciiuCode ?? "").trim(),
             nota: String(item.note ?? "").trim(),
             branches: this.mapBranches(item.branches),
         };

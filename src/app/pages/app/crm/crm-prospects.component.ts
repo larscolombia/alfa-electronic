@@ -2,12 +2,12 @@ import { NgFor, NgIf } from "@angular/common";
 import { ChangeDetectorRef, Component, ElementRef, ViewChild, inject } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { Router, RouterLink } from "@angular/router";
-import { catchError, forkJoin, map, of } from "rxjs";
+import { catchError, debounceTime, distinctUntilChanged, forkJoin, map, of, Subject, Subscription, switchMap } from "rxjs";
 
 import { CrmProspectEquipmentModalComponent } from "./crm-prospect-equipment-modal.component";
 import { ProspectRecord, replaceProspects } from "./crm-prospects.store";
 import { CrmZoneRecord } from "./crm-zones.store";
-import { CrmClientRecord, UpsertCrmClientRequest, CrmClientsApiService } from "../../../services/crm-clients-api.service";
+import { CrmClientRecord, CrmClientsApiService } from "../../../services/crm-clients-api.service";
 import { CrmEquipmentApiService } from "../../../services/crm-equipment-api.service";
 import { CrmFollowupsApiService, CrmProspectFollowup } from "../../../services/crm-followups-api.service";
 import { CrmProspectContact, CrmProspectRecord, CrmProspectsApiService, CrmUpsertBranchPayload } from "../../../services/crm-prospects-api.service";
@@ -15,9 +15,12 @@ import { FormDraftService } from "../../../services/form-draft.service";
 import { HrPeoplePickerService } from "../../../services/hr-people-picker.service";
 import { SearchableSelectDirective } from "../../../components/input-fields/searchable-select/searchable-select.directive";
 import { ConfirmationModalService } from "../../../services/confirmation-modal.service";
+import { AuthService } from "../../../services/auth.service";
 import { COUNTRY_OPTIONS, citiesForCountry } from "./country-city.dataset";
+import { CIIU_REV5_AC_OPTIONS } from "./ciiu-rev5-ac.data";
+import { GlobalSearchResult, GlobalSearchService } from "../../../services/global-search.service";
 
-type QuickAddTarget = "fuentes" | "categorias" | "servicios";
+type QuickAddTarget = "fuentes" | "servicios";
 
 type ProspectFollowupBadge = {
     label: string;
@@ -85,17 +88,17 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
         </div>
 
         <div class="container-fluid" [class.mt-3]="!showProspectForm" [class.mt-2]="showProspectForm" id="main-content">
-            <div class="card adminuiux-card mb-3 mb-lg-4" *ngIf="!showProspectForm">
+            <details class="card adminuiux-card mb-3 mb-lg-4" [open]="showProspectSearch" (toggle)="onProspectSearchToggle($event)">
+                <summary class="card-header border-bottom d-flex align-items-center gap-2 cursor-pointer"><i class="bi bi-search"></i><strong>Buscar prospectos</strong></summary>
                 <div class="card-body">
                     <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
                         <div>
-                            <h5 class="mb-1">Cartera de prospectos</h5>
-                            <p class="text-secondary small mb-0">{{ filteredProspectCount }} de {{ prospectRows.length }} prospectos</p>
+                            <h5 class="mb-1">Buscar prospecto</h5>
+                            <p class="text-secondary small mb-0">Encuentra una empresa y abre su ficha comercial.</p>
                         </div>
                         <div class="d-flex flex-wrap gap-2">
-                        <button class="btn btn-theme" type="button" (click)="openProspectForm()"><i class="bi bi-plus-lg me-1"></i> Agregar Prospecto</button>
+                            <button class="btn btn-theme" type="button" (click)="openProspectForm()"><i class="bi bi-plus-lg me-1"></i> Agregar Prospecto</button>
                             <a class="btn btn-outline-secondary" routerLink="/app/crm-carga-bases"><i class="bi bi-upload me-1"></i> Importar</a>
-                            <button class="btn btn-outline-secondary" type="button" (click)="exportProspects()" [disabled]="filteredProspectCount === 0"><i class="bi bi-download me-1"></i> Exportar</button>
                         </div>
                     </div>
 
@@ -104,141 +107,38 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
 
                     <div class="alert alert-danger border mb-3" *ngIf="prospectsLoadErrorMessage">{{ prospectsLoadErrorMessage }}</div>
 
-                    <div class="row g-2 align-items-end mb-3" aria-label="Filtros de prospectos">
-                        <div class="col-12 col-lg-7">
-                            <label class="form-label" for="prospects-search">Buscar</label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="bi bi-search" aria-hidden="true"></i></span>
-                                <input id="prospects-search" data-testid="prospects-search" class="form-control" type="search" [(ngModel)]="searchTerm" (ngModelChange)="resetListPage()" placeholder="Nombre, empresa, correo, móvil o responsable" />
+                    <label class="form-label" for="prospects-search">Empresa, correo, ciudad o zona</label>
+                    <div class="input-group input-group-lg">
+                        <span class="input-group-text"><i class="bi bi-search" aria-hidden="true"></i></span>
+                        <input id="prospects-search" data-testid="prospects-search" class="form-control" type="search" [ngModel]="prospectSearchQuery" (ngModelChange)="searchProspects($event)" placeholder="Escribe para buscar prospectos" autocomplete="off" />
+                    </div>
+
+                    <div class="text-secondary small mt-2" *ngIf="isProspectSearchLoading"><span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Buscando prospectos...</div>
+                    <div class="list-group mt-3" *ngIf="prospectSearchResults.length > 0" data-testid="prospect-search-results">
+                        <a class="list-group-item list-group-item-action py-3" *ngFor="let result of prospectSearchResults" [routerLink]="result.route">
+                            <div class="d-flex align-items-center gap-3">
+                                <span class="rounded-circle text-white d-inline-flex align-items-center justify-content-center" [style.background]="result.color" style="width: 2.5rem; height: 2.5rem;"><i class="bi" [class]="result.icon"></i></span>
+                                <span><strong class="d-block">{{ result.title }}</strong><small class="text-secondary">{{ result.subtitle || 'Prospecto' }}</small></span>
                             </div>
-                        </div>
-                        <div class="col-8 col-lg-3">
-                            <label class="form-label" for="prospects-status-filter">Estado</label>
-                            <select appSearchableSelect id="prospects-status-filter" data-testid="prospects-status-filter" class="form-select" [(ngModel)]="statusFilter" (ngModelChange)="resetListPage()">
-                                <option value="">Todos los estados</option>
-                                <option value="Pendiente">Pendiente</option>
-                                <option value="En proceso">En proceso</option>
-                                <option value="Cerrado">Cerrado</option>
-                            </select>
-                        </div>
-                        <div class="col-4 col-lg-2">
-                            <label class="form-label" for="prospects-page-size">Por página</label>
-                            <select appSearchableSelect id="prospects-page-size" data-testid="prospects-page-size" class="form-select" [(ngModel)]="pageSize" (ngModelChange)="resetListPage()">
-                                <option [ngValue]="10">10</option>
-                                <option [ngValue]="25">25</option>
-                                <option [ngValue]="50">50</option>
-                            </select>
-                        </div>
+                        </a>
                     </div>
-
-                    <div class="table-responsive border rounded">
-                        <table class="table align-middle mb-0">
-                            <thead>
-                                <tr>
-                                    <th>
-                                        <button class="btn btn-link p-0 text-decoration-none fw-semibold" type="button" (click)="toggleSort('compania')">
-                                            Empresa
-                                            <i class="bi" [class.bi-sort-alpha-down]="sortKey === 'compania' && sortDirection === 'asc'" [class.bi-sort-alpha-up]="sortKey === 'compania' && sortDirection === 'desc'" [class.bi-arrow-down-up]="sortKey !== 'compania'"></i>
-                                        </button>
-                                    </th>
-                                    <th>Correo electrónico</th>
-                                    <th>Móvil</th>
-                                    <th>
-                                        <button class="btn btn-link p-0 text-decoration-none fw-semibold" type="button" (click)="toggleSort('creado')">
-                                            Creado
-                                            <i class="bi" [class.bi-sort-numeric-down]="sortKey === 'creado' && sortDirection === 'asc'" [class.bi-sort-numeric-up]="sortKey === 'creado' && sortDirection === 'desc'" [class.bi-arrow-down-up]="sortKey !== 'creado'"></i>
-                                        </button>
-                                    </th>
-                                    <th>Estado</th>
-                                    <th>Acción</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr *ngFor="let row of visibleProspectRows">
-                                    <td>
-                                        <a class="text-decoration-none fw-semibold" [routerLink]="['/app/crm-prospectos', row.id]">{{ prospectDisplayCompany(row) }}</a>
-                                        <div class="small text-secondary mt-1" *ngIf="row.compania">Contacto: {{ row.nombre }}</div>
-                                        <div class="d-flex flex-wrap gap-1 mt-1">
-                                            <span class="badge text-bg-primary" *ngIf="row.empleado">{{ row.empleado }}</span>
-                                            <span class="badge text-bg-secondary" *ngIf="isProspectConverted(row.id)" data-testid="prospect-converted-badge" title="Este prospecto ya fue convertido en cliente">Convertido</span>
-                                            <span class="badge text-bg-success" *ngIf="row.cotizaciones">{{ row.cotizaciones }} cot.</span>
-                                            <span class="badge text-bg-info" *ngIf="row.zona">{{ row.zona }}</span>
-                                        </div>
-                                        <div class="mt-1" *ngIf="nextFollowupBadge(row.id) as badge">
-                                            <span class="badge" [class.text-bg-danger]="badge.overdue" [class.text-bg-warning]="!badge.overdue && badge.dueToday" [class.text-bg-info]="!badge.overdue && !badge.dueToday">
-                                                {{ badge.label }}
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td>{{ row.correo }}</td>
-                                    <td>{{ row.movil }}</td>
-                                    <td>{{ row.creado }}</td>
-                                    <td>
-                                        <span class="badge" [class.text-bg-warning]="row.estado === 'Pendiente'" [class.text-bg-info]="row.estado === 'En proceso'" [class.text-bg-success]="row.estado === 'Cerrado'">
-                                            {{ row.estado }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div class="dropdown d-inline-block">
-                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-popper-config='{"strategy":"fixed","modifiers":[{"name":"computeStyles","options":{"gpuAcceleration":false}}]}'>
-                                                Acciones
-                                            </button>
-                                            <ul class="dropdown-menu dropdown-menu-end" style="z-index: 1055;">
-                                                <li><a class="dropdown-item" [routerLink]="['/app/crm-prospectos', row.id]">Abrir ficha</a></li>
-                                                <li><button class="dropdown-item" type="button" (click)="openEquipmentModal(row)">Asociar equipo{{ associatedEquipmentCount(row) > 0 ? ' (' + associatedEquipmentCount(row) + ')' : '' }}</button></li>
-                                                <li><button class="dropdown-item" type="button" [disabled]="isConvertingProspect(row.id) || isProspectConverted(row.id)" (click)="convertProspectToClient(row)">{{ isProspectConverted(row.id) ? 'Convertido' : isConvertingProspect(row.id) ? 'Convirtiendo...' : 'Convertir a cliente' }}</button></li>
-                                                <li><a class="dropdown-item" routerLink="/app/crm-cotizaciones">Ver cotizaciones</a></li>
-                                                <li><hr class="dropdown-divider"></li>
-                                                <li><button class="dropdown-item text-danger" type="button" [disabled]="isDeletingProspect(row.id)" (click)="deleteProspect(row)">{{ isDeletingProspect(row.id) ? 'Eliminando...' : 'Eliminar prospecto' }}</button></li>
-                                            </ul>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr *ngIf="visibleProspectRows.length === 0">
-                                    <td colspan="6" class="text-center py-5 text-secondary">
-                                        <i class="bi bi-search fs-3 d-block mb-2" aria-hidden="true"></i>
-                                        <strong>No encontramos prospectos</strong>
-                                        <div class="small">Cambia los filtros o agrega un prospecto nuevo.</div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div class="text-center text-secondary py-5" *ngIf="prospectSearchQuery.trim() && !isProspectSearchLoading && prospectSearchResults.length === 0">
+                        <i class="bi bi-search fs-3 d-block mb-2" aria-hidden="true"></i>No encontramos prospectos con esa búsqueda.
                     </div>
-                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3" data-testid="prospects-pagination" *ngIf="filteredProspectCount > 0">
-                        <span class="small text-secondary">Mostrando {{ pageStart }}–{{ pageEnd }} de {{ filteredProspectCount }}</span>
-                        <div class="btn-group" aria-label="Paginación de prospectos">
-                            <button class="btn btn-outline-secondary" type="button" (click)="previousPage()" [disabled]="currentPage === 1">Anterior</button>
-                            <button class="btn btn-outline-secondary disabled" type="button" aria-current="page">Página {{ currentPage }} de {{ totalPages }}</button>
-                            <button class="btn btn-outline-secondary" type="button" (click)="nextPage()" [disabled]="currentPage === totalPages">Siguiente</button>
-                        </div>
+                    <div class="text-center text-secondary py-5" *ngIf="!prospectSearchQuery.trim()">
+                        <i class="bi bi-search-heart fs-3 d-block mb-2" aria-hidden="true"></i>Busca por empresa, correo, ciudad o zona para abrir una ficha.
                     </div>
                 </div>
-            </div>
+            </details>
 
-            <div #prospectFormCard class="card adminuiux-card prospect-form-card mb-3" *ngIf="showProspectForm">
-                <div class="card-header border-bottom">
-                    <div class="d-flex align-items-center justify-content-between gap-2">
-                        <div>
-                            <h5 class="mb-1">Nuevo prospecto</h5>
-                            <p class="small text-secondary mb-0">Registra la información necesaria para iniciar el seguimiento comercial.</p>
-                        </div>
-                        <button class="btn btn-outline-secondary" type="button" (click)="closeProspectForm()" [disabled]="isSavingProspect"><i class="bi bi-x-lg me-1"></i> Cerrar</button>
-                    </div>
-                </div>
+            <details #prospectFormCard class="card adminuiux-card prospect-form-card mb-3" [open]="showProspectForm" (toggle)="onProspectFormToggle($event)">
+                <summary class="card-header border-bottom cursor-pointer"><i class="bi bi-plus-lg me-1"></i><strong>Agregar prospecto</strong><span class="small text-secondary ms-2">Registra una nueva empresa.</span></summary>
                 <div class="card-body prospect-form-body">
                     <div class="alert alert-danger border mb-3" *ngIf="catalogsLoadErrorMessage">{{ catalogsLoadErrorMessage }}</div>
                     <h6 class="text-uppercase text-secondary small fw-bold mb-3">Información básica</h6>
                     <div class="row gx-3 prospect-form-grid">
                         <div class="col-12 col-sm-6 col-lg-3 mb-2">
-                            <label class="form-label" for="prospect-salutation">Saludo</label>
-                            <select appSearchableSelect id="prospect-salutation" class="form-select" [(ngModel)]="formSaludo" name="formSaludo">
-                                <option value="--">--</option>
-                                <option value="Sr.">Sr.</option>
-                                <option value="Sra.">Sra.</option>
-                            </select>
-                        </div>
-                        <div class="col-12 col-sm-6 col-lg-3 mb-2">
-                            <label class="form-label" for="prospect-company">Empresa</label>
+                            <label class="form-label" for="prospect-company">Empresa *</label>
                             <input
                                 id="prospect-company"
                                 class="form-control"
@@ -251,10 +151,6 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
                         <div class="col-12 col-sm-6 col-lg-3 mb-2">
                             <label class="form-label">Correo electrónico del contacto</label>
                             <input class="form-control" type="email" placeholder="por ejemplo, juanperez@example.com" [(ngModel)]="formCorreo" name="formCorreo" maxlength="180" />
-                        </div>
-                        <div class="col-12 col-sm-6 col-lg-3 mb-2">
-                            <label class="form-label" for="prospect-contact-name">Nombre del contacto *</label>
-                            <input id="prospect-contact-name" #prospectNameInput class="form-control" placeholder="por ejemplo, Juan Perez" [(ngModel)]="formNombre" name="formNombre" maxlength="180" />
                         </div>
                         <div class="col-12 col-sm-6 col-lg-3 mb-2">
                             <label class="form-label" for="prospect-nit">NIT *</label>
@@ -306,14 +202,11 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
                             </div>
                         </div>
                         <div class="col-12 col-lg-4 mb-2">
-                            <label class="form-label" for="prospect-category">Categoría del prospecto</label>
-                            <div class="input-group">
-                                <select appSearchableSelect id="prospect-category" class="form-select" [(ngModel)]="formCategoria" name="formCategoria">
-                                    <option value="">--</option>
-                                    <option *ngFor="let option of categoryOptions" [value]="option">{{ option }}</option>
-                                </select>
-                                <button class="btn btn-outline-secondary" type="button" (click)="openQuickAddModal('categorias')">Agregar</button>
-                            </div>
+                            <label class="form-label" for="prospect-ciiu">CIIU Colombia</label>
+                            <select appSearchableSelect id="prospect-ciiu" class="form-select" [(ngModel)]="formCiiuCode" name="formCiiuCode">
+                                <option value="">Buscar código o actividad económica</option>
+                                <option *ngFor="let option of ciiuOptions" [value]="option.code">{{ option.code }} - {{ option.activity }}</option>
+                            </select>
                         </div>
 
                         <div class="col-12 mb-2">
@@ -462,11 +355,11 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
                 </div>
                 <div class="card-footer">
                     <div class="alert alert-danger border mb-3" *ngIf="prospectSaveErrorMessage">{{ prospectSaveErrorMessage }}</div>
-                    <button class="btn btn-theme me-2" type="button" data-testid="prospect-save-btn" [disabled]="isSavingProspect || !isValidNit(formNit)" (click)="saveProspect()"><i class="bi bi-check2 me-1"></i> {{ isSavingProspect ? 'Guardando...' : 'Guardar' }}</button>
-                    <button class="btn btn-outline-secondary me-2" type="button" [disabled]="isSavingProspect || !isValidNit(formNit)" (click)="saveProspectAndAddMore()">Guardar y agregar otro</button>
+                    <button class="btn btn-theme me-2" type="button" data-testid="prospect-save-btn" [disabled]="isSavingProspect || !isValidNit(formNit) || !formCompania.trim()" (click)="saveProspect()"><i class="bi bi-check2 me-1"></i> {{ isSavingProspect ? 'Guardando...' : 'Guardar' }}</button>
+                    <button class="btn btn-outline-secondary me-2" type="button" [disabled]="isSavingProspect || !isValidNit(formNit) || !formCompania.trim()" (click)="saveProspectAndAddMore()">Guardar y agregar otro</button>
                     <button class="btn btn-link" type="button" (click)="closeProspectForm()">Cancelar</button>
                 </div>
-            </div>
+            </details>
         </div>
 
         <div class="modal fade show" tabindex="-1" role="dialog" aria-modal="true" style="display: block;" *ngIf="isQuickAddModalOpen">
@@ -549,6 +442,8 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
     `,
     styles: [`
         .prospect-form-card .card-header { padding-block: .75rem; }
+        .cursor-pointer { cursor: pointer; list-style: none; }
+        .cursor-pointer::-webkit-details-marker { display: none; }
         .prospect-form-body { padding-block: 1rem; }
         .prospect-form-grid .form-label { margin-bottom: .25rem; font-size: .875rem; }
         .prospect-form-grid .form-text { margin-top: .2rem; line-height: 1.2; }
@@ -558,9 +453,7 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
         .prospect-branches-details summary::before { content: '\\F282'; font-family: bootstrap-icons; margin-right: .45rem; }
         .prospect-branches-details[open] summary::before { content: '\\F286'; }
         .prospect-branches-details > div { margin-top: .75rem; }
-        @media (min-width: 1200px) {
-            .prospect-form-card { max-width: 1600px; margin-inline: auto; }
-        }
+        .prospect-form-card { width: 100%; max-width: none; }
     `],
 })
 export class CrmProspectsComponent {
@@ -568,6 +461,11 @@ export class CrmProspectsComponent {
     @ViewChild("prospectNameInput") private prospectNameInputRef?: ElementRef<HTMLInputElement>;
 
     prospectRows: ProspectRecord[] = [];
+    prospectSearchQuery = "";
+    prospectSearchResults: GlobalSearchResult[] = [];
+    isProspectSearchLoading = false;
+    private readonly prospectSearchSubject = new Subject<string>();
+    private prospectSearchSub?: Subscription;
     searchTerm = "";
     statusFilter = "";
     pageSize = 10;
@@ -635,8 +533,8 @@ export class CrmProspectsComponent {
     exportProspects(): void {
         const rows = this.filteredProspectRows;
         const cells = [
-            ["Empresa", "Nombre del contacto", "Correo electrónico", "Móvil", "Responsable", "Zona", "Estado", "Creado"],
-            ...rows.map((row) => [row.compania, row.nombre, row.correo, row.movil, row.empleado, row.zona, row.estado, row.creado]),
+            ["Empresa", "Correo electrónico", "Móvil", "Responsable", "Zona", "Estado", "Creado"],
+            ...rows.map((row) => [row.compania, row.correo, row.movil, row.empleado, row.zona, row.estado, row.creado]),
         ];
         const csv = cells.map((row) => row.map((value) => `"${String(value ?? "").replaceAll('"', '""')}"`).join(",")).join("\n");
         const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }));
@@ -677,7 +575,6 @@ export class CrmProspectsComponent {
 
     employeeOptions: string[] = [];
     sourceOptions: string[] = [];
-    categoryOptions: string[] = [];
     serviceOptions: string[] = [];
 
     isQuickAddModalOpen = false;
@@ -685,6 +582,7 @@ export class CrmProspectsComponent {
     quickAddInput = "";
     quickAddErrorMessage = "";
     showProspectForm = false;
+    showProspectSearch = true;
     selectedEquipmentProspect: ProspectRecord | null = null;
 
     prospectsLoadErrorMessage = "";
@@ -704,8 +602,6 @@ export class CrmProspectsComponent {
     private companyProspectTargets: CompanyRelatedProspectTarget[] = [];
     private companyContactsLoadedForKey = "";
 
-    formSaludo = "Sr.";
-    formNombre = "";
     formCorreo = "";
     formCompania = "";
     formNit = "";
@@ -713,7 +609,7 @@ export class CrmProspectsComponent {
     formMovil = "";
     formSitioWeb = "";
     formTelefonoOficina = "";
-    formPais = "";
+    formPais = "Colombia";
     formCiudad = "";
     readonly countryOptions = COUNTRY_OPTIONS;
 
@@ -737,14 +633,14 @@ export class CrmProspectsComponent {
     formDireccion = "";
     formEmpleado = "";
     formFuente = "";
-    formCategoria = "";
+    formCiiuCode = "";
+    readonly ciiuOptions = CIIU_REV5_AC_OPTIONS;
     formEstado = "Pendiente";
     formServicio = "";
     formNota = "";
     prospectBranches: ProspectBranchDraft[] = [];
     private stopDraftWatch: () => void = () => undefined;
     private readonly convertingProspectIds = new Set<string>();
-    private readonly convertedProspectIds = new Set<string>();
     private readonly deletingProspectIds = new Set<string>();
     private readonly confirmationModal = inject(ConfirmationModalService);
 
@@ -766,15 +662,15 @@ export class CrmProspectsComponent {
         private readonly crmClientsApi: CrmClientsApiService,
         private readonly crmEquipmentApi: CrmEquipmentApiService,
         private readonly crmFollowupsApi: CrmFollowupsApiService,
+        private readonly authService: AuthService,
         private readonly hrPeople: HrPeoplePickerService,
         private readonly cdr: ChangeDetectorRef,
         private readonly formDraftService: FormDraftService,
+        private readonly globalSearch: GlobalSearchService,
     ) {
         const draft = this.formDraftService.load<{
             showProspectForm?: boolean;
             selectedProspectZone?: string;
-            formSaludo?: string;
-            formNombre?: string;
             formCorreo?: string;
             formCompania?: string;
             formNit?: string;
@@ -786,7 +682,7 @@ export class CrmProspectsComponent {
             formDireccion?: string;
             formEmpleado?: string;
             formFuente?: string;
-            formCategoria?: string;
+            formCiiuCode?: string;
             formEstado?: string;
             formServicio?: string;
             formNota?: string;
@@ -796,8 +692,6 @@ export class CrmProspectsComponent {
         if (draft) {
             this.showProspectForm = Boolean(draft.showProspectForm ?? this.showProspectForm);
             this.selectedProspectZone = String(draft.selectedProspectZone ?? this.selectedProspectZone);
-            this.formSaludo = String(draft.formSaludo ?? this.formSaludo);
-            this.formNombre = String(draft.formNombre ?? this.formNombre);
             this.formCorreo = String(draft.formCorreo ?? this.formCorreo);
             this.formCompania = String(draft.formCompania ?? this.formCompania);
             this.formNit = String(draft.formNit ?? this.formNit);
@@ -809,7 +703,7 @@ export class CrmProspectsComponent {
             this.formDireccion = String(draft.formDireccion ?? this.formDireccion);
             this.formEmpleado = String(draft.formEmpleado ?? this.formEmpleado);
             this.formFuente = String(draft.formFuente ?? this.formFuente);
-            this.formCategoria = String(draft.formCategoria ?? this.formCategoria);
+            this.formCiiuCode = String(draft.formCiiuCode ?? this.formCiiuCode);
             this.formEstado = String(draft.formEstado ?? this.formEstado);
             this.formServicio = String(draft.formServicio ?? this.formServicio);
             this.formNota = String(draft.formNota ?? this.formNota);
@@ -819,8 +713,6 @@ export class CrmProspectsComponent {
         this.stopDraftWatch = this.formDraftService.watch(CRM_PROSPECT_FORM_DRAFT_KEY, () => ({
             showProspectForm: this.showProspectForm,
             selectedProspectZone: this.selectedProspectZone,
-            formSaludo: this.formSaludo,
-            formNombre: this.formNombre,
             formCorreo: this.formCorreo,
             formCompania: this.formCompania,
             formNit: this.formNit,
@@ -832,7 +724,7 @@ export class CrmProspectsComponent {
             formDireccion: this.formDireccion,
             formEmpleado: this.formEmpleado,
             formFuente: this.formFuente,
-            formCategoria: this.formCategoria,
+            formCiiuCode: this.formCiiuCode,
             formEstado: this.formEstado,
             formServicio: this.formServicio,
             formNota: this.formNota,
@@ -840,21 +732,38 @@ export class CrmProspectsComponent {
         }));
 
         replaceProspects([]);
-        this.loadProspectsFromApi();
         this.loadCatalogsFromApi();
         this.loadEmployeeOptions();
+        this.prospectSearchSub = this.prospectSearchSubject.pipe(
+            debounceTime(300),
+            distinctUntilChanged(),
+            switchMap((query) => {
+                if (!query.trim()) return of([] as GlobalSearchResult[]);
+                return this.globalSearch.searchProspects(query);
+            }),
+        ).subscribe((results) => {
+            this.isProspectSearchLoading = false;
+            this.prospectSearchResults = results;
+            this.cdr.detectChanges();
+        });
     }
 
     ngOnDestroy(): void {
         this.stopDraftWatch();
+        this.prospectSearchSub?.unsubscribe();
+    }
+
+    searchProspects(query: string): void {
+        this.prospectSearchQuery = query;
+        this.isProspectSearchLoading = Boolean(query.trim());
+        if (!query.trim()) this.prospectSearchResults = [];
+        this.prospectSearchSubject.next(query);
     }
 
     get quickAddTargetLabel(): string {
         switch (this.quickAddTarget) {
             case "fuentes":
                 return "fuente";
-            case "categorias":
-                return "categoria";
             case "servicios":
                 return "servicio";
             default:
@@ -873,8 +782,19 @@ export class CrmProspectsComponent {
         this.resetProspectForm();
         this.resetCompanyRelatedContactsContext();
         this.showProspectForm = true;
+        this.showProspectSearch = false;
         this.cdr.detectChanges();
         this.bringProspectFormIntoView();
+    }
+
+    onProspectSearchToggle(event: Event): void {
+        this.showProspectSearch = (event.target as HTMLDetailsElement).open;
+        if (this.showProspectSearch) this.showProspectForm = false;
+    }
+
+    onProspectFormToggle(event: Event): void {
+        this.showProspectForm = (event.target as HTMLDetailsElement).open;
+        if (this.showProspectForm) this.showProspectSearch = false;
     }
 
     saveProspect(): void {
@@ -891,6 +811,7 @@ export class CrmProspectsComponent {
 
     closeProspectForm(): void {
         this.showProspectForm = false;
+        this.showProspectSearch = true;
         this.resetCompanyRelatedContactsContext();
     }
 
@@ -1092,7 +1013,7 @@ export class CrmProspectsComponent {
     }
 
     convertProspectToClient(prospect: ProspectRecord): void {
-        if (this.isConvertingProspect(prospect.id) || this.isProspectConverted(prospect.id)) {
+        if (this.isConvertingProspect(prospect.id)) {
             return;
         }
 
@@ -1103,52 +1024,16 @@ export class CrmProspectsComponent {
             return;
         }
 
-        if (!this.isValidNit(this.formNit)) {
-            this.nitTouched = true;
-            this.prospectSaveErrorMessage = "El NIT es obligatorio y debe incluir un guion, por ejemplo 900123456-7.";
-            return;
-        }
-
-        const correo = prospect.correo.trim();
-        if (correo && !this.isValidEmail(correo)) {
-            this.prospectConvertSuccessMessage = "";
-            this.prospectConvertErrorMessage = `El correo de ${nombre} no tiene un formato válido.`;
-            return;
-        }
-
-        const payload: UpsertCrmClientRequest = {
-            nombre,
-            correo,
-            empresa: prospect.compania.trim() || nombre,
-            nit: prospect.nit.trim(),
-            zona: prospect.zona.trim() || this.zoneOptions[0]?.name || "General",
-            estado: "Activo",
-            website: (prospect.sitioWeb ?? "").trim() === "--" ? "" : (prospect.sitioWeb ?? "").trim(),
-            officePhone: (prospect.telefonoOficina ?? "").trim() === "--" ? "" : (prospect.telefonoOficina ?? "").trim(),
-            country: (prospect.pais ?? "").trim() === "--" ? "" : (prospect.pais ?? "").trim(),
-            city: (prospect.ciudad ?? "").trim() === "--" ? "" : (prospect.ciudad ?? "").trim(),
-            address: (prospect.direccion ?? "").trim() === "--" ? "" : (prospect.direccion ?? "").trim(),
-            credito: {
-                enabled: false,
-                creditLimit: 0,
-                consumed: 0,
-                lastPaymentDate: "",
-                paymentTermDays: 30,
-            },
-            branches: this.mapProspectBranchesToClient(prospect),
-        };
-
         this.convertingProspectIds.add(prospect.id);
         this.prospectConvertSuccessMessage = "";
         this.prospectConvertErrorMessage = "";
 
-        this.crmClientsApi.createClient(payload).subscribe({
+        this.crmProspectsApi.convertToClient(prospect.backendId || prospect.id).subscribe({
             next: () => {
                 this.convertingProspectIds.delete(prospect.id);
-                this.convertedProspectIds.add(prospect.id);
                 this.prospectConvertErrorMessage = "";
                 this.prospectConvertSuccessMessage = `Prospecto ${nombre} convertido a cliente correctamente.`;
-                this.syncConvertedProspectsFromBackend();
+                this.loadProspectsFromApi();
                 this.cdr.detectChanges();
             },
             error: (error) => {
@@ -1164,18 +1049,13 @@ export class CrmProspectsComponent {
         return this.convertingProspectIds.has(prospectId);
     }
 
-    isProspectConverted(prospectId: string): boolean {
-        return this.convertedProspectIds.has(prospectId);
-    }
-
     nextFollowupBadge(prospectId: string): ProspectFollowupBadge | null {
         return this.nextFollowupByProspectId[prospectId] ?? null;
     }
 
     private doSaveProspect(keepOpen: boolean): void {
-        const nombre = this.formNombre.trim();
-        if (!nombre) {
-            this.prospectSaveErrorMessage = "El nombre del contacto es requerido.";
+        if (!this.formCompania.trim()) {
+            this.prospectSaveErrorMessage = "La empresa es obligatoria.";
             return;
         }
 
@@ -1216,8 +1096,7 @@ export class CrmProspectsComponent {
 
     private executeProspectSave(branches: CrmUpsertBranchPayload[], keepOpen: boolean): void {
         this.crmProspectsApi.createProspect({
-            salutation: this.formSaludo,
-            name: this.formNombre.trim(),
+            name: this.formCompania.trim(),
             email: this.formCorreo.trim(),
             mobile: this.formMovil.trim(),
             company: this.formCompania.trim(),
@@ -1229,7 +1108,7 @@ export class CrmProspectsComponent {
             address: this.formDireccion.trim(),
             assignedEmployee: this.formEmpleado,
             source: this.formFuente,
-            category: this.formCategoria,
+            ciiuCode: this.formCiiuCode,
             zone: this.selectedProspectZone,
             prospectValue: 0,
             allowFollowUp: true,
@@ -1246,6 +1125,7 @@ export class CrmProspectsComponent {
                     this.resetProspectForm();
                 } else {
                     this.showProspectForm = false;
+                    this.showProspectSearch = true;
                 }
                 this.formDraftService.remove(CRM_PROSPECT_FORM_DRAFT_KEY);
                 this.cdr.detectChanges();
@@ -1278,7 +1158,6 @@ export class CrmProspectsComponent {
     }
 
     private buildDuplicateMatches(clients: CrmClientRecord[]): DuplicateMatch[] {
-        const inputNombre = this.formNombre.trim();
         const inputCorreo = this.formCorreo.trim().toLowerCase();
         const inputEmpresa = this.formCompania.trim();
         const matches: DuplicateMatch[] = [];
@@ -1288,9 +1167,6 @@ export class CrmProspectsComponent {
                 return true;
             }
             if (inputEmpresa && this.normalizeCompanyKey(recordEmpresa) === this.normalizeCompanyKey(inputEmpresa)) {
-                return true;
-            }
-            if (inputNombre && this.normalizeCompanyKey(recordNombre) === this.normalizeCompanyKey(inputNombre)) {
                 return true;
             }
             return false;
@@ -1332,8 +1208,6 @@ export class CrmProspectsComponent {
     }
 
     private resetProspectForm(): void {
-        this.formSaludo = "Sr.";
-        this.formNombre = "";
         this.formCorreo = "";
         this.formCompania = "";
         this.formNit = "";
@@ -1341,18 +1215,24 @@ export class CrmProspectsComponent {
         this.formMovil = "";
         this.formSitioWeb = "";
         this.formTelefonoOficina = "";
-        this.formPais = "";
+        this.formPais = "Colombia";
         this.formCiudad = "";
         this.formDireccion = "";
-        this.formEmpleado = "";
+        this.formEmpleado = this.currentLoggedInEmployee();
         this.formFuente = "";
-        this.formCategoria = "";
+        this.formCiiuCode = "";
         this.formEstado = "Pendiente";
         this.formServicio = "";
         this.formNota = "";
         this.prospectBranches = [];
         this.prospectSaveErrorMessage = "";
         this.resetCompanyRelatedContactsContext();
+        this.loadEmployeeOptions();
+    }
+
+    private currentLoggedInEmployee(): string {
+        const user = this.authService.getCurrentUser();
+        return String(user?.name ?? "").trim() || String(user?.email ?? "").trim();
     }
 
     private loadProspectsFromApi(): void {
@@ -1363,7 +1243,6 @@ export class CrmProspectsComponent {
                 this.prospectsLoadErrorMessage = "";
                 this.refreshEquipmentCountsFromApi();
                 this.refreshFollowupBadges(this.prospectRows);
-                this.syncConvertedProspectsFromBackend();
                 this.cdr.detectChanges();
             },
             error: (error) => {
@@ -1371,7 +1250,6 @@ export class CrmProspectsComponent {
                 replaceProspects([]);
                 this.equipmentCountMap = {};
                 this.nextFollowupByProspectId = {};
-                this.convertedProspectIds.clear();
                 this.prospectsLoadErrorMessage = this.resolveErrorMessage(error, "No se pudo cargar prospectos desde backend.");
                 this.cdr.detectChanges();
             },
@@ -1382,7 +1260,6 @@ export class CrmProspectsComponent {
         this.crmProspectsApi.catalogs().subscribe({
             next: (catalogs) => {
                 this.sourceOptions = [...catalogs.sources];
-                this.categoryOptions = [...catalogs.categories];
                 this.serviceOptions = [...catalogs.services];
                 this.zoneOptions = catalogs.zones.map((name, index) => ({ id: index + 1, name }));
 
@@ -1395,7 +1272,6 @@ export class CrmProspectsComponent {
             },
             error: (error) => {
                 this.sourceOptions = [];
-                this.categoryOptions = [];
                 this.serviceOptions = [];
                 this.zoneOptions = [];
                 this.selectedProspectZone = "";
@@ -1422,12 +1298,10 @@ export class CrmProspectsComponent {
         });
     }
 
-    private catalogTypeFromQuickTarget(target: QuickAddTarget): "sources" | "categories" | "services" | null {
+    private catalogTypeFromQuickTarget(target: QuickAddTarget): "sources" | "services" | null {
         switch (target) {
             case "fuentes":
                 return "sources";
-            case "categorias":
-                return "categories";
             case "servicios":
                 return "services";
             default:
@@ -1549,45 +1423,6 @@ export class CrmProspectsComponent {
         const dd = String(date.getDate()).padStart(2, "0");
         const month = String(date.getMonth() + 1).padStart(2, "0");
         return `${dd}/${month} ${hh}:${mm}`;
-    }
-
-    private syncConvertedProspectsFromBackend(): void {
-        this.crmClientsApi.listClients({ limit: 500 }).subscribe({
-            next: (clients) => {
-                this.convertedProspectIds.clear();
-                for (const prospect of this.prospectRows) {
-                    if (this.hasClientMatchForProspect(clients, prospect)) {
-                        this.convertedProspectIds.add(prospect.id);
-                    }
-                }
-                this.cdr.detectChanges();
-            },
-            error: () => {
-                this.cdr.detectChanges();
-            },
-        });
-    }
-
-    private hasClientMatchForProspect(clients: CrmClientRecord[], prospect: ProspectRecord): boolean {
-        const prospectCompany = prospect.compania.trim().toLowerCase();
-        const prospectName = prospect.nombre.trim().toLowerCase();
-        const prospectEmail = prospect.correo.trim().toLowerCase();
-
-        return clients.some((client) => {
-            const clientCompany = client.empresa.trim().toLowerCase();
-            const clientName = client.nombre.trim().toLowerCase();
-            const clientEmail = client.correo.trim().toLowerCase();
-
-            if (prospectEmail && clientEmail && prospectEmail === clientEmail) {
-                return true;
-            }
-
-            if (prospectCompany && clientCompany && prospectCompany === clientCompany) {
-                return true;
-            }
-
-            return Boolean(prospectName && clientName && prospectName === clientName && (!prospectCompany || !clientCompany || prospectCompany === clientCompany));
-        });
     }
 
     private loadCompanyRelatedContacts(preselectContactId = ""): void {
@@ -1864,49 +1699,6 @@ export class CrmProspectsComponent {
         return normalized;
     }
 
-    private mapProspectBranchesToClient(prospect: ProspectRecord): NonNullable<UpsertCrmClientRequest["branches"]> {
-        const branches = (prospect.branches ?? []).map((branch) => ({
-            name: String(branch.name ?? "").trim(),
-            contactName: String(branch.contactName ?? "").trim(),
-            contactRole: String(branch.contactRole ?? "").trim(),
-            email: String(branch.email ?? "").trim(),
-            phone: String(branch.phone ?? "").trim(),
-            country: String(branch.country ?? "").trim(),
-            city: String(branch.city ?? "").trim(),
-            address: String(branch.address ?? "").trim(),
-            isPrimary: Boolean(branch.isPrimary),
-        })).filter((branch) => branch.name.length > 0 || branch.contactName.length > 0 || branch.email.length > 0 || branch.city.length > 0 || branch.address.length > 0 || branch.isPrimary);
-
-        const primaryIndex = branches.findIndex((branch) => branch.isPrimary);
-        if (branches.length > 0) {
-            if (primaryIndex < 0) {
-                branches[0].isPrimary = true;
-            } else {
-                for (let index = 0; index < branches.length; index += 1) {
-                    branches[index].isPrimary = index === primaryIndex;
-                }
-            }
-            return branches;
-        }
-
-        const fallbackName = prospect.compania.trim() || prospect.nombre.trim();
-        const hasFallback = Boolean(fallbackName || prospect.correo.trim() || prospect.movil.trim() || prospect.pais.trim() || prospect.ciudad.trim() || prospect.direccion.trim());
-        if (!hasFallback) {
-            return [];
-        }
-
-        return [{
-            name: fallbackName || "Sucursal principal",
-            contactName: prospect.nombre.trim(),
-            contactRole: "",
-            email: prospect.correo.trim(),
-            phone: prospect.movil.trim(),
-            country: prospect.pais.trim() === "--" ? "" : prospect.pais.trim(),
-            city: prospect.ciudad.trim() === "--" ? "" : prospect.ciudad.trim(),
-            address: prospect.direccion.trim() === "--" ? "" : prospect.direccion.trim(),
-            isPrimary: true,
-        }];
-    }
 
     private resolveErrorMessage(error: unknown, fallback: string): string {
         if (error instanceof Error && error.message.trim()) {

@@ -3,9 +3,11 @@ package equipmentcatalog
 import (
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/labstack/echo/v4"
 	"pika.software.net.co/backend/internal/platform/company"
+	"pika.software.net.co/backend/internal/platform/mailer"
 )
 
 type Handler struct {
@@ -105,6 +107,17 @@ func (h *Handler) upsertLocation(c echo.Context) error {
 	if err := c.Bind(&item); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "cuerpo de solicitud invalido"})
 	}
+	// Cualquiera puede proponer una nueva ubicación durante la recepción; una
+	// ubicación existente solo puede ser renombrada o modificada por admin.
+	if strings.TrimSpace(item.ID) != "" {
+		exists, err := h.service.LocationExists(companyID, item.ID)
+		if err != nil {
+			return h.fail(c, err, "no se pudo validar la ubicacion")
+		}
+		if exists && !isCatalogAdmin(c) {
+			return c.JSON(http.StatusForbidden, map[string]string{"error": "solo un administrador puede editar una ubicación"})
+		}
+	}
 
 	saved, err := h.service.UpsertLocation(companyID, item)
 	if err != nil {
@@ -114,7 +127,19 @@ func (h *Handler) upsertLocation(c echo.Context) error {
 }
 
 func (h *Handler) deleteLocation(c echo.Context) error {
-	return h.delete(c, h.service.DeleteLocation, "no se pudo eliminar la ubicacion")
+	if !isCatalogAdmin(c) {
+		return c.JSON(http.StatusForbidden, map[string]string{"error": "solo un administrador puede eliminar una ubicación"})
+	}
+	companyID := company.IDFromRequest(c)
+	if err := h.service.DeleteLocation(companyID, c.Param("itemID"), c.QueryParam("reassignTo")); err != nil {
+		return h.fail(c, err, "no se pudo eliminar la ubicacion")
+	}
+	return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
+}
+
+func isCatalogAdmin(c echo.Context) bool {
+	role := strings.ToLower(strings.TrimSpace(mailer.RoleFromContext(c)))
+	return role == "admin" || role == "superadmin"
 }
 
 // delete comparte el borrado: los cuatro maestros se borran igual.
@@ -132,6 +157,7 @@ func (h *Handler) fail(c echo.Context, err error, fallback string) error {
 	switch {
 	case errors.Is(err, errCompanyRequired),
 		errors.Is(err, errIDRequired),
+		errors.Is(err, errReassignTarget),
 		errors.Is(err, errNameRequired),
 		errors.Is(err, errModelIncomplete):
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})

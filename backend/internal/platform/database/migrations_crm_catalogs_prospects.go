@@ -16,7 +16,6 @@ func migrationStatementsCRMCatalogsAndProspects() []string {
 		`CREATE TABLE IF NOT EXISTS crm_prospects (
 			id TEXT PRIMARY KEY,
 			company_id TEXT NOT NULL,
-			salutation VARCHAR(20) NOT NULL DEFAULT '--',
 			name VARCHAR(180) NOT NULL,
 			email VARCHAR(180) NOT NULL DEFAULT '',
 			mobile VARCHAR(40) NOT NULL DEFAULT '',
@@ -24,7 +23,7 @@ func migrationStatementsCRMCatalogsAndProspects() []string {
 			nit VARCHAR(80) NOT NULL DEFAULT '',
 			assigned_employee VARCHAR(140) NOT NULL DEFAULT '',
 			source VARCHAR(120) NOT NULL DEFAULT '',
-			category VARCHAR(120) NOT NULL DEFAULT '',
+			ciiu_code VARCHAR(10) NOT NULL DEFAULT '',
 			zone VARCHAR(120) NOT NULL DEFAULT '',
 			prospect_value BIGINT NOT NULL DEFAULT 0,
 			allow_follow_up BOOLEAN NOT NULL DEFAULT true,
@@ -44,5 +43,6 @@ func migrationStatementsCRMCatalogsAndProspects() []string {
 		`CREATE INDEX IF NOT EXISTS idx_crm_prospects_company_created ON crm_prospects(company_id, created_at DESC);`,
 		`CREATE INDEX IF NOT EXISTS idx_crm_prospects_company_status ON crm_prospects(company_id, status);`,
 		`ALTER TABLE crm_prospects ADD COLUMN IF NOT EXISTS nit VARCHAR(80) NOT NULL DEFAULT '';`,
+		`ALTER TABLE crm_prospects ADD COLUMN IF NOT EXISTS ciiu_code VARCHAR(10) NOT NULL DEFAULT '';`,
 	}
 }

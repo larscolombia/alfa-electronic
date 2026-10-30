@@ -871,16 +871,15 @@ export class CompanyEquipmentConfigComponent implements OnDestroy {
             return;
         }
 
-        // Primero se reasignan los equipos y después se borra la ubicación: si el
-        // borrado falla, los equipos ya apuntan a una ubicación válida en vez de
-        // quedar colgando de un id inexistente.
-        reassignProspectEquipmentLocation(locationToDelete.id, { id: targetLocation.id, name: targetLocation.name });
-
         const deleted = await this.persist(
-            () => deleteEquipmentLocation(locationToDelete.id),
+            () => deleteEquipmentLocation(locationToDelete.id, targetLocation.id),
             `Ubicación ${locationToDelete.name} eliminada y equipos reasignados a ${targetLocation.name}.`,
         );
         if (deleted) {
+            // Mantiene sincronizado el caché local mientras el resto de
+            // módulos vuelve a consultar el servidor. El servidor hizo la
+            // reasignación transaccional por ID antes de borrar el maestro.
+            reassignProspectEquipmentLocation(locationToDelete.id, { id: targetLocation.id, name: targetLocation.name });
             this.closeDeleteLocationModal();
         }
     }

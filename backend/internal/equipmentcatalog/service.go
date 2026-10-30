@@ -21,6 +21,7 @@ func NewService(db *sql.DB) *Service {
 var (
 	errCompanyRequired = errors.New("la empresa es obligatoria")
 	errIDRequired      = errors.New("el id es obligatorio")
+	errReassignTarget  = errors.New("selecciona una nueva ubicacion para reasignar los equipos")
 	errNameRequired    = errors.New("el nombre es obligatorio")
 	errModelIncomplete = errors.New("el modelo necesita marca o serie")
 )
@@ -300,6 +301,15 @@ ORDER BY name, id;`, companyID)
 	return locations, nil
 }
 
+func (s *Service) LocationExists(companyID, id string) (bool, error) {
+	var exists bool
+	err := s.db.QueryRow(`SELECT EXISTS(SELECT 1 FROM company_equipment_locations WHERE company_id = $1 AND id = $2)`, strings.TrimSpace(companyID), strings.TrimSpace(id)).Scan(&exists)
+	if err != nil {
+		return false, fmt.Errorf("consultar ubicacion: %w", err)
+	}
+	return exists, nil
+}
+
 func (s *Service) UpsertLocation(companyID string, item Location) (Location, error) {
 	companyID = strings.TrimSpace(companyID)
 	if companyID == "" {
@@ -328,12 +338,81 @@ RETURNING updated_at;`,
 	if err != nil {
 		return Location{}, fmt.Errorf("guardar ubicacion: %w", err)
 	}
+	// Los equipos guardan el ID como referencia estable y el nombre como una
+	// copia para listados/snapshots. Renombrar no cambia el ID, pero actualiza
+	// esa copia en todos los módulos que leen crm_equipment_records.
+	if err := s.renameLocationReferences(companyID, item.ID, item.Name); err != nil {
+		return Location{}, err
+	}
 	item.UpdatedAt = updatedAt.UTC().Format(time.RFC3339)
 	return item, nil
 }
 
-func (s *Service) DeleteLocation(companyID, id string) error {
-	return s.deleteRow("company_equipment_locations", "ubicacion", companyID, id)
+// DeleteLocation nunca deja equipos apuntando a una ubicación inexistente:
+// reasigna primero por ID dentro de la misma transacción y luego elimina el
+// maestro. targetID es obligatorio y debe pertenecer a la misma empresa.
+func (s *Service) DeleteLocation(companyID, id, targetID string) error {
+	companyID = strings.TrimSpace(companyID)
+	id = strings.TrimSpace(id)
+	targetID = strings.TrimSpace(targetID)
+	if companyID == "" {
+		return errCompanyRequired
+	}
+	if id == "" {
+		return errIDRequired
+	}
+	if targetID == "" || id == targetID {
+		return errReassignTarget
+	}
+
+	tx, err := s.db.Begin()
+	if err != nil {
+		return fmt.Errorf("iniciar reasignacion de ubicacion: %w", err)
+	}
+	defer tx.Rollback()
+
+	var targetName string
+	if err := tx.QueryRow(`SELECT name FROM company_equipment_locations WHERE company_id = $1 AND id = $2`, companyID, targetID).Scan(&targetName); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return errReassignTarget
+		}
+		return fmt.Errorf("consultar nueva ubicacion: %w", err)
+	}
+	if _, err := tx.Exec(locationReferenceUpdateSQL, targetID, targetName, companyID, id); err != nil {
+		return fmt.Errorf("reasignar equipos de ubicacion: %w", err)
+	}
+	result, err := tx.Exec(`DELETE FROM company_equipment_locations WHERE company_id = $1 AND id = $2`, companyID, id)
+	if err != nil {
+		return fmt.Errorf("borrar ubicacion: %w", err)
+	}
+	if affected, _ := result.RowsAffected(); affected == 0 {
+		return errIDRequired
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("confirmar reasignacion de ubicacion: %w", err)
+	}
+	return nil
+}
+
+const locationReferenceUpdateSQL = `
+UPDATE crm_equipment_records
+SET items_json = (
+	SELECT COALESCE(jsonb_agg(
+		CASE WHEN item->>'storageLocationId' = $4
+			THEN jsonb_set(jsonb_set(item, '{storageLocationId}', to_jsonb($1::text)), '{storageLocationName}', to_jsonb($2::text))
+			ELSE item
+		END
+	), '[]'::jsonb)
+	FROM jsonb_array_elements(items_json) AS item
+), updated_at = NOW()
+WHERE company_id = $3
+  AND EXISTS (SELECT 1 FROM jsonb_array_elements(items_json) AS item WHERE item->>'storageLocationId' = $4);`
+
+func (s *Service) renameLocationReferences(companyID, id, name string) error {
+	if _, err := s.db.Exec(locationReferenceUpdateSQL, id, name, companyID, id); err != nil {
+		return fmt.Errorf("actualizar referencias de ubicacion: %w", err)
+	}
+	return nil
 }
 
 // ── Borrado compartido ──────────────────────────────────────────────────────

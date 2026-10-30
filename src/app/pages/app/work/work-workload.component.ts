@@ -1,954 +1,1012 @@
-import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, ElementRef, HostListener, NgZone, OnDestroy, OnInit, ViewChild } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
-import * as echarts from 'echarts';
-import type { ECharts, EChartsOption } from 'echarts';
-import { Subscription, combineLatest } from 'rxjs';
-import { BoardColumn, Project } from '../projects/models';
-import { ProjectService } from '../projects/services';
-import { HrPeoplePickerService } from '../../../services/hr-people-picker.service';
+import { CommonModule } from "@angular/common";
+import { Component, OnDestroy, OnInit } from "@angular/core";
+import { FormsModule } from "@angular/forms";
+import { ActivatedRoute, Router, RouterLink } from "@angular/router";
+import { Subscription, catchError, combineLatest, forkJoin, of } from "rxjs";
+import {
+  CrmEquipmentApiService,
+  EquipmentTechnicianOption,
+} from "../../../services/crm-equipment-api.service";
+import {
+  ProspectEquipmentItem,
+  ProspectEquipmentRecord,
+} from "../crm/crm-prospect-equipment.store";
+import { BoardColumn, Project } from "../projects/models";
+import { ProjectService } from "../projects/services";
 
-interface TechnicianWorkload {
+type WorkloadTab = "queue" | "history";
+interface EquipmentQueueItem {
+  record: ProspectEquipmentRecord;
+  item: ProspectEquipmentItem;
+  receivedAt: string;
+}
+interface CandidateRow {
+  technician: EquipmentTechnicianOption;
+  total: number;
+  stages: Record<string, number>;
+  stageProjects: Record<string, Project[]>;
+  compatible: boolean;
+}
+interface StagePreview {
   technician: string;
-  projectCount: number;
-  projects: string[];
-  projectLoads: number[];
-  projectStages: string[];
-  focus: string;
-}
-
-interface StageLegendItem {
-  key: string;
-  label: string;
-  color: string;
-}
-
-interface ChartThemeTokens {
-  bodyColor: string;
-  mutedColor: string;
-  subtleColor: string;
-  axisLineColor: string;
-  splitLineColor: string;
-  tooltipBackground: string;
-  tooltipBorder: string;
+  stage: BoardColumn;
+  projects: Project[];
+  left: number;
+  top: number;
 }
 
 @Component({
-  selector: 'app-work-workload',
+  selector: "app-work-workload",
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   styles: [
     `
-      .kpi-value {
-        font-size: 1.8rem;
+      .affectation-tabs {
+        border-bottom: 1px solid rgba(var(--bs-body-color-rgb), 0.12);
+      }
+      .affectation-tab {
+        border: 0;
+        border-bottom: 3px solid transparent;
+        background: transparent;
+        padding: 0.65rem 1rem;
+        color: var(--bs-secondary-color);
+        font-weight: 600;
+      }
+      .affectation-tab.is-active {
+        border-bottom-color: var(--adminuiux-theme-1);
+        color: var(--bs-body-color);
+      }
+      .affectation-region {
+        max-height: calc(100vh - 245px);
+        overflow: auto;
+      }
+      .affectation-region thead th {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        background: var(--bs-body-bg);
+      }
+      .queue-row {
+        cursor: pointer;
+      }
+      .queue-row.is-selected {
+        background: rgba(var(--adminuiux-theme-1-rgb), 0.1);
+      }
+      .candidate-incompatible {
+        opacity: 0.48;
+      }
+      .candidate-least {
+        box-shadow: inset 4px 0 0 #198754;
+      }
+      .stage-dot {
+        width: 0.65rem;
+        height: 0.65rem;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 0.25rem;
+      }
+      .matrix-note {
+        font-size: 0.78rem;
+      }
+      .matrix-count {
+        font-size: 1.15rem;
         font-weight: 700;
-        line-height: 1.1;
       }
-
-      .workload-chart {
-        width: 100%;
-        min-height: 660px;
-      }
-
-      .assignment-card {
-        height: 100%;
-        padding: 1rem;
-        border-radius: 1rem;
-        border: 1px solid rgba(var(--adminuiux-theme-1-rgb), 0.08);
-        background: rgba(var(--bs-body-bg-rgb), 0.88);
-        box-shadow: inset 0 0 0 1px rgba(var(--adminuiux-theme-1-rgb), 0.03);
-      }
-
-      .assignment-card--alert {
-        border-color: rgba(217, 72, 95, 0.24);
-        box-shadow: inset 0 0 0 1px rgba(217, 72, 95, 0.08);
-      }
-
-      .assignment-card__header {
+      .candidate-stages {
         display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 1rem;
-        margin-bottom: 0.75rem;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+        min-width: 13rem;
       }
-
-      .assignment-card__count {
+      .candidate-stage {
         display: inline-flex;
         align-items: center;
-        justify-content: center;
-        padding: 0.35rem 0.7rem;
-        border-radius: 999px;
-        font-size: 0.8rem;
-        font-weight: 700;
-        background: rgba(var(--adminuiux-theme-1-rgb), 0.12);
-        color: var(--adminuiux-theme-1);
+        gap: 0.2rem;
+        padding: 0.15rem 0.35rem;
+        border: 1px solid rgba(var(--bs-body-color-rgb), 0.14);
+        border-radius: 0.3rem;
+        font-size: 0.72rem;
+        line-height: 1.1;
         white-space: nowrap;
       }
-
-      .assignment-card--alert .assignment-card__count {
-        background: rgba(217, 72, 95, 0.12);
-        color: #b42318;
+      .candidate-stage {
+        background: var(--bs-body-bg);
+        cursor: help;
       }
-
-      .assignment-focus {
-        font-size: 0.85rem;
-        color: rgba(var(--bs-body-color-rgb), 0.74);
-      }
-
-      .assignment-list {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-      }
-
-      .assignment-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.35rem;
-        padding: 0.45rem 0.75rem;
-        border-radius: 999px;
-        background: rgba(var(--adminuiux-theme-accent-1-rgb), 0.12);
-        color: var(--bs-body-color);
-        font-size: 0.85rem;
-      }
-
-      .capacity-note {
-        font-size: 0.875rem;
-        color: rgba(var(--bs-body-color-rgb), 0.75);
-      }
-
-      .stage-legend {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.75rem 1rem;
-        margin-top: 1rem;
-      }
-
-      .stage-legend__item {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        color: var(--bs-body-color);
-        font-size: 0.875rem;
-        font-weight: 600;
-      }
-
-      .stage-legend__swatch {
-        width: 0.85rem;
-        height: 0.85rem;
-        border-radius: 999px;
-        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
-        flex-shrink: 0;
-      }
-
-      @media (max-width: 991.98px) {
-        .workload-chart {
-          min-height: 820px;
-        }
-      }
-
-      .project-list-body {
-        max-height: 660px;
-        overflow-y: auto;
-      }
-
-      .project-code-grid {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.4rem;
-        padding: 0.5rem;
-      }
-
-      .project-code-pill {
-        display: inline-flex;
-        align-items: center;
-        padding: 0.35rem 0.65rem;
+      .stage-preview {
+        position: fixed;
+        z-index: 1080;
+        width: min(23rem, calc(100vw - 1.5rem));
+        max-height: min(20rem, calc(100vh - 1.5rem));
+        overflow: auto;
+        border: 1px solid rgba(var(--bs-body-color-rgb), 0.15);
         border-radius: 0.5rem;
-        border: 1px solid rgba(var(--adminuiux-theme-1-rgb), 0.18);
-        background: rgba(var(--adminuiux-theme-1-rgb), 0.07);
-        color: var(--bs-body-color);
-        font-size: 0.8rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: background 0.15s, border-color 0.15s;
-        line-height: 1.2;
+        background: var(--bs-body-bg);
+        box-shadow: 0 0.75rem 2rem rgba(0, 0, 0, 0.2);
       }
-
-      .project-code-pill:hover {
-        background: rgba(var(--adminuiux-theme-1-rgb), 0.15);
-        border-color: rgba(var(--adminuiux-theme-1-rgb), 0.35);
-      }
-
-      .project-code-pill.is-assigned {
-        border-color: rgba(16, 185, 129, 0.35);
-        background: rgba(16, 185, 129, 0.09);
+      @media (max-width: 991.98px) {
+        .affectation-region {
+          max-height: none;
+          overflow: visible;
+        }
       }
     `,
   ],
   template: `
     <div class="container-fluid py-3">
-      <div class="row gx-3 gx-lg-4 align-items-center page-title">
-        <div class="col col-sm mb-3 mb-sm-0">
-          <h5 class="mb-0">Trabajo - Carga laboral</h5>
-          <p class="text-secondary small mb-0">Carga operativa basada en el flujo tecnico configurado y los proyectos reales del tablero.</p>
+      <div class="row gx-3 align-items-center page-title">
+        <div class="col">
+          <h5 class="mb-0">Trabajo - Carga laboral y afectación</h5>
+          <p class="text-secondary small mb-0">
+            Decida la afectación con la carga real y las etapas de cada técnico.
+          </p>
+        </div>
+        <div class="col-auto">
+          <a
+            class="btn btn-outline-secondary btn-sm"
+            routerLink="/app/work-teams"
+            >Equipo técnico</a
+          >
         </div>
       </div>
-
-      <nav aria-label="breadcrumb" class="breadcrumb-theme mt-3 rounded">
-        <ol class="breadcrumb mb-0">
-          <li class="breadcrumb-item bi"><a routerLink="/app/dashboard"><i class="bi bi-house-door me-2"></i>AdminUX</a></li>
-          <li class="breadcrumb-item bi active" aria-current="page">Carga laboral</li>
-        </ol>
-      </nav>
     </div>
-
-    <div class="container mt-3" id="main-content">
-      @if (serverError$ | async; as serverError) {
-        <div class="alert alert-danger border mb-3" role="alert" data-testid="workload-server-error">
-          <strong>Los datos del tablero no pudieron sincronizarse con el servidor.</strong>
-          <div>{{ serverError }}</div>
-          <button type="button" class="btn btn-outline-danger btn-sm mt-2" (click)="retryServerSync()">
+    <main class="container-fluid px-3 px-xl-4 mt-2" id="main-content">
+      @if (message) {
+        <div
+          class="alert border mb-3"
+          [class.alert-success]="messageType === 'success'"
+          [class.alert-danger]="messageType === 'danger'"
+          role="status"
+        >
+          {{ message }}
+          <button
+            *ngIf="messageType === 'danger'"
+            class="btn btn-sm btn-outline-danger ms-2"
+            (click)="retryLoad()"
+          >
             Reintentar
           </button>
         </div>
       }
-
-      <div class="row gx-3 gx-lg-4 mb-3 mb-lg-4">
-        <div class="col-12 col-md-6 col-xl-3 mb-3 mb-xl-0">
-          <div class="card adminuiux-card h-100">
-            <div class="card-body">
-              <p class="small text-secondary mb-1">Tecnicos activos</p>
-              <p class="kpi-value mb-0">{{ workloadItems.length }}</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-12 col-md-6 col-xl-3 mb-3 mb-xl-0">
-          <div class="card adminuiux-card h-100">
-            <div class="card-body">
-              <p class="small text-secondary mb-1">Proyectos activos</p>
-              <p class="kpi-value mb-0">{{ totalProjects }}</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-12 col-md-6 col-xl-3 mb-3 mb-md-0">
-          <div class="card adminuiux-card h-100">
-            <div class="card-body">
-              <p class="small text-secondary mb-1">Promedio por tecnico</p>
-              <p class="kpi-value mb-0">{{ averageProjects | number: '1.1-1' }}</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-12 col-md-6 col-xl-3">
-          <div class="card adminuiux-card h-100">
-            <div class="card-body">
-              <p class="small text-secondary mb-1">Tecnico con sobrecarga</p>
-              <p class="kpi-value mb-0">{{ overloadedTechnician.technician }}</p>
-              <p class="small text-secondary mb-0">{{ overloadedTechnician.projectCount }} proyectos simultaneos</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="row gx-3 gx-lg-4 mb-3 mb-lg-4">
-        <!-- Columna izquierda: grafico de carga laboral -->
-        <div class="col-12 col-xl-7 mb-3 mb-xl-0">
-          <div class="card adminuiux-card h-100">
-            <div class="card-header">
-              <h6 class="mb-0">Grafico de carga laboral</h6>
-              <p class="text-secondary small mb-0">Cada color corresponde a una columna tecnica activa en Company -> Config. Proyectos.</p>
-            </div>
-            <div class="card-body">
-              @if (chartInitError) {
-                <div class="alert alert-warning border mb-3">
-                  No fue posible inicializar el grafico. El resumen de asignaciones sigue disponible mas abajo.
-                </div>
-              }
-
-              <div #workloadChart class="workload-chart" role="img" aria-label="Grafico de carga laboral por tecnico"></div>
-
-              <div class="stage-legend">
-                @for (stage of stageLegendItems; track stage.key) {
-                  <span class="stage-legend__item">
-                    <span class="stage-legend__swatch" [style.backgroundColor]="stage.color"></span>
-                    {{ stage.label }}
-                  </span>
-                }
-              </div>
-
-              <p class="capacity-note mt-3 mb-0">La carga se calcula con las columnas activas para workload y las horas estimadas de cada proyecto.</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Columna derecha: lista compacta de proyectos para asignacion -->
-        <div class="col-12 col-xl-5">
-          <div class="card adminuiux-card h-100">
-            <div class="card-header">
-              <h6 class="mb-0">Proyectos</h6>
-              <p class="text-secondary small mb-0">Haz clic en un proyecto para asignarlo a un tecnico.</p>
-            </div>
-            <div class="card-body p-2 project-list-body">
-              @if (allProjects.length) {
-                <div class="project-code-grid">
-                  @for (project of allProjects; track project.id) {
-                    <button
-                      type="button"
-                      class="project-code-pill"
-                      [class.is-assigned]="getProjectAssignee(project)"
-                      [title]="project.title + (getProjectAssignee(project) ? ' · ' + getProjectAssignee(project) : '')"
-                      (click)="openAssignModal(project)">
-                      {{ getProjectCode(project) }}
-                    </button>
-                  }
-                </div>
-              } @else {
-                <div class="helper-box">No hay proyectos disponibles.</div>
-              }
-            </div>
-          </div>
-        </div>
-      </div><!-- /row chart + proyectos -->
-
-      <div class="card adminuiux-card">
-        <div class="card-header">
-          <h6 class="mb-0">Detalle por tecnico</h6>
-          <p class="text-secondary small mb-0">Cada tarjeta agrupa proyectos activos por responsable y refleja el foco dominante segun la etapa tecnica.</p>
-        </div>
-        <div class="card-body">
-          @if (workloadItems.length) {
-            <div class="row gx-3 gy-3">
-              @for (item of workloadItems; track item.technician) {
-                <div class="col-12 col-lg-6">
-                  <div class="assignment-card" [class.assignment-card--alert]="item.projectCount > baseCapacity">
-                    <div class="assignment-card__header">
-                      <div>
-                        <h6 class="mb-1">{{ item.technician }}</h6>
-                        <p class="assignment-focus mb-0">Foco actual: {{ item.focus }}</p>
-                      </div>
-
-                      <span class="assignment-card__count">{{ item.projectCount }} proyectos</span>
-                    </div>
-
-                    <div class="assignment-list">
-                      @for (project of item.projects; track project) {
-                        <span class="assignment-pill">{{ project }}</span>
-                      }
-                    </div>
+      <nav class="affectation-tabs d-flex gap-1 mb-3" role="tablist">
+        <button
+          class="affectation-tab"
+          type="button"
+          data-testid="workload-tab-queue"
+          [class.is-active]="activeTab === 'queue'"
+          (click)="setTab('queue')"
+        >
+          Pendientes de afectación
+          <span class="badge text-bg-warning ms-1">{{
+            pendingItems.length
+          }}</span></button
+        ><button
+          class="affectation-tab"
+          type="button"
+          data-testid="workload-tab-history"
+          [class.is-active]="activeTab === 'history'"
+          (click)="setTab('history')"
+        >
+          Histórico
+        </button>
+      </nav>
+      @if (activeTab === "queue") {
+        <section data-testid="workload-queue-panel">
+          <div class="row g-3">
+            <div class="col-12 col-xl-4">
+              <div class="card adminuiux-card">
+                <div
+                  class="card-header d-flex flex-wrap gap-2 justify-content-between align-items-center"
+                >
+                  <div>
+                    <h6 class="mb-0">Cola de afectación</h6>
+                    <p class="small text-secondary mb-0">
+                      Equipos recibidos aún sin técnico.
+                    </p>
                   </div>
+                  <input
+                    class="form-control form-control-sm"
+                    style="max-width:15rem"
+                    type="search"
+                    placeholder="Código, cliente o equipo"
+                    [(ngModel)]="queueFilter"
+                  />
                 </div>
-              }
+                <div class="card-body p-0 affectation-region">
+                  <table class="table align-middle mb-0">
+                    <thead>
+                      <tr>
+                        <th>Equipo</th>
+                        <th>Cliente</th>
+                        <th>Tipo / servicio</th>
+                        <th>Falla</th>
+                        <th>Recepción</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (
+                        entry of filteredPendingItems;
+                        track entry.item.id
+                      ) {
+                        <tr
+                          class="queue-row"
+                          [class.is-selected]="
+                            selectedItem &&
+                            selectedItem.item.id === entry.item.id
+                          "
+                          (click)="selectItem(entry)"
+                          [attr.data-testid]="
+                            'affectation-queue-' + entry.item.id
+                          "
+                        >
+                          <td>
+                            <strong>{{ equipmentLabel(entry) }}</strong
+                            ><small class="d-block text-secondary"
+                              >{{ entry.item.marca || "Sin marca" }} ·
+                              {{ entry.item.serie || "Sin serie" }}</small
+                            >
+                          </td>
+                          <td>
+                            {{
+                              entry.record.companyName ||
+                                entry.record.prospectName ||
+                                "Sin cliente"
+                            }}
+                          </td>
+                          <td>{{ itemSpeciality(entry.item) }}</td>
+                          <td class="text-truncate" style="max-width:10rem">
+                            {{
+                              entry.item.failureDescription ||
+                                "Sin falla reportada"
+                            }}
+                          </td>
+                          <td>{{ entry.receivedAt | date: "dd/MM/yy" }}</td>
+                        </tr>
+                      } @empty {
+                        <tr>
+                          <td
+                            colspan="5"
+                            class="text-center text-secondary py-4"
+                          >
+                            No hay equipos pendientes de afectación.
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
-          } @else {
-            <div class="helper-box">No hay proyectos configurados en columnas que cuenten para carga laboral.</div>
-          }
-        </div>
-      </div>
-
-      <!-- Modal: asignar tecnico a proyecto -->
-      @if (modalProject) {
-        <div
-          class="modal fade show d-block"
-          tabindex="-1"
-          style="background: rgba(0,0,0,0.5);"
-          (click)="closeAssignModal()">
-          <div class="modal-dialog modal-dialog-centered" (click)="$event.stopPropagation()">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title">
-                  <i class="bi bi-person-check me-2"></i>Asignar tecnico
-                </h5>
-                <button type="button" class="btn-close" (click)="closeAssignModal()"></button>
-              </div>
-              <div class="modal-body">
-                <p class="mb-1 fw-semibold">{{ getProjectCode(modalProject) }}</p>
-                <p class="text-secondary small mb-3">{{ modalProject.title }}</p>
-                <label for="technicianSelect" class="form-label">Tecnico responsable</label>
-                <select id="technicianSelect" class="form-select" [(ngModel)]="modalTechnician">
-                  <option value="">-- Seleccionar --</option>
-                  @for (tech of technicianOptions; track tech) {
-                    <option [value]="tech">{{ tech }}</option>
+            <div class="col-12 col-xl-8">
+              <div
+                class="card adminuiux-card h-100"
+                data-testid="affectation-decision-panel"
+              >
+                <div class="card-header">
+                  @if (selectedItem) {
+                    <div class="d-flex justify-content-between gap-2">
+                      <div>
+                        <h6 class="mb-0">Matriz de decisión</h6>
+                        <p class="small text-secondary mb-0">
+                          {{ equipmentLabel(selectedItem) }} ·
+                          {{ itemSpeciality(selectedItem.item) }} ·
+                          {{
+                            selectedItem.item.storageLocationName ||
+                              "Sin ubicación"
+                          }}
+                        </p>
+                      </div>
+                      <button
+                        class="btn btn-sm btn-outline-secondary"
+                        (click)="sortDescending = !sortDescending"
+                      >
+                        Orden:
+                        {{ sortDescending ? "mayor carga" : "menor carga" }}
+                      </button>
+                    </div>
+                  } @else {
+                    <h6 class="mb-0">Matriz de decisión</h6>
+                    <p class="small text-secondary mb-0">
+                      Seleccione un equipo de la cola.
+                    </p>
                   }
-                </select>
+                </div>
+                <div class="card-body p-0 affectation-region">
+                  @if (selectedItem) {
+                    @if (!hasSpeciality) {
+                      <div class="alert alert-warning m-3 py-2 matrix-note">
+                        Sin especialidad registrada: se muestran todos los
+                        técnicos de Técnica. No se simula un filtro de
+                        compatibilidad.
+                      </div>
+                    }
+                    @if (specialityFilterUnavailable) {
+                      <div
+                        class="alert alert-warning m-3 py-2 matrix-note"
+                        role="status"
+                      >
+                        No hay un mapeo de técnicos para esta especialidad. Se
+                        muestran todos los técnicos de Técnica para no bloquear
+                        la afectación; verifica la compatibilidad antes de
+                        asignar.
+                      </div>
+                    }
+                    @if (isLoadingCandidates) {
+                      <p class="text-secondary p-3 mb-0">
+                        Cargando candidatos…
+                      </p>
+                    } @else {
+                      <div>
+                        <table class="table table-sm align-middle mb-0">
+                          <thead>
+                            <tr>
+                              <th>Técnico / especialidad</th>
+                              <th>Total activos</th>
+                              <th>Etapas activas</th>
+                              <th>Estado</th>
+                              <th class="text-end">Acción</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            @for (
+                              candidate of sortedCandidates;
+                              track candidate.technician.id
+                            ) {
+                              <tr
+                                [class.candidate-incompatible]="
+                                  !candidate.compatible
+                                "
+                                [class.candidate-least]="
+                                  candidate.compatible &&
+                                  candidate.total === leastCompatibleLoad
+                                "
+                              >
+                                <td>
+                                  <strong>{{
+                                    candidate.technician.name
+                                  }}</strong
+                                  ><small class="d-block text-secondary">{{
+                                    candidate.compatible
+                                      ? itemSpeciality(selectedItem.item)
+                                      : "No compatible con la especialidad"
+                                  }}</small>
+                                </td>
+                                <td>
+                                  <span class="matrix-count">{{
+                                    candidate.total
+                                  }}</span
+                                  ><small class="d-block text-secondary"
+                                    >pasará a {{ candidate.total + 1 }}</small
+                                  >
+                                </td>
+                                <td>
+                                  <div class="candidate-stages">
+                                    @for (stage of stages; track stage.id) {
+                                      <button
+                                        class="candidate-stage"
+                                        type="button"
+                                        (mouseenter)="
+                                          showStagePreview(
+                                            candidate,
+                                            stage,
+                                            $event
+                                          )
+                                        "
+                                        (focus)="
+                                          showStagePreview(
+                                            candidate,
+                                            stage,
+                                            $event
+                                          )
+                                        "
+                                        (mouseleave)="
+                                          scheduleStagePreviewClose()
+                                        "
+                                        (blur)="scheduleStagePreviewClose()"
+                                      >
+                                        <span
+                                          class="stage-dot mb-0"
+                                          [style.background]="stage.color"
+                                        ></span>
+                                        {{ stage.name }}:
+                                        {{ candidate.stages[stage.id] || 0 }}
+                                      </button>
+                                    }
+                                  </div>
+                                </td>
+                                <td>
+                                  <span
+                                    class="badge"
+                                    [class.text-bg-success]="
+                                      loadLabel(candidate) === 'Menor carga'
+                                    "
+                                    [class.text-bg-warning]="
+                                      loadLabel(candidate) === 'Carga media'
+                                    "
+                                    [class.text-bg-danger]="
+                                      loadLabel(candidate) === 'Mayor carga'
+                                    "
+                                    >{{ loadLabel(candidate) }}</span
+                                  >
+                                </td>
+                                <td class="text-end">
+                                  @if (candidate.compatible) {
+                                    <button
+                                      class="btn btn-sm btn-theme"
+                                      [disabled]="isAssigning"
+                                      (click)="
+                                        assign(
+                                          selectedItem,
+                                          candidate.technician
+                                        )
+                                      "
+                                      [attr.data-testid]="
+                                        'affectation-assign-' +
+                                        candidate.technician.id
+                                      "
+                                    >
+                                      Asignar
+                                    </button>
+                                  } @else {
+                                    <span class="small text-secondary"
+                                      >No elegible</span
+                                    >
+                                  }
+                                </td>
+                              </tr>
+                            } @empty {
+                              <tr>
+                                <td colspan="5" class="text-secondary p-3">
+                                  No hay técnicos activos disponibles.
+                                </td>
+                              </tr>
+                            }
+                          </tbody>
+                        </table>
+                      </div>
+                    }
+                  } @else {
+                    <p class="text-secondary p-3 mb-0">
+                      Elija un equipo para ver carga, etapas y técnicos
+                      compatibles sin salir de esta vista.
+                    </p>
+                  }
+                </div>
               </div>
-              <div class="modal-footer">
-                <button type="button" class="btn btn-secondary btn-sm" (click)="closeAssignModal()">Cancelar</button>
+            </div>
+          </div>
+        </section>
+      }
+      @if (activeTab === "history") {
+        <section data-testid="workload-history-panel">
+          <div class="card adminuiux-card">
+            <div
+              class="card-header d-flex flex-wrap gap-2 align-items-center justify-content-between"
+            >
+              <div>
+                <h6 class="mb-0">Histórico de afectaciones</h6>
+                <p class="small text-secondary mb-0">
+                  {{ filteredAssignedItems.length }} resultado(s)
+                </p>
+              </div>
+              <input
+                class="form-control form-control-sm"
+                style="max-width:18rem"
+                type="search"
+                placeholder="Buscar equipo, técnico o cliente"
+                [(ngModel)]="historyFilter"
+                (ngModelChange)="resetHistoryPage()"
+                data-testid="workload-history-search"
+              />
+            </div>
+            <div class="card-body p-0 affectation-region">
+              <table class="table align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th>Equipo</th>
+                    <th>Técnico</th>
+                    <th>Cliente</th>
+                    <th>Asignado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (entry of pagedAssignedItems; track entry.item.id) {
+                    <tr>
+                      <td>{{ equipmentLabel(entry) }}</td>
+                      <td>{{ entry.item.assignedTo }}</td>
+                      <td>
+                        {{
+                          entry.record.companyName || entry.record.prospectName
+                        }}
+                      </td>
+                      <td>
+                        {{ entry.item.assignedAt | date: "dd/MM/yy HH:mm" }}
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td colspan="4" class="text-center text-secondary py-4">
+                        No hay equipos afectados.
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+            <div
+              class="card-footer d-flex align-items-center justify-content-between"
+            >
+              <span class="small text-secondary"
+                >Página {{ historyPage + 1 }}</span
+              >
+              <div class="btn-group" aria-label="Paginación del histórico">
                 <button
+                  class="btn btn-sm btn-outline-secondary"
                   type="button"
-                  class="btn btn-primary btn-sm"
-                  [disabled]="!modalTechnician || isAssigning"
-                  (click)="confirmAssign()">
-                  @if (isAssigning) {
-                    <span class="spinner-border spinner-border-sm me-1" role="status"></span>
-                  }
-                  Asignar
+                  [disabled]="historyPage === 0"
+                  (click)="historyPage = historyPage - 1"
+                >
+                  Anterior
+                </button>
+                <button
+                  class="btn btn-sm btn-outline-secondary"
+                  type="button"
+                  [disabled]="!historyHasNextPage"
+                  (click)="historyPage = historyPage + 1"
+                >
+                  Siguiente
                 </button>
               </div>
             </div>
           </div>
-        </div>
+        </section>
       }
-    </div>
+      @if (stagePreview) {
+        <aside
+          class="stage-preview"
+          [style.left.px]="stagePreview.left"
+          [style.top.px]="stagePreview.top"
+          role="dialog"
+          aria-label="Proyectos de la etapa"
+          (mouseenter)="cancelStagePreviewClose()"
+          (mouseleave)="scheduleStagePreviewClose()"
+        >
+          <div class="p-2 border-bottom">
+            <strong>{{ stagePreview.stage.name }}</strong
+            ><span class="text-secondary small d-block"
+              >{{ stagePreview.technician }} ·
+              {{ stagePreview.projects.length }} proyecto(s)</span
+            >
+          </div>
+          @if (stagePreview.projects.length) {
+            <div class="list-group list-group-flush">
+              @for (project of stagePreview.projects; track project.id) {
+                <button
+                  class="list-group-item list-group-item-action"
+                  type="button"
+                  (click)="openProject(project)"
+                >
+                  <strong>{{ projectCode(project) }}</strong
+                  ><span class="d-block small text-secondary text-truncate">{{
+                    project.title
+                  }}</span>
+                </button>
+              }
+            </div>
+          } @else {
+            <p class="text-secondary small p-3 mb-0">
+              No hay proyectos en esta etapa.
+            </p>
+          }
+        </aside>
+      }
+    </main>
   `,
 })
-export class WorkWorkloadComponent implements OnInit, AfterViewInit, OnDestroy {
-  @ViewChild('workloadChart') private readonly workloadChartRef?: ElementRef<HTMLDivElement>;
-
-  readonly baseCapacity = 2;
-
-  stageLegendItems: StageLegendItem[] = [];
-  workloadItems: TechnicianWorkload[] = [];
-  allProjects: Project[] = [];
-  chartInitError = false;
-
-  /** Ultimo error de sincronizacion del tablero (mismo subject que la vista de proyectos). */
-  serverError$ = this.projectService.error$;
-
-  /** Modal state */
-  modalProject: Project | null = null;
-  modalTechnician = '';
-  /** Fase 6: empleados activos de RRHH que alimentan el select de técnico. */
-  peopleNames: string[] = [];
+export class WorkWorkloadComponent implements OnInit, OnDestroy {
+  activeTab: WorkloadTab = "queue";
+  records: ProspectEquipmentRecord[] = [];
+  projects: Project[] = [];
+  stages: BoardColumn[] = [];
+  selectedItem: EquipmentQueueItem | null = null;
+  candidates: CandidateRow[] = [];
+  queueFilter = "";
+  historyFilter = "";
+  historyPage = 0;
+  readonly historyPageSize = 10;
+  sortDescending = true;
+  message = "";
+  messageType: "success" | "danger" = "success";
+  isLoadingCandidates = false;
   isAssigning = false;
-
-  private chart?: ECharts;
-  private themeObserver?: MutationObserver;
-  private dataSubscription?: Subscription;
-  private boardColumnsMap = new Map<string, BoardColumn>();
-
+  specialityFilterUnavailable = false;
+  stagePreview: StagePreview | null = null;
+  private stagePreviewCloseTimer?: ReturnType<typeof setTimeout>;
+  private readonly subscription = new Subscription();
   constructor(
-    private readonly ngZone: NgZone,
+    private readonly equipmentApi: CrmEquipmentApiService,
     private readonly projectService: ProjectService,
-    private readonly hrPeople: HrPeoplePickerService,
+    private readonly router: Router,
+    private readonly route: ActivatedRoute,
   ) {}
-
-  get totalProjects(): number {
-    return this.workloadItems.reduce((sum, item) => sum + item.projectCount, 0);
-  }
-
-  get averageProjects(): number {
-    return this.workloadItems.length ? this.totalProjects / this.workloadItems.length : 0;
-  }
-
-  get overloadedTechnician(): TechnicianWorkload {
-    if (!this.workloadItems.length) {
-      return this.emptyWorkloadItem('Sin asignaciones');
-    }
-
-    return this.workloadItems.reduce((currentMax, item) => {
-      return item.projectCount > currentMax.projectCount ? item : currentMax;
-    }, this.workloadItems[0]);
-  }
-
-  get maxProjectSlots(): number {
-    return Math.max(1, ...this.workloadItems.map((item) => item.projects.length));
-  }
-
-  get projectSlotNames(): string[] {
-    return Array.from({ length: this.maxProjectSlots }, (_, index) => `Proyecto ${index + 1}`);
-  }
-
-  get technicianOptions(): string[] {
-    const fromWorkload = this.workloadItems.map((item) => item.technician).filter((t) => t !== 'Sin asignar');
-    // Fase 6: los técnicos salen de RRHH (hr_employees activos). Los nombres que
-    // ya aparecen en cargas se conservan para no dejar en blanco lo histórico.
-    // Antes había un fallback de 6 nombres inventados que ocultaba que RRHH
-    // estaba vacío.
-    return this.hrPeople.merge(this.peopleNames, this.modalTechnician, fromWorkload);
-  }
-
-  retryServerSync(): void {
-    // Mismo patron que la vista de proyectos: recarga y el banner desaparece si vuelve a funcionar.
-    this.projectService.loadProjects('board-1').subscribe();
-  }
-
   ngOnInit(): void {
-    this.projectService.loadProjects('board-1').subscribe();
-    // Fase 6: el select de técnico se alimenta de RRHH, no de nombres quemados.
-    // Contexto tecnica: aquí se asigna trabajo técnico a técnicos; un comercial
-    // en esta lista no tiene sentido operativo.
-    void this.hrPeople.refresh('tecnica').then((names) => {
-      this.peopleNames = names;
+    this.route.queryParamMap.subscribe((params) => {
+      const tab = params.get("tab");
+      if (tab === "queue" || tab === "history") this.activeTab = tab;
     });
-    this.dataSubscription = combineLatest([this.projectService.projectsWithTasks$, this.projectService.board$]).subscribe({
-      next: ([projects, board]) => {
-        this.allProjects = [...projects].sort((a, b) => this.getProjectCode(a).localeCompare(this.getProjectCode(b)));
-        this.rebuildWorkload(projects, board?.columns ?? []);
-        this.updateChartOptions();
-      },
-    });
+    this.projectService.loadProjects("board-1").subscribe();
+    this.subscription.add(
+      combineLatest([
+        this.projectService.projectsWithTasks$,
+        this.projectService.board$,
+      ]).subscribe(([projects, board]) => {
+        this.projects = projects;
+        this.stages = (board?.columns ?? []).filter(
+          (column) => column.includeInWorkload,
+        );
+        this.recalculateCandidates();
+      }),
+    );
+    this.loadRecords();
   }
-
-  ngAfterViewInit(): void {
-    this.initializeChart();
-  }
-
   ngOnDestroy(): void {
-    this.dataSubscription?.unsubscribe();
-    this.themeObserver?.disconnect();
-    this.chart?.dispose();
+    this.subscription.unsubscribe();
+    this.cancelStagePreviewClose();
   }
-
-  @HostListener('window:resize')
-  onWindowResize(): void {
-    this.chart?.resize();
+  get flattenedItems(): EquipmentQueueItem[] {
+    return this.records.flatMap((record) =>
+      (record.items || []).map((item) => ({
+        record,
+        item,
+        receivedAt: record.intakeReceivedAt || record.createdAt || "",
+      })),
+    );
   }
-
-  private rebuildWorkload(projects: Project[], columns: BoardColumn[]): void {
-    const orderedColumns = [...columns].sort((left, right) => left.order - right.order);
-    this.boardColumnsMap = new Map(orderedColumns.map((column) => [column.id, column]));
-    this.stageLegendItems = orderedColumns
-      .filter((column) => column.includeInWorkload)
-      .map((column) => ({
-        key: column.id,
-        label: column.name,
-        color: column.color,
-      }));
-
-    const grouped = new Map<string, Array<{ label: string; load: number; stage: string; focus: string }>>();
-
-    for (const project of projects) {
-      const column = this.boardColumnsMap.get(project.status);
-      if (!column?.includeInWorkload) {
-        continue;
-      }
-
-      const technician = String(project.properties['assignee'] ?? '').trim() || 'Sin asignar';
-      const projectLabel = String(project.properties['shortCode'] ?? '').trim() || project.title.trim() || project.id;
-      const projectLoad = this.calculateProjectLoad(project);
-      const focusLabel = `${column.name} · ${String(project.properties['client'] ?? '').trim() || project.title.trim() || 'Sin cliente'}`;
-      const entries = grouped.get(technician) ?? [];
-
-      entries.push({
-        label: projectLabel,
-        load: projectLoad,
-        stage: project.status,
-        focus: focusLabel,
-      });
-      grouped.set(technician, entries);
-    }
-
-    this.workloadItems = Array.from(grouped.entries())
-      .map(([technician, entries]) => {
-        const orderedEntries = [...entries].sort((left, right) => right.load - left.load || left.label.localeCompare(right.label));
-
-        return {
-          technician,
-          projectCount: orderedEntries.length,
-          projects: orderedEntries.map((entry) => entry.label),
-          projectLoads: orderedEntries.map((entry) => entry.load),
-          projectStages: orderedEntries.map((entry) => entry.stage),
-          focus: orderedEntries[0]?.focus ?? 'Sin foco activo',
-        };
-      })
-      .sort((left, right) => right.projectCount - left.projectCount || left.technician.localeCompare(right.technician));
+  get pendingItems(): EquipmentQueueItem[] {
+    return this.flattenedItems.filter(
+      (entry) =>
+        !String(entry.item.assignedToId || entry.item.assignedTo || "").trim(),
+    );
   }
-
-  private calculateProjectLoad(project: Project): number {
-    const estimatedHours = this.normalizeNumber(project.properties['estimatedHours']);
-    const actualHours = this.normalizeNumber(project.properties['actualHours']);
-    const candidateHours = estimatedHours > 0 ? estimatedHours : actualHours > 0 ? actualHours : 8;
-    return Math.max(1, Math.round(candidateHours / 8));
+  get assignedItems(): EquipmentQueueItem[] {
+    return this.flattenedItems.filter((entry) =>
+      Boolean(
+        String(entry.item.assignedToId || entry.item.assignedTo || "").trim(),
+      ),
+    );
   }
-
-  private normalizeNumber(value: unknown): number {
-    const numeric = typeof value === 'number' ? value : Number(value ?? 0);
-    return Number.isFinite(numeric) ? numeric : 0;
+  get filteredPendingItems(): EquipmentQueueItem[] {
+    const query = this.queueFilter.trim().toLowerCase();
+    return !query
+      ? this.pendingItems
+      : this.pendingItems.filter((entry) =>
+          [
+            this.equipmentLabel(entry),
+            entry.record.companyName,
+            entry.record.prospectName,
+            entry.item.marca,
+            entry.item.tipo,
+            entry.item.serviceTypeName,
+          ].some((value) =>
+            String(value || "")
+              .toLowerCase()
+              .includes(query),
+          ),
+        );
   }
-
-  private emptyWorkloadItem(technician: string): TechnicianWorkload {
-    return {
-      technician,
-      projectCount: 0,
-      projects: [],
-      projectLoads: [],
-      projectStages: [],
-      focus: 'Sin foco activo',
+  get filteredAssignedItems(): EquipmentQueueItem[] {
+    const query = this.historyFilter.trim().toLowerCase();
+    const items = this.assignedItems.filter((entry) =>
+      !query
+        ? true
+        : [
+            this.equipmentLabel(entry),
+            entry.item.assignedTo,
+            entry.record.companyName,
+            entry.record.prospectName,
+            entry.item.marca,
+            entry.item.tipo,
+          ].some((value) =>
+            String(value || "")
+              .toLowerCase()
+              .includes(query),
+          ),
+    );
+    return [...items].sort((left, right) =>
+      String(right.item.assignedAt || "").localeCompare(
+        String(left.item.assignedAt || ""),
+      ),
+    );
+  }
+  get pagedAssignedItems(): EquipmentQueueItem[] {
+    const start = this.historyPage * this.historyPageSize;
+    return this.filteredAssignedItems.slice(
+      start,
+      start + this.historyPageSize,
+    );
+  }
+  get historyHasNextPage(): boolean {
+    return (
+      (this.historyPage + 1) * this.historyPageSize <
+      this.filteredAssignedItems.length
+    );
+  }
+  resetHistoryPage(): void {
+    this.historyPage = 0;
+  }
+  get hasSpeciality(): boolean {
+    return Boolean(
+      this.selectedItem &&
+      String(
+        this.selectedItem.item.serviceTypeName ||
+          this.selectedItem.item.familyName ||
+          "",
+      ).trim(),
+    );
+  }
+  get leastCompatibleLoad(): number {
+    const candidates = this.candidates.filter(
+      (candidate) => candidate.compatible,
+    );
+    return candidates.length
+      ? Math.min(...candidates.map((candidate) => candidate.total))
+      : 0;
+  }
+  get sortedCandidates(): CandidateRow[] {
+    return [...this.candidates].sort((a, b) => {
+      const load = this.sortDescending ? b.total - a.total : a.total - b.total;
+      return (
+        load ||
+        Number(b.compatible) - Number(a.compatible) ||
+        a.technician.name.localeCompare(b.technician.name)
+      );
+    });
+  }
+  setTab(tab: WorkloadTab): void {
+    this.activeTab = tab;
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { tab },
+      queryParamsHandling: "merge",
+    });
+  }
+  equipmentLabel(entry: EquipmentQueueItem): string {
+    return String(
+      entry.item.receivedIdentifier ||
+        entry.item.serie ||
+        entry.item.customerShipmentReference ||
+        entry.item.id,
+    ).trim();
+  }
+  itemSpeciality(item: ProspectEquipmentItem): string {
+    return String(
+      item.serviceTypeName ||
+        item.familyName ||
+        item.tipo ||
+        "Sin especialidad",
+    ).trim();
+  }
+  projectCode(project: Project): string {
+    return String(
+      project.properties?.["shortCode"] || project.title || project.id,
+    ).trim();
+  }
+  showStagePreview(
+    candidate: CandidateRow,
+    stage: BoardColumn,
+    event: Event,
+  ): void {
+    this.cancelStagePreviewClose();
+    const pointer = event as MouseEvent;
+    const maxLeft = Math.max(12, window.innerWidth - 380);
+    const maxTop = Math.max(12, window.innerHeight - 330);
+    this.stagePreview = {
+      technician: candidate.technician.name,
+      stage,
+      projects: candidate.stageProjects[stage.id] ?? [],
+      left: Math.min(maxLeft, Math.max(12, pointer.clientX || 12)),
+      top: Math.min(maxTop, Math.max(12, (pointer.clientY || 12) + 12)),
     };
   }
-
-  getProjectCode(project: Project): string {
-    return String(project.properties['shortCode'] ?? '').trim() || project.title.trim() || project.id;
+  scheduleStagePreviewClose(): void {
+    this.cancelStagePreviewClose();
+    this.stagePreviewCloseTimer = setTimeout(
+      () => (this.stagePreview = null),
+      180,
+    );
   }
-
-  getProjectAssignee(project: Project): string {
-    return String(project.properties['assignee'] ?? '').trim();
+  cancelStagePreviewClose(): void {
+    if (this.stagePreviewCloseTimer) clearTimeout(this.stagePreviewCloseTimer);
   }
-
-  openAssignModal(project: Project): void {
-    this.modalProject = project;
-    this.modalTechnician = this.getProjectAssignee(project);
-    this.isAssigning = false;
+  openProject(project: Project): void {
+    this.stagePreview = null;
+    void this.router.navigate(["/app/work-projects", project.id]);
   }
-
-  closeAssignModal(): void {
-    this.modalProject = null;
-    this.modalTechnician = '';
-    this.isAssigning = false;
+  selectItem(entry: EquipmentQueueItem): void {
+    this.selectedItem = entry;
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { item: entry.item.id },
+      queryParamsHandling: "merge",
+    });
+    this.loadCandidates(entry);
   }
-
-  confirmAssign(): void {
-    if (!this.modalProject || !this.modalTechnician) {
-      return;
-    }
-
-    this.isAssigning = true;
-    const projectId = this.modalProject.id;
-    const technician = this.modalTechnician;
-
-    this.projectService.updateProject(projectId, {
-      properties: {
-        ...this.modalProject.properties,
-        assignee: technician,
+  loadLabel(candidate: CandidateRow): string {
+    const compatible = this.candidates
+      .filter((entry) => entry.compatible)
+      .map((entry) => entry.total);
+    if (compatible.length < 2) return "Carga actual";
+    const minimum = Math.min(...compatible);
+    const maximum = Math.max(...compatible);
+    if (candidate.total === minimum) return "Menor carga";
+    if (candidate.total === maximum) return "Mayor carga";
+    return "Carga media";
+  }
+  retryLoad(): void {
+    this.message = "";
+    this.loadRecords();
+    if (this.selectedItem) this.loadCandidates(this.selectedItem);
+  }
+  private loadRecords(): void {
+    this.equipmentApi.listRecords({ includeArchived: false }).subscribe({
+      next: (records) => {
+        this.records = records;
+        const requested = this.route.snapshot.queryParamMap.get("item");
+        const reception = this.route.snapshot.queryParamMap.get("reception");
+        const entry =
+          this.pendingItems.find(
+            (candidate) => candidate.item.id === requested,
+          ) ??
+          this.pendingItems.find(
+            (candidate) => candidate.record.id === reception,
+          );
+        if (entry) this.selectItem(entry);
       },
+      error: () =>
+        this.setMessage(
+          "No se pudieron cargar los equipos recibidos.",
+          "danger",
+        ),
+    });
+  }
+  private loadCandidates(entry: EquipmentQueueItem): void {
+    this.isLoadingCandidates = true;
+    this.specialityFilterUnavailable = false;
+    const speciality = this.hasSpeciality
+      ? this.itemSpeciality(entry.item)
+      : "";
+    forkJoin({
+      all: this.equipmentApi.listTechnicians({ context: "tecnica" }),
+      compatible: speciality
+        ? this.equipmentApi
+            .listTechnicians({ speciality, context: "tecnica" })
+            .pipe(
+              catchError(() => {
+                this.specialityFilterUnavailable = true;
+                return of([] as EquipmentTechnicianOption[]);
+              }),
+            )
+        : this.equipmentApi.listTechnicians({ context: "tecnica" }),
     }).subscribe({
-      next: () => {
-        this.closeAssignModal();
+      next: ({ all, compatible }) => {
+        // El catálogo aún no modela especialidades de técnico. Una respuesta
+        // vacía no puede bloquear la afectación: se muestran técnicos de
+        // Técnica y se exige la validación humana de compatibilidad.
+        if (speciality && compatible.length === 0) {
+          this.specialityFilterUnavailable = true;
+        }
+        const eligible = new Set(compatible.map((technician) => technician.id));
+        this.candidates = this.makeRows(
+          all,
+          (technician) =>
+            !speciality ||
+            this.specialityFilterUnavailable ||
+            eligible.has(technician.id),
+        );
+        this.isLoadingCandidates = false;
       },
       error: () => {
-        this.isAssigning = false;
+        this.candidates = [];
+        this.isLoadingCandidates = false;
+        this.setMessage(
+          "No se pudieron cargar los técnicos candidatos.",
+          "danger",
+        );
       },
     });
   }
-
-  private initializeChart(): void {
-    const chartElement = this.workloadChartRef?.nativeElement;
-
-    if (!chartElement) {
-      return;
-    }
-
-    this.ngZone.runOutsideAngular(() => {
-      try {
-        this.chart?.dispose();
-        this.chart = echarts.init(chartElement);
-        this.chart.setOption(this.buildChartOptions(), true);
-        this.observeThemeChanges();
-      } catch (error) {
-        console.error('Unable to initialize workload chart', error);
-        this.ngZone.run(() => {
-          this.chartInitError = true;
-        });
-      }
-    });
+  private recalculateCandidates(): void {
+    if (this.candidates.length)
+      this.candidates = this.makeRows(
+        this.candidates.map((candidate) => candidate.technician),
+        (technician) =>
+          this.candidates.find(
+            (candidate) => candidate.technician.id === technician.id,
+          )?.compatible ?? false,
+      );
   }
-
-  private updateChartOptions(): void {
-    if (!this.workloadChartRef?.nativeElement) {
-      return;
-    }
-
-    const chart = this.chart;
-    if (!chart) {
-      this.initializeChart();
-      return;
-    }
-
-    this.ngZone.runOutsideAngular(() => {
-      chart.setOption(this.buildChartOptions(), true);
-      chart.resize();
-    });
-  }
-
-  private buildChartOptions(): EChartsOption {
-    const maxProjectLoad = Math.max(5, ...this.workloadItems.flatMap((item) => item.projectLoads), 0);
-    const themeTokens = this.getChartThemeTokens();
-    const yAxisRich = this.buildYAxisRichStyles(themeTokens);
-
-    if (!this.workloadItems.length) {
+  private makeRows(
+    technicians: EquipmentTechnicianOption[],
+    compatible: (technician: EquipmentTechnicianOption) => boolean,
+  ): CandidateRow[] {
+    return technicians.map((technician) => {
+      const linked = this.projects.filter(
+        (project) =>
+          String(project.properties?.["assignee"] || "").trim() ===
+          technician.name,
+      );
+      const stages: Record<string, number> = {};
+      const stageProjects: Record<string, Project[]> = {};
+      linked.forEach((project) => {
+        stages[project.status] = (stages[project.status] || 0) + 1;
+        (stageProjects[project.status] ??= []).push(project);
+      });
       return {
-        title: {
-          text: 'Carga laboral por tecnico',
-          left: 'center',
-          textStyle: {
-            fontSize: 24,
-            fontWeight: 700,
-            color: themeTokens.bodyColor,
-          },
-        },
-        graphic: {
-          type: 'text',
-          left: 'center',
-          top: 'middle',
-          style: {
-            text: 'No hay proyectos activos en columnas de carga laboral.',
-            fill: themeTokens.mutedColor,
-            fontSize: 15,
-            fontWeight: 600,
-          },
-        },
+        technician,
+        total: linked.length,
+        stages,
+        stageProjects,
+        compatible: compatible(technician),
       };
-    }
-
-    return {
-      animationDuration: 800,
-      animationEasing: 'cubicOut',
-      title: {
-        text: 'Carga laboral por tecnico',
-        left: 'center',
-        textStyle: {
-          fontSize: 24,
-          fontWeight: 700,
-          color: themeTokens.bodyColor,
-        },
-      },
-      tooltip: {
-        trigger: 'axis',
-        axisPointer: {
-          type: 'shadow',
-        },
-        backgroundColor: themeTokens.tooltipBackground,
-        borderColor: themeTokens.tooltipBorder,
-        borderWidth: 1,
-        textStyle: {
-          color: themeTokens.bodyColor,
-        },
-        extraCssText: 'box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);',
-        formatter: (params: unknown) => {
-          const rows = (Array.isArray(params) ? params : [params]).filter(
-            (row): row is { dataIndex: number; seriesIndex: number; marker: string; seriesName: string; value: number } => {
-              return typeof row === 'object' && row !== null && 'dataIndex' in row && 'seriesIndex' in row && 'value' in row && 'marker' in row && 'seriesName' in row;
-            },
+    });
+  }
+  assign(
+    entry: EquipmentQueueItem,
+    technician: EquipmentTechnicianOption,
+  ): void {
+    this.isAssigning = true;
+    this.equipmentApi
+      .assignItemTechnician(entry.record.id, entry.item.id, {
+        assignedToId: technician.id,
+        assignedTo: technician.name,
+        assignedAt: new Date().toISOString(),
+      })
+      .subscribe({
+        next: () => {
+          this.syncLinkedProject(entry, technician.name);
+          this.isAssigning = false;
+          this.selectedItem = null;
+          this.setMessage(
+            `${this.equipmentLabel(entry)} fue afectado a ${technician.name}.`,
+            "success",
           );
-
-          if (!rows.length) {
-            return '';
-          }
-
-          const item = this.workloadItems[rows[0].dataIndex];
-          if (!item) {
-            return '';
-          }
-
-          const values = rows
-            .filter((row) => Number(row.value) > 0)
-            .map((row) => {
-              const projectName = item.projects[row.seriesIndex] ?? row.seriesName;
-              const stage = item.projectStages[row.seriesIndex];
-              return `${row.marker}<strong>${projectName}</strong>: ${row.value} pts <span style="color:${themeTokens.mutedColor}">(${this.getStageLabel(stage)})</span>`;
-            })
-            .join('<br/>');
-
-          return [
-            `<strong>${item.technician}</strong>`,
-            values,
-            `<span style="color:${themeTokens.mutedColor}">Total:</span> <strong>${item.projectCount}</strong> proyectos`,
-            `<span style="color:${themeTokens.mutedColor}">Asignaciones:</span> ${item.projects.join(', ')}`,
-          ].join('<br/>');
+          this.loadRecords();
         },
-      },
-      legend: {
-        show: false,
-      },
-      grid: {
-        left: 115,
-        right: 230,
-        top: 70,
-        bottom: 72,
-      },
-      toolbox: {
-        show: true,
-        right: 12,
-        feature: {
-          saveAsImage: {},
+        error: () => {
+          this.isAssigning = false;
+          this.setMessage(
+            "No se pudo afectar el equipo. Reintente la operación.",
+            "danger",
+          );
         },
-      },
-      xAxis: {
-        type: 'value',
-        name: 'Carga estimada',
-        min: 0,
-        max: maxProjectLoad + 4,
-        interval: 2,
-        axisLabel: {
-          formatter: '{value}',
-          color: themeTokens.mutedColor,
-        },
-        nameTextStyle: {
-          color: themeTokens.mutedColor,
-          padding: [0, 0, 0, 18],
-        },
-        splitLine: {
-          lineStyle: {
-            color: themeTokens.splitLineColor,
-          },
-        },
-      },
-      yAxis: {
-        type: 'category',
-        inverse: true,
-        data: this.workloadItems.map((item) => item.technician),
-        axisLine: {
-          show: true,
-          lineStyle: {
-            color: themeTokens.axisLineColor,
-          },
-        },
-        axisTick: {
-          show: false,
-        },
-        axisLabel: {
-          formatter: (value: string) => {
-            const richKey = this.toRichKey(value);
-            return `{${richKey}| }\n{value|${value}}`;
-          },
-          margin: 20,
-          rich: yAxisRich,
-        },
-      },
-      series: this.buildProjectSeries(themeTokens),
-    };
+      });
   }
-
-  private buildProjectSeries(themeTokens: ChartThemeTokens): Array<Record<string, unknown>> {
-    return this.projectSlotNames.map((slotName, slotIndex) => ({
-      name: slotName,
-      type: 'bar',
-      data: this.workloadItems.map((item) => {
-        const value = item.projectLoads[slotIndex];
-        if (typeof value !== 'number') {
-          return null;
-        }
-
-        return {
-          value,
-          itemStyle: {
-            color: this.getStageColor(item.projectStages[slotIndex]),
-            borderRadius: [0, 8, 8, 0],
-          },
-        };
-      }),
-      barMaxWidth: 18,
-      label: this.buildProjectLabel(slotIndex, themeTokens),
-      emphasis: {
-        focus: 'series',
-      },
-    }));
+  private syncLinkedProject(
+    entry: EquipmentQueueItem,
+    technician: string,
+  ): void {
+    const project = this.projects.find(
+      (candidate) =>
+        String(candidate.properties?.["equipmentRecordId"] || "") ===
+          entry.record.id &&
+        String(candidate.properties?.["equipmentItemId"] || "") ===
+          entry.item.id,
+    );
+    if (!project) return;
+    this.projectService
+      .updateProject(project.id, {
+        properties: { ...project.properties, assignee: technician },
+      })
+      .subscribe({
+        error: () =>
+          this.setMessage(
+            "El equipo fue afectado, pero no se pudo sincronizar el proyecto vinculado.",
+            "danger",
+          ),
+      });
   }
-
-  private buildProjectLabel(slotIndex: number, themeTokens: ChartThemeTokens): Record<string, unknown> {
-    return {
-      show: true,
-      position: 'right',
-      distance: 8,
-      formatter: (params: unknown) => {
-        const dataIndex = typeof params === 'object' && params !== null && 'dataIndex' in params ? Number(params.dataIndex) : -1;
-        const value = typeof params === 'object' && params !== null && 'value' in params ? Number(params.value) : 0;
-        const item = this.workloadItems[dataIndex];
-        const projectName = item?.projects[slotIndex];
-
-        if (!projectName || !value) {
-          return '';
-        }
-
-        return `{project|${projectName}} {value|${value}}`;
-      },
-      rich: {
-        project: {
-          color: themeTokens.bodyColor,
-          fontSize: 11,
-          fontWeight: 600,
-        },
-        value: {
-          color: themeTokens.subtleColor,
-          fontSize: 11,
-          padding: [0, 0, 0, 6],
-        },
-      },
-    };
-  }
-
-  private buildYAxisRichStyles(themeTokens: ChartThemeTokens): Record<string, any> {
-    const rich: Record<string, any> = {
-      value: {
-        lineHeight: 30,
-        align: 'center',
-        color: themeTokens.bodyColor,
-        fontWeight: 600,
-        fontSize: 13,
-      },
-    };
-
-    for (const item of this.workloadItems) {
-      rich[this.toRichKey(item.technician)] = {
-        height: 40,
-        align: 'center',
-        backgroundColor: {
-          image: this.createTechnicianAvatar(item.technician),
-        },
-      };
-    }
-
-    return rich;
-  }
-
-  private getStageColor(stageId: string | undefined): string {
-    return stageId ? this.boardColumnsMap.get(stageId)?.color ?? '#94a3b8' : '#94a3b8';
-  }
-
-  private getStageLabel(stageId: string | undefined): string {
-    return stageId ? this.boardColumnsMap.get(stageId)?.name ?? stageId : 'Sin etapa';
-  }
-
-  private getChartThemeTokens(): ChartThemeTokens {
-    const root = this.workloadChartRef?.nativeElement.ownerDocument.documentElement ?? document.documentElement;
-    const styles = getComputedStyle(root);
-    const bodyColor = styles.getPropertyValue('--bs-body-color').trim() || '#334155';
-    const bodyColorRgb = styles.getPropertyValue('--bs-body-color-rgb').trim();
-    const bodyBgRgb = styles.getPropertyValue('--bs-body-bg-rgb').trim();
-    const isDark = root.getAttribute('data-bs-theme') === 'dark';
-
-    return {
-      bodyColor,
-      mutedColor: bodyColorRgb ? `rgba(${bodyColorRgb}, 0.74)` : isDark ? 'rgba(226, 232, 240, 0.74)' : '#64748b',
-      subtleColor: bodyColorRgb ? `rgba(${bodyColorRgb}, 0.58)` : isDark ? 'rgba(226, 232, 240, 0.58)' : '#64748b',
-      axisLineColor: bodyColorRgb ? `rgba(${bodyColorRgb}, 0.34)` : isDark ? 'rgba(226, 232, 240, 0.34)' : '#94a3b8',
-      splitLineColor: bodyColorRgb ? `rgba(${bodyColorRgb}, 0.12)` : isDark ? 'rgba(226, 232, 240, 0.12)' : 'rgba(148, 163, 184, 0.26)',
-      tooltipBackground: bodyBgRgb ? `rgba(${bodyBgRgb}, 0.96)` : isDark ? 'rgba(17, 24, 39, 0.96)' : 'rgba(255, 255, 255, 0.96)',
-      tooltipBorder: bodyColorRgb ? `rgba(${bodyColorRgb}, 0.14)` : isDark ? 'rgba(226, 232, 240, 0.14)' : '#d0d7de',
-    };
-  }
-
-  private observeThemeChanges(): void {
-    const root = this.workloadChartRef?.nativeElement.ownerDocument.documentElement;
-
-    if (!root || typeof MutationObserver === 'undefined') {
-      return;
-    }
-
-    this.themeObserver?.disconnect();
-    this.themeObserver = new MutationObserver((mutations) => {
-      const themeChanged = mutations.some((mutation) => mutation.attributeName === 'data-bs-theme');
-      if (!themeChanged) {
-        return;
-      }
-
-      this.chart?.setOption(this.buildChartOptions(), true);
-      this.chart?.resize();
-    });
-    this.themeObserver.observe(root, {
-      attributes: true,
-      attributeFilter: ['data-bs-theme'],
-    });
-  }
-
-  private createTechnicianAvatar(name: string): string {
-    const palette = ['#f59e0b', '#06b6d4', '#8b5cf6', '#ef4444', '#10b981', '#3b82f6', '#ec4899'];
-    const colorIndex = name.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0) % palette.length;
-    const initials = name
-      .split(' ')
-      .map((part) => part[0])
-      .join('')
-      .slice(0, 2)
-      .toUpperCase();
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40"><rect width="40" height="40" rx="20" fill="${palette[colorIndex]}" /><text x="20" y="24" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#ffffff">${initials}</text></svg>`;
-
-    return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
-  }
-
-  private toRichKey(value: string): string {
-    return value.replace(/[^a-zA-Z0-9]/g, '');
+  private setMessage(message: string, type: "success" | "danger"): void {
+    this.message = message;
+    this.messageType = type;
   }
 }

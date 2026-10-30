@@ -3,14 +3,14 @@ import { RouterLink } from "@angular/router";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { ChangeDetectorRef } from "@angular/core";
-import { catchError, forkJoin, of } from "rxjs";
+import { catchError, debounceTime, distinctUntilChanged, forkJoin, of, Subject, Subscription, switchMap } from "rxjs";
 import { CrmZoneRecord, getCrmZones } from "./crm-zones.store";
-import { CrmBranchRecord, CrmClientRecord, CrmClientsApiService, UpsertCrmClientRequest } from "../../../services/crm-clients-api.service";
+import { CrmBranchRecord, CrmClientsApiService, UpsertCrmClientRequest } from "../../../services/crm-clients-api.service";
 import { CrmProspectContact, CrmProspectRecord, CrmProspectsApiService } from "../../../services/crm-prospects-api.service";
-import { replaceCrmClients } from "./crm-clients.store";
 import { CrmClientsImportComponent } from "./crm-clients-import.component";
 import { COUNTRY_OPTIONS, citiesForCountry } from "./country-city.dataset";
 import * as XLSX from "xlsx";
+import { GlobalSearchResult, GlobalSearchService } from "../../../services/global-search.service";
 
 interface ClientBranchDraft {
     id?: string;
@@ -92,7 +92,8 @@ interface ClientDraft {
                 <div class="alert alert-danger border mb-3">{{ formError }}</div>
             }
 
-            <div class="card adminuiux-card mb-3 mb-lg-4" data-testid="clients-list-card" *ngIf="!showAddClient && !showImport">
+            <details class="card adminuiux-card mb-3 mb-lg-4" data-testid="clients-list-card" [open]="showClientSearch" (toggle)="onClientSearchToggle($event)">
+                <summary class="card-header border-bottom" style="cursor:pointer; list-style:none;"><i class="bi bi-search me-1"></i><strong>Buscar clientes</strong></summary>
                 <div class="card-body">
                     <div class="d-flex flex-wrap gap-2 mb-3">
                         <button class="btn btn-theme" type="button" (click)="openCreateClient()"><i class="bi bi-plus-lg me-1"></i> Agregar Cliente</button>
@@ -106,129 +107,42 @@ interface ClientDraft {
                     </div>
 
 <div class="row g-2 align-items-center mb-3">
-                        <div class="col-12 col-md-8 col-lg-6">
-                            <label for="clientSearchTerm" class="form-label small mb-1">Buscar clientes</label>
+                        <div class="col-12">
+                            <label for="clientSearchTerm" class="form-label">Empresa, correo, NIT, ciudad o zona</label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="bi bi-search"></i></span>
                                 <input
                                     id="clientSearchTerm"
+                                    data-testid="clients-search"
                                     type="search"
                                     class="form-control"
-                                    placeholder="Nombre, empresa, correo, NIT, teléfono..."
-                                    [(ngModel)]="clientSearchTerm"
-                                    (ngModelChange)="clientPage = 1"
+                                    placeholder="Escribe para buscar clientes"
+                                    [ngModel]="clientSearchTerm"
+                                    (ngModelChange)="searchClients($event)"
                                     autocomplete="off">
-                                <button
-                                    *ngIf="clientSearchTerm"
-                                    class="btn btn-outline-secondary"
-                                    type="button"
-                                    aria-label="Limpiar búsqueda"
-                                    (click)="clientSearchTerm = ''; clientPage = 1">
-                                    Limpiar
-                                </button>
                             </div>
-                        </div>
-                        <div class="col-12 col-md text-md-end small text-secondary">
-                            {{ filteredClients.length }} de {{ clients.length }} clientes
                         </div>
                     </div>
 
-                    <div class="table-responsive border rounded">
-                        <table class="table align-middle mb-0">
-                            <thead>
-                                <tr>
-                                    <th>
-                                        <button class="btn btn-link p-0 text-reset text-decoration-none fw-semibold" type="button" (click)="toggleClientSort('cliente')">
-                                            Cliente <i class="bi" [ngClass]="sortColumn === 'cliente' ? (sortDirection === 'asc' ? 'bi-arrow-up' : 'bi-arrow-down') : 'bi-arrow-down-up'"></i>
-                                        </button>
-                                    </th>
-                                    <th>
-                                        <button class="btn btn-link p-0 text-reset text-decoration-none fw-semibold" type="button" (click)="toggleClientSort('contacto')">
-                                            Contacto <i class="bi" [ngClass]="sortColumn === 'contacto' ? (sortDirection === 'asc' ? 'bi-arrow-up' : 'bi-arrow-down') : 'bi-arrow-down-up'"></i>
-                                        </button>
-                                    </th>
-                                    <th>
-                                        <button class="btn btn-link p-0 text-reset text-decoration-none fw-semibold" type="button" (click)="toggleClientSort('detalles')">
-                                            Detalles <i class="bi" [ngClass]="sortColumn === 'detalles' ? (sortDirection === 'asc' ? 'bi-arrow-up' : 'bi-arrow-down') : 'bi-arrow-down-up'"></i>
-                                        </button>
-                                    </th>
-                                    <th>
-                                        <button class="btn btn-link p-0 text-reset text-decoration-none fw-semibold" type="button" (click)="toggleClientSort('estado')">
-                                            Estado <i class="bi" [ngClass]="sortColumn === 'estado' ? (sortDirection === 'asc' ? 'bi-arrow-up' : 'bi-arrow-down') : 'bi-arrow-down-up'"></i>
-                                        </button>
-                                    </th>
-                                    <th class="text-end">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr *ngFor="let client of displayedClients">
-                                    <td>
-                                        <a class="text-decoration-none fw-semibold" [routerLink]="['/app/crm-clientes', client.id]">{{ client.nombre }}</a>
-                                        <div class="small text-secondary">{{ client.empresa || '--' }}</div>
-                                    </td>
-                                    <td>
-                                        {{ client.correo || '--' }}
-                                        <div class="small text-secondary">{{ client.nit || '--' }}</div>
-                                    </td>
-                                    <td>
-                                        <div class="d-flex flex-wrap gap-1">
-                                            <span class="badge text-bg-info">{{ client.zona }}</span>
-                                            @if (client.credito.enabled) {
-                                                <span class="badge text-bg-warning">Cupo: {{ client.credito.creditLimit | currency: "COP" : "symbol" : "1.0-0" }}</span>
-                                            } @else {
-                                                <span class="badge text-bg-secondary">Sin cupo</span>
-                                            }
-                                        </div>
-                                        <div class="small text-secondary mt-1">Creado: {{ client.creado }}</div>
-                                    </td>
-                                    <td>
-                                        <span class="badge" [class.text-bg-success]="client.estado === 'Activo'" [class.text-bg-secondary]="client.estado === 'Inactivo'">
-                                            {{ client.estado }}
-                                        </span>
-                                    </td>
-                                    <td class="text-end position-relative">
-                                        <div class="dropdown d-inline-block">
-                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-boundary="window" data-bs-popper-config='{"strategy":"fixed","modifiers":[{"name":"computeStyles","options":{"gpuAcceleration":false}}]}'>
-                                                Acciones
-                                            </button>
-                                            <ul class="dropdown-menu dropdown-menu-end" style="z-index: 2000;">
-                                                <li><a class="dropdown-item" [routerLink]="['/app/crm-clientes', client.id]">Abrir ficha</a></li>
-                                                <li><button class="dropdown-item" type="button" (click)="editClient(client.id)">Editar</button></li>
-                                                <li><button class="dropdown-item text-danger" type="button" (click)="removeClient(client.id)">Eliminar</button></li>
-                                            </ul>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr *ngIf="filteredClients.length === 0">
-                                    <td colspan="5" class="text-center py-5 text-secondary">No encontramos clientes. Cambia la búsqueda o agrega el primero.</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div class="text-secondary small mb-3" *ngIf="isClientSearchLoading"><span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Buscando clientes...</div>
+                    <div class="list-group mb-3" *ngIf="clientSearchResults.length > 0" data-testid="client-search-results">
+                        <a class="list-group-item list-group-item-action py-3" *ngFor="let result of clientSearchResults" [routerLink]="result.route">
+                            <div class="d-flex align-items-center gap-3"><span class="rounded-circle text-white d-inline-flex align-items-center justify-content-center" [style.background]="result.color" style="width: 2.5rem; height: 2.5rem;"><i class="bi" [class]="result.icon"></i></span><span><strong class="d-block">{{ result.title }}</strong><small class="text-secondary">{{ result.subtitle || 'Cliente' }}</small></span></div>
+                        </a>
                     </div>
-                    <div class="d-flex justify-content-between align-items-center gap-2 mt-3" *ngIf="filteredClients.length > 0" data-testid="clients-pagination">
-                        <span class="small text-secondary">Mostrando {{ clientPageStart }}–{{ clientPageEnd }} de {{ filteredClients.length }}</span>
-                        <div class="btn-group" aria-label="Paginación de clientes">
-                            <button class="btn btn-outline-secondary" type="button" (click)="clientPage = clientPage - 1" [disabled]="clientPage === 1">Anterior</button>
-                            <button class="btn btn-outline-secondary disabled" type="button" aria-current="page">Página {{ clientPage }} de {{ clientTotalPages }}</button>
-                            <button class="btn btn-outline-secondary" type="button" (click)="clientPage = clientPage + 1" [disabled]="clientPage === clientTotalPages">Siguiente</button>
-                        </div>
-                    </div>
+                    <div class="text-center text-secondary py-5" *ngIf="!clientSearchTerm.trim()"><i class="bi bi-search-heart fs-3 d-block mb-2"></i>Busca por empresa, correo, NIT, ciudad o zona para abrir una ficha.</div>
+                    <div class="text-center text-secondary py-5" *ngIf="clientSearchTerm.trim() && !isClientSearchLoading && clientSearchResults.length === 0"><i class="bi bi-search fs-3 d-block mb-2"></i>No encontramos clientes con esa búsqueda.</div>
+
                 </div>
-            </div>
+            </details>
 
             <app-crm-clients-import
                 *ngIf="showImport"
                 (imported)="onImportCompleted($event)"
                 (closed)="showImport = false"></app-crm-clients-import>
 
-            <div class="card adminuiux-card mb-3 mb-lg-4" data-testid="client-form-card" *ngIf="showAddClient">
-                <div class="card-header border-bottom d-flex justify-content-between align-items-center gap-2">
-                    <div>
-                        <h5 class="mb-1">{{ editingClientId === null ? "Nuevo cliente" : "Editar cliente" }}</h5>
-                        <p class="small text-secondary mb-0">Datos comerciales, fiscales y de contacto de la cuenta.</p>
-                    </div>
-                    <button class="btn btn-outline-secondary" type="button" (click)="cancelForm()"><i class="bi bi-x-lg me-1"></i>Cerrar</button>
-                </div>
+            <details class="card adminuiux-card mb-3 mb-lg-4" data-testid="client-form-card" [open]="showAddClient" (toggle)="onClientFormToggle($event)">
+                <summary class="card-header border-bottom" style="cursor:pointer; list-style:none;"><i class="bi bi-plus-lg me-1"></i><strong>{{ editingClientId === null ? "Agregar cliente" : "Editar cliente" }}</strong><span class="small text-secondary ms-2">Datos comerciales, fiscales y de contacto.</span></summary>
                 <div class="card-body">
                     @if (draft.creditEnabled) {
                         <div class="alert alert-info border">
@@ -462,53 +376,27 @@ interface ClientDraft {
                     </button>
                     <button class="btn btn-link" type="button" [disabled]="isSavingClient" (click)="cancelForm()">Cancelar</button>
                 </div>
-            </div>
+            </details>
         </div>
     `,
 })
 export class CrmClientsComponent {
 
     readonly countryOptions = COUNTRY_OPTIONS;
-    clients: CrmClientRecord[] = [];
     clientSearchTerm = "";
-    clientPage = 1;
-    readonly clientPageSize = 10;
-    sortColumn: "cliente" | "contacto" | "detalles" | "estado" = "cliente";
-    sortDirection: "asc" | "desc" = "asc";
-
-    toggleClientSort(column: "cliente" | "contacto" | "detalles" | "estado"): void {
-        if (this.sortColumn === column) {
-            this.sortDirection = this.sortDirection === "asc" ? "desc" : "asc";
-            this.clientPage = 1;
-            return;
-        }
-
-        this.sortColumn = column;
-        this.sortDirection = "asc";
-        this.clientPage = 1;
-    }
-
-    private getClientSortValue(client: CrmClientRecord, column: "cliente" | "contacto" | "detalles" | "estado"): string {
-        switch (column) {
-            case "cliente":
-                return `${client.nombre ?? ""} ${client.empresa ?? ""}`.trim();
-            case "contacto":
-                return `${client.correo ?? ""} ${client.nit ?? ""}`.trim();
-            case "detalles":
-                return `${client.zona ?? ""} ${client.creado ?? ""}`.trim();
-            case "estado":
-                return String(client.estado ?? "");
-        }
-    }
+    clientSearchResults: GlobalSearchResult[] = [];
+    isClientSearchLoading = false;
+    private readonly clientSearchSubject = new Subject<string>();
+    private clientSearchSub?: Subscription;
     zoneOptions: CrmZoneRecord[] = [];
     showAddClient = false;
+    showClientSearch = true;
     showImport = false;
     exportandoClientes = false;
     editingClientId: string | null = null;
     successMessage = "";
     formError = "";
     isSavingClient = false;
-    isDeletingClient = false;
     draft: ClientDraft = this.getDefaultDraft();
 
     get draftCityOptions(): readonly string[] { return citiesForCountry(this.draft.country); }
@@ -535,14 +423,33 @@ export class CrmClientsComponent {
         private readonly crmClientsApi: CrmClientsApiService,
         private readonly crmProspectsApi: CrmProspectsApiService,
         private readonly cdr: ChangeDetectorRef,
+        private readonly globalSearch: GlobalSearchService,
     ) {
         this.loadZones();
-        this.loadClients();
         this.ensureDraftZone();
+        this.clientSearchSub = this.clientSearchSubject.pipe(
+            debounceTime(300),
+            distinctUntilChanged(),
+            switchMap((query) => query.trim() ? this.globalSearch.searchClients(query) : of([] as GlobalSearchResult[])),
+        ).subscribe((results) => {
+            this.isClientSearchLoading = false;
+            this.clientSearchResults = results;
+            this.cdr.detectChanges();
+        });
+    }
+
+    ngOnDestroy(): void {
+        this.clientSearchSub?.unsubscribe();
+    }
+
+    searchClients(query: string): void {
+        this.clientSearchTerm = query;
+        this.isClientSearchLoading = Boolean(query.trim());
+        if (!query.trim()) this.clientSearchResults = [];
+        this.clientSearchSubject.next(query);
     }
 
     onImportCompleted(created: number): void {
-        this.loadClients();
         this.successMessage = created === 1 ? "1 cliente importado correctamente." : `${created} clientes importados correctamente.`;
     }
 
@@ -554,48 +461,19 @@ export class CrmClientsComponent {
         this.resetCompanyRelatedContactsContext();
         this.ensureDraftZone();
         this.showAddClient = true;
+        this.showClientSearch = false;
     }
 
-    editClient(clientId: string): void {
-        this.successMessage = "";
-        this.formError = "";
-
-        const client = this.clients.find((item) => item.id === clientId);
-        if (!client) {
-            this.formError = "No se encontro el cliente para editar.";
-            return;
-        }
-
-        this.editingClientId = client.id;
-        this.draft = {
-            nombre: client.nombre,
-            correo: client.correo,
-            empresa: client.empresa,
-            nit: client.nit,
-            zona: client.zona,
-            estado: client.estado,
-            website: client.website ?? "",
-            officePhone: client.officePhone ?? "",
-            country: client.country ?? "",
-            city: client.city ?? "",
-            address: client.address ?? "",
-            dv: client.dv ?? "",
-            postalCode: client.postalCode ?? "",
-            billingEmail: client.billingEmail ?? "",
-            grandContributor: Boolean(client.grandContributor),
-            idType: client.idType || "NIT",
-            creditEnabled: client.credito.enabled,
-            creditLimit: client.credito.creditLimit,
-            creditConsumed: client.credito.consumed,
-            lastPaymentDate: client.credito.lastPaymentDate,
-            paymentTermDays: client.credito.paymentTermDays,
-            branches: this.mapBranchesToDraft(client.branches),
-        };
-
-        this.resetCompanyRelatedContactsContext();
-
-        this.showAddClient = true;
+    onClientSearchToggle(event: Event): void {
+        this.showClientSearch = (event.target as HTMLDetailsElement).open;
+        if (this.showClientSearch) this.showAddClient = false;
     }
+
+    onClientFormToggle(event: Event): void {
+        this.showAddClient = (event.target as HTMLDetailsElement).open;
+        if (this.showAddClient) this.showClientSearch = false;
+    }
+
 
     saveClient(): void {
         this.successMessage = "";
@@ -679,7 +557,6 @@ export class CrmClientsComponent {
         request$.subscribe({
             next: () => {
                 this.isSavingClient = false;
-                this.loadClients();
                 this.successMessage = this.editingClientId === null ? "Cliente creado correctamente." : "Cliente actualizado correctamente.";
                 this.cancelForm();
             },
@@ -690,25 +567,10 @@ export class CrmClientsComponent {
         });
     }
 
-    removeClient(clientId: string): void {
-        this.successMessage = "";
-        this.formError = "";
-        this.isDeletingClient = true;
-        this.crmClientsApi.deleteClient(clientId).subscribe({
-            next: () => {
-                this.isDeletingClient = false;
-                this.loadClients();
-                this.successMessage = "Cliente eliminado.";
-            },
-            error: (error) => {
-                this.isDeletingClient = false;
-                this.formError = this.resolveErrorMessage(error, "No se pudo eliminar el cliente.");
-            },
-        });
-    }
 
     cancelForm(): void {
         this.showAddClient = false;
+        this.showClientSearch = true;
         this.formError = "";
         this.editingClientId = null;
         this.draft = this.getDefaultDraft();
@@ -948,75 +810,6 @@ export class CrmClientsComponent {
                     error,
                     "No se pudieron obtener todos los clientes para exportarlos."
                 );
-                this.cdr.detectChanges();
-            },
-        });
-    }
-
-    get filteredClients(): CrmClientRecord[] {
-        const term = this.clientSearchTerm.trim().toLocaleLowerCase();
-
-        const filtered = this.clients.filter((client) => {
-            if (!term) {
-                return true;
-            }
-            const searchableValues = [
-                client.nombre,
-                client.empresa,
-                client.correo,
-                client.nit,
-                client.officePhone,
-                client.zona,
-                client.city,
-                client.country,
-                client.address,
-                client.website,
-                client.estado,
-            ];
-
-            return searchableValues.some((value) =>
-                String(value ?? "").toLocaleLowerCase().includes(term),
-            );
-        });
-
-        return filtered.sort((a, b) => {
-            const left = this.getClientSortValue(a, this.sortColumn);
-            const right = this.getClientSortValue(b, this.sortColumn);
-            const comparison = left.localeCompare(right, undefined, {
-                numeric: true,
-                sensitivity: "base",
-            });
-
-            return this.sortDirection === "asc" ? comparison : -comparison;
-        });
-    }
-
-    get displayedClients(): CrmClientRecord[] {
-        const start = (this.clientPage - 1) * this.clientPageSize;
-        return this.filteredClients.slice(start, start + this.clientPageSize);
-    }
-
-    get clientTotalPages(): number {
-        return Math.max(1, Math.ceil(this.filteredClients.length / this.clientPageSize));
-    }
-
-    get clientPageStart(): number {
-        return this.filteredClients.length === 0 ? 0 : (this.clientPage - 1) * this.clientPageSize + 1;
-    }
-
-    get clientPageEnd(): number {
-        return Math.min(this.clientPage * this.clientPageSize, this.filteredClients.length);
-    }
-
-    private loadClients(): void {
-        this.crmClientsApi.listClients().subscribe({
-            next: (items) => {
-                this.clients = items.map((item) => ({ ...item }));
-                replaceCrmClients(this.clients);
-                this.cdr.detectChanges();
-            },
-            error: (error) => {
-                this.formError = this.resolveErrorMessage(error, "No se pudieron cargar los clientes desde backend.");
                 this.cdr.detectChanges();
             },
         });

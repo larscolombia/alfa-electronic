@@ -64,8 +64,6 @@ func normalizeCatalogType(raw string) (string, error) {
 		return CatalogTypeEmployees, nil
 	case CatalogTypeSources, "fuentes", "fuente", "source":
 		return CatalogTypeSources, nil
-	case CatalogTypeCategories, "categorias", "categoria", "category":
-		return CatalogTypeCategories, nil
 	case CatalogTypeServices, "servicios", "servicio", "service":
 		return CatalogTypeServices, nil
 	case CatalogTypeZones, "zonas", "zona":

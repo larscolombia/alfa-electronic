@@ -22,7 +22,9 @@ func (s *Service) ConvertProspectToClient(companyID, prospectID string) (Client,
 
 	existing, err := s.findClientByEmpresa(companyID, empresa)
 	if err == nil {
-		// Already exists — return it without creating a duplicate.
+		if err := s.markProspectConverted(companyID, prospectID); err != nil {
+			return Client{}, false, err
+		}
 		return existing, false, nil
 	}
 
@@ -81,7 +83,27 @@ func (s *Service) ConvertProspectToClient(companyID, prospectID string) (Client,
 		return Client{}, false, err
 	}
 
+	if err := s.markProspectConverted(companyID, prospectID); err != nil {
+		return Client{}, false, err
+	}
 	return created, true, nil
+}
+
+func (s *Service) markProspectConverted(companyID, prospectID string) error {
+	ctx := context.Background()
+	result, err := s.db.ExecContext(ctx, `
+UPDATE crm_prospects SET soft_delete = true, updated_at = NOW()
+WHERE company_id = $1 AND id = $2 AND soft_delete = false;`, companyID, prospectID)
+	if err != nil {
+		return err
+	}
+	if affected, _ := result.RowsAffected(); affected == 0 {
+		return errProspectNotFound
+	}
+	_, err = s.db.ExecContext(ctx, `
+UPDATE crm_accounts SET lifecycle_status = 'cliente', converted_at = COALESCE(converted_at, NOW()), updated_at = NOW()
+WHERE company_id = $1 AND id = $2 AND soft_delete = false;`, companyID, prospectID)
+	return err
 }
 
 // findClientByEmpresa looks for a non-deleted client matching empresa (case-insensitive).

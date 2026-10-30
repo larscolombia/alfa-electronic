@@ -7,14 +7,6 @@ import (
 )
 
 func (s *Service) normalizeProspectPayload(req UpsertProspectRequest) (normalizedProspectInput, error) {
-	name := strings.TrimSpace(req.Name)
-	if name == "" {
-		return normalizedProspectInput{}, errProspectNameRequired
-	}
-	if len(name) > 180 {
-		return normalizedProspectInput{}, newValidationError("el nombre del prospecto no puede superar 180 caracteres")
-	}
-
 	email := strings.TrimSpace(req.Email)
 	if email != "" {
 		if len(email) > 180 {
@@ -56,8 +48,21 @@ func (s *Service) normalizeProspectPayload(req UpsertProspectRequest) (normalize
 	}
 
 	company := strings.TrimSpace(req.Company)
+	if company == "" {
+		return normalizedProspectInput{}, errProspectCompanyRequired
+	}
 	if len(company) > 180 {
 		return normalizedProspectInput{}, newValidationError("el nombre de la compania no puede superar 180 caracteres")
+	}
+
+	// El prospecto representa una empresa. Los contactos se registran por separado;
+	// se conserva el nombre técnico por compatibilidad con la tabla existente.
+	name := strings.TrimSpace(req.Name)
+	if name == "" {
+		name = company
+	}
+	if len(name) > 180 {
+		return normalizedProspectInput{}, newValidationError("el nombre del prospecto no puede superar 180 caracteres")
 	}
 
 	nit := strings.TrimSpace(req.Nit)
@@ -108,17 +113,21 @@ func (s *Service) normalizeProspectPayload(req UpsertProspectRequest) (normalize
 	allowFollowUp := boolValueOrDefault(req.AllowFollowUp, true)
 	assignedEmployee := normalizeCatalogSelection(req.AssignedEmployee, CatalogTypeEmployees)
 	source := normalizeCatalogSelection(req.Source, CatalogTypeSources)
-	category := normalizeCatalogSelection(req.Category, CatalogTypeCategories)
+	ciiuCode := strings.TrimSpace(req.CiiuCode)
+	if len(ciiuCode) > 10 {
+		return normalizedProspectInput{}, newValidationError("el código CIIU no puede superar 10 caracteres")
+	}
+	if ciiuCode != "" && !reCiiuCode.MatchString(ciiuCode) {
+		return normalizedProspectInput{}, newValidationError("el código CIIU debe tener cuatro dígitos")
+	}
 	zone := normalizeCatalogSelection(req.Zone, CatalogTypeZones)
 	service := normalizeCatalogSelection(req.Service, CatalogTypeServices)
-	salutation := trimOrDefault(req.Salutation, "--")
 	branches, err := normalizeBranchesInput(req.Branches)
 	if err != nil {
 		return normalizedProspectInput{}, err
 	}
 
 	return normalizedProspectInput{
-		Salutation:       salutation,
 		Name:             name,
 		Email:            email,
 		Mobile:           mobile,
@@ -126,7 +135,7 @@ func (s *Service) normalizeProspectPayload(req UpsertProspectRequest) (normalize
 		Nit:              nit,
 		AssignedEmployee: assignedEmployee,
 		Source:           source,
-		Category:         category,
+		CiiuCode:         ciiuCode,
 		Zone:             zone,
 		ProspectValue:    req.ProspectValue,
 		AllowFollowUp:    allowFollowUp,
@@ -191,7 +200,6 @@ func scanProspect(scanner interface{ Scan(dest ...any) error }) (Prospect, error
 
 	if err := scanner.Scan(
 		&item.ID,
-		&item.Salutation,
 		&item.Name,
 		&item.Email,
 		&item.Mobile,
@@ -199,7 +207,7 @@ func scanProspect(scanner interface{ Scan(dest ...any) error }) (Prospect, error
 		&item.Nit,
 		&item.AssignedEmployee,
 		&item.Source,
-		&item.Category,
+		&item.CiiuCode,
 		&item.Zone,
 		&item.ProspectValue,
 		&item.AllowFollowUp,
