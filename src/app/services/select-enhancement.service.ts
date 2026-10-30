@@ -107,10 +107,15 @@ export class SelectEnhancementService {
                 refreshQueued = false;
                 if (!select.isConnected) return;
                 choices.refresh();
+                this.applyBoundValue(select, choices);
                 if (select.disabled) choices.disable();
                 else choices.enable();
             });
         });
+        // Aplica el valor ya fijado por ngModel si aún no estaba seleccionado,
+        // para que un select nativo con selección inicial (p.ej. modal de seguimiento)
+        // no pierda su valor cuando Choices reconstruye la lista.
+        this.applyBoundValue(select, choices);
         optionsObserver.observe(select, { childList: true, subtree: true, attributes: true, attributeFilter: ["disabled"] });
         // Choices dispara el cambio desde la zona externa usada para decorar
         // el DOM. Volvemos a entrar a Angular para que ngModel y los selectores
@@ -118,6 +123,21 @@ export class SelectEnhancementService {
         const onChange = () => this.zone.run(() => undefined);
         select.addEventListener("change", onChange);
         this.enhanced.set(select, { choices, optionsObserver, onChange });
+    }
+
+    private applyBoundValue(select: HTMLSelectElement, choices: Choices): void {
+        const value = String(select.value ?? "").trim();
+        if (!value) return;
+        const hasOption = Array.from(select.options).some((opt) => opt.value === value);
+        if (!hasOption) return;
+        try {
+            const raw = choices.getValue(true);
+            const current = (Array.isArray(raw) ? raw : [raw]).map(String);
+            if (current.includes(value)) return; // ya seleccionado: evita re-render/loop infinito
+        } catch { /* si getValue falla, seguimos aplicando */ }
+        try {
+            choices.setValue([value]);
+        } catch { /* Choices puede destruirse entre frames; no romper el render */ }
     }
 
     private removeDisconnected(): void {
