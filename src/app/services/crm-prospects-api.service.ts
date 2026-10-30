@@ -4,6 +4,14 @@ import { AuthService } from "./auth.service";
 import { resolveApiBaseUrl } from "./api-base-url.util";
 import { CrmBranchRecord } from "./crm-clients-api.service";
 
+/** Resultado de convertir un prospecto en cliente.
+ *  `created=false` significa que ya existía el cliente para esa empresa y el
+ *  prospecto quedó vinculado sin duplicar (endpoint idempotente). */
+export interface ProspectConversionResult {
+    client: unknown;
+    created: boolean;
+}
+
 export type CrmProspectStatus = "Pendiente" | "En proceso" | "Cerrado";
 
 export interface CrmProspectContact {
@@ -185,10 +193,10 @@ export class CrmProspectsApiService {
         ).pipe(map(() => void 0));
     }
 
-    convertToClient(prospectId: string): Observable<void> {
-        return from(this.request<Record<string, unknown>>(`/api/v1/crm/prospects/${encodeURIComponent(prospectId)}/convert-to-client`, {
+    convertToClient(prospectId: string): Observable<ProspectConversionResult> {
+        return from(this.request<{ client: unknown; created: boolean }>(`/api/v1/crm/prospects/${encodeURIComponent(prospectId)}/convert-to-client`, {
             method: "POST",
-        })).pipe(map(() => void 0));
+        })).pipe(map((response) => ({ client: response.client ?? null, created: Boolean(response.created) })));
     }
 
     updateProspectNote(prospectId: string, note: string): Observable<string> {
@@ -309,13 +317,6 @@ export class CrmProspectsApiService {
 
     private apiURL(path: string): string {
         return `${this.apiBaseUrl}${path}`;
-    }
-
-    convertProspectToClient(prospectId: string) {
-        return from(this.request<{ client: unknown; created: boolean }>(
-            `/api/v1/crm/prospects/${encodeURIComponent(prospectId)}/convert-to-client`,
-            { method: "POST" },
-        ));
     }
 
     listClientRelatedProspects(clientId: string) {

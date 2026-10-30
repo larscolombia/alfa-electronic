@@ -1029,10 +1029,12 @@ export class CrmProspectsComponent {
         this.prospectConvertErrorMessage = "";
 
         this.crmProspectsApi.convertToClient(prospect.backendId || prospect.id).subscribe({
-            next: () => {
+            next: (result) => {
                 this.convertingProspectIds.delete(prospect.id);
                 this.prospectConvertErrorMessage = "";
-                this.prospectConvertSuccessMessage = `Prospecto ${nombre} convertido a cliente correctamente.`;
+                this.prospectConvertSuccessMessage = result.created
+                    ? `Prospecto ${nombre} convertido a cliente correctamente.`
+                    : `El prospecto ${nombre} quedó vinculado al cliente existente de esta empresa, sin duplicar datos.`;
                 this.loadProspectsFromApi();
                 this.cdr.detectChanges();
             },

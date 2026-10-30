@@ -389,11 +389,22 @@ type EditableProfileFieldConfig = {
                                 <button class="btn btn-theme" type="button" (click)="openCommercialActionModal()"><i class="bi bi-plus-lg me-1"></i> Nueva acción comercial</button>
                                 <button class="btn btn-outline-theme" type="button" data-testid="send-intake-documents-btn" (click)="openIntakeDocumentsModal()"><i class="bi bi-send me-1"></i> Enviar documentos de ingreso</button>
                                 <button class="btn btn-outline-theme" type="button" data-testid="technical-question-btn" (click)="openTechnicalQuestionModal()"><i class="bi bi-question-circle me-1"></i> Registrar consulta técnica</button>
-                                <button class="btn btn-outline-secondary" type="button"><i class="bi bi-download me-1"></i> Exportar</button>
+                                <span class="flex-grow-1 d-none d-sm-block"></span>
+                                <button class="btn btn-success" type="button" data-testid="convert-to-client-btn" (click)="openConvertToClientModal()"><i class="bi bi-person-check me-1"></i> Convertir a cliente</button>
                             </div>
                             @if (commercialActionLoadErrorMessage) {
                                 <div class="px-3 pt-3">
                                     <div class="alert alert-danger border mb-0">{{ commercialActionLoadErrorMessage }}</div>
+                                </div>
+                            }
+                            @if (convertSuccessMessage || convertErrorMessage) {
+                                <div class="px-3 pt-3" data-testid="convert-result-banner">
+                                    @if (convertSuccessMessage) {
+                                        <div class="alert alert-success border mb-0"><i class="bi bi-check-circle me-1"></i>{{ convertSuccessMessage }}</div>
+                                    }
+                                    @if (convertErrorMessage) {
+                                        <div class="alert alert-danger border mb-0"><i class="bi bi-exclamation-triangle me-1"></i>{{ convertErrorMessage }}</div>
+                                    }
                                 </div>
                             }
                             <div class="table-responsive">
@@ -881,6 +892,41 @@ type EditableProfileFieldConfig = {
             <div class="modal-backdrop fade show"></div>
         }
 
+        @if (isConvertToClientModalOpen && prospect) {
+            <!-- Mismo patrón de backdrop que el modal de contactos; ver comentario ahí. -->
+            <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" (click)="$event.target === $event.currentTarget ? closeConvertToClientModal() : null">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Convertir a cliente</h5>
+                            <button type="button" class="btn-close" aria-label="Cerrar" (click)="closeConvertToClientModal()"></button>
+                        </div>
+                        <div class="modal-body">
+                            @if (convertErrorMessage && isConvertingProspect === false) {
+                                <div class="alert alert-danger border mb-3">{{ convertErrorMessage }}</div>
+                            }
+                            <p>Se creará el cliente <strong>{{ prospect.nombre }}</strong>{{ (prospect.compania ? ' de ' + prospect.compania : '') }} con los datos del prospecto: correo, NIT, zona y sus sucursales.</p>
+                            <ul class="text-secondary small mb-0">
+                                <li>Si ya existe un cliente para esa empresa no se duplica: el prospecto queda vinculado a ese cliente.</li>
+                                <li>Después de convertirlo, este prospecto deja de aparecer en la lista de prospectos y pasa al módulo de clientes.</li>
+                            </ul>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-link" (click)="closeConvertToClientModal()">Cancelar</button>
+                            <button type="button" class="btn btn-success" data-testid="confirm-convert-to-client-btn" [disabled]="isConvertingProspect" (click)="convertProspectToClient()">
+                                @if (isConvertingProspect) {
+                                    <span class="spinner-border spinner-border-sm me-1"></span>Convirtiendo...
+                                } @else {
+                                    <i class="bi bi-person-check me-1"></i>Convertir a cliente
+                                }
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-backdrop fade show"></div>
+        }
+
         @if (isCommercialActionModalOpen && prospect) {
             <!-- Mismo patrón de backdrop que el modal de contactos; ver comentario ahí. -->
             <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" (click)="$event.target === $event.currentTarget ? closeCommercialActionModal() : null">
@@ -1083,6 +1129,11 @@ export class CrmProspectDetailComponent {
     private activeDraftKey = "";
 
     isCommercialActionModalOpen = false;
+    isConvertToClientModalOpen = false;
+    isConvertingProspect = false;
+    convertSuccessMessage = "";
+    convertErrorMessage = "";
+
     commercialActionValidationMessage = "";
     commercialActionLoadErrorMessage = "";
     isSavingCommercialAction = false;
@@ -1697,6 +1748,54 @@ export class CrmProspectDetailComponent {
         this.commercialActionDraftBaseline = { ...this.commercialActionDraft };
 
         this.isCommercialActionModalOpen = true;
+    }
+
+    openConvertToClientModal(): void {
+        this.convertSuccessMessage = "";
+        this.convertErrorMessage = "";
+        this.isConvertingProspect = false;
+        this.isConvertToClientModalOpen = true;
+        this.cdr.detectChanges();
+    }
+
+    closeConvertToClientModal(): void {
+        if (this.isConvertingProspect) return; // No cerrar mientras corre la petición.
+        this.isConvertToClientModalOpen = false;
+        this.cdr.detectChanges();
+    }
+
+    convertProspectToClient(): void {
+        const prospect = this.prospect;
+        if (!prospect || this.isConvertingProspect) return;
+
+        const nombre = String(prospect.nombre ?? "").trim();
+        if (!nombre) {
+            this.convertErrorMessage = "El prospecto debe tener un nombre para poder convertirse en cliente.";
+            this.cdr.detectChanges();
+            return;
+        }
+
+        this.isConvertingProspect = true;
+        this.convertSuccessMessage = "";
+        this.convertErrorMessage = "";
+        const prospectId = String(prospect.backendId ?? "").trim() || prospect.id;
+
+        this.crmProspectsApi.convertToClient(prospectId).subscribe({
+            next: (result) => {
+                this.isConvertingProspect = false;
+                this.isConvertToClientModalOpen = false;
+                this.convertSuccessMessage = result.created
+                    ? `El prospecto ${nombre} se convirtió en cliente correctamente.`
+                    : `Ya existía un cliente para esta empresa: el prospecto ${nombre} quedó vinculado a él sin duplicar datos.`;
+            },
+            error: (error) => {
+                this.isConvertingProspect = false;
+                this.convertSuccessMessage = "";
+                const detail = String((error as Error | null)?.message ?? "").trim();
+                this.convertErrorMessage = detail ? `No se pudo convertir el prospecto a cliente: ${detail}` : "No se pudo convertir el prospecto a cliente. Inténtalo de nuevo.";
+            },
+        });
+        this.cdr.detectChanges();
     }
 
     openIntakeDocumentsModal(): void {
