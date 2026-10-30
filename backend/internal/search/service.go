@@ -97,14 +97,29 @@ func (s *Service) loadClients(ctx context.Context) ([]Document, error) {
 		if err := rows.Scan(&companyID, &id, &nombre, &correo, &empresa, &zona, &estado); err != nil {
 			return nil, err
 		}
+
+		trimmedNombre := strings.TrimSpace(nombre)
+		trimmedEmpresa := strings.TrimSpace(empresa)
+		trimmedZona := strings.TrimSpace(zona)
+
+		// Presentacion: negrita = empresa; debajo, zona y nombre del contacto (si existe).
+		title := trimmedEmpresa
+		if title == "" {
+			title = trimmedNombre // Sin empresa -> contacto, para no dejar una linea vacia.
+		}
+		contactInSubtitle := ""
+		if trimmedEmpresa != "" && trimmedNombre != "" {
+			contactInSubtitle = trimmedNombre // Solo en el subtitle cuando ya no es la linea principal.
+		}
+
 		docs = append(docs, Document{
 			ID:        id,
 			Type:      clienteIndex,
 			CompanyID: companyID,
-			Title:     nombre,
+			Title:     title,
 			Body:      strings.Join([]string{nombre, correo, empresa, zona, estado}, " "),
 			Fields: map[string]string{
-				"subtitle":  joinNonEmpty(" · ", empresa, zona),
+				"subtitle":  joinNonEmpty(" · ", trimmedZona, contactInSubtitle),
 				"route":     "/app/crm-clientes/" + id,
 				"typeLabel": "Cliente",
 			},
