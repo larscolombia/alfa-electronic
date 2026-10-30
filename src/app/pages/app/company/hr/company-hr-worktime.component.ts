@@ -26,10 +26,7 @@ import {
     template: `
         <div class="container-fluid py-3">
             <div class="row gx-3 gx-lg-4 align-items-center page-title">
-                <div class="col col-sm mb-3 mb-sm-0">
-                    <h5 class="mb-0">RRHH - Horarios y festivos</h5>
-                    <p class="text-secondary small mb-0">Configuracion de jornada laboral y calendario anual</p>
-                </div>
+
                 <div class="col-12 col-sm-auto text-sm-end">
                     <button class="btn btn-outline-secondary me-2" type="button" (click)="restoreDefaults()">Restaurar mock</button>
                     <a class="btn btn-outline-secondary me-2" routerLink="/app/profile-professional" [queryParams]="{ source: 'hr-worktime' }">Ver ficha</a>

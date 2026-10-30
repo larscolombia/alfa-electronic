@@ -14,10 +14,6 @@ const HR_EMPLOYEES_DRAFT_KEY = "app.company.hr-employees.catalogs";
     template: `
         <div class="container-fluid py-3">
             <div class="row gx-3 gx-lg-4 align-items-center page-title">
-                <div class="col col-sm mb-3 mb-sm-0">
-                    <h5 class="mb-0">RRHH - Empleados</h5>
-                    <p class="text-secondary small mb-0">Gestion de fichas maestras y catalogos organizacionales</p>
-                </div>
                 <div class="col-12 col-sm-auto text-sm-end">
                     <button class="btn btn-outline-secondary me-2" type="button" (click)="restoreCatalogDefaults()">Restaurar catalogos</button>
                     <a class="btn btn-outline-theme me-2" routerLink="/app/work-workload">Ver carga laboral</a>

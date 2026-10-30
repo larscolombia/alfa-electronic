@@ -22,10 +22,6 @@ interface CreditDraft {
     template: `
         <div class="container-fluid py-3">
             <div class="row gx-3 gx-lg-4 align-items-center page-title">
-                <div class="col col-sm mb-3 mb-sm-0">
-                    <h5 class="mb-0">Clientes a crédito</h5>
-                    <p class="text-secondary small mb-0">Asigna cupos de crédito y controla consumo y mora por cliente.</p>
-                </div>
             </div>
 
             <nav aria-label="breadcrumb" class="breadcrumb-theme mt-3 rounded">

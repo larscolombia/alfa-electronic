@@ -35,10 +35,6 @@ import {
     template: `
         <div class="container-fluid py-3">
             <div class="row gx-3 gx-lg-4 align-items-center page-title">
-                <div class="col col-sm mb-3 mb-sm-0">
-                    <h5 class="mb-0">Proveedores - CRUD</h5>
-                    <p class="text-secondary small mb-0">Ficha maestra de proveedores con informacion legal, contable, contacto y calidad.</p>
-                </div>
                 <div class="col-12 col-sm-auto text-sm-end">
                     <a class="btn btn-outline-secondary me-2" routerLink="/app/suppliers-dashboard">Ver dashboard</a>
                     <button class="btn btn-theme" type="button" (click)="openCreateSupplierForm()">Crear proveedor</button>

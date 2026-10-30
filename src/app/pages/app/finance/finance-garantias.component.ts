@@ -58,10 +58,6 @@ interface LegacyWarrantyRecord extends WarrantyRecord {
     template: `
         <div class="container-fluid py-3">
             <div class="row gx-3 gx-lg-4 align-items-center page-title">
-                <div class="col col-sm mb-3 mb-sm-0">
-                    <h5 class="mb-0">Garantias</h5>
-                    <p class="text-secondary small mb-0">Ciclo de garantias y seguimiento por vencimiento de servicios y equipos.</p>
-                </div>
                 <div class="col-12 col-sm-auto text-sm-end">
                     @if (viewMode === "list") {
                         <button class="btn btn-theme" type="button" (click)="openCreateForm()"><i class="bi bi-plus-lg me-2"></i>Nueva garantia</button>

@@ -8,10 +8,6 @@ import { RouterLink } from "@angular/router";
     template: `
         <div class="container-fluid py-3">
             <div class="row gx-3 gx-lg-4 align-items-center page-title">
-                <div class="col col-sm mb-3 mb-sm-0">
-                    <h5 class="mb-0">Recursos Humanos</h5>
-                    <p class="text-secondary small mb-0">Vista general del modulo de talento humano</p>
-                </div>
                 <div class="col-12 col-sm-auto text-sm-end">
                     <button class="btn btn-outline-secondary me-2" type="button">Exportar</button>
                     <a class="btn btn-theme" routerLink="/app/profile-professional" [queryParams]="{ source: 'hr-dashboard', new: 1 }">Nuevo colaborador</a>

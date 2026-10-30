@@ -27,10 +27,6 @@ interface FinanceAccountDraft {
     template: `
         <div class="container-fluid py-3">
             <div class="row gx-3 gx-lg-4 align-items-center page-title">
-                <div class="col col-sm mb-3 mb-sm-0">
-                    <h5 class="mb-0">Cuentas</h5>
-                    <p class="text-secondary small mb-0">Administra cuentas bancarias y cuentas de efectivo para operacion financiera.</p>
-                </div>
                 <div class="col-12 col-sm-auto text-sm-end">
                     <a class="btn btn-outline-secondary" routerLink="/app/finance-caja-menor">Ir a caja menor</a>
                 </div>
