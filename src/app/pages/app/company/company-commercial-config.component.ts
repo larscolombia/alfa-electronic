@@ -379,8 +379,10 @@ const COMMISSIONS_STORAGE_KEY = "adminux.company.commercial.commissions.v1";
         </div>
 
         @if (showDeleteZoneModal && zoneToDelete) {
-            <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" (click)="closeDeleteZoneModal()">
-                <div class="modal-dialog modal-dialog-centered" role="document" (click)="$event.stopPropagation()">
+            <!-- Backdrop-close sin stopPropagation: Choices.js abre dropdowns con un
+                 listener de click en <html>; cortarla dejaba los selects ciegos al click. -->
+            <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" (click)="$event.target === $event.currentTarget ? closeDeleteZoneModal() : null">
+                <div class="modal-dialog modal-dialog-centered" role="document">
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title">Reasignar clientes antes de borrar zona</h5>

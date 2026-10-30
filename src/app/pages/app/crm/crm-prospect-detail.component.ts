@@ -832,8 +832,11 @@ type EditableProfileFieldConfig = {
         </div>
 
         @if (isContactModalOpen) {
-            <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" (click)="closeContactModal()">
-                <div class="modal-dialog modal-dialog-centered" role="document" (click)="$event.stopPropagation()">
+            <!-- Cierre por backdrop: solo si el clic cae en .modal mismo. NO usar stopPropagation:
+                 Choices.js abre sus dropdowns con un listener de click en <html>; cortarla
+                 dejaba los selects del modal ciegos al click (bug "Accion comercial realizada"). -->
+            <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" (click)="$event.target === $event.currentTarget ? closeContactModal() : null">
+                <div class="modal-dialog modal-dialog-centered" role="document">
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title">{{ editingContact ? "Editar contacto" : "Agregar contacto" }}</h5>
@@ -879,8 +882,9 @@ type EditableProfileFieldConfig = {
         }
 
         @if (isCommercialActionModalOpen && prospect) {
-            <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" (click)="closeCommercialActionModal()">
-                <div class="modal-dialog modal-lg modal-dialog-centered" role="document" (click)="$event.stopPropagation()">
+            <!-- Mismo patrón de backdrop que el modal de contactos; ver comentario ahí. -->
+            <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" (click)="$event.target === $event.currentTarget ? closeCommercialActionModal() : null">
+                <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title">Agregar Seguimiento</h5>

@@ -240,8 +240,10 @@ interface OrderTraceRecord {
             </div>
 
             @if (selectedOrder && orderDetailDraft) {
-                <div class="modal fade show d-block order-modal" tabindex="-1" role="dialog" aria-modal="true" (click)="closeOrderDetails()">
-                    <div class="modal-dialog modal-xl modal-dialog-scrollable" (click)="$event.stopPropagation()">
+                <!-- Backdrop-close sin stopPropagation: Choices.js abre dropdowns con un
+                     listener de click en <html>; cortarla dejaba los selects ciegos al click. -->
+                <div class="modal fade show d-block order-modal" tabindex="-1" role="dialog" aria-modal="true" (click)="$event.target === $event.currentTarget ? closeOrderDetails() : null">
+                    <div class="modal-dialog modal-xl modal-dialog-scrollable">
                         <div class="modal-content">
                             <div class="modal-header">
                                 <div>
