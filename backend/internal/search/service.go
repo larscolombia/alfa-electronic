@@ -98,19 +98,10 @@ func (s *Service) loadClients(ctx context.Context) ([]Document, error) {
 			return nil, err
 		}
 
-		trimmedNombre := strings.TrimSpace(nombre)
-		trimmedEmpresa := strings.TrimSpace(empresa)
 		trimmedZona := strings.TrimSpace(zona)
 
 		// Presentacion: negrita = empresa; debajo, zona y nombre del contacto (si existe).
-		title := trimmedEmpresa
-		if title == "" {
-			title = trimmedNombre // Sin empresa -> contacto, para no dejar una linea vacia.
-		}
-		contactInSubtitle := ""
-		if trimmedEmpresa != "" && trimmedNombre != "" {
-			contactInSubtitle = trimmedNombre // Solo en el subtitle cuando ya no es la linea principal.
-		}
+		title, contactInSubtitle := presentacionSearch(empresa, nombre)
 
 		docs = append(docs, Document{
 			ID:        id,
@@ -145,14 +136,19 @@ func (s *Service) loadProspects(ctx context.Context) ([]Document, error) {
 		if err := rows.Scan(&companyID, &id, &name, &email, &company, &zone, &city); err != nil {
 			return nil, err
 		}
+		// Presentacion (misma regla que clientes): negrita = empresa; debajo, zona y contacto.
+		title, contactInSubtitle := presentacionSearch(company, name)
+		locacion := strings.TrimSpace(zone) // Zona principal; ciudad como fallback si no hay zona.
+		if locacion == "" {
+			locacion = strings.TrimSpace(city)
+		}
+
 		docs = append(docs, Document{
-			ID:        id,
-			Type:      prospectoIndex,
-			CompanyID: companyID,
-			Title:     name,
-			Body:      strings.Join([]string{name, email, company, zone, city}, " "),
+			ID:    id,
+			Title: title,
+			Body:  strings.Join([]string{name, email, company, zone, city}, " "),
 			Fields: map[string]string{
-				"subtitle":  joinNonEmpty(" · ", company, zone, city),
+				"subtitle":  joinNonEmpty(" · ", locacion, contactInSubtitle),
 				"route":     "/app/crm-prospectos/" + id,
 				"typeLabel": "Prospecto",
 			},
@@ -190,6 +186,22 @@ func (s *Service) ReplaceClientDocs(companyID, docType string, docs []Document) 
 	}
 	s.engine.ReplaceCompanyDocs(docType, companyID, docs)
 	return nil
+}
+
+// presentacionSearch aplica la regla de Presentacion del listado de busqueda (clientes y
+// prospectos): negrita = empresa; el nombre del contacto pasa al subtitle solo cuando la
+// empresa ya ocupa la linea principal. Sin empresa -> el contacto es la negrita.
+func presentacionSearch(empresa, persona string) (title, contactoLine string) {
+	trimmedEmpresa := strings.TrimSpace(empresa)
+	trimmedPersona := strings.TrimSpace(persona)
+	title = trimmedEmpresa
+	if title == "" {
+		title = trimmedPersona // Sin empresa -> contacto, para no dejar una linea vacia.
+	}
+	if trimmedEmpresa != "" && trimmedPersona != "" {
+		contactoLine = trimmedPersona // Solo en el subtitle cuando ya no es la linea principal.
+	}
+	return title, contactoLine
 }
 
 func joinNonEmpty(sep string, values ...string) string {
