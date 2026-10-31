@@ -23,7 +23,7 @@
 | E2E Playwright local (A: botón) | 1 escenario / 2 asserts | PASS | `npm run check:crm-prospect-owner-default` |
 | E2E Playwright local (B: borrador viejo) | 1 escenario / 2 asserts | PASS | idem |
 | E2E Playwright local (C: toggle nativo del summary) | 1 escenario / 2 asserts | PASS | idem |
-| E2E Playwright prod (post-deploy) | 3 escenarios | ver §4 | `PW_BASE_URL=https://alfa.software.net.co ...` |
+| E2E Playwright prod (post-deploy) | 3 escenarios / 6 asserts | PASS (2026-10-31, commit `9c36f6ea`) | `PW_BASE_URL=https://alfa.software.net.co node scripts/check-crm-prospect-owner-default-playwright.mjs` |
 
 ## 3. Cobertura de edge cases
 
@@ -40,4 +40,7 @@
 
 - Local: `OK: Empleado responsable autocompletado en los tres escenarios.`
   (A/B/C verdes; value `"Administrador PIKA"`, options `["--","Administrador PIKA"]`).
-- Prod: pendiente de registro post-deploy (ver QA procedures §2.3).
+- Prod (2026-10-31, commit `9c36f6ea`, build en server con node v20.19.0): `OK: Empleado responsable autocompletado en los tres escenarios.`
+  - A (clic) / B (borrador viejo) / C (summary-toggle): value `"Administrador PIKA"`.
+  - Opciones RRHH reales cargadas vía CORS de prod: `["--","Comercial01 Comercial01","Nathalia Gonzalez","Administrador PIKA"]`.
+  - Chunk servido por nginx (`dist/demo/browser/chunk-TJ343ODX.js`) contiene `onProspectFormToggle`; HTTP/2 200 en `/`.
