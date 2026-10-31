@@ -25,7 +25,7 @@ import { describeProjectSla, getProjectTechnicalTestTypeLabel, resolveProjectSla
       <div class="project-card__accent" [style.background]="column?.color || null"></div>
 
       <div class="project-card__meta-row" *ngIf="project.properties['shortCode'] || project.properties['client']">
-        <span class="project-card__meta-code" *ngIf="project.properties['shortCode']">{{ project.properties['shortCode'] }}</span>
+        <span class="project-card__meta-code" *ngIf="project.properties['equipmentCode'] || project.properties['shortCode']">{{ project.properties['equipmentCode'] || project.properties['shortCode'] }}</span>
         <span class="project-card__meta-client" *ngIf="project.properties['client']">{{ project.properties['client'] }}</span>
       </div>
 

@@ -51,7 +51,7 @@ import { ProspectEquipmentAttachment, ProspectEquipmentItem, ProspectEquipmentRe
                     <h2>Equipo {{ i + 1 }} · {{ item.familyName || 'Sin familia' }} {{ item.marca || '' }} {{ item.tipo || '' }}</h2>
                     <div class="sheet-grid">
                         <div><strong>Serie:</strong> {{ item.serie || '--' }}</div>
-                        <div><strong>Identificador:</strong> {{ item.receivedIdentifier || '--' }}</div>
+                        <div><strong>Identificador:</strong> {{ item.equipmentCode || item.receivedIdentifier || '--' }}</div>
                         <div><strong>Servicio:</strong> {{ item.serviceTypeName || '--' }}</div>
                         <div><strong>Ubicación:</strong> {{ item.storageLocationName || '--' }}</div>
                         <div><strong>Falla reportada:</strong> {{ item.failureDescription || '--' }}</div>

@@ -613,5 +613,89 @@ export function makeStages({ base, pause, data, stamp, snap, utils }) {
     await visible(rowEnt.locator("[data-testid=remission-item-service]",{hasText:data.serviceType}),"El servicio no persistió en la remisión entregada");
   }
 
-  return { ensureReceptionCatalog, reception, commercialAction, completeAccountRelations, verifyProspectTabs, remitAndDeliver, promoteToClient };
+  // Auditoría visual del código CO+YYMM+NNNN en TODAS las vistas del equipo,
+  // tras el cierre de reparación. Actúa como usuario real: navega a cada vista,
+  // lee el texto renderizado y lo aserta contra data.internalCode (asignado en
+  // recepción). Si alguna vista aún cae al identificador legacy, la aserción
+  // falla con el texto exacto para diagnosticar qué bloque no migra.
+  async function verifyEquipmentCodeInViews(page) {
+    if(!/^CO\d{8,}$/.test(data.internalCode||"")) throw new Error(`Falta data.internalCode para auditar las vistas (recibido: "${data.internalCode}")`);
+
+    // 1) Tablero de proyectos (vista completa): el badge de la tarjeta muestra CO.
+    await page.goto(`${base}/app/work-projects`,{waitUntil:"domcontentloaded"});
+    await utils.ensureBoardFullView(page);
+    const card=page.locator(".project-card",{hasText:data.serie}).first();
+    if(!await card.waitFor({state:"visible",timeout:20000}).then(()=>true).catch(()=>false)) throw new Error("La tarjeta del proyecto no aparece en el tablero para auditar su código");
+    const badge=card.locator(".project-card__meta-code").first();
+    await visible(badge,"El badge de código interno no aparece en la tarjeta del tablero");
+    const badgeText=((await badge.innerText().catch(()=>""))||"").trim();
+    if(!/^CO\d{8,}$/.test(badgeText)) throw new Error(`El badge del tablero muestra "${badgeText}" y no un código CO+YYMM+NNNN`);
+    if(!badgeText.includes(coPeriod)) throw new Error(`El badge ${badgeText} no incluye el periodo actual (CO${coPeriod})`);
+    await snap("11a-tablero-badge-co");
+
+    // 2) Modo compacto: el chip único por proyecto también debe mostrar el CO.
+    const toggle=page.locator(".compact-mode-toggle input[type=checkbox]").first();
+    if(await toggle.waitFor({state:"attached",timeout:20000}).then(()=>true).catch(()=>false)){
+      await checkFocus(page,toggle);
+      await page.waitForTimeout(900);
+      const chips=(await page.locator(".compact-code-chip").allInnerTexts().catch(()=>[])).map(t=>t.trim());
+      if(!chips.some(text=>text===data.internalCode)) throw new Error(`El chip compacto no muestra ${data.internalCode}. Chips visibles: ${JSON.stringify(chips.slice(0,12))}`);
+      await snap("11b-tablero-chip-compacto-co");
+      await toggle.uncheck(); await page.waitForTimeout(900);
+    } else {
+      console.log("UI_ONLY_CODE auditoría de modo compacto omitida (sin toggle disponible)");
+    }
+
+    // 3) Ficha del proyecto: eyebrow + bloque QR/caja de equipo vinculado.
+    const d=await utils.openCard(page);
+    await visible(d,"No abrió la ficha del proyecto para auditar su código");
+    const eyebrow=d.locator(".project-detail-dialog__eyebrow").first();
+    await visible(eyebrow,"La ficha no expone el eyebrow con el código interno");
+    const eyebrowText=((await eyebrow.innerText().catch(()=>""))||"").trim();
+    if(!/^CO\d{8,}$/.test(eyebrowText)) throw new Error(`El eyebrow de la ficha muestra "${eyebrowText}" y no ${data.internalCode}`);
+    const qrMeta=d.locator(".equipment-qr-preview__meta small",{hasText:/Código interno/}).first();
+    const linkedBox=d.locator(".equipment-linked-box__grid span",{hasText:/Código interno/}).first();
+    const codeViews=[];
+    if(await qrMeta.isVisible().catch(()=>false)) codeViews.push(["QR del equipo",((await qrMeta.innerText().catch(()=>""))||"").trim()]);
+    if(await linkedBox.isVisible().catch(()=>false)) codeViews.push(["Equipo vinculado",((await linkedBox.innerText().catch(()=>""))||"").trim()]);
+    if(!codeViews.length) throw new Error("La ficha no muestra ningún bloque con el código interno del equipo (ni QR ni caja de vínculo)");
+    for(const [name,text] of codeViews){ if(!text.includes(data.internalCode)) throw new Error(`El bloque "${name}" de la ficha muestra "${text}" y no ${data.internalCode}`); }
+    await snap("11c-ficha-codigo-interno-co");
+    const closeBtn=d.locator("button.project-detail-dialog__close").first();
+    if(await closeBtn.isVisible().catch(()=>false)) await click(page,closeBtn,"Cerrar ficha tras auditar código");
+
+    // 4) Ficha del prospecto → pestaña Equipos: la fila conserva el código CO.
+    const detail=await openProspectDetail(page);
+    await click(page,detail.locator(".nav-link",{hasText:/Equipos/}).first(),"Tab Equipos (auditoría de código)");
+    const eqRow=detail.locator("table tbody tr",{hasText:data.serie}).first();
+    await visible(eqRow,"La fila del equipo no aparece en la pestaña Equipos para auditar su código");
+    const rowText=(await eqRow.innerText().catch(()=>""))||"";
+    if(!rowText.includes(data.internalCode)) throw new Error(`La fila del equipo en la ficha de prospecto no muestra ${data.internalCode}. Fila: ${JSON.stringify(rowText.slice(0,240))}`);
+    await snap("11d-prospecto-tab-equipos-co");
+
+    // 5) Carga laboral (cola de afectación): si el equipo aún está sin técnico,
+    // la fila visible debe llevar el código CO. Tras el cierre suele salir ya
+    // asignado: en ese caso se omite con aviso, sin ocultar fallos reales.
+    await page.goto(`${base}/app/work-workload`,{waitUntil:"domcontentloaded"});
+    const queueRow=page.locator("tr.queue-row",{hasText:data.serie}).first();
+    if(await queueRow.isVisible().catch(()=>false)){
+      const qText=(await queueRow.innerText().catch(()=>""))||"";
+      if(!qText.includes(data.internalCode)) throw new Error(`La fila de la cola laboral no muestra ${data.internalCode}. Fila: ${JSON.stringify(qText.slice(0,240))}`);
+      console.log("UI_ONLY_CODE cola laboral visible con código CO");
+    } else {
+      console.log("UI_ONLY_CODE cola laboral sin el equipo (ya asignado tras el cierre): aserción de código omitida");
+    }
+
+    // 6) Timesheet: la opción del select de equipos siempre incluye el código.
+    await page.goto(`${base}/app/work-timesheet`,{waitUntil:"domcontentloaded"});
+    const tsSelect=page.locator("select[data-testid=timesheet-equipment-select]").first();
+    await visible(tsSelect,"El select de equipos del timesheet no aparece para auditar su código");
+    const opts=(await tsSelect.locator("option").allInnerTexts().catch(()=>[])).map(t=>t.trim());
+    if(!opts.some(text=>text.includes(data.internalCode))) throw new Error(`Ninguna opción del select de equipos muestra ${data.internalCode}. Opciones: ${JSON.stringify(opts.slice(0,12))}`);
+    await snap("11e-timesheet-opcion-co");
+
+    console.log(`UI_ONLY_CODE vistas verificadas con ${data.internalCode} (periodo CO${coPeriod})`);
+  }
+
+  return { ensureReceptionCatalog, reception, commercialAction, completeAccountRelations, verifyProspectTabs, remitAndDeliver, promoteToClient, verifyEquipmentCodeInViews };
 }

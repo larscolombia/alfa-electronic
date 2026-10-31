@@ -768,7 +768,8 @@ export class WorkWorkloadComponent implements OnInit, OnDestroy {
   }
   equipmentLabel(entry: EquipmentQueueItem): string {
     return String(
-      entry.item.receivedIdentifier ||
+      entry.item.equipmentCode ||
+        entry.item.receivedIdentifier ||
         entry.item.serie ||
         entry.item.customerShipmentReference ||
         entry.item.id,

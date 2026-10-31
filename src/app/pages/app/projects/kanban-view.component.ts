@@ -228,7 +228,7 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
                   [ngClass]="'compact-chip--' + getCompactSlaSeverity(project, column)"
                   [attr.title]="project.title"
                   (click)="$event.stopPropagation(); navigateToProject(project)">
-                  {{ project.properties['equipmentIdentifier'] || project.properties['shortCode'] || project.id }}
+                  {{ project.properties['equipmentCode'] || project.properties['equipmentIdentifier'] || project.properties['shortCode'] || project.id }}
                 </button>
               </div>
 
@@ -289,7 +289,7 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
               </span>
 
               <div>
-                <span class="project-detail-dialog__eyebrow">{{ detailProject.properties['shortCode'] || 'PRJ' }}</span>
+                <span class="project-detail-dialog__eyebrow">{{ detailProject.properties['equipmentCode'] || detailProject.properties['shortCode'] || 'PRJ' }}</span>
                 <h3 class="project-detail-dialog__title">{{ detailProject.title || 'Nuevo proyecto' }}</h3>
                 <p class="project-detail-dialog__subtitle">
                   Ficha extendida para planificacion, presupuesto, responsables, equipo y control operativo.

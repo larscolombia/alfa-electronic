@@ -270,6 +270,7 @@ let browser; let page; try { browser=await chromium.launch({headless,slowMo:0});
   console.log("UI_ONLY order"); await order(page); await snap("4-oc");
   console.log("UI_ONLY parts and purchases"); await partsAndPurchases(page); await snap("5-repuestos");
   console.log("UI_ONLY repair close"); await repairAndClose(page); await snap("6-cierre");
+  console.log("UI_ONLY código CO en vistas"); await stages.verifyEquipmentCodeInViews(page);
   console.log("UI_ONLY promote to client"); await stages.promoteToClient(page); await snap("10-cliente");
   console.log("UI_ONLY invoice"); await toInvoice(page); await snap("7-factura");
   console.log("UI_ONLY emit invoice"); await emitInvoice(page);

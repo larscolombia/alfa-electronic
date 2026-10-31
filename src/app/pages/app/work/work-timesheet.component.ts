@@ -552,7 +552,7 @@ export class WorkTimesheetComponent implements OnInit, OnDestroy {
             next: (items) => {
                 this.equipmentOptions = items.map((item) => ({
                     value: item.itemId,
-                    label: [item.displayName || item.serie || item.itemId, item.receivedIdentifier]
+                    label: [item.displayName || item.serie || item.itemId, item.equipmentCode || item.receivedIdentifier]
                         .filter((part) => !!part && part.trim())
                         .join(" · "),
                 }));

@@ -3547,7 +3547,7 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy,
                 </head>
                 <body>
                     <img src="${qrAttachment.dataUrl}" alt="QR equipo" />
-                    <div class="meta">${item.receivedIdentifier || item.serie || item.id}</div>
+                    <div class="meta">${item.equipmentCode || item.receivedIdentifier || item.serie || item.id}</div>
                 </body>
             </html>
         `);

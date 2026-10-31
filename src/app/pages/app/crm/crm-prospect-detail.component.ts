@@ -507,7 +507,7 @@ type EditableProfileFieldConfig = {
                                                                 <td>{{ item.serie || "--" }}</td>
                                                                 <td>{{ item.serviceTypeName || "--" }}</td>
                                                                 <td>{{ item.storageLocationName || "--" }}</td>
-                                                                <td>{{ item.receivedIdentifier || "--" }}</td>
+                                                                <td>{{ item.equipmentCode || item.receivedIdentifier || "--" }}</td>
                                                                 <td>{{ item.customerShipmentReference || "--" }}</td>
                                                                 <td>{{ item.accessories || "--" }}</td>
                                                                 <td>{{ item.evidencePhotos.length }} foto(s)</td>
