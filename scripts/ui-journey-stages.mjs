@@ -698,12 +698,31 @@ export function makeStages({ base, pause, data, stamp, snap, utils }) {
     }
 
     // 6) Timesheet: la opción del select de equipos siempre incluye el código.
+    // El control que ve el usuario es un wrapper Choices.js (SelectEnhancementService
+    // envuelve a todos los <select> ~50ms después de insertarse): el <select>
+    // nativo queda oculto, así que la visibilidad se aserta sobre el wrapper y el
+    // contenido sobre las opciones reales que ese wrapper renderiza. La tarjeta del
+    // formulario llega por API tardía: se espera (con tope) a que esté lista.
     await page.goto(`${base}/app/work-timesheet`,{waitUntil:"domcontentloaded"});
     const tsSelect=page.locator("select[data-testid=timesheet-equipment-select]").first();
-    await visible(tsSelect,"El select de equipos del timesheet no aparece para auditar su código");
-    const opts=(await tsSelect.locator("option").allInnerTexts().catch(()=>[])).map(t=>t.trim());
-    if(!opts.some(text=>text.includes(data.internalCode))) throw new Error(`Ninguna opción del select de equipos muestra ${data.internalCode}. Opciones: ${JSON.stringify(opts.slice(0,12))}`);
+    let tsOpts=[];
+    for(let i=0;i<120 && !tsOpts.some(text=>text.includes(data.internalCode));i++){
+      if(await tsSelect.count().catch(()=>0)){
+        tsOpts=(await tsSelect.locator("option").allInnerTexts().catch(()=>[])).map(t=>t.trim());
+      }
+      await new Promise(r=>setTimeout(r,500));
+    }
+    // El select nativo vive DENTRO de .choices__inner (el <select> recibe hidden+
+    // class choices__input). El wrapper exterior es el div con token exacto
+    // "choices": se busca como ancestro más lejano que lo contenga para no
+    // confundirlo con su hijo .choices__inner.
+    const tsWrapper=tsSelect.locator("xpath=ancestor::div[contains(concat(' ',normalize-space(@class),' '),' choices ')][last()]").first();
+    if(!await tsWrapper.isVisible().catch(()=>false)) throw new Error(`El control visible de equipos del timesheet (wrapper Choices) no está en pantalla para auditar su código. Opciones: ${JSON.stringify(tsOpts.slice(0,12))}`);
+    await click(page,tsWrapper.locator(".choices__inner").first(),"Abrir lista de equipos del timesheet");
+    const listOption=page.locator(".choices__list--dropdown .choices__item",{hasText:data.internalCode}).first();
+    if(!await listOption.isVisible().catch(()=>false)) throw new Error(`La lista desplegada del timesheet no muestra ${data.internalCode} (como lo vería el usuario). Opciones: ${JSON.stringify(tsOpts.slice(0,12))}`);
     await snap("11e-timesheet-opcion-co");
+    await click(page,tsWrapper.locator(".choices__inner").first(),"Cerrar lista de equipos del timesheet");
 
     console.log(`UI_ONLY_CODE vistas verificadas con ${data.internalCode} (periodo CO${coPeriod})`);
   }
