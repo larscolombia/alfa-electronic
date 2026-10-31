@@ -655,10 +655,21 @@ export function makeStages({ base, pause, data, stamp, snap, utils }) {
     if(!/^CO\d{8,}$/.test(eyebrowText)) throw new Error(`El eyebrow de la ficha muestra "${eyebrowText}" y no ${data.internalCode}`);
     const qrMeta=d.locator(".equipment-qr-preview__meta small",{hasText:/Código interno/}).first();
     const linkedBox=d.locator(".equipment-linked-box__grid span",{hasText:/Código interno/}).first();
+    // El bloque depende de que el catálogo llegue por API (resuelve linkedEquipment)
+    // y, en el QR, de una generación asíncrona: se espera su settle con tope estricto,
+    // como esperaría un usuario real. Si tras 30s no aparece, la aserción falla.
+    let blockVisible=false;
+    for(let i=0;i<60 && !blockVisible;i++){
+      blockVisible=(await qrMeta.isVisible().catch(()=>false))||(await linkedBox.isVisible().catch(()=>false));
+      if(!blockVisible) await new Promise(r=>setTimeout(r,500));
+    }
     const codeViews=[];
     if(await qrMeta.isVisible().catch(()=>false)) codeViews.push(["QR del equipo",((await qrMeta.innerText().catch(()=>""))||"").trim()]);
     if(await linkedBox.isVisible().catch(()=>false)) codeViews.push(["Equipo vinculado",((await linkedBox.innerText().catch(()=>""))||"").trim()]);
-    if(!codeViews.length) throw new Error("La ficha no muestra ningún bloque con el código interno del equipo (ni QR ni caja de vínculo)");
+    if(!codeViews.length){
+      const estado=((await d.locator(".equipment-qr-placeholder, .alert-warning").allInnerTexts().catch(()=>[])).join(" | ")||(await d.locator("text=/Aun no hay un equipo|No se pudo cargar|ya no existe/i").first().innerText().catch(()=>"sin estado legible")));
+      throw new Error(`La ficha no muestra ningún bloque con el código interno del equipo (ni QR ni caja de vínculo) tras 30s de espera. Estado visible: ${JSON.stringify(estado.slice(0,400))}`);
+    }
     for(const [name,text] of codeViews){ if(!text.includes(data.internalCode)) throw new Error(`El bloque "${name}" de la ficha muestra "${text}" y no ${data.internalCode}`); }
     await snap("11c-ficha-codigo-interno-co");
     const closeBtn=d.locator("button.project-detail-dialog__close").first();
