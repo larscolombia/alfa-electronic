@@ -50,9 +50,12 @@ export function makeUtils({ base, pause, data }) {
           : String(option?.label ?? option?.value ?? "");
       if (!label) throw new Error("No se pudo determinar la opción visible del selector");
       const name = await select.getAttribute("name");
+      // Sin `name` (ngModel standalone), el ancestro más cercano que contiene
+      // "choices" es div.choices__inner, no el wrapper: se resuelve por token
+      // exacto de la clase exterior para poder leer .choices__inner dentro.
       const wrapper = name
         ? page.locator(`.choices:has(select[name="${escapeCssAttribute(name)}"])`).first()
-        : select.locator("xpath=ancestor::*[contains(@class, 'choices')][1]");
+        : select.locator("xpath=ancestor::*[contains(concat(' ', normalize-space(@class), ' '), ' choices ')][1]");
       if (await wrapper.count()) {
         const trigger = wrapper.locator(".choices__inner").first();
         if (await trigger.isVisible().catch(() => false)) {
@@ -70,6 +73,76 @@ export function makeUtils({ base, pause, data }) {
       await select.selectOption(option, opts);
     }
     await page.waitForTimeout(pause);
+  }
+  // Selección por label de campo cuando SelectEnhancementService puede mejorar el
+  // <select> con Choices.js (~50 ms tras renderizar el modal). Resuelve ambos casos:
+  // widget .choices visible o select nativo aún no mejorado. La coincidencia es
+  // parcial porque las opciones reales son "Nombre (Contacto)".
+  async function pickByLabel(page, scope, labelText, optionText) {
+    const label = scope.locator("label.form-label").filter({ hasText: labelText }).first();
+    await visible(label, `No aparece el campo "${labelText}"`);
+    const widget = label.locator("xpath=following-sibling::*[contains(@class,'choices')][1]");
+    const native = label.locator("xpath=following-sibling::select").first();
+    let mode = null;
+    const deadline = Date.now() + 30000;
+    while (!mode && Date.now() < deadline) {
+      if ((await widget.count()) && (await widget.first().isVisible().catch(() => false))) mode = "choices";
+      else if (await native.isVisible().catch(() => false)) mode = "native";
+      else await page.waitForTimeout(150);
+    }
+    if (!mode) throw new Error(`El selector "${labelText}" no quedó disponible ni como widget Choices ni como select nativo`);
+    if (mode === "choices") {
+      const w = widget.first();
+      const trigger = w.locator(".choices__inner").first();
+      await paint(trigger);
+      // El select puede nacer disabled (p. ej. Ciudad antes de elegir País).
+      const enabledBy = Date.now() + 10000;
+      while (!(await trigger.isEnabled().catch(() => true)) && Date.now() < enabledBy) {
+        await page.waitForTimeout(150);
+      }
+      if (!(await trigger.isEnabled().catch(() => false))) throw new Error(`El selector "${labelText}" quedó inhabilitado`);
+      await trigger.click();
+      const items = w.locator(".choices__list--dropdown .choices__item--choice");
+      await visible(items.first(), `No se desplegaron opciones en "${labelText}"`);
+      const item = items.filter({ hasText: new RegExp(escapeRegExp(optionText)) }).first();
+      if (await item.isVisible().catch(() => false)) {
+        await paint(item);
+        await item.click();
+      } else {
+        const list = await items.allInnerTexts().catch(() => []);
+        throw new Error(`No encontré la opción "${optionText}" en "${labelText}". Opciones visibles: ${JSON.stringify(list.slice(0, 10))}`);
+      }
+    } else {
+      const sel = native;
+      await paint(sel);
+      const opts = await sel.locator("option").evaluateAll((os) => os.map((o) => (o.textContent || "").trim()));
+      const idx = opts.findIndex((t) => t.includes(optionText));
+      if (idx < 0) throw new Error(`No encontré la opción "${optionText}" en "${labelText}" entre: ${JSON.stringify(opts.slice(0, 8))}`);
+      await sel.selectOption({ index: idx });
+    }
+    // Verifica que el valor quedó fijado en el control real (widget o nativo).
+    const fixed = mode === "choices"
+      ? ((await widget.first().locator("select").first().inputValue().catch(() => "")) || "")
+      : ((await native.inputValue().catch(() => "")) || "");
+    if (!fixed) throw new Error(`La selección "${optionText}" en "${labelText}" no quedó fijada`);
+    await page.waitForTimeout(pause);
+  }
+  // SelectEnhancementService monta Choices.js (~50 ms) y oculta el <select>
+  // nativo. Espera a que el control quede interactuable como un usuario real:
+  // select nativo visible o widget .choices activo y visible.
+  async function awaitSelectReady(page, select, message) {
+    const first=select.first();
+    if(!await first.waitFor({state:"attached",timeout:30000}).then(()=>true).catch(()=>false)) throw new Error(message);
+    const deadline = Date.now() + 30000;
+    for(;;) {
+      if(await first.isVisible().catch(()=>false)) return "native";
+      if((await first.getAttribute("data-choice").catch(()=>null))==="active") {
+        const wrapper=first.locator("xpath=ancestor::*[contains(concat(' ', normalize-space(@class), ' '), ' choices ')][1]");
+        if(await wrapper.count().then(c=>c>0).catch(()=>false) && await wrapper.first().isVisible().catch(()=>false)) return "choices";
+      }
+      if(Date.now()>deadline) throw new Error(`${message} (ni select nativo visible ni widget Choices activo)`);
+      await page.waitForTimeout(150);
+    }
   }
   async function checkFocus(page, locator) { await mark(page,locator); if (!await locator.isChecked().catch(()=>false)) await locator.check(); await page.waitForTimeout(pause); }
   async function attachFocus(page, locator, files) { await mark(page,locator); await locator.setInputFiles(files); await page.waitForTimeout(pause); }
@@ -108,7 +181,7 @@ export function makeUtils({ base, pause, data }) {
     await click(page,d.getByRole("button",{name:"Guardar cambios"}),"Guardar cambios");
     await page.waitForTimeout(1000);
   }
-  return { visible, click, mark, fillFocus, selectFocus, checkFocus, attachFocus, selectLabel, fillLabel, openCard, ensureBoardFullView, confirmTransitionIfAsked, moveAndSave };
+  return { visible, click, mark, fillFocus, selectFocus, awaitSelectReady, pickByLabel, checkFocus, attachFocus, selectLabel, fillLabel, openCard, ensureBoardFullView, confirmTransitionIfAsked, moveAndSave };
 }
 
 function escapeRegExp(value) {

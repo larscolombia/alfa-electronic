@@ -1,5 +1,5 @@
 import type { ProspectEquipmentItem, ProspectEquipmentRecord } from "../crm/crm-prospect-equipment.store";
-import { buildInternalEquipmentCode } from "../crm/equipment-qr.util";
+import { resolveEquipmentCode } from "../crm/equipment-qr.util";
 
 export interface EquipmentJourneySnapshot {
     owner: { prospectId: string; prospectName: string; companyName: string; nit: string; contactName: string; contactEmail: string };
@@ -19,7 +19,7 @@ export function buildEquipmentJourneySnapshot(record: ProspectEquipmentRecord, i
             contactEmail: String(record.email ?? "").trim(),
         },
         equipment: {
-            recordId: String(record.id ?? "").trim(), itemId: String(item.id ?? "").trim(), equipmentCode: buildInternalEquipmentCode(item.id),
+            recordId: String(record.id ?? "").trim(), itemId: String(item.id ?? "").trim(), equipmentCode: resolveEquipmentCode(item),
             identifier: String(item.receivedIdentifier ?? "").trim(), serie: String(item.serie ?? "").trim(),
             displayName: [item.marca, item.tipo].filter(Boolean).join(" ").trim(),
             serviceTypeId: String(item.serviceTypeId ?? "").trim(), serviceTypeName: String(item.serviceTypeName ?? "").trim(),

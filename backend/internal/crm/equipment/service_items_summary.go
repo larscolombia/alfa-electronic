@@ -23,7 +23,7 @@ func flattenSummaries(records []Record) []Summary {
 			summaries = append(summaries, Summary{
 				RecordID:                  record.ID,
 				ItemID:                    item.ID,
-				EquipmentCode:             internalEquipmentCode(item.ID),
+				EquipmentCode:             resolveEquipmentCode(item.EquipmentCode, item.ID),
 				ProspectID:                record.ProspectID,
 				ProspectName:              record.ProspectName,
 				ReceptionLabel:            receptionLabel,
@@ -50,6 +50,16 @@ func flattenSummaries(records []Record) []Summary {
 	}
 
 	return summaries
+}
+
+// resolveEquipmentCode prefiere el código asignado al recepcionar (serie CO+YYMM+NNNN)
+// y solo deriva la serie legacy EQ-* del ID cuando el registro es anterior a esa
+// serie, para que los equipos antiguos no pierdan su etiqueta estable.
+func resolveEquipmentCode(stored string, itemID string) string {
+	if trimmed := strings.TrimSpace(stored); trimmed != "" {
+		return trimmed
+	}
+	return internalEquipmentCode(itemID)
 }
 
 func internalEquipmentCode(itemID string) string {

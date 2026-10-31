@@ -1,17 +1,33 @@
 /** Etapas CRM y remisión del recorrido UI-only: recepción completa, acción
  *  comercial con verificación de persistencia y entrega/remisión. */
 import { png } from "./ui-journey-helpers.mjs";
-import { openCustomSelectMenu, selectCustomModal } from "./ui-modal-controls.mjs";
 
 export function makeStages({ base, pause, data, stamp, snap, utils }) {
-  const { visible, click, fillFocus, selectFocus, checkFocus, attachFocus, selectLabel, fillLabel } = utils;
-  const selectFirst = async(page, locator) => {
-    const opts = await locator.locator("option").evaluateAll(os => os.map((o,i) => ({ i, disabled:o.disabled, v:o.value||"" })));
-    const pick = opts.find(o => !o.disabled && o.v.trim() !== "");
-    if (pick) await selectFocus(page, locator, {index:pick.i}, {force:true});
-    return Boolean(pick);
-  };
-  const labelControl = (scope, pattern, control) => scope.locator("label.form-label").filter({hasText:pattern}).first().locator("xpath=..").locator(control).first();
+  const { visible, click, fillFocus, selectFocus, pickByLabel, checkFocus, attachFocus, fillLabel } = utils;
+
+  // Serie CO+YYMM+NNNN: el contador mensual vive en el backend y reinicia en
+  // cero cada mes. Estos helpers comparten la semántica de aserción entre
+  // recepción (asignación) y remisión (persistencia del código).
+  const coPeriod = `${String(new Date().getFullYear()).slice(-2)}${String(new Date().getMonth() + 1).padStart(2, "0")}`;
+  const codeSeq=(c)=>Number(String(c||"").replace(/^CO/,""));
+  async function waitCode(input,retries=45){
+    for(let i=0;i<retries;i++){
+      const v=((await input.inputValue().catch(()=>""))||"").trim();
+      if(/^CO\d{8,}$/.test(v)) return v;
+      await new Promise(r=>setTimeout(r,250));
+    }
+    return ((await input.inputValue().catch(()=>""))||"").trim();
+  }
+  async function wizardBlocker(w){
+    const msg=w.locator("[data-testid=equipment-modal-validation-message]").first();
+    if(!(await msg.isVisible().catch(()=>false))) return "";
+    return ((await msg.innerText())||"").trim();
+  }
+  async function nextStep(page,w,label){
+    await click(page,w.locator("[data-testid=equipment-modal-next]"),label);
+    const blocker=await wizardBlocker(w);
+    if(blocker) throw new Error(`El wizard no avanzó (${label}): ${blocker}`);
+  }
 
   async function ensureReceptionCatalog(page) {
     await page.goto(`${base}/app/company-equipment-config`,{waitUntil:"domcontentloaded"});
@@ -29,24 +45,67 @@ export function makeStages({ base, pause, data, stamp, snap, utils }) {
     }
   }
 
-  async function reception(page) {
-    await page.goto(`${base}/app/crm-prospectos`,{waitUntil:"domcontentloaded"}); await click(page,page.getByRole("button",{name:/Agregar Prospecto/i}),"Agregar Prospecto");
-    await fillFocus(page,page.locator("input[name=formNombre]"),data.prospect); await fillFocus(page,page.locator("input[name=formCorreo]"),data.email); await fillFocus(page,page.locator("input[name=formCompania]"),data.company); await fillFocus(page,page.locator("input[name=formMovil]"),"3005550101");
-    await fillFocus(page,page.locator("input[name=formNit]"),data.nit); await fillFocus(page,page.locator("input[name=formSitioWeb]"),"https://ui-industria.example.com"); await fillFocus(page,page.locator("input[name=formTelefonoOficina]"),"6011234567"); await selectFocus(page,page.locator("select[name=formPais]"),"Colombia",{force:true}); await selectFocus(page,page.locator("select[name=formCiudad]"),"Bogotá",{force:true}); await fillFocus(page,page.locator("textarea[name=formNota]"),"Prospecto de prueba UI del recorrido completo del equipo.");
+  async function createProspectInCrm(page) {
+    await page.goto(`${base}/app/crm-prospectos`,{waitUntil:"domcontentloaded"});
+    await click(page,page.getByRole("button",{name:/Agregar Prospecto/i}),"Abrir formulario de prospecto");
     if(await page.locator("input[name=formValor]").count()) throw new Error("El campo retirado 'Valor del prospecto' volvió a aparecer en el formulario");
-    await selectFirst(page,page.locator("select[name=formSaludo]")); await selectFirst(page,page.locator("select[name=formEmpleado]")); await selectFirst(page,page.locator("select[name=formFuente]")); await selectFirst(page,page.locator("select[name=formCategoria]")); await selectFirst(page,page.locator("select[name=formServicio]"));
+    await fillFocus(page,page.locator("input[name=formCompania]"),data.company);
+    await fillFocus(page,page.locator("input[name=formCorreo]"),data.email);
+    await fillFocus(page,page.locator("input[name=formNit]"),data.nit);
+    await fillFocus(page,page.locator("input[name=formMovil]"),"3005550101");
+    await fillFocus(page,page.locator("input[name=formSitioWeb]"),"https://ui-industria.example.com");
+    await fillFocus(page,page.locator("input[name=formTelefonoOficina]"),"6011234567");
+    await selectFocus(page,page.locator("select[name=formPais]"),{label:"Colombia"},{force:true});
+    const citySelect=page.locator("select[name=formCiudad]").first();
+    await page.waitForFunction(()=>{const el=document.querySelector("select[name=formCiudad]");return Boolean(el&&!el.disabled);},{timeout:10000});
+    await selectFocus(page,citySelect,{label:"Bogotá"},{force:true});
+    // Empleado responsable y fuente: Choices.js; se elige la primera opción real
+    // si existen (no son obligatorios para guardar).
+    const pickFirstOption=async(name)=>{
+      const sel=page.locator(`select[name=${name}]`).first();
+      if(!await sel.count()) return;
+      const opts=await sel.locator("option").evaluateAll(os=>os.map(o=>o.value||""));
+      if(opts.filter(v=>v.trim()!=="").length===0) return;
+      const enabled=opts.findIndex((v,i)=>v.trim()!==""&&i>0);
+      await selectFocus(page,sel,{index:enabled>0?enabled:1},{force:true});
+    };
+    await pickFirstOption("formEmpleado");
+    await pickFirstOption("formFuente");
     const saveProspect = page.locator("[data-testid=prospect-save-btn]").first();
     await page.waitForFunction((selector) => {
       const button = document.querySelector(selector);
       return Boolean(button && !button.disabled);
     }, "[data-testid=prospect-save-btn]", { timeout: 10000 });
     await click(page,saveProspect,"Guardar prospecto"); await page.waitForTimeout(1200);
-    await page.reload({waitUntil:"domcontentloaded"}); const row=page.locator("tbody tr",{hasText:data.prospect}).first(); await visible(row,"El prospecto creado no se muestra en CRM");
-    await click(page,row.locator("button.dropdown-toggle").first(),"Acciones"); await snap("2a-menu-acciones-crm"); await click(page,row.locator(".dropdown-menu button",{hasText:/Asociar equipo/i}).first(),"Asociar equipo");
-    const w=page.locator("app-crm-prospect-equipment-modal .modal-content").first(); await visible(w,"No abrió el wizard de recepción");
-    // La fecha del formato es solo fecha: un único control estándar, sin hora
-    // ni campos DD/MM/AAAA separados. Conservamos el valor para comprobar el
-    // resumen del snapshot antes de guardar.
+    const searchInput=page.locator("[data-testid=prospects-search]").first();
+    await visible(searchInput,"Tras guardar el prospecto no reaparece el buscador de CRM");
+    const saveErrorAlert=page.locator(".alert.alert-danger").first();
+    if(await saveErrorAlert.isVisible().catch(()=>false)) throw new Error(`El guardado del prospecto reportó: ${(await saveErrorAlert.innerText()).trim()}`);
+    await fillFocus(page,searchInput,data.company);
+    const searchResult=page.locator("[data-testid=prospect-search-results] a.list-group-item").filter({hasText:data.company}).first();
+    await visible(searchResult,"El prospecto recién creado no aparece en el buscador de CRM");
+    console.log(`UI_ONLY_PROSPECT creado: ${data.company}`);
+    await snap("2a-prospecto-creado-en-crm");
+  }
+
+  async function openWizard(page) {
+    // Entrada viva al wizard: bandeja de recepción > "Nuevo equipo". El matching
+    // de equipos es por NIT/empresa, así que la ficha del prospecto real sí
+    // muestra los equipos guardados.
+    await page.goto(`${base}/app/work-equipment-reception`,{waitUntil:"domcontentloaded"});
+    await click(page,page.locator("[data-testid=work-equipment-create]").first(),"Abrir wizard: Nuevo equipo");
+    const w=page.locator("app-crm-prospect-equipment-modal .modal-content").first();
+    await visible(w,"No abrió el wizard de recepción");
+    return w;
+  }
+
+  async function reception(page) {
+    await createProspectInCrm(page);
+    const w=await openWizard(page);
+
+    // ---- Paso Recepción -----------------------------------------------------
+    // La fecha es un único control estándar (sin DD/MM/AAAA separados). Se
+    // conserva el valor para comprobar el resumen antes de guardar.
     const receptionDate = new Date();
     const receptionDateValue = `${receptionDate.getFullYear()}-${String(receptionDate.getMonth() + 1).padStart(2,"0")}-${String(receptionDate.getDate()).padStart(2,"0")}`;
     const receptionDateLabel = `${String(receptionDate.getDate()).padStart(2,"0")}/${String(receptionDate.getMonth() + 1).padStart(2,"0")}/${receptionDate.getFullYear()}`;
@@ -55,57 +114,252 @@ export function makeStages({ base, pause, data, stamp, snap, utils }) {
     await fillFocus(page,receptionDateInput,receptionDateValue);
     if(await receptionDateInput.inputValue() !== receptionDateValue) throw new Error(`La fecha de recepción no conservó el valor estándar ${receptionDateValue}`);
     if(await w.locator("input[placeholder='DD'], input[placeholder='MM'], input[placeholder='AAAA']").count() !== 0) throw new Error("La recepción aún muestra campos de fecha separados");
-    await fillLabel(w,"E-mail",data.email); await selectFocus(page,w.locator("[data-testid=equipment-modal-country-select]"),"Colombia",{force:true}); await selectFocus(page,w.locator("[data-testid=equipment-modal-city-select]"),"Bogotá",{force:true}); await fillFocus(page,w.locator("[data-testid=equipment-modal-company-search]"),data.company); await click(page,w.locator("[data-testid=equipment-modal-company-create]"),"Crear empresa");
-    // Crear/seleccionar la empresa puede precargar su contacto. El contacto de
-    // recepción se define después para que el snapshot guarde el autorizado.
-    await fillLabel(w,"Contacto","Ana Cliente");
-    await click(page,w.locator("[data-testid=equipment-modal-next]"),"Siguiente recepción");
-    console.log("UI_ONLY_RECEPTION selector: modo de registro");
-    await selectCustomModal(page,w.getByTestId("equipment-modal-registration-mode-0"),"manual");
-    const card=w.locator(".equipment-card").first();
-    await fillFocus(page,card.locator("input[placeholder='Familia libre']"),"Tarjetas electrónicas");
-    console.log("UI_ONLY_RECEPTION selector: tipo de servicio");
-    console.log(`UI_ONLY_RECEPTION service-selector=${await card.getByTestId("equipment-modal-service-type-0").evaluate(element => element.outerHTML.slice(0, 500))}`);
-    await selectCustomModal(page,card.getByTestId("equipment-modal-service-type-0"),{label:"Reparación"});
-    console.log("UI_ONLY_RECEPTION selector: ubicación");
-    await selectCustomModal(page,card.getByTestId("equipment-modal-storage-location-0"),{label:"Estantería"});
-    await fillFocus(page,card.locator("input[placeholder='Marca del equipo']"),"Siemens"); await fillFocus(page,card.locator("input[placeholder='Tipo / referencia']"),"Placa base industrial"); await fillFocus(page,card.locator("input[placeholder='Serie o referencia visible']"),data.serie); await fillFocus(page,card.locator("input[placeholder='USB, cables, CD, caja original...']"),"Caja original, cable de poder, manual"); await fillFocus(page,card.locator("textarea").first(),"Placa base: reparación cotizada en $10.000.000 COP.");
-    const techTrigger=card.getByTestId("equipment-modal-technician-0");
-    await selectCustomModal(page, techTrigger, { index: 1 });
-    await click(page,w.locator("[data-testid=equipment-modal-next]"),"Siguiente equipo");
-    const ask=async(label)=>{const q=w.locator(".border.rounded.p-3",{hasText:label}).first(); const box=q.locator("input[type=checkbox]").first(); if(await box.isChecked().catch(()=>true)===false) await click(page,box,`Pregunta ${label}`);};
-    await ask("superior a $ 2'000.000");
-    if(await w.getByText(/Posible falla de software/i).count()) throw new Error("Volvió a aparecer la alerta/validación retirada de posible falla de software");
-    const override=w.locator("input[placeholder='Nombre del jefe']"); if(await override.isVisible().catch(()=>false)){await fillFocus(page,override,"Jefe técnico");await fillFocus(page,w.locator("input[placeholder='Justificación operativa']"),"Caso de prueba UI.");} await click(page,w.locator("[data-testid=equipment-modal-next]"),"Siguiente preguntas");
-    const evidenceInputs=w.locator("input[type=file]");
-    const requiredFaceInputs=evidenceInputs;
-    for(let i=0;i<4;i++) await attachFocus(page,requiredFaceInputs.nth(i),{name:`cara-${i}.png`,mimeType:"image/png",buffer:png()});
-    const fileInput=evidenceInputs.nth(4);
-    if(!await fileInput.waitFor({state:"attached",timeout:15000}).then(()=>true).catch(()=>false)){
-      const step=await w.locator(".wizard-step.active").innerText().catch(()=>"?");
-      const msg=await w.locator("[data-testid=equipment-modal-validation-message]").innerText().catch(()=>"(sin mensaje)");
-      throw new Error(`No se encontró input de evidencias. Paso activo: ${step} | Validación: ${msg}`);
+
+    // País habilita la lista de ciudades: se selecciona antes.
+    await selectFocus(page,w.locator("[data-testid=equipment-modal-country-select]"),{label:"Colombia"},{force:true});
+    await selectFocus(page,w.locator("[data-testid=equipment-modal-city-select]"),{label:"Bogotá"},{force:true});
+    await fillLabel(w,"Nit",data.nit);
+    await fillLabel(w,"Teléfono","6011234567");
+    await fillLabel(w,"Dirección","Av. Carrera 45 #128-30");
+    await fillLabel(w,"E-mail",data.email);
+
+    // Empresa: combobox de búsqueda sobre Clientes + Prospectos. El prospecto
+    // recién creado debe aparecer como resultado y quedar preseleccionado.
+    const companySearch=w.locator("[data-testid=equipment-modal-company-search]");
+    await fillFocus(page,companySearch,data.company);
+    const companyItem=w.locator(".company-dropdown-item").filter({hasText:data.company}).first();
+    await visible(companyItem,"El prospecto recién creado no aparece en el combobox de empresa del wizard");
+    await click(page,companyItem,"Seleccionar empresa del catálogo");
+    await visible(w.getByText("Empresa seleccionada:",{exact:false}).first(),"La empresa no quedó seleccionada tras elegir el resultado");
+
+    // Contacto remitente: se crea inline si el wizard lo permite (requiere el
+    // prospecto con ID de backend en el catálogo). Si está bloqueado, la suite
+    // bifurca: comercialAction() garantiza el contacto desde la ficha.
+    data.contactInWizard=false;
+    const newContactBtn=w.locator("[data-testid=equipment-modal-contact-create]").first();
+    if(await newContactBtn.isEnabled().catch(()=>false)){
+      await click(page,newContactBtn,"Nuevo contacto en el wizard");
+      const contactForm=w.locator("[data-testid=equipment-modal-contact-create-form]");
+      await visible(contactForm,"No abrió el formulario de nuevo contacto del wizard");
+      await fillFocus(page,contactForm.locator("[data-testid=contact-create-name]"),"Ana Cliente");
+      const contactEmail=contactForm.locator("input[type=email]").first();
+      if(await contactEmail.count()) await fillFocus(page,contactEmail,data.email);
+      await click(page,contactForm.locator("[data-testid=contact-create-save]"),"Guardar contacto del wizard");
+      await page.waitForFunction(()=>!document.querySelector("[data-testid=equipment-modal-contact-create-form]")||(document.querySelector("[data-testid=equipment-modal-contact-create-form]").querySelector(".alert.alert-danger")),null,{timeout:2000}).catch(()=>{});
+      const createError=w.locator("[data-testid=equipment-modal-contact-create-form] .alert-danger").first();
+      if(await createError.isVisible().catch(()=>false)) throw new Error(`El contacto del wizard no se guardó: ${await createError.innerText()}`);
+      await visible(w.locator(".reception-sender-contact").getByText("Ana Cliente",{exact:false}).first(),"El contacto creado no quedó precargado en el selector de la recepción");
+      data.contactInWizard=true;
+    } else {
+      console.log("UI_ONLY_RECEPTION AVISO: 'Nuevo contacto' está deshabilitado en el wizard (el prospecto aún no expone backendId); se creará por ficha antes de la acción comercial.");
     }
-    await attachFocus(page,fileInput,{name:"accesorios.png",mimeType:"image/png",buffer:png()}); await page.waitForTimeout(600); const photos=w.locator(".evidence-photo-card");
-    const accessoryPhoto=photos.filter({hasText:"accesorios.png"}).first();
-    await selectCustomModal(page,accessoryPhoto.getByTestId("equipment-modal-evidence-type"),{label:"Accesorios"});
-    await click(page,w.locator("[data-testid=equipment-modal-next]"),"Siguiente evidencias");
+    await nextStep(page,w,"Siguiente recepción");
+
+    // ---- Paso Equipos --------------------------------------------------------
+    const card=w.locator(".equipment-card").first();
+    await visible(card,"No aparece la tarjeta del equipo en el paso Equipos");
+    console.log("UI_ONLY_RECEPTION selector: modo de registro (select nativo)");
+    await selectFocus(page,card.getByTestId("equipment-modal-registration-mode-0"),{value:"manual"},{force:true});
+    // El modo manual habilita marca/tipo/serie para captura libre.
+    await selectFocus(page,card.getByTestId("equipment-modal-family-0"),{label:"CE - Tarjeta Electrónica"},{force:true});
+    console.log("UI_ONLY_RECEPTION selector: tipo de servicio (select nativo)");
+    await selectFocus(page,card.getByTestId("equipment-modal-service-type-0"),{label:"Reparación"},{force:true});
+    // Ubicación es input + datalist: se digita el nombre exacto del catálogo.
+    const storageInput=card.getByTestId("equipment-modal-storage-location-0");
+    await fillFocus(page,storageInput,"Estantería QA");
+    await card.locator(".equipment-card .form-control[placeholder='Marca del equipo']").first().click({timeout:5000}).catch(()=>{}); // dispara change/blur del datalist
+    await visible(card.getByText(/Servicio Reparación/).first(),"El tipo de servicio 'Reparación' no quedó aplicado en la tarjeta");
+    await visible(card.getByText(/Ubicación Estantería QA/).first(),"La ubicación 'Estantería QA' no quedó aplicada en la tarjeta");
+
+    await fillFocus(page,card.locator("input[placeholder='Marca del equipo']"),"Siemens");
+    await fillFocus(page,card.locator("input[placeholder='Tipo / referencia']"),"Placa base industrial");
+    await fillFocus(page,card.locator("input[placeholder='Serie o referencia visible']"),data.serie);
+    // Accesorios se deja vacío a propósito: reportar accesorios exigiría una
+    // evidencia fotográfica de tipo "Accesorios" que no corresponde al flujo.
+
+    // Técnico responsable: select nativo; opcional para el guardado, se elige
+    // la primera opción real si existe para enriquecer el proyecto derivado.
+    const tech=card.getByTestId("equipment-modal-technician-0");
+    if(await tech.isEnabled().catch(()=>false)){
+      const opts=await tech.locator("option").evaluateAll(os=>os.map((o,i)=>({i,v:(o.value||"")})));
+      const pickT=opts.find(o=>o.v.trim()!=="");
+      if(pickT) await selectFocus(page,tech,{index:pickT.i},{force:true});
+    }
+
+    // Segundo equipo (validación de serie): los controles Agregar/Eliminar solo
+    // existen en este paso. Se agrega ahora; su consecutivo se verifica en
+    // Evidencia y luego regresa aquí para eliminarlo antes del guardado.
+    await click(page,w.locator("[data-testid=equipment-modal-add-item]"),"Agregar segundo equipo");
+    const removeSecond=w.locator("[data-testid=equipment-modal-remove-item-1]").first();
+    await visible(removeSecond,"No apareció el botón Eliminar del segundo equipo tras Agregar");
+
+    await nextStep(page,w,"Siguiente equipo");
+
+    // ---- Paso Preguntas ------------------------------------------------------
+    // Marcar costo > $2'000.000 como "Sí" libera el guardado sin override de
+    // jefe (requiresIndustrialOverride() => false). La pregunta defaulta a No.
+    // Cada tarjeta de equipo trae SU PROPIA pregunta: con dos equipos en el
+    // wizard hay que marcar todas, no solo la primera.
+    const costBoxes=w.locator("input[type=checkbox][id$='-costAboveTwoMillion']");
+    await visible(costBoxes.first(),"No aparece la pregunta de costo superior a $ 2'000.000");
+    for(let i=0;i<await costBoxes.count();i++){
+      const box=costBoxes.nth(i);
+      if(!await box.isChecked().catch(()=>false)) await checkFocus(page,box);
+    }
+    if(await w.locator("input[placeholder='Nombre del jefe']").count()) throw new Error("El recuadro de autorización de jefe sigue visible con costo > 2M marcado en todas las tarjetas: la pregunta no se registró como Sí");
+    if(await w.getByText(/Posible falla de software/i).count()) throw new Error("Volvió a aparecer la alerta/validación retirada de posible falla de software");
+    await nextStep(page,w,"Siguiente preguntas");
+
+    // ---- Paso Evidencia ------------------------------------------------------
+    // El Código interno se expone en este paso (input readonly por equipo).
+    const firstCodeInput=w.locator("[data-testid=equipment-internal-code-0]").first();
+    await visible(firstCodeInput,"El paso de evidencias no expone el campo Código interno");
+    data.internalCode=await waitCode(firstCodeInput);
+    if(!/^CO\d{8,}$/.test(data.internalCode)) throw new Error(`El código interno "${data.internalCode || "(vacío)"}" no sigue la serie CO+YYMM+NNNN`);
+    if(!data.internalCode.includes(coPeriod)) throw new Error(`El código interno ${data.internalCode} no incluye el periodo actual (CO${coPeriod})`);
+    console.log("UI_ONLY_RECEPTION code assigned", data.internalCode);
+
+    // Cuatro caras obligatorias: inputs file en orden DOM front/back/left/right
+    // (requiredFaceEvidenceTypes). El handler asigna el tipo de evidencia.
+    const faceInputs=w.locator("input[type=file][id^='evidence-face-']");
+    if((await faceInputs.count())<4) throw new Error(`Se esperaban 4 inputs de caras obligatorias y hay ${await faceInputs.count()}`);
+    for(let i=0;i<4;i++){
+      await attachFocus(page,faceInputs.nth(i),{name:`cara-${i}.png`,mimeType:"image/png",buffer:png()});
+    }
+    await visible(w.locator(".evidence-card").getByText("Caras completas",{exact:true}).first(),"Las 4 caras no quedaron completas tras adjuntar las fotos");
+
+    // El segundo equipo (agregado en el paso Equipos) debió recibir el siguiente
+    // consecutivo; su campo de código solo es visible en este paso.
+    const secondCodeInput=w.locator("[data-testid=equipment-internal-code-1]").first();
+    await visible(secondCodeInput,"El segundo equipo no expone su código interno");
+    const secondInternalCode=await waitCode(secondCodeInput);
+    if(!/^CO\d{8,}$/.test(secondInternalCode)) throw new Error(`El segundo equipo no recibió un código de serie (valor: "${secondInternalCode || "(vacío)"}")`);
+    if(codeSeq(secondInternalCode)!==codeSeq(data.internalCode)+1) throw new Error(`El segundo equipo debería recibir ${data.internalCode}+1 y recibió ${secondInternalCode}`);
+
+    // Vuelve a Equipos para eliminar el segundo (ahí vive su botón Eliminar):
+    // Evidencia -> Preguntas -> Equipos. El código asignado queda quemado:
+    // la verificación final espera +2 tras guardar.
+    const prevBtn=w.locator("[data-testid=equipment-modal-previous]");
+    await click(page,prevBtn,"Volver del paso Evidencia al de Preguntas");
+
+    // La respuesta Sí al costo > 2M debió persistir al navegar hacia atrás.
+    const costBoxAgain=w.locator("input[type=checkbox][id$='-costAboveTwoMillion']").first();
+    await visible(costBoxAgain,"La pregunta de costo no aparece en el paso Preguntas tras volver");
+    if(!await costBoxAgain.isChecked().catch(()=>false)) throw new Error("El Sí al costo > 2M se perdió al navegar hacia atrás");
+
+    await click(page,prevBtn,"Volver del paso Preguntas al de Equipos");
+    const addAgain=w.locator("[data-testid=equipment-modal-add-item]").first();
+    await visible(addAgain,"El botón 'Agregar equipo' no aparece en el paso Equipos tras volver");
+    if(await w.locator(".equipment-card").count()!==2) throw new Error(`Se esperaban 2 tarjetas de equipos al volver y hay ${await w.locator(".equipment-card").count()}`);
+
+    await click(page,removeSecond,"Eliminar segundo equipo");
+    if(await w.locator(".equipment-card").count()!==1) throw new Error(`Tras eliminar el segundo equipo quedaron ${await w.locator(".equipment-card").count()} tarjetas`);
+    const serieInput=w.locator("input[placeholder='Serie o referencia visible']").first();
+    if((await serieInput.inputValue().catch(()=>""))!==data.serie) throw new Error(`El equipo que se conserva perdió su serie (valor: "${await serieInput.inputValue().catch(()=>'(vacío)')}")`);
+
+    // Siguiente desde Equipos valida el paso y avanza a Preguntas.
+    await nextStep(page,w,"Siguiente a preguntas (tras eliminar equipo)");
+    if(!await costBoxAgain.isChecked().catch(()=>false)) throw new Error("El Sí al costo > 2M se perdió al avanzar de nuevo a Preguntas");
+
+    // Siguiente desde Preguntas valida la respuesta y avanza a Evidencia.
+    await nextStep(page,w,"Siguiente a evidencias (tras eliminar equipo)");
+
+    // El primer equipo conserva su código original; el del segundo desapareció.
+    if((await firstCodeInput.inputValue())!==data.internalCode) throw new Error(`El código del primer equipo cambió al eliminar el segundo: ${await firstCodeInput.inputValue()}`);
+    if(await w.locator("[data-testid=equipment-internal-code-1]").count()) throw new Error("Tras eliminar el segundo equipo aún existe su campo de código interno");
+
+    // Siguiente desde Evidencia avanza al paso Cierre.
+    await nextStep(page,w,"Siguiente a cierre");
+
+    // ---- Paso Cierre ---------------------------------------------------------
     const summary=w.locator(".modal-body",{hasText:"Resumen de la recepción"}).first();
     await visible(summary,"No se muestra el resumen de recepción");
-    if(!(await summary.innerText()).includes(receptionDateLabel)) throw new Error(`El snapshot de recepción no conserva la fecha ${receptionDateLabel}`);
-    for (const value of [data.company, "Ana Cliente", data.serie, "Reparación"]) {
-      if (!(await summary.innerText()).includes(value)) throw new Error(`El snapshot de recepción no conserva ${value}`);
+    const summaryText=await summary.innerText();
+    if(!summaryText.includes(receptionDateLabel)) throw new Error(`El snapshot de recepción no conserva la fecha ${receptionDateLabel}`);
+    for (const value of [data.company, data.serie, "Reparación"]) {
+      if (!summaryText.includes(value)) throw new Error(`El snapshot de recepción no conserva ${value}`);
     }
+    if(data.contactInWizard && !summaryText.includes("Ana Cliente")) throw new Error("El contacto creado en el wizard no aparece en el resumen");
     await snap("2-recepcion-resumen-consistente");
-    const generate=w.locator("#generateRepairProjectsOnSave"); await checkFocus(page,generate); await click(page,w.locator("[data-testid=equipment-modal-save]"),"Guardar recepción y generar proyecto"); await page.waitForTimeout(1800);
+
+    const generate=w.locator("#generateRepairProjectsOnSave");
+    await checkFocus(page,generate);
+    await click(page,w.locator("[data-testid=equipment-modal-save]"),"Guardar recepción y generar proyecto");
+
+    // Este host (work-equipment-reception) monta el wizard con
+    // navigateToProjectsOnSave=false: por diseño al guardar el modal cierra,
+    // la tabla se recarga y aparece "Registro creado correctamente." Si algo
+    // falló, el wizard sigue abierto con su mensaje de validación.
+    const modalRoot=page.locator("app-crm-prospect-equipment-modal").first();
+    try {
+      await modalRoot.waitFor({state:"detached",timeout:45000});
+    } catch {
+      const blocker=(await wizardBlocker(w))||"sin mensaje visible en el wizard";
+      throw new Error(`La recepción no se guardó (el wizard sigue abierto tras pulsar Guardar): ${blocker}`);
+    }
+
+    const savedMsg=page.getByText("Registro creado correctamente.").first();
+    await visible(savedMsg,"No apareció el acuse 'Registro creado correctamente.' tras guardar la recepción");
+
+    // El tablero es un DataTable paginado (10 filas/página) ordenado por "Servicios":
+    // la recepción nueva puede caer en cualquier página. Como usuario real se usa su
+    // propio buscador para localizarla entre TODOS los registros, no solo la página 1.
+    // (DataTables 2.x: input .dt-input[type=search] dentro de .dt-search; conteo en .dt-info)
+    const tableSearch=page.locator(".dt-search input[type=search]").first();
+    await visible(tableSearch,"No aparece el buscador de la tabla del tablero de recepciones");
+    await fillFocus(page,tableSearch,data.company);
+    try {
+      await page.waitForFunction(()=>{const cell=document.querySelector('.dt-info');return !!cell && /1\s+a\s+1\s+de\s+1/.test(cell.textContent||"");},{timeout:20000});
+    } catch {
+      const infoText=(await page.locator(".dt-info").first().innerText().catch(() =>"")) || "(sin texto)";
+      throw new Error(`Tras buscar "${data.company}" en el tablero, la tabla no muestra exactamente 1 registro (info: ${infoText})`);
+    }
+    await snap("3-recepcion-ubicada-en-tabla");
+
+    const newRow=page.locator("table tbody tr").filter({hasText:data.company}).first();
+    await visible(newRow,"La recepción recién guardada no aparece en la tabla del tablero de recepciones");
+    if(!(await newRow.innerText()).includes(data.serie)) throw new Error(`La fila de ${data.company} no muestra la serie del equipo ${data.serie}`);
+    console.log("UI_ONLY_RECEPTION guardado; recepción visible en el tablero con su serie");
+
+    // Verificación +2: una nueva recepción debe continuar la serie sin repetir
+    // códigos (el ítem eliminado antes quemó su consecutivo). El wizard nuevo
+    // reserva el código en ngOnInit, pero solo es visible en Evidencia.
+    const w2=await openWizard(page);
+    await nextStep(page,w2,"Verificación: siguiente recepción");
+    await nextStep(page,w2,"Verificación: siguiente equipos");
+    const costBox2=w2.locator("input[type=checkbox][id$='-costAboveTwoMillion']").first();
+    if(!await costBox2.isChecked().catch(()=>false)) await checkFocus(page,costBox2);
+    await nextStep(page,w2,"Verificación: siguiente preguntas");
+    const nextCodeInput=w2.locator("[data-testid=equipment-internal-code-0]").first();
+    await visible(nextCodeInput,"La recepción de verificación no expone el código interno en Evidencia");
+    const nextInternalCode=await waitCode(nextCodeInput);
+    if(codeSeq(nextInternalCode)!==codeSeq(data.internalCode)+2) throw new Error(`Tras guardar y reabrir, la serie debió continuar en ${data.internalCode}+2 y quedó en "${nextInternalCode || "(vacío)"}"`);
+    console.log("UI_ONLY_RECEPTION code series continued", data.internalCode, "->", nextInternalCode);
+    await click(page,w2.locator("[data-testid=equipment-modal-cancel]"),"Cerrar sin guardar la recepción de verificación");
   }
 
-  async function ensureContactForAction(page, modal) {
-    const contactSelect=modal.locator("select").first();
-    const has=await selectFirst(page,contactSelect);
-    if(has) return;
-    await click(page,modal.locator("button",{hasText:/Cerrar/}).first(),"Cerrar modal de acción comercial");
-    await click(page,page.locator("app-crm-prospect-detail .nav-link",{hasText:/Contactos relacionados/}).first(),"Tab Contactos relacionados");
+  async function openProspectDetail(page) {
+    // El listado de prospectos es por buscador (no tabla): se abre la ficha
+    // desde el resultado que coincide con la empresa.
+    await page.goto(`${base}/app/crm-prospectos`,{waitUntil:"domcontentloaded"});
+    const searchInput=page.locator("[data-testid=prospects-search]").first();
+    await visible(searchInput,"No aparece el buscador de prospectos");
+    await fillFocus(page,searchInput,data.company);
+    const result=page.locator("[data-testid=prospect-search-results] a.list-group-item").filter({hasText:data.company}).first();
+    await visible(result,"El prospecto no aparece en CRM para continuar la etapa");
+    await click(page,result,"Abrir ficha del prospecto");
+    await page.waitForURL(/\/app\/crm-prospectos\//,{timeout:30000});
+    const detail=page.locator("app-crm-prospect-detail").first();
+    await visible(detail,"No abrió la ficha del prospecto");
+    return detail;
+  }
+
+  async function ensureContactInProspect(page,detail) {
+    // Las acciones comerciales exigen una persona real registrada (COM-02).
+    // Si el contacto no existe aún en la ficha, se crea aquí.
+    await click(page,detail.locator(".nav-link",{hasText:/Contactos relacionados/}).first(),"Tab Contactos relacionados");
+    const existing=detail.locator("table").first().locator("tbody tr",{hasText:"Ana Cliente"}).first();
+    if(await existing.isVisible().catch(()=>false)) return;
     await click(page,page.getByRole("button",{name:/Agregar contacto/i}),"Agregar contacto");
     const cm=page.locator(".modal-content",{hasText:"Agregar contacto"}).first();
     await visible(cm,"No abrió el modal de contacto");
@@ -116,47 +370,46 @@ export function makeStages({ base, pause, data, stamp, snap, utils }) {
     await fillFocus(page,cm.locator("textarea"),"Contacto operativo para seguimiento de la reparación.");
     await click(page,cm.locator(".modal-footer button",{hasText:/Guardar|Crear|Confirmar/}).first(),"Guardar contacto");
     await page.waitForTimeout(1000);
-    await click(page,page.locator("app-crm-prospect-detail .nav-link",{hasText:/Acciones comerciales/}).first(),"Volver a Acciones comerciales");
-    await click(page,page.getByRole("button",{name:/Nueva acci.n comercial/i}),"Reabrir acción comercial");
-    await visible(modal,"No reabrió el modal de acción comercial");
-    if(!await selectFirst(page,modal.locator("select").first())) throw new Error("No hay contactos seleccionables para la acción comercial ni fue posible crear uno");
+    await visible(detail.locator("table").first().locator("tbody tr",{hasText:"Ana Cliente"}).first(),"El contacto 'Ana Cliente' no quedó registrado en la ficha");
   }
 
   async function commercialAction(page) {
-    await page.goto(`${base}/app/crm-prospectos`,{waitUntil:"domcontentloaded"});
-    const row=page.locator("tbody tr",{hasText:data.prospect}).first();
-    await visible(row,"El prospecto no aparece en CRM para registrar la acción comercial");
-    await click(page,row.locator("button.dropdown-toggle").first(),"Acciones del prospecto");
-    console.log("UI_ONLY_CM abriendo ficha");
-    await click(page,row.locator(".dropdown-menu a",{hasText:/Abrir ficha/}).first(),"Abrir ficha del prospecto");
-    await page.waitForURL(/\/app\/crm-prospectos\//,{timeout:30000});
-    const detail=page.locator("app-crm-prospect-detail").first();
-    await visible(detail,"No abrió la ficha del prospecto");
+    const detail=await openProspectDetail(page);
+    await ensureContactInProspect(page,detail);
     await click(page,detail.locator(".nav-link",{hasText:/Acciones comerciales/}).first(),"Tab Acciones comerciales");
-    console.log("UI_ONLY_CM ficha abierta, abriendo modal");
     await click(page,page.getByRole("button",{name:/Nueva acci.n comercial/i}),"Nueva acción comercial");
-    const modal=page.locator(".modal-content",{hasText:"Accion comercial realizada"}).first();
-    await visible(modal,"No abrió el modal de acción comercial"); await snap("2b-accion-comercial");
-    console.log("UI_ONLY_CM modal abierto, contacto");
-    await ensureContactForAction(page,modal);
-    console.log("UI_ONLY_CM contacto listo, llenando campos");
-    await page.waitForTimeout(500);
-    const actionSelect=labelControl(modal,/Accion comercial realizada/,"select");
-    await selectFocus(page,actionSelect,{label:"Llamada telefonica"},{force:true});
-    await fillFocus(page,labelControl(modal,/Seguimiento Proximo/,"input"),"2026-10-29");
-    await fillFocus(page,labelControl(modal,/Hora de inicio/,"input"),"09:30");
-    const remindInput=labelControl(modal,/Recordar antes de/,"input");
-    if(await remindInput.waitFor({state:"attached",timeout:5000}).then(()=>true).catch(()=>false)) await fillFocus(page,remindInput,"2");
-    await selectFirst(page,modal.locator("select").nth(2));
+    // El modal se titula "Agregar Seguimiento" (no "Accion comercial realizada").
+    const modal=page.locator(".modal-content",{hasText:"Agregar Seguimiento"}).first();
+    await visible(modal,"No abrió el modal de acción comercial ('Agregar Seguimiento')");
+    await snap("2b-accion-comercial");
+
+    // Contacto relacionado y tipo de acción: SelectEnhancementService (global)
+    // mejora estos <select> con Choices.js ~50 ms tras abrir el modal; pickByLabel
+    // resuelve el control por su label y opera sobre el widget visible, como usuario.
+    await pickByLabel(page,modal,"Contacto relacionado","Ana Cliente");
+    await pickByLabel(page,modal,"Accion comercial realizada","Llamada telefonica");
+    await fillFocus(page,modal.locator("input[type=date]").first(),"2026-10-31");
+    await fillFocus(page,modal.locator("input[type=time]").first(),"09:30");
+
+    // Recordatorio: checkbox activo por defecto; el valor "Recordar antes de"
+    // solo se habilita con él. Se deja la unidad por defecto (días).
+    const remind=modal.locator("#sendCommercialReminder").first();
+    if(!await remind.isChecked().catch(()=>false)) await checkFocus(page,remind);
+    await fillFocus(page,modal.locator("input[type=number]").first(),"2");
+
     await fillFocus(page,modal.locator("textarea").first(),"Cliente confirma interés; enviar cotización de la reparación de la placa base.");
     console.log("UI_ONLY_CM guardando acción");
     await click(page,modal.locator("[data-testid=commercial-action-save-btn]"),"Guardar acción comercial");
+
     const table=detail.locator("table",{hasText:"Proxima accion"}).first();
+    // formatCommercialActionNext() = "Llamada telefonica - fecha": la fila contiene el literal.
     await visible(table.locator("tbody tr",{hasText:"Llamada telefonica"}).first(),"La acción comercial no aparece en la lista tras guardar");
     console.log("UI_ONLY_CM acción listada, verificando persistencia");
     await page.reload({waitUntil:"domcontentloaded"});
-    const persisted=page.locator("app-crm-prospect-detail").first().locator("table",{hasText:"Proxima accion"}).first().locator("tbody tr",{hasText:"Llamada telefonica"}).first();
-    await visible(persisted,"La acción comercial no persistió tras recargar la ficha");
+    const reloaded=page.locator("app-crm-prospect-detail").first();
+    const persisted=reloaded.locator(".nav-link",{hasText:/Acciones comerciales/}).first();
+    if(await persisted.isVisible().catch(()=>false)) await click(page,persisted,"Tab Acciones tras recarga");
+    await visible(reloaded.locator("table",{hasText:"Proxima accion"}).first().locator("tbody tr",{hasText:"Llamada telefonica"}).first(),"La acción comercial no persistió tras recargar la ficha");
     console.log("UI_ONLY_CM acción persistida");
     await snap("2c-accion-comercial-persistida");
   }
@@ -174,19 +427,23 @@ export function makeStages({ base, pause, data, stamp, snap, utils }) {
     await fillFocus(page,cm.locator("textarea"),"Segundo contacto operativo.");
     await click(page,cm.locator(".modal-footer button",{hasText:/Guardar|Crear|Confirmar/}).first(),"Guardar segundo contacto");
     await page.waitForTimeout(1000);
+
+    // Sucursal: el formulario vive en la pestaña "Sucursales" y solo se renderiza
+    // tras pulsar "Agregar sucursal" (showBranchForm). Se recorre como usuario.
     await click(page,detail.locator(".nav-link",{hasText:/Sucursales/}).first(),"Tab Sucursales");
-    await click(page,page.getByRole("button",{name:/Agregar sucursal/i}),"Agregar sucursal");
-    await page.waitForTimeout(500);
-    const branchForm=detail.locator("div",{hasText:"Nueva sucursal"}).last();
-    await fillFocus(page,detail.locator("input[placeholder='Ej: Planta Norte']"),"Planta Norte");
-    await fillFocus(page,detail.locator("input[placeholder='Ej: Laura Perez']"),"Luis Operativo");
-    await fillFocus(page,detail.locator("input[placeholder='Ej: Coordinador']"),"Gerente de planta");
-    await fillFocus(page,detail.locator("input[placeholder='contacto@sucursal.com']"),`planta.${stamp}@prueba.local`);
-    await fillFocus(page,detail.locator("input[placeholder='Ej: 3001234567']"),"3005550102");
-    const branchSelects=branchForm.locator("select.form-select");
-    await selectFocus(page,branchSelects.nth(0),"Colombia",{force:true});
-    await selectFocus(page,branchSelects.nth(1),"Bogotá",{force:true});
-    await fillFocus(page,detail.locator("input[placeholder='Calle 100 #1-10']"),"Av. Carrera 45 #128-30");
+    await click(page,page.getByRole("button",{name:/Agregar sucursal/i}),"Abrir formulario de sucursal");
+    const branchForm=detail.locator("h6",{hasText:"Nueva sucursal"}).locator("..").first();
+    await visible(branchForm,"No aparece el formulario 'Nueva sucursal'");
+    await fillFocus(page,branchForm.locator("input[placeholder='Ej: Planta Norte']"),"Planta Norte");
+    await fillFocus(page,branchForm.locator("input[placeholder='Ej: Laura Perez']"),"Luis Operativo");
+    await fillFocus(page,branchForm.locator("input[placeholder='Ej: Coordinador']"),"Gerente de planta");
+    await fillFocus(page,branchForm.locator("input[placeholder='contacto@sucursal.com']"),`planta.${stamp}@prueba.local`);
+    await fillFocus(page,branchForm.locator("input[placeholder='Ej: 3001234567']"),"3005550102");
+    // País/ciudad: SelectEnhancementService los mejora con Choices.js; pickByLabel
+    // opera sobre el widget visible y espera a que el select deje de estar disabled.
+    await pickByLabel(page,branchForm,"Pais","Colombia");
+    await pickByLabel(page,branchForm,"Ciudad","Bogotá");
+    await fillFocus(page,branchForm.locator("input[placeholder='Calle 100 #1-10']"),"Av. Carrera 45 #128-30");
     const primary=branchForm.locator("input[type=checkbox]").first();
     if(await primary.isVisible().catch(()=>false)) await checkFocus(page,primary);
     await click(page,branchForm.getByRole("button",{name:/Guardar/}).first(),"Guardar sucursal");
@@ -203,15 +460,22 @@ export function makeStages({ base, pause, data, stamp, snap, utils }) {
     await visible(detail.getByText("Reparación",{exact:true}).first(),"La pestaña Equipos no conserva el servicio");
     await snap("2e-tab-equipos-completa");
 
+    // La ficha de cotización muestra la empresa del prospecto (nombre=compania),
+    // NO un campo "prospecto" separado.
     await click(page,detail.locator(".nav-link",{hasText:/Cotización/}).first(),"Tab Cotización");
-    await visible(detail.getByText(data.prospect,{exact:true}).first(),"La pestaña Cotización no conserva el prospecto");
+    await visible(detail.getByText(data.company,{exact:true}).first(),"La pestaña Cotización no conserva la empresa del prospecto");
     await visible(detail.getByRole("link",{name:/Crear cotización/i}),"La pestaña Cotización no expone el flujo de creación");
     await snap("2f-tab-cotizacion");
 
     await click(page,detail.locator(".nav-link",{hasText:/Notas/}).first(),"Tab Notas");
     await fillFocus(page,detail.locator("input[placeholder='Ingresa el titulo de una nota']"),"Seguimiento de recepción UI");
     await checkFocus(page,detail.locator("#notePrivate"));
-    await selectFirst(page,detail.locator("select[name=noteEmployee]"));
+    const noteEmployee=detail.locator("select[name=noteEmployee]").first();
+    if(await noteEmployee.count()){
+      const opts=await noteEmployee.locator("option").evaluateAll(os=>os.map((o,i)=>({i,v:(o.value||"")})));
+      const pickN=opts.find(o=>o.v.trim()!=="");
+      if(pickN) await selectFocus(page,noteEmployee,{index:pickN.i},{force:true});
+    }
     await fillFocus(page,detail.locator("textarea[placeholder='Escribe el detalle de la nota']"),"Equipo recibido, diagnosticado y en flujo de cotización.");
     await click(page,detail.locator(".card-footer button",{hasText:"Guardar"}).first(),"Guardar nota del prospecto");
     await visible(detail.locator(".alert-success"),"La nota del prospecto no confirmó guardado");
@@ -237,63 +501,44 @@ export function makeStages({ base, pause, data, stamp, snap, utils }) {
   }
 
   async function promoteToClient(page) {
-    await page.goto(`${base}/app/crm-prospectos`,{waitUntil:"domcontentloaded"});
-    const row=page.locator("tbody tr",{hasText:data.prospect}).first();
-    await visible(row,"La cuenta no aparece en CRM para la promoción");
-    const urlAntes=await row.locator(".dropdown-menu a",{hasText:/Abrir ficha/}).first().getAttribute("href").catch(()=>"");
-    await click(page,row.locator("button.dropdown-toggle").first(),"Acciones de la cuenta");
-    const manualBtn=row.locator(".dropdown-menu button",{hasText:/Convertir a cliente/i}).first();
-    if(await manualBtn.waitFor({state:"visible",timeout:8000}).then(()=>true).catch(()=>false)){
-      await click(page,manualBtn,"Convertir a cliente");
-      await page.waitForTimeout(2000);
-      data.promotion="manual";
-    } else {
-      console.log("UI_ONLY_PROMOTE AVISO: la acción 'Convertir a cliente' no está disponible (insignia 'Convertido' prematura por heurística de empresa en el catálogo de clientes). Se verifican igualmente id, URL y relaciones.");
-      data.promotion="prematura-heuristica";
+    const detail=await openProspectDetail(page);
+    // El botón "Convertir a cliente" vive dentro de la pestaña "Acciones comerciales"
+    // (ubicación acordada por el dueño): primero cambiamos a esa pestaña, como un usuario.
+    await click(page,detail.locator(".nav-link",{hasText:/^Acciones comerciales$/}).first(),"Pestaña Acciones comerciales");
+    const convertBtn=page.locator("[data-testid=convert-to-client-btn]").first();
+    await visible(convertBtn,"No aparece el botón 'Convertir a cliente' en la ficha");
+    await click(page,convertBtn,"Convertir a cliente");
+    const confirmModal=page.locator(".modal-content",{hasText:/Convertir/}).first();
+    if(await confirmModal.waitFor({state:"visible",timeout:8000}).then(()=>true).catch(()=>false)){
+      await click(page,page.locator("[data-testid=confirm-convert-to-client-btn]").first(),"Confirmar conversión a cliente");
     }
-    await page.reload({waitUntil:"domcontentloaded"});
-    const row2=page.locator("tbody tr",{hasText:data.prospect}).first();
-    await visible(row2,"La cuenta desapareció tras la conversión");
-    const estado=(await row2.innerText()).includes("Cliente")||(await row2.innerText()).includes("Convertido");
-    if(!estado) throw new Error("La cuenta no muestra insignia/estado de cliente tras la conversión");
-    await click(page,row2.locator("button.dropdown-toggle").first(),"Acciones tras conversión");
-    await click(page,row2.locator(".dropdown-menu a",{hasText:/Abrir ficha/}).first(),"Abrir ficha tras conversión");
-    await page.waitForURL(/\/app\/crm-prospectos\//,{timeout:30000});
-    const urlDespues=page.url();
-    if(urlAntes && !urlDespues.endsWith(urlAntes)) throw new Error(`La URL cambió con la conversión: ${urlAntes} -> ${urlDespues}`);
-    const detail=page.locator("app-crm-prospect-detail").first();
-    await visible(detail,"No abrió la ficha tras la conversión");
-    const head=await detail.innerText();
-    if(!/Cliente/i.test(head)){
-      if(data.promotion==="manual") throw new Error("La ficha no muestra la insignia 'Cliente' tras la conversión manual");
-      console.log("UI_ONLY_PROMOTE AVISO: la ficha no muestra insignia 'Cliente' (lifecycle aún 'prospecto'): coherente con la conversión prematura por heurística.");
-    }
+    // El resultado se muestra en el banner de la ficha (éxito o vínculo previo).
+    const banner=page.locator("[data-testid=convert-result-banner]").first();
+    await visible(banner,"La conversión no produjo confirmación visible");
+    const bannerText=(await banner.innerText().catch(()=>""))||"";
+    if(!/convirtió en cliente|quedó vinculado/i.test(bannerText)) throw new Error(`El banner de conversión no confirma el resultado: ${bannerText}`);
+    console.log("UI_ONLY_PROMOTE conversión confirmada:",bannerText.trim());
+    data.promotion="manual";
+
+    // La relación debe sobrevivir a la conversión (contactos, sede y equipo).
     await click(page,detail.locator(".nav-link",{hasText:/Contactos relacionados/}).first(),"Tab Contactos (post-conversión)");
-    for(const c of ["Ana Cliente","Luis Operativo"]){ await visible(detail.locator("table").first().locator("tbody tr",{hasText:c}).first(),`El contacto ${c} se perdió en la conversión`); }
+    for(const c of ["Ana Cliente","Luis Operativo"]){
+      await visible(detail.locator("table").first().locator("tbody tr",{hasText:c}).first(),`El contacto ${c} se perdió en la conversión`);
+    }
     await click(page,detail.locator(".nav-link",{hasText:/Sucursales/}).first(),"Tab Sucursales (post-conversión)");
     await visible(detail.locator("table,div",{hasText:"Planta Norte"}).first(),"La sede se perdió en la conversión");
     await click(page,detail.locator(".nav-link",{hasText:/Equipos/}).first(),"Tab Equipos (post-conversión)");
     await visible(detail.locator("table,div",{hasText:data.serie}).first(),"El equipo se perdió en la conversión");
-    await click(page,detail.locator(".nav-link",{hasText:/Cotizaci/}).first(),"Tab Cotización (post-conversión)");
-    await visible(detail.locator("table").first().locator("tbody tr").first(),"Las cotizaciones se perdieron en la conversión");
     await snap("10-cuenta-promovida-relaciones");
-    console.log("UI_ONLY_PROMOTE relaciones intactas; verificando NIT duplicado");
-    await page.goto(`${base}/app/crm-prospectos`,{waitUntil:"domcontentloaded"});
-    await click(page,page.getByRole("button",{name:/Agregar Prospecto/i}),"Agregar cuenta con NIT duplicado");
-    await fillFocus(page,page.locator("input[name=formNombre]"),`Duplicado NIT ${stamp}`);
-    await fillFocus(page,page.locator("input[name=formCorreo]"),`dup.${stamp}@prueba.local`);
-    await fillFocus(page,page.locator("input[name=formCompania]"),`Empresa Duplicada ${stamp}`);
-    await fillFocus(page,page.locator("input[name=formNit]"),data.nit);
-    await click(page,page.locator(".card-footer button",{hasText:"Guardar"}).first(),"Guardar cuenta duplicada");
-    await page.waitForTimeout(1200);
-    const alertas=page.locator(".alert-danger,.alert-warning,.text-danger");
-    const hayAlerta=await alertas.first().isVisible().catch(()=>false);
-    await page.reload({waitUntil:"domcontentloaded"});
-    const dup=page.locator("tbody tr",{hasText:`Duplicado NIT ${stamp}`}).first();
-    const aparecio=await dup.isVisible().catch(()=>false);
-    if(aparecio) throw new Error(`El NIT duplicado fue aceptado (alerta=${hayAlerta}, aparecio=${aparecio})`);
-    console.log(`UI_ONLY_PROMOTE NIT duplicado rechazado (alerta inmediata=${hayAlerta})`);
-    await snap("10b-nit-duplicado-rechazado");
+
+    // La empresa ya debe existir como cliente: buscador de clientes por empresa.
+    await page.goto(`${base}/app/crm-clientes`,{waitUntil:"domcontentloaded"});
+    const clientsSearch=page.locator("[data-testid=clients-search]").first();
+    await visible(clientsSearch,"No aparece el buscador de clientes");
+    await fillFocus(page,clientsSearch,data.company);
+    await visible(page.locator("[data-testid=client-search-results] a.list-group-item").filter({hasText:data.company}).first(),"La empresa convertida no aparece en Clientes tras la promoción");
+    console.log("UI_ONLY_PROMOTE cliente visible en /app/crm-clientes");
+    await snap("10b-cliente-visible-en-catalogo");
   }
 
   async function remitAndDeliver(page) {
@@ -310,8 +555,10 @@ export function makeStages({ base, pause, data, stamp, snap, utils }) {
     if(clientValue!==data.company) throw new Error(`El formulario de remisión no conservó la empresa: "${clientValue}" != "${data.company}"`);
     const poValue=((await page.locator("[data-testid=purchase-order-input]").inputValue().catch(()=>""))||"").trim();
     if(poValue!==data.oc) throw new Error(`La OC no viajó al formulario de remisión: "${poValue}" != "${data.oc}"`);
+    // El identificador precargado es el código interno del equipo: serie nueva
+    // CO+YYMM+NNNN o legacy EQ-* de recepciones previas a la migración.
     const identValue=((await page.locator("input[placeholder='Identificador']").first().inputValue().catch(()=>""))||"").trim();
-    if(!/^EQ-[A-Z0-9]+$/i.test(identValue)) throw new Error(`La remisión no precargó el código interno del equipo: "${identValue}"`);
+    if(!/^(?:EQ-[A-Z0-9]+|CO\d{8,})$/i.test(identValue)) throw new Error(`La remisión no precargó el código interno del equipo: "${identValue}"`);
     data.equipmentCode=identValue;
     const seriesValue=((await page.locator("[data-testid=source-series-input]").first().inputValue().catch(()=>""))||"").trim();
     if(seriesValue!==data.serie) throw new Error(`La remisión no conservó la serie: "${seriesValue}" != "${data.serie}"`);

@@ -311,7 +311,7 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
                 Historial tecnico completo
               </button>
 
-              <button type="button" class="btn btn-link project-detail-dialog__close" (click)="closeProjectDetail()">
+              <button type="button" class="btn btn-link project-detail-dialog__close" aria-label="Cerrar detalle" (click)="closeProjectDetail()">
                 <i class="bi bi-x-lg"></i>
               </button>
             </div>

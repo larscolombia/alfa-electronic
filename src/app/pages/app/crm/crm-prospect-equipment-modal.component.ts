@@ -1,9 +1,9 @@
 import { CommonModule } from "@angular/common";
-import { ChangeDetectorRef, Component, ElementRef, EventEmitter, HostListener, Input, OnChanges, OnDestroy, Output, SimpleChanges, ViewChild } from "@angular/core";
+import { ChangeDetectorRef, Component, ElementRef, EventEmitter, HostListener, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges, ViewChild } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { Router } from "@angular/router";
 import { BrowserMultiFormatReader } from "@zxing/browser";
-import { forkJoin, of } from "rxjs";
+import { firstValueFrom, forkJoin, of } from "rxjs";
 import { catchError, take } from "rxjs/operators";
 
 import {
@@ -54,7 +54,7 @@ import {
     getProspectEquipmentWarnings,
 } from "./crm-prospect-equipment.store";
 import { COUNTRY_OPTIONS, citiesForCountry } from "./country-city.dataset";
-import { buildEquipmentQrShortCode, buildInternalEquipmentCode, estimateDataUrlBinarySize, generateEquipmentQrDataUrl } from "./equipment-qr.util";
+import { buildEquipmentQrShortCode, estimateDataUrlBinarySize, generateEquipmentQrDataUrl, resolveEquipmentCode } from "./equipment-qr.util";
 import { resolveEquipmentProspectId } from "./crm-prospect-equipment-match.logic";
 import { ProspectRecord } from "./crm-prospects.store";
 import { Project } from "../projects/models";
@@ -1758,7 +1758,7 @@ type SoftwareBackupInfo = {
         }
     `],
 })
-export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy {
+export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy, OnInit {
     readonly wizardSteps: readonly WizardStepDefinition[] = [
         { key: "reception", title: "Recepción", description: "Datos del cliente y la orden" },
         { key: "equipment", title: "Equipos", description: "Modelos, servicio y logística" },
@@ -2045,9 +2045,74 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
         this.stopScannerSession();
     }
 
-    addEquipmentItem(): void {
+    ngOnInit(): void {
+        // Registro NUEVO: reserva el código interno del primer equipo para que el
+        // input "Código interno" muestre la serie CO+YYMM+NNNN antes de guardar.
+        void this.assignMissingEquipmentCodes();
+    }
+
+    /** Flags de la reserva atómica de códigos (serie CO+YYMM+NNNN): impiden
+     * duplicar reservas cuando el usuario agrega equipos en rápida sucesión. */
+    private equipmentCodesAssigning = false;
+    private equipmentCodesPending = false;
+
+    async addEquipmentItem(): Promise<void> {
         this.draft.items = [...this.draft.items, this.buildItem()];
         this.validationMessage = "";
+        await this.assignMissingEquipmentCodes();
+    }
+
+    /**
+     * Serie CO+YYMM+NNNN: pide al backend (contador mensual por empresa, que
+     * reinicia en cero cada mes) un batch de códigos y los asigna a los ítems que
+     * aún no tengan uno, en orden estable. Solo aplica a registros NUEVOS:
+     * un registro existente conserva sus propios códigos (legacy EQ-* incluidos).
+     * Si la reserva falla muestra un mensaje accionable sin bloquear la edición;
+     * esos ítems caen al código legacy derivado del ID al momento de guardar.
+     */
+    private async assignMissingEquipmentCodes(): Promise<void> {
+        if (this.initialRecord) {
+            return;
+        }
+
+        const missingCount = this.draft.items.filter((item) => !String(item.equipmentCode ?? "").trim()).length;
+        if (missingCount === 0) {
+            return;
+        }
+
+        if (this.equipmentCodesAssigning) {
+            // Llegó un ítem nuevo mientras la reserva está en vuelo: se atiende al completar.
+            this.equipmentCodesPending = true;
+            return;
+        }
+
+        this.equipmentCodesAssigning = true;
+        try {
+            const codes = await firstValueFrom(this.crmEquipmentApi.nextEquipmentCodes(missingCount));
+            if (codes.length !== missingCount) {
+                throw new Error("respuesta incompleta del contador de códigos");
+            }
+
+            let cursor = 0;
+            this.draft.items = this.draft.items.map((item) => {
+                if (String(item.equipmentCode ?? "").trim()) {
+                    return item;
+                }
+                const code = String(codes[cursor] ?? "").trim();
+                cursor += 1;
+                return code ? { ...item, equipmentCode: code } : item;
+            });
+        } catch (error) {
+            console.error("No se pudo asignar el código interno del equipo:", error);
+            this.validationMessage = "No se pudo asignar el código interno del equipo. Revisa tu conexión y vuelve a intentarlo.";
+        } finally {
+            this.equipmentCodesAssigning = false;
+            if (this.equipmentCodesPending) {
+                this.equipmentCodesPending = false;
+                void this.assignMissingEquipmentCodes();
+            }
+            this.changeDetectorRef.detectChanges();
+        }
     }
 
     visibleItemWarnings(item: ProspectEquipmentItem): ProspectEquipmentWarning[] {
@@ -3518,7 +3583,9 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
         const uploadedBy = this.authService.getCurrentUserName() || "recepcion";
 
         for (const item of items) {
-            const identifier = buildInternalEquipmentCode(item.id);
+            // El QR lleva el código interno real del equipo: serie CO+YYMM+NNNN si
+            // se asignó al recepcionar, o la etiqueta legacy EQ-* de registros antiguos.
+            const identifier = resolveEquipmentCode(item);
             if (!identifier) {
                 continue;
             }
@@ -3554,7 +3621,9 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
     }
 
     internalEquipmentCode(item: ProspectEquipmentItem): string {
-        return buildInternalEquipmentCode(item.id);
+        // Prefiere el código asignado al recepcionar (CO+YYMM+NNNN); solo registros
+        // previos a la serie caen al legacy EQ-* derivado del ID.
+        return resolveEquipmentCode(item);
     }
 
     private async sha256Hex(value: string): Promise<string> {
@@ -4590,7 +4659,7 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
             const payload = JSON.parse(value);
             const record = this.equipmentRecordsCache.find((entry) => entry.id === String(payload.recordId ?? "").trim());
             const sourceItem = record?.items.find((entry) => entry.id === String(payload.itemId ?? "").trim());
-            if (!sourceItem || buildInternalEquipmentCode(sourceItem.id) !== String(payload.identifier ?? "").trim()) throw new Error("unknown");
+            if (!sourceItem || resolveEquipmentCode(sourceItem) !== String(payload.identifier ?? "").trim()) throw new Error("unknown");
             const index = this.draft.items.findIndex((entry) => entry.id === target.id);
             this.draft.items[index] = { ...sourceItem, attachments: [...(sourceItem.attachments ?? [])], evidencePhotos: [...(sourceItem.evidencePhotos ?? [])], borrowedEquipments: [...(sourceItem.borrowedEquipments ?? [])], receivedIdentifier: sourceItem.receivedIdentifier, receivedIdentifierType: "alfa-qr", receivedIdentifierSource: "camera-scan", receivedIdentifierCapturedAt: new Date().toISOString() };
             this.scannerStatus = "QR interno reconocido: información del equipo precargada.";
@@ -4773,7 +4842,7 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy 
             equipmentProspectId: record.prospectId,
             equipmentProspectName: record.prospectName,
             equipmentDisplayName: this.equipmentCardTitle(item, 0).replace(/^Equipo\s+\d+\s+·\s+/, "") || "Equipo",
-            equipmentCode: buildInternalEquipmentCode(item.id),
+            equipmentCode: resolveEquipmentCode(item),
             equipmentIdentifier: item.receivedIdentifier.trim(),
             equipmentSerie: item.serie.trim(),
             equipmentReceptionLabel: `${record.receptionDay || "--"}/${record.receptionMonth || "--"}/${record.receptionYear || "----"}`,

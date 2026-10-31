@@ -2,6 +2,7 @@ package equipment
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -34,6 +35,9 @@ func (h *Handler) RegisterRoutes(group *echo.Group) {
 	group.PATCH("/records/:recordID/archive", h.archiveRecord)
 	group.POST("/records/:recordID/restore", h.restoreRecord)
 
+	// Serie CO+YYMM+NNNN: emite el código interno de cada equipo nuevo al
+	// recepcionar (contador mensual por empresa, reinicia en cada mes).
+	group.POST("/codes/next", h.nextEquipmentCodes)
 	group.GET("/items", h.listItems)
 	group.GET("/technicians", h.listTechnicians)
 	group.GET("/insights", h.getInsight)
@@ -41,6 +45,36 @@ func (h *Handler) RegisterRoutes(group *echo.Group) {
 	group.POST("/records/:recordID/items/:itemID/attachments", h.addItemAttachment)
 	group.PUT("/records/:recordID/items/:itemID/assignment", h.assignItemTechnician)
 	group.DELETE("/records/:recordID/items/:itemID/attachments/:attachmentID", h.deleteItemAttachment)
+}
+
+// nextEquipmentCodesRequest es el payload de /codes/next: cuántos códigos
+// asignar en una sola reserva atómica.
+type nextEquipmentCodesRequest struct {
+	Count int `json:"count"`
+}
+
+func (h *Handler) nextEquipmentCodes(c echo.Context) error {
+	companyID := company.IDFromRequest(c)
+
+	var req nextEquipmentCodesRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "payload inválido: se esperaba { count?: number }"})
+	}
+
+	count := req.Count
+	if count < 1 {
+		count = 1
+	}
+	if count > equipmentCodeMaxBatch {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": fmt.Sprintf("máximo %d códigos por solicitud", equipmentCodeMaxBatch)})
+	}
+
+	codes, err := h.service.NextEquipmentCodes(companyID, count)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "no se pudo asignar el código del equipo"})
+	}
+
+	return c.JSON(http.StatusOK, map[string][]string{"codes": codes})
 }
 
 func (h *Handler) listRecords(c echo.Context) error {

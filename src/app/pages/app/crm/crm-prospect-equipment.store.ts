@@ -1,6 +1,6 @@
 import { getEquipmentFamilyName, getEquipmentLocationById, getEquipmentServiceTypeById, getIndustrialEquipmentModelById } from "../company/company-equipment-config.store";
 import { normalizeBorrowedEquipments } from "./crm-prospect-equipment-borrowed.util";
-import { buildInternalEquipmentCode } from "./equipment-qr.util";
+import { resolveEquipmentCode } from "./equipment-qr.util";
 
 export type ProspectEquipmentAnswer = "" | "Sí" | "No";
 export type ProspectEquipmentQuestionType = "boolean" | "text";
@@ -89,6 +89,9 @@ export interface ProspectEquipmentWarning {
 
 export interface ProspectEquipmentItem {
     id: string;
+    /** Código interno asignado al recepcionar (CO+YYMM+NNNN, contador mensual).
+     * Ausente en registros antiguos: se deriva la serie legacy EQ-* del id. */
+    equipmentCode?: string;
     registrationMode?: ProspectEquipmentRegistrationMode;
     equipmentModelId: string;
     isIndustrial?: boolean;
@@ -582,7 +585,9 @@ function buildEquipmentSummaries(records: ProspectEquipmentRecord[]): ProspectEq
             return {
                 recordId: record.id,
                 itemId: item.id,
-                equipmentCode: buildInternalEquipmentCode(item.id),
+                // Código interno real del equipo (CO+YYMM+NNNN si se asignó al
+                // recepcionar; legacy EQ-* para registros previos a la serie).
+                equipmentCode: resolveEquipmentCode(item),
                 prospectId: record.prospectId,
                 prospectName: record.prospectName,
                 receptionLabel: formatProspectEquipmentReception(record),

@@ -198,6 +198,7 @@ VALUES (
 		return Prospect{}, err
 	}
 
+	s.refreshGlobalSearch(ctx) // el buscador global debe encontrar el prospecto recién creado
 	return s.GetProspect(companyID, prospectID)
 }
 
@@ -284,5 +285,6 @@ WHERE company_id = $21
 		return Prospect{}, err
 	}
 
+	s.refreshGlobalSearch(ctx) // el buscador global debe reflejar los datos actualizados
 	return s.GetProspect(companyID, normalizedID)
 }

@@ -33,6 +33,7 @@ WHERE company_id = $1
 `, companyID, normalizedID); err != nil {
 			return false, err
 		}
+		s.refreshGlobalSearch(ctx) // el borrado debe retirarlo del buscador global
 	}
 	return affected > 0, nil
 }

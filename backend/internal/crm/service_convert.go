@@ -25,6 +25,7 @@ func (s *Service) ConvertProspectToClient(companyID, prospectID string) (Client,
 		if err := s.markProspectConverted(companyID, prospectID); err != nil {
 			return Client{}, false, err
 		}
+		s.refreshGlobalSearch(context.Background()) // el prospecto salió del índice al convertirse
 		return existing, false, nil
 	}
 
@@ -86,6 +87,7 @@ func (s *Service) ConvertProspectToClient(companyID, prospectID string) (Client,
 	if err := s.markProspectConverted(companyID, prospectID); err != nil {
 		return Client{}, false, err
 	}
+	s.refreshGlobalSearch(context.Background()) // CreateClient refrescó el alta; esto cubre la baja del prospecto
 	return created, true, nil
 }
 

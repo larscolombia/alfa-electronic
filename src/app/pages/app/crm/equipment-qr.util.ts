@@ -7,11 +7,21 @@ export interface EquipmentQrPayload {
     shortCode: string;
 }
 
-/** Código interno, estable y legible que identifica al equipo dentro de Alfa.
- * No reutiliza la serie ni un código leído de la placa del fabricante. */
+/** Código interno legacy (registros antiguos): derivado del ID aleatorio.
+ * Se conserva solo como fallback para ítems sin código asignado. */
 export function buildInternalEquipmentCode(itemId: string): string {
     const normalized = String(itemId ?? "").trim().replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
     return normalized ? `EQ-${normalized.slice(-8)}` : "";
+}
+
+/** Código interno del equipo: prefiere el asignado al recepcionar (serie CO+YYMM+NNNN,
+ * contador mensual por empresa emitido por el backend). Solo cuando no existe —
+ * registros anteriores a esa serie — deriva la etiqueta legacy EQ-* del ID, para
+ * que los equipos antiguos mantengan su código estable sin renúmeros. */
+export function resolveEquipmentCode(item: { id?: unknown; equipmentCode?: unknown } | null | undefined): string {
+    const stored = String(item?.equipmentCode ?? "").trim();
+    if (stored) return stored;
+    return buildInternalEquipmentCode(String(item?.id ?? ""));
 }
 
 export function buildEquipmentQrShortCode(recordId: string, itemId: string): string {

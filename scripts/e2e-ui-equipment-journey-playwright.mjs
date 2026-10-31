@@ -10,7 +10,7 @@ const pause = Number(process.env.PW_SLOW_MO_MS || "300");
 const stamp = Date.now();
 const data = { prospect: `UI Cliente ${stamp}`, email: `ui.${stamp}@prueba.local`, company: `UI Industria ${stamp}`, nit: `900${String(stamp).slice(-7)}-7`, serviceType: "Reparación", serie: `UI-MB-10M-${stamp}`, oc: `OC-UI-${stamp}` };
 const utils = makeUtils({ base, pause, data });
-const { visible, click, fillFocus, selectFocus, attachFocus, openCard, ensureBoardFullView, moveAndSave } = utils;
+const { visible, click, fillFocus, selectFocus, awaitSelectReady, attachFocus, openCard, ensureBoardFullView, moveAndSave } = utils;
 
 let currentPage=null;
 const snap=s=>{ if(!currentPage) return Promise.resolve(); return currentPage.screenshot({path:`playwright-artifacts/ui-journey-${stamp}-${s}.png`,fullPage:true}).catch(()=>{}); };
@@ -78,13 +78,20 @@ async function diagnoseAndQuote(page) {
   const equipment=form.locator("label.form-check",{hasText:data.serie}).first();
   if(!await equipment.locator("input[type=checkbox]").isChecked()) await click(page,equipment,"Seleccionar equipo en cotización");
   const row=form.locator("table tbody tr").first();
-  await selectFocus(page,row.locator("td").first().locator("select").first(),{label:"Reparación"},{force:true});
+  const lineServiceSelect=row.locator("td").first().locator("select").first();
+  // El catálogo de servicios puede no incluir el servicio de recepción
+  // ("Reparación"): como un usuario real, se elige si existe o la primera opción.
+  const lineServiceOptions=(await lineServiceSelect.locator("option").allInnerTexts()).map(o=>o.trim()).filter(Boolean);
+  if(!lineServiceOptions.length) throw new Error("El select de servicio de la línea de cotización no tiene opciones disponibles");
+  const lineService=lineServiceOptions.find(o=>o.toLowerCase().includes(data.serviceType.toLowerCase()))??lineServiceOptions[0];
+  await selectFocus(page,lineServiceSelect,{label:lineService},{force:true});
   await fillFocus(page,row.locator("td").nth(2).locator("input[type=number]").first(),"10000000");
   await fillFocus(page,form.locator("textarea").nth(0),"Reparación aprobada de placa base."); await fillFocus(page,form.locator("textarea").nth(1),"Vigencia 15 días.");
   await click(page,form.locator("button.dropdown-toggle").first(),"Opciones de guardado"); await snap("3a-menu-guardado-cotizacion"); await click(page,form.locator(".dropdown-menu button",{hasText:/Guardar y marcar como enviado/}).first(),"Guardar y enviar cotización"); await page.waitForTimeout(1500);
 }
 async function order(page) {
-  const row=page.locator("table tbody tr",{hasText:data.prospect}).first();
+  // La tabla de cotizaciones muestra la empresa (row.empresa), no el nombre del prospecto.
+  const row=page.locator("table tbody tr",{hasText:data.company}).first();
   if(!await row.waitFor({state:"visible",timeout:15000}).then(()=>true).catch(()=>false)){
     const url=page.url();
     const formVisible=await page.locator("[data-testid=quote-form-card]").isVisible().catch(()=>false);
@@ -152,21 +159,26 @@ async function partsAndPurchases(page) {
 async function repairAndClose(page) {
   let d=await openCard(page);
   const locationSelect=d.getByTestId("equipment-location-select");
-  await visible(locationSelect,"No aparece el selector de ubicación del equipo");
-  const locationOptions=await locationSelect.locator("option").evaluateAll(options=>options.map(option=>option.value).filter(Boolean));
+  // El <select> nativo puede quedar oculto tras el widget Choices: esperar el
+  // control real visible, como lo haría un usuario ante el desplegable.
+  await awaitSelectReady(page,locationSelect,"No aparece el selector de ubicación del equipo");
+  const locationOptions=await locationSelect.locator("option").evaluateAll(options=>options.map(option=>({value:option.value,label:(option.textContent||"").trim()})).filter(option=>Boolean(option.value)));
   if(!locationOptions.length) throw new Error("El selector de ubicación no tiene opciones disponibles");
-  await selectFocus(page,locationSelect,locationOptions.at(-1),{force:true});
+  const targetLocation=locationOptions.at(-1);
+  await selectFocus(page,locationSelect,{value:targetLocation.value,label:targetLocation.label},{force:true});
   await click(page,d.getByTestId("equipment-update-location-btn"),"Actualizar ubicación");
   await visible(d.locator(".alert-success",{hasText:/Estado actualizado/}),"Actualizar ubicación no produjo confirmación visible");
   const updatedLocation=await locationSelect.inputValue();
-  await click(page,d.getByRole("button",{name:"Cerrar"}).first(),"Cerrar para verificar ubicación");
+  await click(page,d.locator("button.project-detail-dialog__close").first(),"Cerrar detalle para verificar ubicación");
   d=await openCard(page);
   if((await d.getByTestId("equipment-location-select").inputValue())!==updatedLocation) throw new Error("La ubicación del equipo no persistió al reabrir la ficha");
   await moveAndSave(page,d,"Esperando proveedor");
   d=await openCard(page);
-  await click(page,d.getByRole("button",{name:/Registrar llegada de componentes/}),"Registrar llegada de componentes y pasar a reparación");
-  await page.waitForTimeout(900);
-  await click(page,d.getByRole("button",{name:"Guardar cambios"}),"Guardar transición a reparación");
+  // La llegada de componentes ya se registró en la etapa 5 (receive-purchase-line, cantidad=max),
+  // así que el gate de materiales está abierto. La app actual no tiene el flujo inline
+  // "Registrar llegada → Guardar cambios": la transición a reparación es por chip de estado,
+  // con confirmación modal si hay reglas activas — mismo mecanismo que Esperando proveedor.
+  await moveAndSave(page,d,"Reparacion");
   d=await openCard(page); await snap("6a-ficha-reparacion");
   if(await d.locator("textarea[placeholder*='Memo diagnostico']").count()) throw new Error("El memo diagnóstico sigue editable durante reparación");
   await visible(d.getByText("Diagnóstico de placa principal; reparación viable.",{exact:false}),"El memo diagnóstico no quedó visible como historial durante reparación");
@@ -185,7 +197,9 @@ async function repairAndClose(page) {
   await snap("6a-contador-reparacion-activo");
   await fillFocus(page,d.locator("textarea[placeholder*='Acciones de reparacion']"),"Cambio de capacitor DC-Link y prueba funcional de la placa base.");
   const pf=label=>d.locator("label.project-detail-field").filter({hasText:label}).first();
-  await selectFocus(page,pf("Prueba de cierre").locator("select"),"banco-pruebas",{force:true});
+  // El <option [value]="banco-pruebas"> muestra la etiqueta "Banco de pruebas":
+  // seleccionar por label visible funciona tanto con Choices.js como con el select nativo.
+  await selectFocus(page,pf("Prueba de cierre").locator("select"),{label:"Banco de pruebas"},{force:true});
   await click(page,d.getByRole("button",{name:"Guardar cambios"}),"Guardar cambios");
   await page.waitForTimeout(800);
   d=await openCard(page);
@@ -194,7 +208,8 @@ async function repairAndClose(page) {
 }
 async function toInvoice(page) {
   await page.goto(`${base}/app/crm-cotizaciones`,{waitUntil:"domcontentloaded"});
-  const row=page.locator("table tbody tr",{hasText:data.prospect}).first();
+  // La fila de cotización conserva la empresa del prospecto (nombre=compania).
+  const row=page.locator("table tbody tr",{hasText:data.company}).first();
   await visible(row,"No aparece la cotización aprobada"); await snap("7a-cotizacion-aprobada");
   await click(page,row.locator("[data-testid=convert-to-invoice-btn]"),"Convertir en factura");
   const ok=page.locator("[data-testid=quote-conversion-success]");

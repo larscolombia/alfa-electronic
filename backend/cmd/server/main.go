@@ -136,6 +136,12 @@ func main() {
 	searchService := search.NewService(db)
 	searchHandler := search.NewHandler(searchService)
 
+	// La búsqueda global debe ver prospectos y clientes al instante tras cada alta,
+	// cambio o baja (el refresco de fondo del servicio de búsqueda sigue cubriendo).
+	crmService.SetSearchRefresher(func(ctx context.Context) error {
+		return searchService.ReindexFromDB(ctx)
+	})
+
 	// Identidad de la empresa (logo, nombre, contacto, titulo del tab): una fila
 	// por company_id. GET publico para la pagina de cotizacion del cliente; PUT
 	// admin para /app/company-profile.

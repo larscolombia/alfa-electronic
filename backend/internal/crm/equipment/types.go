@@ -37,6 +37,10 @@ type Attachment struct {
 
 type Item struct {
 	ID                             string              `json:"id"`
+	// EquipmentCode es el código interno legible asignado al recepcionar
+	// (serie CO + YY + MM + NNNN, contador mensual por empresa). Los registros
+	// antiguos no lo traen y los lectores derivan la serie legacy EQ-* del ID.
+	EquipmentCode                  string              `json:"equipmentCode"`
 	RegistrationMode               string              `json:"registrationMode"`
 	EquipmentModelID               string              `json:"equipmentModelId"`
 	IsIndustrial                   *bool               `json:"isIndustrial,omitempty"`

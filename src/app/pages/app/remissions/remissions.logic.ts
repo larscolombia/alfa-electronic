@@ -102,10 +102,11 @@ export function validateRemissionDraft(form: any): string {
     }
     for (const item of items) {
         const identifier = String(item?.identifier || "").trim();
-        // El identificador operativo es el código interno EQ-*. La serie se
-        // conserva como trazabilidad separada, por lo que no debe bloquear la
-        // remisión cuando ambos valores son deliberadamente distintos.
-        if (item?.sourceSeries && !/^EQ-[A-Z0-9]+$/i.test(identifier) && identifier !== String(item.sourceSeries).trim()) {
+        // El identificador operativo es el código interno: serie legacy EQ-* o
+        // serie actual CO+YYMM+NNNN (misma regla que backend/internal/remissions/validation.go).
+        // La serie física se conserva como trazabilidad separada, por lo que no debe
+        // bloquear la remisión cuando ambos valores son deliberadamente distintos.
+        if (item?.sourceSeries && !/^(?:EQ-[A-Z0-9]+|CO[0-9]{8,})$/i.test(identifier) && identifier !== String(item.sourceSeries).trim()) {
             return "marca, tipo y serie deben coincidir exactamente con el equipo origen; no se aceptan coincidencias parciales";
         }
     }

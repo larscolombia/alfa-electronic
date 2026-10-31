@@ -141,6 +141,21 @@ export class CrmEquipmentApiService {
     }
 
     /**
+     * Serie CO+YYMM+NNNN: reserva un batch de códigos internos del periodo actual.
+     * El contador es mensual y por empresa (reinicia en cero cada mes) y vive en el
+     * backend para que recepciones simultáneas no repitan ni salten secuenciales;
+     * devuelve los códigos ascendentes listos para asignar a ítems en orden estable.
+     */
+    nextEquipmentCodes(count = 1): Observable<string[]> {
+        return from(
+            this.request<{ codes: string[] }>("/api/v1/crm-equipment/codes/next", {
+                method: "POST",
+                body: JSON.stringify({ count }),
+            })
+        ).pipe(map((response) => response.codes ?? []));
+    }
+
+    /**
      * context: relevancia del rol/departamento según la vista que consume:
      * 'tecnica' para selects de técnicos, 'comercial' para selects comerciales.
      * Vacío = todos los activos (contrato del backend).

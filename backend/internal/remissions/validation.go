@@ -6,7 +6,10 @@ import (
 	"strings"
 )
 
-var internalEquipmentCodePattern = regexp.MustCompile(`(?i)^EQ-[A-Z0-9]+$`)
+// Serie legacy EQ-* (derivada del ID) y serie actual CO+YYMM+NNNN
+// (contador mensual, p. ej. CO26110001). Ambas son códigos internos; la serie
+// de origen del fabricante se valida por separado.
+var internalEquipmentCodePattern = regexp.MustCompile(`(?i)^(EQ-[A-Z0-9]+|CO[0-9]{8,})$`)
 
 // Reglas duras del requerimiento de despacho, validadas en el SERVIDOR.
 // El navegador sólo propone: si estas reglas vivieran en el cliente, un fetch

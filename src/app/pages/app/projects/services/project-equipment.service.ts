@@ -6,7 +6,7 @@ export type { ProjectRepairStatusOption } from './project-equipment-options';
 
 import { EquipmentLocationRecord, ensureEquipmentCatalogLoaded, getEquipmentLocations } from '../../company/company-equipment-config.store';
 import { CrmEquipmentApiService } from '../../../../services/crm-equipment-api.service';
-import { buildInternalEquipmentCode } from '../../crm/equipment-qr.util';
+import { resolveEquipmentCode } from '../../crm/equipment-qr.util';
 import {
   ProspectEquipmentItem,
   ProspectEquipmentRecord,
@@ -294,7 +294,7 @@ export class ProjectEquipmentService {
       const summary: ProspectEquipmentSummary = {
         recordId: record.id,
         itemId: item.id,
-        equipmentCode: buildInternalEquipmentCode(item.id),
+        equipmentCode: resolveEquipmentCode(item),
         prospectId: record.prospectId,
         prospectName: record.prospectName,
         receptionLabel,

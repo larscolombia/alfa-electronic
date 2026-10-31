@@ -124,6 +124,7 @@ func (s *Service) CreateClient(companyID string, req UpsertClientRequest) (Clien
 		return Client{}, err
 	}
 
+	s.refreshGlobalSearch(ctx) // el buscador global debe encontrar el cliente recién creado
 	return s.GetClient(companyID, clientID)
 }
 
@@ -209,6 +210,7 @@ WHERE company_id = $22
 		return Client{}, err
 	}
 
+	s.refreshGlobalSearch(ctx) // el buscador global debe reflejar los datos actualizados
 	return s.GetClient(companyID, normalizedID)
 }
 
@@ -390,5 +392,6 @@ WHERE company_id = $1 AND client_id = $2;
 	if err := tx.Commit(); err != nil {
 		return false, err
 	}
+	s.refreshGlobalSearch(ctx) // el cliente salió del índice y su rollback a prospecto entró
 	return true, nil
 }

@@ -1,8 +1,10 @@
 package crm
 
 import (
+	"context"
 	"database/sql"
 	"errors"
+	"log"
 	"regexp"
 )
 
@@ -72,6 +74,11 @@ var defaultCatalogItems = map[string][]string{
 
 type Service struct {
 	db *sql.DB
+
+	// Refresco del índice de búsqueda global (BM25, ver internal/search): se invoca tras
+	// cada alta/baja exitosa de prospectos y clientes para que el buscador los muestre al
+	// instante. nil = sin cablear; el refresco en segundo plano sigue cubriendo como red.
+	searchRefresher func(ctx context.Context) error
 }
 
 var reCiiuCode = regexp.MustCompile(`^\d{4}$`)
@@ -143,4 +150,20 @@ var (
 
 func NewService(db *sql.DB) *Service {
 	return &Service{db: db}
+}
+
+// SetSearchRefresher conecta el refresco del índice de búsqueda global (lo cablea
+// main.go contra internal/search). Se ejecuta síncronamente, después de que la
+// escritura a base de datos confirmó éxito.
+func (s *Service) SetSearchRefresher(fn func(context.Context) error) {
+	s.searchRefresher = fn
+}
+
+func (s *Service) refreshGlobalSearch(ctx context.Context) {
+	if s.searchRefresher == nil {
+		return
+	}
+	if err := s.searchRefresher(ctx); err != nil {
+		log.Printf("crm: refresco de indice de busqueda global: %v", err)
+	}
 }
