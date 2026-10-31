@@ -5304,7 +5304,20 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
     if (!linked) {
       this.linkedEquipment = null;
       this.clearLinkedEquipmentEvidenceContext();
-      this.equipmentWorkflowError = 'El equipo vinculado anteriormente ya no existe en recepcion.';
+      // El catálogo llega por API tras el arranque. Mientras no haya concluido la
+      // primera carga, NO mostrar error: el equipo existe y aún no llegó; al llegar,
+      // optionsChanged$ re-ejecuta este método y resuelve la vinculación.
+      if (!this.projectEquipmentService.hasCatalogFromApi) {
+        this.refreshEquipmentQrPreview();
+        return;
+      }
+
+      if (this.projectEquipmentService.catalogLoadFailed) {
+        this.equipmentWorkflowError = 'No se pudo cargar el catalogo de equipos. Revisa tu conexion e intentalo nuevamente.';
+      } else {
+        this.equipmentWorkflowError = 'El equipo vinculado anteriormente ya no existe en recepcion.';
+      }
+
       this.refreshEquipmentQrPreview();
       return;
     }

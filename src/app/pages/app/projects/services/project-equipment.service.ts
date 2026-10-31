@@ -36,6 +36,11 @@ export class ProjectEquipmentService {
   private apiCacheLoadedAt = 0;
   private loadingApiCache = false;
 
+  /** true tras la primera carga exitosa del catálogo de equipos desde la API. */
+  hasCatalogFromApi = false;
+  /** true si la primera carga falló y aún no hay catálogo en memoria (sin conexion, etc.). */
+  catalogLoadFailed = false;
+
   readonly repairStatusOptions = PROJECT_REPAIR_STATUS_OPTIONS;
 
   constructor(private readonly crmEquipmentApi: CrmEquipmentApiService) {
@@ -203,10 +208,15 @@ export class ProjectEquipmentService {
           });
           this.apiCacheLoadedAt = Date.now();
           this.loadingApiCache = false;
+          this.hasCatalogFromApi = true;
+          this.catalogLoadFailed = false;
           this.optionsChangedSubject.next();
         },
         error: () => {
           this.loadingApiCache = false;
+          if (!this.hasCatalogFromApi) {
+            this.catalogLoadFailed = true;
+          }
         },
       });
   }

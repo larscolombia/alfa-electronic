@@ -162,6 +162,23 @@ export function makeUtils({ base, pause, data }) {
     await click(page,card,"Tarjeta del proyecto");
     return page.locator(".project-detail-dialog").first();
   }
+  // Tras el page.goto completo, el catálogo de equipos llega asíncrono por API.
+  // Espera que el diálogo alcance un estado real (ubicación resuelta o error
+  // explícito visible), como lo vería un usuario antes de asertar nada.
+  async function awaitEquipmentDialogSettled(page) {
+    await page.waitForFunction(() => {
+      const sel = document.querySelector('[data-testid="equipment-location-select"]');
+      if (!sel) return false;
+      // Estado estable 1: ubicación ya resuelta (la UX normal tras la carga del catálogo).
+      if (String(sel.value || "").trim() !== "") return true;
+      // Estado estable 2: error visible y explícito de la app.
+      const err = Array.from(document.querySelectorAll(".alert-danger")).some((el) => /ya no existe en recepcion|No se pudo cargar el catalogo/.test(String(el.textContent || "")));
+      if (err) return true;
+      // Estado estable 3: catálogo cargado (hay opciones) aunque sin ubicación predefinida.
+      const options = Array.from(sel.querySelectorAll("option")).filter((o) => String(o.value || "").trim() !== "");
+      return options.length > 0;
+    }, { timeout: 30000, polling: 250 });
+  }
   async function confirmTransitionIfAsked(page) {
     const modal=page.locator("app-project-transition-check-modal .project-transition-dialog");
     if(!await modal.waitFor({state:"visible",timeout:5000}).then(()=>true).catch(()=>false)) return;
@@ -181,7 +198,7 @@ export function makeUtils({ base, pause, data }) {
     await click(page,d.getByRole("button",{name:"Guardar cambios"}),"Guardar cambios");
     await page.waitForTimeout(1000);
   }
-  return { visible, click, mark, fillFocus, selectFocus, awaitSelectReady, pickByLabel, checkFocus, attachFocus, selectLabel, fillLabel, openCard, ensureBoardFullView, confirmTransitionIfAsked, moveAndSave };
+  return { visible, click, mark, fillFocus, selectFocus, awaitSelectReady, pickByLabel, checkFocus, attachFocus, selectLabel, fillLabel, openCard, ensureBoardFullView, awaitEquipmentDialogSettled, confirmTransitionIfAsked, moveAndSave };
 }
 
 function escapeRegExp(value) {

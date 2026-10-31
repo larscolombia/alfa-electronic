@@ -10,7 +10,7 @@ const pause = Number(process.env.PW_SLOW_MO_MS || "300");
 const stamp = Date.now();
 const data = { prospect: `UI Cliente ${stamp}`, email: `ui.${stamp}@prueba.local`, company: `UI Industria ${stamp}`, nit: `900${String(stamp).slice(-7)}-7`, serviceType: "Reparación", serie: `UI-MB-10M-${stamp}`, oc: `OC-UI-${stamp}` };
 const utils = makeUtils({ base, pause, data });
-const { visible, click, fillFocus, selectFocus, awaitSelectReady, attachFocus, openCard, ensureBoardFullView, moveAndSave } = utils;
+const { visible, click, fillFocus, selectFocus, awaitSelectReady, attachFocus, openCard, ensureBoardFullView, awaitEquipmentDialogSettled, moveAndSave } = utils;
 
 let currentPage=null;
 const snap=s=>{ if(!currentPage) return Promise.resolve(); return currentPage.screenshot({path:`playwright-artifacts/ui-journey-${stamp}-${s}.png`,fullPage:true}).catch(()=>{}); };
@@ -162,6 +162,11 @@ async function repairAndClose(page) {
   // El <select> nativo puede quedar oculto tras el widget Choices: esperar el
   // control real visible, como lo haría un usuario ante el desplegable.
   await awaitSelectReady(page,locationSelect,"No aparece el selector de ubicación del equipo");
+  // Tras el goto completo el catálogo llega asíncrono por API: espera estado estable
+  // (ubicación resuelta) antes de interactuar, como lo haría un usuario real.
+  await awaitEquipmentDialogSettled(page);
+  const equipmentError=d.locator(".alert-danger",{hasText:/ya no existe en recepcion|No se pudo cargar el catalogo/}).first();
+  if(await equipmentError.isVisible().catch(()=>false)) throw new Error(`La app reporta error al vincular el equipo: ${await equipmentError.innerText()}`);
   const locationOptions=await locationSelect.locator("option").evaluateAll(options=>options.map(option=>({value:option.value,label:(option.textContent||"").trim()})).filter(option=>Boolean(option.value)));
   if(!locationOptions.length) throw new Error("El selector de ubicación no tiene opciones disponibles");
   const targetLocation=locationOptions.at(-1);
@@ -171,7 +176,13 @@ async function repairAndClose(page) {
   const updatedLocation=await locationSelect.inputValue();
   await click(page,d.locator("button.project-detail-dialog__close").first(),"Cerrar detalle para verificar ubicación");
   d=await openCard(page);
-  if((await d.getByTestId("equipment-location-select").inputValue())!==updatedLocation) throw new Error("La ubicación del equipo no persistió al reabrir la ficha");
+  // El reload completo vuelve a cargar el catálogo por API: espera el estado real
+  // del diálogo (ubicación resuelta o error visible) antes de asertar persistencia.
+  await awaitEquipmentDialogSettled(page);
+  const reopenedError=d.locator(".alert-danger",{hasText:/ya no existe en recepcion|No se pudo cargar el catalogo/}).first();
+  if(await reopenedError.isVisible().catch(()=>false)) throw new Error(`Al reabrir la ficha la app reporta: ${await reopenedError.innerText()}`);
+  const reopenedValue=await d.getByTestId("equipment-location-select").inputValue();
+  if(reopenedValue!==updatedLocation) throw new Error(`La ubicación del equipo no persistió al reabrir la ficha (esperado "${updatedLocation}", actual "${reopenedValue}")`);
   await moveAndSave(page,d,"Esperando proveedor");
   d=await openCard(page);
   // La llegada de componentes ya se registró en la etapa 5 (receive-purchase-line, cantidad=max),
