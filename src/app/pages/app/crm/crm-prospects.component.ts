@@ -131,7 +131,7 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
                 </div>
             </details>
 
-            <details #prospectFormCard class="card adminuiux-card prospect-form-card mb-3" [open]="showProspectForm" (toggle)="onProspectFormToggle($event)">
+            <details id="prospect-form-card" #prospectFormCard class="card adminuiux-card prospect-form-card mb-3" [open]="showProspectForm" (toggle)="onProspectFormToggle($event)">
                 <summary class="card-header border-bottom cursor-pointer"><i class="bi bi-plus-lg me-1"></i><strong>Agregar prospecto</strong><span class="small text-secondary ms-2">Registra una nueva empresa.</span></summary>
                 <div class="card-body prospect-form-body">
                     <div class="alert alert-danger border mb-3" *ngIf="catalogsLoadErrorMessage">{{ catalogsLoadErrorMessage }}</div>
@@ -702,6 +702,13 @@ export class CrmProspectsComponent {
             this.formCiudad = String(draft.formCiudad ?? this.formCiudad);
             this.formDireccion = String(draft.formDireccion ?? this.formDireccion);
             this.formEmpleado = String(draft.formEmpleado ?? this.formEmpleado);
+            // Un borrador guardado antes del default (o con el campo vacío) puede
+            // reabrir el formulario sin responsable. El prospecto nuevo SIEMPRE
+            // arranca con el empleado logueado: si el borrador no trajo valor,
+            // se restaura aquí, antes de que loadEmployeeOptions() mezcle opciones.
+            if (this.showProspectForm && !this.formEmpleado.trim()) {
+                this.formEmpleado = this.currentLoggedInEmployee();
+            }
             this.formFuente = String(draft.formFuente ?? this.formFuente);
             this.formCiiuCode = String(draft.formCiiuCode ?? this.formCiiuCode);
             this.formEstado = String(draft.formEstado ?? this.formEstado);
@@ -794,7 +801,21 @@ export class CrmProspectsComponent {
 
     onProspectFormToggle(event: Event): void {
         this.showProspectForm = (event.target as HTMLDetailsElement).open;
-        if (this.showProspectForm) this.showProspectSearch = false;
+        if (!this.showProspectForm) return;
+        this.showProspectSearch = false;
+        // Tercera puerta de entrada al formulario: el summary del <details> se
+        // abre por clic nativo sin pasar por openProspectForm(). Si el campo
+        // quedó vacío (carga fresca sin borrador), se completa con el empleado
+        // logueado; un valor ya escrito nunca se pisa.
+        if (!this.formEmpleado.trim()) {
+            this.formEmpleado = this.currentLoggedInEmployee();
+        }
+        // El select solo puede mostrar valores que existen en employeeOptions:
+        // optionsFor() mezcla formEmpleado como "current". Sin esta llamada el
+        // ngModel queda sin opción coincidente y el DOM se ve vacío aunque el
+        // modelo tenga valor (también cubre borradores con un nombre antiguo).
+        this.loadEmployeeOptions();
+        this.cdr.detectChanges();
     }
 
     saveProspect(): void {
