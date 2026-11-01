@@ -68,8 +68,9 @@ try {
   await locationInput.fill(locationName);
   await locationInput.press("Tab");
   await page.waitForTimeout(800);
-  result.customLocationCreated = await locationInput.inputValue() === locationName;
-  if (!result.customLocationCreated) throw new Error("La ubicación escrita no quedó seleccionada/creada en el formulario");
+  // El campo fuerza mayúsculas mientras se escribe (libre diligenciamiento, sin datalist).
+  result.customLocationCreated = await locationInput.inputValue() === locationName.toUpperCase();
+  if (!result.customLocationCreated) throw new Error("La ubicación escrita no quedó en mayúsculas en el formulario");
   for (const [placeholder, value] of [["Marca del equipo", "Marca QA"], ["Tipo / referencia", "Tipo QA"], ["Serie o referencia visible", `SER-${id}`]]) await modal.locator(`input[placeholder='${placeholder}']`).fill(value);
   await modal.getByTestId("equipment-modal-next").click(); await wait(page);
   const costSwitch = modal.locator("input[id$='-costAboveTwoMillion']");

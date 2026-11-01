@@ -164,12 +164,12 @@ export function makeStages({ base, pause, data, stamp, snap, utils }) {
     await selectFocus(page,card.getByTestId("equipment-modal-family-0"),{label:"CE - Tarjeta Electrónica"},{force:true});
     console.log("UI_ONLY_RECEPTION selector: tipo de servicio (select nativo)");
     await selectFocus(page,card.getByTestId("equipment-modal-service-type-0"),{label:"Reparación"},{force:true});
-    // Ubicación es input + datalist: se digita el nombre exacto del catálogo.
+    // Ubicación es input libre en mayúsculas (sin datalist): se digita y el campo fuerza mayúsculas.
     const storageInput=card.getByTestId("equipment-modal-storage-location-0");
     await fillFocus(page,storageInput,"Estantería QA");
-    await card.locator(".equipment-card .form-control[placeholder='Marca del equipo']").first().click({timeout:5000}).catch(()=>{}); // dispara change/blur del datalist
+    await card.locator(".equipment-card .form-control[placeholder='Marca del equipo']").first().click({timeout:5000}).catch(()=>{}); // dispara change/blur del input
     await visible(card.getByText(/Servicio Reparación/).first(),"El tipo de servicio 'Reparación' no quedó aplicado en la tarjeta");
-    await visible(card.getByText(/Ubicación Estantería QA/).first(),"La ubicación 'Estantería QA' no quedó aplicada en la tarjeta");
+    await visible(card.getByText(/Ubicación ESTANTERÍA QA/).first(),"La ubicación 'ESTANTERÍA QA' (mayúsculas) no quedó aplicada en la tarjeta");
 
     await fillFocus(page,card.locator("input[placeholder='Marca del equipo']"),"Siemens");
     await fillFocus(page,card.locator("input[placeholder='Tipo / referencia']"),"Placa base industrial");

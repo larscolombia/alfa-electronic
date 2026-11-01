@@ -547,18 +547,16 @@ type SoftwareBackupInfo = {
                                             </div>
                                             <div class="col-12 col-lg-3">
                                                 <label class="form-label">Ubicación de almacenamiento</label>
+                                                <!-- Libre diligenciamiento en mayúsculas (acepta letras y números); sin lista desplegable. -->
                                                 <input
-                                                    class="form-select"
+                                                    class="form-control"
                                                     [ngModel]="item.storageLocationName"
                                                     [ngModelOptions]="{ standalone: true }"
                                                     [attr.data-testid]="'equipment-modal-storage-location-' + i"
-                                                    [attr.list]="'storage-location-options-' + i"
-                                                    placeholder="Seleccionar o escribir ubicación"
+                                                    placeholder="Escriba la ubicación en mayúsculas (ej: CO260206)"
+                                                    (input)="onStorageLocationInput($event, item)"
                                                     (ngModelChange)="item.storageLocationName = $event"
                                                     (change)="resolveStorageLocation(item, item.storageLocationName)" />
-                                                <datalist [id]="'storage-location-options-' + i">
-                                                    <option *ngFor="let option of storageLocationSelectOptions" [value]="option.label"></option>
-                                                </datalist>
                                             </div>
                                             <div class="col-12 col-lg-3">
                                                 <label class="form-label">Marca</label>
@@ -1835,13 +1833,6 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy,
         ];
     }
 
-    get storageLocationSelectOptions(): CrmModalSelectOption[] {
-        return [
-            { label: "Seleccionar ubicación", value: "" },
-            ...this.activeEquipmentLocations.map((location) => ({ label: location.name, value: location.id })),
-        ];
-    }
-
     technicianSelectOptionsForItem(item: ProspectEquipmentItem): CrmModalSelectOption[] {
         return [
             { label: "Sin asignar", value: "" },
@@ -2221,6 +2212,14 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy,
 
         item.storageLocationId = location.id;
         item.storageLocationName = location.name;
+    }
+
+    /** Libre diligenciamiento en mayúsculas: fuerza el valor del input a mayúsculas
+     *  mientras se escribe (acepta letras y números) y sincroniza el modelo. */
+    onStorageLocationInput(event: Event, item: ProspectEquipmentItem): void {
+        const target = event.target as HTMLInputElement;
+        target.value = target.value.toUpperCase();
+        item.storageLocationName = target.value;
     }
 
     async resolveStorageLocation(item: ProspectEquipmentItem, rawName: string): Promise<void> {
