@@ -12,7 +12,9 @@ const wait = page => page.waitForTimeout(500);
 const result = {
   case: "REC-06",
   login: false,
-  accessoriesHeadingExact: false,
+  accessoryCellRemoved: false,
+  borrowedSectionKept: false,
+  borrowedAddRemoveWorks: false,
   checkboxLabelExact: false,
   checkboxChecked: false,
   warningChipVisible: false,
@@ -67,51 +69,26 @@ try {
   await selectCustomModal(page, modal.locator("[data-testid^='equipment-modal-registration-mode-']").first(), "manual");
   for (const [placeholder, value] of [["Marca del equipo", "Marca QA"], ["Tipo / referencia", "Tipo QA"], ["Serie o referencia visible", `SER-${id}`]]) await modal.locator(`input[placeholder='${placeholder}']`).fill(value);
 
-  // Celda renombrada: "Elementos recibidos" -> "Accesorios recibidos con el equipo".
-  // getByText casa también a ancestros (el <div> padre tiene el mismo texto normalizado):
-  // por eso la aserción va sobre el h6 del DOM, y el nombre viejo debe tener CERO ocurrencias.
-  const receivedSection = modal.locator("section.received-items").first();
-  result.accessoriesHeadingExact =
-    (await receivedSection.locator("h6").innerText()).trim() === "Accesorios recibidos con el equipo" &&
-    (await modal.getByText(/Elementos recibidos/i).count()) === 0;
-  if (!result.accessoriesHeadingExact) throw new Error(`El titulo de la celda de accesorios no es "Accesorios recibidos con el equipo" (o sigue apareciendo el nombre viejo): ${JSON.stringify(await receivedSection.locator("h6, label").allInnerTexts())}`);
+  // La celda de accesorios fue eliminada (duplicaba a "Elementos prestados para prueba"):
+  // no debe quedar titulo, input ni boton en el paso Equipos.
+  result.accessoryCellRemoved =
+    (await modal.getByText("Accesorios recibidos con el equipo").count()) === 0 &&
+    (await modal.locator("[data-testid^='equipment-modal-add-accessory-']").count()) === 0 &&
+    (await modal.locator("input[id^='accessory-draft-']").count()) === 0;
+  if (!result.accessoryCellRemoved) throw new Error(`La celda de accesorios deberia estar eliminada del paso Equipos: titulo=${await modal.getByText("Accesorios recibidos con el equipo").count()}, testidAdd=${await modal.locator("[data-testid^='equipment-modal-add-accessory-']").count()}`);
 
-  // Celdilla de accesorios: input + boton AGREGAR; al agregar queda en la lista inferior con editar/quitar.
-  // Se deja la lista VACIA al final para no disparar la evidencia ACCESSORIES aguas abajo (REC-06).
-  const accDraft = receivedSection.locator("input[id^='accessory-draft-']").first();
-  const accAddBtn = modal.getByTestId(`equipment-modal-add-accessory-${0}`);
-  const accRows = receivedSection.locator("div.input-group.input-group-sm"); // borrowed-equipment arranca con 0 entradas aqui
-  result.accessoryAddControl = (await accDraft.isVisible()) && (await accAddBtn.isVisible()) && (await accAddBtn.isDisabled());
-  if (!result.accessoryAddControl) throw new Error(`El input + boton Agregar de accesorios no esta disponible o el boton no empieza deshabilitado: visible=${await accDraft.isVisible()}, btnVisible=${await accAddBtn.isVisible()}, disabled=${await accAddBtn.isDisabled()}`);
-
-  await accDraft.fill("Cable USB"); await wait(page);
-  result.accessoryAddButtonEnabled = await accAddBtn.isEnabled();
-  if (!result.accessoryAddButtonEnabled) throw new Error("El boton Agregar no se habilito al escribir en el input de accesorios");
-  await accAddBtn.click(); await wait(page);
-
-  result.accessoryFirstItemInList = (await accRows.count()) === 1 && (await accRows.nth(0).locator("input.form-control").first().inputValue()).trim() === "Cable USB";
-  if (!result.accessoryFirstItemInList) throw new Error(`Despues de Agregar, la lista no contiene exactamente [\"Cable USB\"]: ${JSON.stringify(await accRows.locator("input").allInnerTexts())} (count=${await accRows.count()})`);
-  result.accessoryDraftClearedAfterAdd = (await accDraft.inputValue()).trim() === "";
-  if (!result.accessoryDraftClearedAfterAdd) throw new Error(`El input de borrador no quedo vacio tras agregar: '${await accDraft.inputValue()}'`);
-
-  // Segundo accesorio + edicion del primero (inline, en la lista).
-  await accDraft.fill("Cargador original 9V"); await wait(page);
-  await page.keyboard.press("Enter"); await wait(page); // fill deja el focus en el draft; keyup.enter lo agrega (mismo handler que el boton)
-  result.accessorySecondItemInList = (await accRows.count()) === 2 && (await accRows.nth(1).locator("input.form-control").first().inputValue()).trim() === "Cargador original 9V";
-  if (!result.accessorySecondItemInList) throw new Error(`El segundo accesorio no quedo en la lista: count=${await accRows.count()}, values=${JSON.stringify(await Promise.all((await accRows.locator("input.form-control").all()).map(async (i) => i.inputValue())))}`);
-
-  const firstAccInput = accRows.nth(0).locator("input.form-control").first();
-  await firstAccInput.fill("Cable HDMI (editado)"); await wait(page);
-  result.accessoryEditItem = (await accRows.count()) === 2 && (await firstAccInput.inputValue()).trim() === "Cable HDMI (editado)";
-  if (!result.accessoryEditItem) throw new Error(`La edicion inline del primer accesorio no persiste: '${await firstAccInput.inputValue()}'`);
-
-  // Eliminar el segundo y luego el primero -> estado vacio visible.
-  await modal.getByTestId("equipment-modal-remove-accessory-0-1").click(); await wait(page);
-  result.accessoryRemoveItem = (await accRows.count()) === 1 && (await accRows.nth(0).locator("input.form-control").first().inputValue()).trim() === "Cable HDMI (editado)";
-  if (!result.accessoryRemoveItem) throw new Error(`Quitar el segundo accesorio dejo la lista inconsistente: count=${await accRows.count()}, values=${JSON.stringify(await Promise.all((await accRows.locator("input.form-control").all()).map(async (i) => i.inputValue())))}`);
-  await modal.getByTestId("equipment-modal-remove-accessory-0-0").click(); await wait(page);
-  result.accessoryEmptyState = (await accRows.count()) === 0 && /Sin accesorios registrados/i.test(await receivedSection.innerText());
-  if (!result.accessoryEmptyState) throw new Error(`Tras quitar todos los accesorios no aparece el estado vacio: count=${await accRows.count()}, text=${JSON.stringify((await receivedSection.innerText()).slice(0, 300))}`);
+  // La seccion "Elementos prestados para prueba" (la que queda) sigue operativa:
+  // abrir details -> Agregar una entrada -> fila editable -> quitarla -> lista vacia.
+  const borrowedSummary = modal.getByText("¿El cliente prestó algo para la prueba?").first();
+  result.borrowedSectionKept = await borrowedSummary.isVisible();
+  if (!result.borrowedSectionKept) throw new Error(`Falta la seccion "Elementos prestados para prueba" tras eliminar la celda de accesorios`);
+  await borrowedSummary.click(); await wait(page);
+  await modal.getByTestId("equipment-modal-add-borrowed-0").click(); await wait(page);
+  const borrowedRows = modal.locator("section.received-items .input-group.input-group-sm");
+  result.borrowedAddRemoveWorks = (await borrowedRows.count()) === 1 && (await borrowedRows.nth(0).locator("input.form-control").first().isVisible());
+  if (!result.borrowedAddRemoveWorks) throw new Error(`Agregar una entrada de "Elementos prestados" no dejo una fila editable: count=${await borrowedRows.count()}`);
+  await modal.getByTestId("equipment-modal-remove-borrowed-0-0").click(); await wait(page);
+  result.borrowedAddRemoveWorks = (await borrowedRows.count()) === 0;
 
   // El checkbox debe existir con la etiqueta nueva EXACTA (una sola ocurrencia en el modal).
   const labelIssueBox = modal.getByLabel(/^Equipo con Etiqueta rota, ilegible o sin etiqueta$/i);

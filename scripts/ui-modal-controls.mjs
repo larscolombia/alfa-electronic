@@ -69,7 +69,16 @@ export async function setCustomModalDateTime(page, triggerLocator, localValue) {
   const [hour = "00", minute = "00"] = timePart.split(":");
   await menu.locator("[data-testid='dt-hour']").fill(hour);
   await menu.locator("[data-testid='dt-minute']").fill(minute);
+  // Escape cierra el menú desde cualquier foco interno (keydown burbujea a .crm-modal-dt-menu).
   await page.keyboard.press("Escape");
+  await menu.waitFor({ state: "hidden", timeout: 5000 }).catch(() => {});
+
+  // Verificación de commit contra la UI: el trigger debe mostrar fecha/hora legible
+  // (formato es-CO "dd/mm/aaaa hh:mm") y no el placeholder.
+  const display = ((await triggerLocator.first().textContent().catch(() => "")) || "").trim();
+  if (!/\d{2}\/\d{2}\/\d{4}/.test(display)) {
+    throw new Error(`app-crm-modal-datetime no registró la fecha/hora tras la selección (trigger="${display}", valor esperado ~${localValue}).`);
+  }
   await page.waitForTimeout(300);
 }
 

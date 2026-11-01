@@ -21,7 +21,6 @@ import {
 import { buildEvidencePhotosFromFiles } from "./crm-prospect-equipment-evidence.util";
 import {
     getEvidenceRequirementsError,
-    isAccessoriesEvidenceMissing,
     isSerialPlateEvidenceMissing,
     isSerieExceptionReasonMissing,
     isVisibleDamageSaveBlocked,
@@ -868,9 +867,6 @@ type SoftwareBackupInfo = {
 
                                         <div class="alert alert-warning py-2 mb-3" *ngIf="isSerialPlateEvidenceMissing(item)" data-testid="serial-plate-evidence-required">
                                             Placa o serie ilegible: sube una evidencia tipo "Placa / serie" y registra el motivo de excepción.
-                                        </div>
-                                        <div class="alert alert-warning py-2 mb-3" *ngIf="isAccessoriesEvidenceMissing(item)" data-testid="accessories-evidence-required">
-                                            El equipo tiene accesorios reportados: se requiere evidencia fotográfica de accesorios.
                                         </div>
 
                                         <app-crm-equipment-evidence-damage [item]="item"></app-crm-equipment-evidence-damage>
@@ -1992,7 +1988,6 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy,
     }
 
     readonly isSerialPlateEvidenceMissing = isSerialPlateEvidenceMissing;
-    readonly isAccessoriesEvidenceMissing = isAccessoriesEvidenceMissing;
     readonly borrowedEntriesWithContent = borrowedEntriesWithContent;
 
     get filteredCompanyOptions(): CompanyCatalogOption[] {

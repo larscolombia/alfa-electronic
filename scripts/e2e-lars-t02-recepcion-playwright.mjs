@@ -4,9 +4,10 @@
  * Flujo validado 100% por UI:
  *  1. Login admin (API solo para sesión/verificaciones).
  *  2. Prospecto "LARS Empresa Industrial -t02" (reutilizado si ya existe, creado por UI si no).
- *  3. Desde la fila del prospecto: Acciones → "Asociar equipo" (modal crm-prospect-equipment-modal).
+ *  3. Modal de equipos desde Trabajo > Recepción (/app/work-equipment-reception, botón 'Nuevo
+ *     equipo'), asociando el prospecto por la combobox Empresa (catálogo Clientes + Prospectos).
  *  4. Wizard: Recepción (transportadora/guía/fecha) → Equipos (PLC Siemens, serie única,
- *     servicio, ubicación/estantería, accesorios, falla impresora Heidelberg) → Preguntas
+ *     servicio, ubicación/estantería, falla impresora Heidelberg) → Preguntas
  *     (valor nuevo >2M: Sí, componentes electrónicos accesibles/falla electrónica: Sí,
  *     autorización jefe por equipo no industrial en modo manual) → Evidencia (identificador
  *     + 4 caras fotográficas) → Cierre (guardar).
@@ -21,7 +22,7 @@
 import path from "node:path";
 import { promises as fs } from "node:fs";
 import { chromium } from "playwright";
-import { openCustomSelectMenu, selectCustomModal, setCustomModalDateTime } from "./ui-modal-controls.mjs";
+import { selectCustomModal, setCustomModalDateTime } from "./ui-modal-controls.mjs";
 
 const baseUrl = (process.env.PW_BASE_URL || "https://alfa.software.net.co").replace(/\/+$/, "");
 const apiBaseUrl = (process.env.PW_API_BASE_URL || baseUrl).replace(/\/+$/, "");
@@ -36,15 +37,17 @@ const artifactPrefix = "e2e-lars-t02-";
 
 const now = Date.now();
 const prospectName = "LARS Empresa Industrial -t02";
-const prospectCompany = `LARS Industrial SAS t02 ${now}`;
+// La UI persiste name === company === formCompania (executeProspectSave) y findProspectByName()
+// busca por `name`: la empresa digitada debe ser EXACTAMENTE prospectName, o el paso 1b no lo encontraría.
 const prospectEmail = `lars-t02-${now}@alfa.local`;
+// El botón Guardar exige NIT válido (/^\d+-\d+$/): sin esto queda [disabled] y el click es un no-op.
+const prospectNit = `900${String(now).slice(-6)}-3`;
 const uniqueSerie = `PLC-S7-HEIDELBERG-${now}`;
 // La app NO genera un consecutivo CO-* automático (ver audit 02-recepcion H1):
 // el "código del equipo" es el identificador escaneado/digitado en el paso Evidencia,
 // que recepción digita como CO-* para etiquetar el equipo.
 const equipmentCode = `CO-T02-${now}`;
 const failureText = "No energiza salidas (impresora Heidelberg)";
-const accessoriesText = "Cable de programación MPI, manual de usuario, caja original";
 const intakeCarrier = `Coordinadora t02 ${now}`;
 const trackingNumber = `GUIA-LARS-T02-${now}`;
 
@@ -157,22 +160,6 @@ function receptionInput(page, labelText) {
     return page.locator(`label.form-label:has-text("${labelText}") + input.form-control`).first();
 }
 
-async function fillDateIfEmpty(page) {
-    const today = new Date();
-    const dd = page.locator("input[placeholder='DD']").first();
-    const mm = page.locator("input[placeholder='MM']").first();
-    const aaaa = page.locator("input[placeholder='AAAA']").first();
-    if ((await dd.inputValue().catch(() => "")) === "") {
-        await dd.fill(String(today.getDate()).padStart(2, "0"));
-    }
-    if ((await mm.inputValue().catch(() => "")) === "") {
-        await mm.fill(String(today.getMonth() + 1).padStart(2, "0"));
-    }
-    if ((await aaaa.inputValue().catch(() => "")) === "") {
-        await aaaa.fill(String(today.getFullYear()));
-    }
-}
-
 async function answerQuestionYes(page, questionSnippet) {
     const container = page
         .locator(".question-card div.border.rounded.p-3.bg-light-subtle", { hasText: questionSnippet })
@@ -188,29 +175,27 @@ async function answerQuestionYes(page, questionSnippet) {
 async function setRequiredFaceEvidence(page) {
     await page.locator("input[placeholder='QR, código de barras, serial o placa']").first().fill(equipmentCode);
 
-    const evidenceInput = page.locator("input[type='file'][accept='image/*']:visible").first();
-    await evidenceInput.setInputFiles(faceFixturePaths);
-    await evidenceInput.evaluate((inputElement) => {
-        inputElement.dispatchEvent(new Event("input", { bubbles: true }));
-        inputElement.dispatchEvent(new Event("change", { bubbles: true }));
-    });
+    // UI actual (required-evidence-grid): un input único por cara, oculto y single-file,
+    // id = 'evidence-face-' + item.id + '-' + faceType. handleRequiredFaceEvidenceSelected()
+    // fija photo.evidenceType solo: ya no hay input multiple que reciba las 4 fotos a la vez
+    // ni tarjetas que reclasificar (el slot ya nace clasificada).
+    const faceTypes = ["face-front", "face-back", "face-left", "face-right"];
+    for (let index = 0; index < faceTypes.length; index += 1) {
+        const slotInput = page.locator(`input[type='file'][accept='image/*'][id$="-${faceTypes[index]}"]`).first();
+        await slotInput.setInputFiles(faceFixturePaths[index]);
+    }
 
-    const faceTypeLabels = ["Cara frente", "Cara atrás", "Cara izquierda", "Cara derecha"];
-    const photoCards = page.locator(".evidence-photo-card");
-
+    // Cada slot renderiza su miniatura <img> cuando la foto quedó procesada (EXIF + hash).
+    const slotThumbs = page.locator(".required-evidence-slot img");
     const waitStart = Date.now();
     while ((Date.now() - waitStart) < timeoutMs) {
-        if ((await photoCards.count()) >= faceTypeLabels.length) break;
+        if ((await slotThumbs.count()) >= faceTypes.length) break;
         await page.waitForTimeout(250);
     }
 
-    const availableCards = await photoCards.count();
-    if (availableCards < faceTypeLabels.length) {
-        throw new Error(`No se encontraron ${faceTypeLabels.length} tarjetas de evidencia. Detectadas: ${availableCards}`);
-    }
-
-    for (let index = 0; index < faceTypeLabels.length; index += 1) {
-        await selectCustomModal(page, photoCards.nth(index).getByTestId("equipment-modal-evidence-type"), { label: faceTypeLabels[index] });
+    const availableThumbs = await slotThumbs.count();
+    if (availableThumbs < faceTypes.length) {
+        throw new Error(`No se procesaron las ${faceTypes.length} fotos de caras obligatorias. Miniaturas detectadas: ${availableThumbs}`);
     }
 }
 
@@ -226,25 +211,28 @@ async function createProspectViaUi(page) {
     await addButton.waitFor({ state: "visible", timeout: timeoutMs });
     await addButton.click();
 
-    await page.waitForFunction(
-        () =>
-            Array.from(document.querySelectorAll("h5")).some((n) =>
-                (n.textContent || "").toLowerCase().includes("detalles del prospecto"),
-            ),
-        null,
-        { timeout: timeoutMs },
-    );
+    // El panel de creacion es inline (no hay heading "Detalles del prospecto" en la UI actual):
+    // el sentinel robusto es que los inputs del formulario ya esten visibles.
+    const companiaInput = page.locator("input[name='formCompania']").first();
+    await companiaInput.waitFor({ state: "visible", timeout: timeoutMs });
 
-    await page.locator("input[name='formNombre']").fill(prospectName);
+    // executeProspectSave() persiste name === company === formCompania y findProspectByName()
+    // busca por `name`: se llena AQUÍ exactamente prospectName (no un valor de empresa distinto).
+    await companiaInput.fill(prospectName);
     await page.locator("input[name='formCorreo']").fill(prospectEmail);
-    await page.locator("input[name='formCompania']").fill(prospectCompany);
+
+    // Sin NIT válido el botón Guardar queda [disabled]: el click no haría nada.
+    const nitInput = page.locator("input[name='formNit']").first();
+    await nitInput.waitFor({ state: "visible", timeout: timeoutMs });
+    await nitInput.fill(prospectNit);
 
     const movilInput = page.locator("input[name='formMovil']");
     if (await movilInput.isVisible().catch(() => false)) {
         await movilInput.fill("3005550202");
     }
 
-    await page.locator(".card-footer button", { hasText: "Guardar" }).first().click();
+    // Mismo boton que REC-06 (testid estable del panel inline). "Guardar y agregar otro" no casa.
+    await page.getByTestId("prospect-save-btn").click();
 
     const duplicateButton = page.getByRole("button", { name: /Crear de todos modos/i }).first();
     if (await duplicateButton.isVisible({ timeout: 4000 }).catch(() => false)) {
@@ -252,14 +240,15 @@ async function createProspectViaUi(page) {
         await duplicateButton.click();
     }
 
-    await page.waitForFunction(
-        () =>
-            !Array.from(document.querySelectorAll("h5")).some((n) =>
-                (n.textContent || "").toLowerCase().includes("detalles del prospecto"),
-            ),
-        null,
-        { timeout: timeoutMs },
-    );
+    // Evidencia de éxito contra la UI actual (NO hay tabla de filas): tras guardar el panel
+    // cierra y reabre la búsqueda; escribir el nombre debe devolver su card en los resultados.
+    const searchInput = page.locator("#prospects-search").first();
+    await searchInput.waitFor({ state: "visible", timeout: timeoutMs });
+    await searchInput.fill(prospectName);
+    await page
+        .locator("[data-testid='prospect-search-results'] .list-group-item", { hasText: prospectName })
+        .first()
+        .waitFor({ state: "visible", timeout: timeoutMs });
 }
 
 try {
@@ -307,37 +296,49 @@ try {
         result.observations.push(`SETUP: el prospecto "${prospectName}" ya existía; se reutilizó (idempotente).`);
     }
 
-    console.log("STEP 1b: abrir modal 'Asociar equipo' desde la fila del prospecto …");
-    await page.goto(`${baseUrl}/app/crm-prospectos`, { waitUntil: "networkidle", timeout: timeoutMs });
-    await page.waitForFunction(
-        (name) =>
-            Array.from(document.querySelectorAll("tbody tr")).some((tr) => (tr.textContent || "").includes(name)),
-        prospectName,
-        { timeout: timeoutMs },
-    );
+    console.log("STEP 1b: abrir modal de equipos (Trabajo > Recepción) y asociar el prospecto …");
+    // En la UI actual NO existe "Acciones → Asociar equipo" sobre una fila del prospecto.
+    // La recepción se crea desde /app/work-equipment-reception (botón 'Nuevo equipo') y el
+    // cliente/prospecto se asocia por la combobox Empresa del modal.
+    await page.goto(`${baseUrl}/app/work-equipment-reception`, { waitUntil: "networkidle", timeout: timeoutMs });
 
-    const prospectRow = page.locator("tbody tr", { hasText: prospectName }).first();
-    await prospectRow.locator("button.dropdown-toggle", { hasText: "Acciones" }).click();
-    await prospectRow.getByRole("button", { name: /Asociar equipo/i }).first().click();
+    const createButton = page.getByTestId("work-equipment-create").first();
+    await createButton.waitFor({ state: "visible", timeout: timeoutMs });
+    await createButton.click();
 
     await page.getByTestId("equipment-modal-cancel").waitFor({ state: "visible", timeout: timeoutMs });
     result.checks.equipmentModalOpened = true;
 
-    // Precarga del prospecto en el paso Recepción
-    const companyPreloaded = await page
-        .locator(".modal-body", { hasText: "Empresa seleccionada:" })
-        .first()
-        .isVisible({ timeout: 8000 })
-        .catch(() => false);
-    if (!companyPreloaded) {
-        result.observations.push("HALLAZGO: al abrir 'Asociar equipo' desde el prospecto, la empresa no quedó precargada/confirmada en el paso Recepción.");
+    // Asociar el prospecto LARS creado en 1a desde la combobox (catálogo Clientes + Prospectos):
+    // selectCompanyOption() fija draft.companyName y autocompleta NIT/contacto.
+    const companySearch = page.getByTestId("equipment-modal-company-search");
+    await companySearch.waitFor({ state: "visible", timeout: timeoutMs });
+    await companySearch.fill(prospectName);
+
+    const companyItem = page.locator(".company-dropdown-item", { hasText: prospectName }).first();
+    await companyItem.waitFor({ state: "visible", timeout: timeoutMs });
+    await companyItem.click();
+
+    // Confirmación visual de que el borrador tomó la empresa LARS (no quedó 'Recepción directa').
+    const selectedCompanyLine = page.locator("text=Empresa seleccionada:").first();
+    await selectedCompanyLine.waitFor({ state: "visible", timeout: timeoutMs });
+    if (!(await selectedCompanyLine.textContent().catch(() => ""))?.includes(prospectName)) {
+        result.observations.push(`HALLAZGO: la combobox no muestra el prospecto asociado: "${(await selectedCompanyLine.textContent().catch(() => "")) || "(sin texto)"}".`);
     }
 
     console.log("STEP 2: paso Recepción (transportadora/guía/fecha) …");
     await selectCustomModal(page, page.getByTestId("equipment-modal-intake-method"), "transportadora");
     await receptionInput(page, "Transportadora").fill(intakeCarrier);
     await receptionInput(page, "Guía / tracking").fill(trackingNumber);
-    await fillDateIfEmpty(page);
+
+    // "Fecha de recepción" es <input type="date"> nativo autocompletado por el getter del
+    // componente (receptionDateInput → fallback a hoy). Solo se aserta que trae fecha ISO.
+    const receptionDateValue = await page.locator(".reception-date input[type='date']").first().inputValue();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(receptionDateValue)) {
+        result.observations.push(`HALLAZGO: "Fecha de recepción" no trae una fecha ISO (valor="${receptionDateValue}").`);
+    } else {
+        result.observations.push(`DATO: "Fecha de recepción" autocompletado por la UI con "${receptionDateValue}".`);
+    }
 
     const currentDate = new Date();
     const yyyy = currentDate.getFullYear();
@@ -347,40 +348,74 @@ try {
     const min = String(currentDate.getMinutes()).padStart(2, "0");
     await setCustomModalDateTime(page, page.getByTestId("equipment-modal-intake-received-at"), `${yyyy}-${mm}-${dd}T${hh}:${min}`);
 
+    // Verificación UI del commit: el alert de requerido debe haber desaparecido.
+    const receivedAtRequiredAlert = page.getByTestId("intake-received-at-required");
+    if (await receivedAtRequiredAlert.isVisible().catch(() => false)) {
+        await screenshotStep(page, "02-reception-step-validation-fail");
+        throw new Error(
+            `Paso Recepción: el alert "${(await receivedAtRequiredAlert.textContent().catch(() => ""))?.trim()}" sigue visible; ` +
+            `draft.intakeReceivedAt no quedó fijado (carrier="${(await receptionInput(page, "Transportadora").inputValue().catch(() => ""))}", ` +
+            `guía="${(await receptionInput(page, "Guía / tracking").inputValue().catch(() => ""))}").`,
+        );
+    }
+
     await screenshotStep(page, "02-reception-step");
     await page.getByTestId("equipment-modal-next").click();
-    await page.waitForSelector("[data-testid='equipment-modal-add-item']", { timeout: timeoutMs });
+
+    // Fail-fast con diagnóstico: si el wizard no avanza en 15 s, capturamos la causa exacta
+    // (mensaje de validación del modal + estado de los campos) en vez de esperar timeoutMs.
+    // Marcador de paso Equipos: el <select> "Tipo de servicio" del primer equipo (testid
+    // equipment-modal-service-type-0). OJO: NO usar equipment-modal-add-item como marcador:
+    // ese botón vive detrás de *ngIf allowMultipleEquipment=false y nunca renderiza.
+    const equipmentStep = page.getByTestId("equipment-modal-service-type-0");
+    try {
+        await equipmentStep.waitFor({ state: "visible", timeout: 15000 });
+    } catch (advanceError) {
+        await screenshotStep(page, "02-reception-step-no-advance");
+        const validationMessage = ((await page.getByTestId("equipment-modal-validation-message").textContent().catch(() => "")) || "").trim();
+        const carrierValue = await receptionInput(page, "Transportadora").inputValue().catch(() => "(campo no visible)");
+        const trackingValue = await receptionInput(page, "Guía / tracking").inputValue().catch(() => "(campo no visible)");
+        const datetimeDisplay = ((await page.getByTestId("equipment-modal-intake-received-at").textContent().catch(() => "")) || "").trim();
+        result.observations.push(
+            `DIAGNÓSTICO transición Recepción→Equipos: validación="${validationMessage || "(sin mensaje)"}", ` +
+            `carrier="${carrierValue}", guía="${trackingValue}", datetime-trigger="${datetimeDisplay}", ` +
+            `consoleErrors=${result.consoleErrors.slice(-3).join(" | ")}`,
+        );
+        throw new Error(
+            `Paso Recepción→Equipos no avanzó. validación="${validationMessage || "(sin mensaje)"}", ` +
+            `carrier="${carrierValue}", guía="${trackingValue}", datetime-trigger="${datetimeDisplay}" (ver observations).`,
+        );
+    }
     result.checks.receptionStepCompleted = true;
 
     console.log("STEP 3: paso Equipos (PLC Siemens) …");
     await selectCustomModal(page, page.getByTestId("equipment-modal-registration-mode-0"), "manual");
-    await page.locator("label.form-label:has-text('Familia') + input.form-control").first().fill("PLC");
+    // Familia es un <select> nativo (STANDARD_EQUIPMENT_FAMILIES: A - Alimentacion | CE - Tarjeta
+    // Electrónica), NO un input libre. { label } → selectOption({label}) sobre el option real.
+    await selectCustomModal(page, page.getByTestId("equipment-modal-family-0"), { label: "CE - Tarjeta Electrónica" });
     await page.locator("label.form-label:has-text('Marca') + input.form-control").first().fill("Siemens");
     await page.locator("label.form-label:has-text('Tipo') + input.form-control").first().fill("Autómata programable (PLC)");
     await page.locator("label.form-label:has-text('Serie') + input.form-control").first().fill(uniqueSerie);
 
-    // Tipo de servicio: primera opción que indique reparación
+    // Tipo de servicio: <select> nativo (catálogo STANDARD_SERVICE_TYPES). selectCustomModal
+    // detecta el SELECT y usa selectOption; se busca por regex para no depender del acento.
     const serviceTypeTrigger = page.getByTestId("equipment-modal-service-type-0");
-    const serviceMenu = await openCustomSelectMenu(page, serviceTypeTrigger);
-    const serviceOptions = await serviceMenu.locator(".crm-modal-select-option").allTextContents();
-    const repairOption = serviceOptions.find((label) => /repar/i.test(label)) || serviceOptions.find((label) => label.trim() !== "");
-    if (!repairOption) throw new Error("No hay opciones de tipo de servicio disponibles");
-    await selectCustomModal(page, serviceTypeTrigger, { label: repairOption });
-    result.observations.push(`DATO: tipo de servicio seleccionado: "${String(repairOption).trim()}".`);
+    await selectCustomModal(page, serviceTypeTrigger, { labelRegex: /reparaci[oó]n/i });
+    result.observations.push(`DATO: tipo de servicio seleccionado: "${(await serviceTypeTrigger.inputValue().catch(() => ""))}" (label: Reparación).`);
 
-    // Ubicación / estantería: primera ubicación real del catálogo
-    const locationTrigger = page.getByTestId("equipment-modal-storage-location-0");
-    const locationMenu = await openCustomSelectMenu(page, locationTrigger);
-    const locationOptions = (await locationMenu.locator(".crm-modal-select-option").allTextContents()).filter((label) => label.trim() !== "" && !/seleccionar/i.test(label));
-    if (locationOptions.length === 0) {
-        result.observations.push("HALLAZGO: no hay ubicaciones/estanterías configuradas en el catálogo; el equipo quedará sin ubicación de almacenamiento.");
-    } else {
-        await selectCustomModal(page, locationTrigger, { label: locationOptions[0] });
-        result.observations.push(`DATO: ubicación de almacenamiento seleccionada: "${String(locationOptions[0]).trim()}".`);
-    }
+    // Ubicación de almacenamiento: la UI actual es un campo LIBRE en mayúsculas (acepta números),
+    // sin lista desplegable. onStorageLocationInput() fuerza mayúsculas; se dispara además el
+    // evento change para que resolveStorageLocation() lo procese igual que con teclado.
+    const storageValue = `ESTANTERIA-T02-${String(now).slice(-6)}`;
+    const locationInput = page.getByTestId("equipment-modal-storage-location-0");
+    await locationInput.waitFor({ state: "visible", timeout: timeoutMs });
+    await locationInput.fill(storageValue);
+    await locationInput.evaluate((inputElement) => {
+        inputElement.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    result.observations.push(`DATO: ubicación de almacenamiento registrada (campo libre): "${storageValue}".`);
 
     await receptionInput(page, "Remisión del cliente / guía").fill(`REM-LARS-T02-${now}`);
-    await receptionInput(page, "Accesorios").fill(accessoriesText);
     await page.locator("label.form-label:has-text('Descripción de la falla') + textarea.form-control").first().fill(failureText);
 
     await screenshotStep(page, "03-equipment-step");
@@ -411,23 +446,35 @@ try {
     await page.getByTestId("equipment-modal-next").click();
 
     // El paso Evidencia es el siguiente; si el flujo exige firma antes, se cubre aquí.
-    const scannerOrEvidence = await page
-        .locator("input[placeholder='QR, código de barras, serial o placa']")
-        .first()
-        .isVisible({ timeout: timeoutMs })
+    // isVisible({timeout}) NO espera (retorna inmediato): tras el click a 'Siguiente' la
+    // vista nueva aún no está en DOM y el probe caía al fallback equivocado. Se usa waitFor:
+    // espera de verdad hasta que el input QR sea visible (determinista) o timeout real.
+    const scannerInput = page.locator("input[placeholder='QR, código de barras, serial o placa']").first();
+    const reachedEvidenceStep = await scannerInput
+        .waitFor({ state: "visible", timeout: 20000 })
+        .then(() => true)
         .catch(() => false);
-    if (!scannerOrEvidence) {
+    if (!reachedEvidenceStep) {
+        // Fallback de robustez: paso intermedio de autorización/firma (no se ha observado
+        // en el flujo actual; si aparece, se completa y se avanza a Evidencia).
         await page.locator("label.form-label.small:has-text('Autorizado por') + input.form-control").first().fill("Jefe técnico LARS t02");
         await page.locator("label.form-label.small:has-text('Motivo de autorización') + input.form-control").first().fill("Autorización operativa t02");
         await page.getByTestId("equipment-modal-next").click();
-        await page.locator("input[placeholder='QR, código de barras, serial o placa']").first().waitFor({ state: "visible", timeout: timeoutMs });
+        await scannerInput.waitFor({ state: "visible", timeout: timeoutMs });
     }
 
     console.log("STEP 5: paso Evidencia (identificador + 4 caras) …");
     await setRequiredFaceEvidence(page);
-    const completeFacesBadge = page.locator(".evidence-card .badge", { hasText: "Caras completas" }).first();
+    // En el paso de ingreso la señal de estado es el badge del panel "Fotos obligatorias"
+    // (.evidence-side-panel): 'Completas' cuando hasRequiredFaceEvidence() pasa. El texto
+    // 'Caras completas' solo existe en la tarjeta de revisión posterior (reviewItems).
+    // isVisible({timeout}) NO espera: se usa waitFor para dar tiempo al commit visual.
+    // El template del badge lleva saltos de línea alrededor de la interpolación:
+    // anclar con \s* y sin bandera /i para no capturar 'Caras completas' (revisión) ni 'Pendientes'.
+    const completeFacesBadge = page.locator(".evidence-side-panel span.badge", { hasText: /^\s*Completas\s*$/ }).first();
     result.checks.evidenceUploaded = await completeFacesBadge
-        .isVisible({ timeout: 15000 })
+        .waitFor({ state: "visible", timeout: 15000 })
+        .then(() => true)
         .catch(() => false);
     if (!result.checks.evidenceUploaded) {
         result.observations.push("HALLAZGO: la evidencia no quedó con las 4 caras obligatorias completas.");
@@ -474,11 +521,11 @@ try {
 
     const apiChecks =
         String(savedItem?.marca || "") === "Siemens" &&
-        String(savedItem?.familyName || "") === "PLC" &&
+        // Familia ahora es select estándar (STANDARD_EQUIPMENT_FAMILIES): el test eligió CE.
+        String(savedItem?.familyName || "") === "CE - Tarjeta Electrónica" &&
         String(savedItem?.serie || "") === uniqueSerie &&
         String(savedItem?.receivedIdentifier || "") === equipmentCode &&
         String(savedItem?.failureDescription || "") === failureText &&
-        String(savedItem?.accessories || "") === accessoriesText &&
         String(savedItem?.answers?.costAboveTwoMillion || "") === "Sí" &&
         String(savedItem?.answers?.electronicsAccessible || "") === "Sí" &&
         Boolean(savedItem?.storageLocationName || savedItem?.storageLocationId) &&

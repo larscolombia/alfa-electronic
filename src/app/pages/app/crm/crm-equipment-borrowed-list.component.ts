@@ -10,54 +10,7 @@ import { createBorrowedEntry, normalizeBorrowedEntry } from "./crm-prospect-equi
     standalone: true,
     imports: [CommonModule, FormsModule],
     template: `
-        <section class="received-items" [attr.aria-label]="'Accesorios recibidos con el equipo ' + (itemIndex + 1)">
-            <div class="d-flex align-items-center gap-2 mb-2">
-                <i class="bi bi-box-seam text-theme" aria-hidden="true"></i>
-                <h6 class="mb-0">Accesorios recibidos con el equipo</h6>
-            </div>
-            <label class="form-label" for="accessory-draft-{{ itemIndex }}">Accesorios incluidos con el equipo</label>
-            <div class="input-group">
-                <input
-                    #accessoryDraft
-                    [id]="'accessory-draft-' + itemIndex"
-                    class="form-control"
-                    [(ngModel)]="draftAccessory"
-                    [ngModelOptions]="{ standalone: true }"
-                    (keyup.enter)="addAccessory()"
-                    placeholder="Ej.: Cable USB, cargador original, CD..." />
-                <button
-                    class="btn btn-outline-theme"
-                    type="button"
-                    [disabled]="!draftAccessory.trim()"
-                    [attr.data-testid]="'equipment-modal-add-accessory-' + itemIndex"
-                    (click)="addAccessory(); accessoryDraft.focus()">
-                    <i class="bi bi-plus-lg me-1" aria-hidden="true"></i> Agregar
-                </button>
-            </div>
-            <div class="form-text">Quedan registrados como parte del equipo recibido. Pulsa Enter o el botón para agregar.</div>
-
-            <div class="vstack gap-2 mt-2" *ngIf="accessoryItems.length > 0; else accessoryEmptyState">
-                <div class="input-group input-group-sm" *ngFor="let acc of accessoryItems; let accIndex = index; trackBy: trackByAccessoryIndex">
-                    <span class="input-group-text">{{ accIndex + 1 }}</span>
-                    <input
-                        class="form-control"
-                        [attr.aria-label]="'Accesorio ' + (accIndex + 1) + ': ' + acc"
-                        [ngModel]="acc"
-                        [ngModelOptions]="{ standalone: true }"
-                        (ngModelChange)="onAccessoryItemChange(accIndex, $event)" />
-                    <button
-                        class="btn btn-outline-danger"
-                        type="button"
-                        aria-label="Eliminar accesorio {{ acc }}"
-                        [attr.data-testid]="'equipment-modal-remove-accessory-' + itemIndex + '-' + accIndex"
-                        (click)="removeAccessory(accIndex)">
-                        Quitar
-                    </button>
-                </div>
-            </div>
-            <ng-template #accessoryEmptyState>
-                <div class="small text-secondary border rounded px-2 py-2 mt-2">Sin accesorios registrados.</div>
-            </ng-template>
+        <section class="received-items" [attr.aria-label]="'Elementos prestados para prueba del equipo ' + (itemIndex + 1)">
 
             <details class="borrowed-equipment-repeater mt-3" [open]="entries.length > 0">
                 <summary class="d-flex align-items-center justify-content-between gap-2">
@@ -111,39 +64,6 @@ export class CrmEquipmentBorrowedListComponent {
     @Input({ required: true }) item!: ProspectEquipmentItem;
     @Input() itemIndex = 0;
 
-    // `item.accessories` sigue siendo el único source of truth (string en store/API/BD).
-    // Delimitador \n para que los nombres con coma no se fragmenten; las vistas de solo
-    // lectura usan white-space: pre-line. Se re-serializa en cada mutación.
-    draftAccessory = "";
-
-    get accessoryItems(): string[] {
-        const raw = this.item.accessories ?? "";
-        return String(raw).split(/\r?\n/).map((part) => part.trim()).filter(Boolean);
-    }
-
-    trackByAccessoryIndex(index: number): number {
-        return index;
-    }
-
-    private syncAccessories(items: string[]): void {
-        this.item.accessories = items.map((value) => String(value ?? "").trim()).filter(Boolean).join("\n");
-    }
-
-    addAccessory(): void {
-        const value = this.draftAccessory.trim();
-        if (!value) return;
-        this.syncAccessories([...this.accessoryItems, value]);
-        this.draftAccessory = "";
-    }
-
-    onAccessoryItemChange(index: number, value: string): void {
-        const next = this.accessoryItems.map((entry, currentIndex) => (currentIndex === index ? String(value ?? "") : entry));
-        this.syncAccessories(next);
-    }
-
-    removeAccessory(index: number): void {
-        this.syncAccessories(this.accessoryItems.filter((_, currentIndex) => currentIndex !== index));
-    }
 
     get entries(): ProspectEquipmentBorrowedEquipment[] {
         return (this.item.borrowedEquipments ?? []).map((entry) => normalizeBorrowedEntry(entry));

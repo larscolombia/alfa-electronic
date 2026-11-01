@@ -38,9 +38,13 @@ const MENU_MARGIN_PX = 8;
                 (keydown.escape)="isOpen && $event.stopPropagation(); close()">
                 <span class="text-truncate" [class.text-secondary]="!displayLabel">{{ displayLabel || placeholder }}</span>
             </button>
+            <!-- keydown.escape en el menú: cierra desde cualquier foco interno (los inputs
+                 de hora/minuto no tienen manejador propio); el valor ya quedó emitido al
+                 elegir día/hora, Escape solo confirma y cierra. -->
             <div
                 class="crm-modal-dt-menu"
                 *ngIf="isOpen"
+                (keydown.escape)="close()"
                 [style.top.px]="menuTop"
                 [style.left.px]="menuLeft">
                 <div class="d-flex justify-content-between align-items-center mb-2">
