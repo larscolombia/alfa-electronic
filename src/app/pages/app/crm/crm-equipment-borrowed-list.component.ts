@@ -10,10 +10,10 @@ import { createBorrowedEntry, normalizeBorrowedEntry } from "./crm-prospect-equi
     standalone: true,
     imports: [CommonModule, FormsModule],
     template: `
-        <section class="received-items" [attr.aria-label]="'Elementos recibidos del equipo ' + (itemIndex + 1)">
+        <section class="received-items" [attr.aria-label]="'Accesorios recibidos con el equipo ' + (itemIndex + 1)">
             <div class="d-flex align-items-center gap-2 mb-2">
                 <i class="bi bi-box-seam text-theme" aria-hidden="true"></i>
-                <h6 class="mb-0">Elementos recibidos</h6>
+                <h6 class="mb-0">Accesorios recibidos con el equipo</h6>
             </div>
             <label class="form-label" [for]="'equipment-accessories-' + itemIndex">Accesorios incluidos con el equipo</label>
             <input

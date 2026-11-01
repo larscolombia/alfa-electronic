@@ -12,6 +12,7 @@ const wait = page => page.waitForTimeout(500);
 const result = {
   case: "REC-06",
   login: false,
+  accessoriesHeadingExact: false,
   checkboxLabelExact: false,
   checkboxChecked: false,
   warningChipVisible: false,
@@ -65,6 +66,15 @@ try {
   // Ruta de registro manual libera los inputs Marca/Tipo/Serie (en el modo catálogo quedan readonly).
   await selectCustomModal(page, modal.locator("[data-testid^='equipment-modal-registration-mode-']").first(), "manual");
   for (const [placeholder, value] of [["Marca del equipo", "Marca QA"], ["Tipo / referencia", "Tipo QA"], ["Serie o referencia visible", `SER-${id}`]]) await modal.locator(`input[placeholder='${placeholder}']`).fill(value);
+
+  // Celda renombrada: "Elementos recibidos" -> "Accesorios recibidos con el equipo".
+  // getByText casa también a ancestros (el <div> padre tiene el mismo texto normalizado):
+  // por eso la aserción va sobre el h6 del DOM, y el nombre viejo debe tener CERO ocurrencias.
+  const receivedSection = modal.locator("section.received-items").first();
+  result.accessoriesHeadingExact =
+    (await receivedSection.locator("h6").innerText()).trim() === "Accesorios recibidos con el equipo" &&
+    (await modal.getByText(/Elementos recibidos/i).count()) === 0;
+  if (!result.accessoriesHeadingExact) throw new Error(`El titulo de la celda de accesorios no es "Accesorios recibidos con el equipo" (o sigue apareciendo el nombre viejo): ${JSON.stringify(await receivedSection.locator("h6, label").allInnerTexts())}`);
 
   // El checkbox debe existir con la etiqueta nueva EXACTA (una sola ocurrencia en el modal).
   const labelIssueBox = modal.getByLabel(/^Equipo con Etiqueta rota, ilegible o sin etiqueta$/i);
