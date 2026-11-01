@@ -21,6 +21,7 @@ import {
 import { buildEvidencePhotosFromFiles } from "./crm-prospect-equipment-evidence.util";
 import {
     getEvidenceRequirementsError,
+    isAccessoriesEvidenceMissing,
     isSerialPlateEvidenceMissing,
     isSerieExceptionReasonMissing,
     isVisibleDamageSaveBlocked,
@@ -85,7 +86,7 @@ const STANDARD_SERVICE_TYPES = [
     { id: "service-intercambio", name: "Intercambio" },
 ] as const;
 
-const REQUIRED_FACE_EVIDENCE_TYPES: readonly ProspectEquipmentEvidenceType[] = ["face-front", "face-back", "face-left", "face-right"];
+const REQUIRED_FACE_EVIDENCE_TYPES: readonly ProspectEquipmentEvidenceType[] = ["face-front", "face-back", "serial-plate"];
 
 const FACE_EVIDENCE_LABELS: Record<ProspectEquipmentEvidenceType, string> = {
     general: "Vista general",
@@ -869,6 +870,9 @@ type SoftwareBackupInfo = {
                                         <div class="alert alert-warning py-2 mb-3" *ngIf="isSerialPlateEvidenceMissing(item)" data-testid="serial-plate-evidence-required">
                                             Placa o serie ilegible: sube una evidencia tipo "Placa / serie" y registra el motivo de excepción.
                                         </div>
+                                        <div class="alert alert-warning py-2 mb-3" *ngIf="isAccessoriesEvidenceMissing(item)" data-testid="accessories-evidence-required">
+                                            El equipo tiene accesorios reportados: se requiere evidencia fotográfica de accesorios.
+                                        </div>
 
                                         <app-crm-equipment-evidence-damage [item]="item"></app-crm-equipment-evidence-damage>
 
@@ -879,7 +883,7 @@ type SoftwareBackupInfo = {
                                                         <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
                                                             <div>
                                                                 <h6 class="mb-0">Fotos obligatorias</h6>
-                                                                <p class="small text-secondary mb-0">Carga una foto por cada cara del equipo.</p>
+                                                                <p class="small text-secondary mb-0">Carga una foto por cada evidencia obligatoria.</p>
                                                             </div>
                                                             <span class="badge" [class.text-bg-success]="hasRequiredFaceEvidence(item)" [class.text-bg-warning]="!hasRequiredFaceEvidence(item)">
                                                                 {{ hasRequiredFaceEvidence(item) ? 'Completas' : 'Pendientes' }}
@@ -1989,6 +1993,7 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy,
     }
 
     readonly isSerialPlateEvidenceMissing = isSerialPlateEvidenceMissing;
+    readonly isAccessoriesEvidenceMissing = isAccessoriesEvidenceMissing;
     readonly borrowedEntriesWithContent = borrowedEntriesWithContent;
 
     get filteredCompanyOptions(): CompanyCatalogOption[] {

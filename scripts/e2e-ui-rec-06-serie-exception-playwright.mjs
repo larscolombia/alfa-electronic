@@ -12,7 +12,14 @@ const wait = page => page.waitForTimeout(500);
 const result = {
   case: "REC-06",
   login: false,
-  accessoryCellRemoved: false,
+  accessoryCellPresent: false,
+  accessoryBtnDisabledWhenEmpty: false,
+  accessoryBtnEnabledWithText: false,
+  accessoryAddedViaButton: false,
+  accessoryAddedViaEnter: false,
+  accessoryInlineEditWorks: false,
+  accessoryRemoveSecond: false,
+  accessoryEmptyState: false,
   borrowedSectionKept: false,
   borrowedAddRemoveWorks: false,
   checkboxLabelExact: false,
@@ -34,13 +41,11 @@ const png1x1 = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
   "base64",
 );
-const evidenceTypes = ["serial-plate", "face-front", "face-back", "face-left", "face-right"];
+const evidenceTypes = ["serial-plate", "face-front", "face-back"];
 const typeLabels = {
   "serial-plate": "Placa / serie",
   "face-front": "Cara frente",
   "face-back": "Cara atrás",
-  "face-left": "Cara izquierda",
-  "face-right": "Cara derecha",
 };
 
 try {
@@ -69,13 +74,47 @@ try {
   await selectCustomModal(page, modal.locator("[data-testid^='equipment-modal-registration-mode-']").first(), "manual");
   for (const [placeholder, value] of [["Marca del equipo", "Marca QA"], ["Tipo / referencia", "Tipo QA"], ["Serie o referencia visible", `SER-${id}`]]) await modal.locator(`input[placeholder='${placeholder}']`).fill(value);
 
-  // La celda de accesorios fue eliminada (duplicaba a "Elementos prestados para prueba"):
-  // no debe quedar titulo, input ni boton en el paso Equipos.
-  result.accessoryCellRemoved =
-    (await modal.getByText("Accesorios recibidos con el equipo").count()) === 0 &&
-    (await modal.locator("[data-testid^='equipment-modal-add-accessory-']").count()) === 0 &&
-    (await modal.locator("input[id^='accessory-draft-']").count()) === 0;
-  if (!result.accessoryCellRemoved) throw new Error(`La celda de accesorios deberia estar eliminada del paso Equipos: titulo=${await modal.getByText("Accesorios recibidos con el equipo").count()}, testidAdd=${await modal.locator("[data-testid^='equipment-modal-add-accessory-']").count()}`);
+  // Celda ACCESORIOS RECIBIDOS CON EL EQUIPO (input libre + boton AGREGAR). Cada accesorio
+  // queda como fila editable inline; se prueba add por boton y Enter, edit inline y quitar.
+  // La lista se deja VACIA al final para no disparar ACCESSORIES_EVIDENCE_ERROR en Evidencia.
+  const accessoryHeading = modal.getByText("Accesorios recibidos con el equipo", { exact: true });
+  result.accessoryCellPresent = (await accessoryHeading.count()) === 1 && (await modal.locator("input[id^='accessory-draft-']").first().isVisible());
+  if (!result.accessoryCellPresent) throw new Error(`Falta la celda "Accesorios recibidos con el equipo" en el paso Equipos: titulo=${await accessoryHeading.count()}`);
+
+  const accDraft = modal.locator("input[id^='accessory-draft-']").first();
+  const accAdd = modal.getByTestId("equipment-modal-add-accessory-0");
+  result.accessoryBtnDisabledWhenEmpty = await accAdd.isDisabled();
+  if (!result.accessoryBtnDisabledWhenEmpty) throw new Error(`El boton Agregar deberia estar disabled con el input vacio`);
+
+  // Add por boton: fila editable registrada y draft vaciado.
+  await accDraft.fill("Cable USB"); await wait(page);
+  result.accessoryBtnEnabledWithText = !(await accAdd.isDisabled());
+  if (!result.accessoryBtnEnabledWithText) throw new Error(`El boton Agregar deberia habilitarse al escribir texto`);
+  await accAdd.click(); await wait(page);
+  const accRowByValue = (n, value) => modal.locator(`input[aria-label='Accesorio ${n}: ${value}']`).first();
+  result.accessoryAddedViaButton = (await accRowByValue(1, "Cable USB").isVisible()) && (await accDraft.inputValue()) === "";
+  if (!result.accessoryAddedViaButton) throw new Error(`Agregar por boton no registro la fila o no vacio el draft: filas=${await modal.locator("input[aria-label^='Accesorio ']").count()}, draft='${await accDraft.inputValue()}'`);
+
+  // Add por Enter: segundo accesorio.
+  await accDraft.fill("Cargador original");
+  await accDraft.press("Enter"); await wait(page);
+  result.accessoryAddedViaEnter = (await modal.locator("input[aria-label^='Accesorio ']").count()) === 2 && (await accRowByValue(2, "Cargador original").isVisible());
+  if (!result.accessoryAddedViaEnter) throw new Error(`Agregar con Enter no dejo exactamente 2 filas: count=${await modal.locator("input[aria-label^='Accesorio ']").count()}`);
+
+  // Editar inline el primer accesorio.
+  await accRowByValue(1, "Cable USB").fill("Cable HDMI (editado)"); await wait(page);
+  result.accessoryInlineEditWorks = (await modal.locator(`input[aria-label='Accesorio 1: Cable HDMI (editado)']`).count()) === 1 && (await accRowByValue(1, "Cable USB").count()) === 0;
+  if (!result.accessoryInlineEditWorks) throw new Error(`Editar inline no actualizo el valor del primer accesorio`);
+
+  // Quitar el segundo -> queda solo uno.
+  await modal.getByTestId("equipment-modal-remove-accessory-0-1").click(); await wait(page);
+  result.accessoryRemoveSecond = (await modal.locator("input[aria-label^='Accesorio ']").count()) === 1;
+  if (!result.accessoryRemoveSecond) throw new Error(`Quitar el segundo accesorio no dejo 1 fila: count=${await modal.locator("input[aria-label^='Accesorio ']").count()}`);
+
+  // Quitar el ultimo -> estado vacio visible.
+  await modal.getByTestId("equipment-modal-remove-accessory-0-0").click(); await wait(page);
+  result.accessoryEmptyState = (await modal.locator("input[aria-label^='Accesorio ']").count()) === 0 && (await modal.getByText("Sin accesorios registrados.", { exact: true }).isVisible());
+  if (!result.accessoryEmptyState) throw new Error(`Quitar el ultimo accesorio no mostro el estado vacio`);
 
   // La seccion "Elementos prestados para prueba" (la que queda) sigue operativa:
   // abrir details -> Agregar una entrada -> fila editable -> quitarla -> lista vacia.
@@ -135,7 +174,7 @@ try {
   result.blockedWithoutEvidence = (await modal.getByTestId("equipment-modal-validation-message").isVisible()) && /placa o serie ilegible/i.test(await modal.innerText());
   if (!result.serialPlateWarningVisible || !result.blockedWithoutEvidence) throw new Error(`La evidencia sin placa/serie no quedó bloqueada. Texto modal: ${(await modal.innerText()).slice(0, 900)}`);
 
-  // Ruta exitosa: foto placa/serie + 4 caras.
+  // Ruta exitosa: foto placa/serie + 2 caras (frente y atrás).
   const files = evidenceTypes.map((type) => {
     const path = join(tmpdir(), `rec06-${type}-${id}.png`);
     writeFileSync(path, png1x1);
@@ -143,7 +182,7 @@ try {
   });
   // input[capture=...] coincide también con los 4 slots de cara (strict-mode violation): usar el multi-input único.
   await modal.getByTestId("evidence-files-input").setInputFiles(files);
-  await modal.locator(".evidence-photo-card").nth(4).waitFor({ state: "visible", timeout: 30000 });
+  await modal.locator(".evidence-photo-card").nth(2).waitFor({ state: "visible", timeout: 30000 });
   for (let i = 0; i < evidenceTypes.length; i++) {
     await selectCustomModal(page, modal.locator(".evidence-photo-card").nth(i).getByTestId("equipment-modal-evidence-type"), { label: typeLabels[evidenceTypes[i]] });
     await wait(page);

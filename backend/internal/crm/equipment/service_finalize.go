@@ -9,7 +9,7 @@ import (
 
 var errFinalizeEvidenceFacesRequired = errors.New("faltan evidencias por cara obligatorias")
 
-var requiredEvidenceFaces = []string{"face-front", "face-back", "face-left", "face-right"}
+var requiredEvidenceFaces = []string{"face-front", "face-back", "serial-plate"}
 
 func (s *Service) FinalizeRecord(companyID, recordID string) (Record, error) {
 	normalizedRecordID := strings.TrimSpace(recordID)

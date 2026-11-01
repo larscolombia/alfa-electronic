@@ -6,6 +6,8 @@ export const SERIAL_PLATE_EVIDENCE_ERROR =
     "Placa o serie ilegible: registra el motivo de excepción y sube una foto de placa / serie (tipo Placa / serie).";
 export const SERIE_EXCEPTION_REASON_ERROR =
     "Equipo con Etiqueta rota, ilegible o sin etiqueta: registra el motivo de excepción antes de continuar.";
+export const ACCESSORIES_EVIDENCE_ERROR =
+    "El equipo tiene accesorios reportados: se requiere evidencia fotográfica de accesorios.";
 export const VISIBLE_DAMAGE_ERROR =
     "Daño visible reportado: se requiere evidencia de daño visible con nota y confirmación del cliente.";
 
@@ -36,9 +38,17 @@ export function isSerieExceptionReasonMissing(item: ProspectEquipmentItem): bool
     return Boolean(item.identifierLabelIssue) && !(item.serieExceptionReason || "").trim();
 }
 
+export function isAccessoriesEvidenceMissing(item: ProspectEquipmentItem): boolean {
+    return Boolean(item.accessories?.trim()) && !hasEvidenceType(item, "accessories");
+}
+
 export function getEvidenceRequirementsError(item: ProspectEquipmentItem): string | null {
     if (isSerialPlateEvidenceMissing(item)) {
         return SERIAL_PLATE_EVIDENCE_ERROR;
+    }
+
+    if (isAccessoriesEvidenceMissing(item)) {
+        return ACCESSORIES_EVIDENCE_ERROR;
     }
 
     return null;
