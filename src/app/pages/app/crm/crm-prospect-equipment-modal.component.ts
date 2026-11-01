@@ -237,7 +237,7 @@ type SoftwareBackupInfo = {
                         </div>
 
                         <div class="d-flex justify-content-end mb-3">
-                            <button class="btn btn-outline-theme" type="button" *ngIf="currentWizardStep.key === 'equipment'" data-testid="equipment-modal-add-item" (click)="addEquipmentItem()">
+                            <button class="btn btn-outline-theme" type="button" *ngIf="currentWizardStep.key === 'equipment' && allowMultipleEquipment" data-testid="equipment-modal-add-item" (click)="addEquipmentItem()">
                                 <i class="bi bi-plus-lg me-1"></i> Agregar equipo
                             </button>
                         </div>
@@ -1856,6 +1856,10 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy,
     @Input({ required: true }) prospect: ProspectRecord | null = null;
     @Input() initialRecord: ProspectEquipmentRecord | null = null;
     @Input() navigateToProjectsOnSave = true;
+    // 2026-11-01 — registro múltiple (botón "Agregar equipo") desactivado por defecto:
+    // la recepción registra un solo equipo a la vez. Los call sites que lo necesiten
+    // lo habilitan explícitamente con [allowMultipleEquipment]="true".
+    @Input() allowMultipleEquipment = false;
     @Output() closed = new EventEmitter<void>();
     @Output() saved = new EventEmitter<void>();
     @ViewChild("scannerVideo") scannerVideo?: ElementRef<HTMLVideoElement>;

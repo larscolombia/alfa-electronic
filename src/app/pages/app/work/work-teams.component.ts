@@ -353,10 +353,14 @@ const WORK_DIRECT_PROSPECT: ProspectRecord = {
         </div>
 
         @if (showEditor) {
+            <!-- 2026-11-01 — registro múltiple oculto en recepción: solo se agrega un equipo a la vez.
+                 Para reactivar el botón "Agregar equipo", pon allowMultipleEquipmentReception = true
+                 en esta clase (una sola línea; la funcionalidad del modal sigue intacta). -->
             <app-crm-prospect-equipment-modal
                 [prospect]="editorProspect"
                 [initialRecord]="editorRecord"
                 [navigateToProjectsOnSave]="false"
+                [allowMultipleEquipment]="allowMultipleEquipmentReception"
                 (closed)="closeEditor()"
                 (saved)="handleSaved()"></app-crm-prospect-equipment-modal>
         }
@@ -375,6 +379,9 @@ export class WorkTeamsComponent implements AfterViewInit, OnDestroy {
     tableVisible = true;
     editorRecord: ProspectEquipmentRecord | null = null;
     editorProspect: ProspectRecord = WORK_DIRECT_PROSPECT;
+    // 2026-11-01 — registro múltiple desactivado en recepción (botón "Agregar equipo" del modal):
+    // solo se agrega un equipo a la vez. Para reactivarlo, pon esta constante en true.
+    readonly allowMultipleEquipmentReception = false;
     pageTitle = "Trabajo - Equipos";
     pageSubtitle = "CRUD de recepciones de equipos usando el mismo formulario operativo de CRM y una lista tipo datatable.";
     breadcrumbLabel = "Equipos";

@@ -427,6 +427,7 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
         <app-crm-prospect-equipment-modal
             *ngIf="selectedEquipmentProspect"
             [prospect]="selectedEquipmentProspect"
+            [allowMultipleEquipment]="true"
             (closed)="closeEquipmentModal()"
             (saved)="handleEquipmentSaved()"></app-crm-prospect-equipment-modal>
     `,
