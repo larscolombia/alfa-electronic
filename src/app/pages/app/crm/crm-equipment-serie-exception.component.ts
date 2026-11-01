@@ -12,7 +12,7 @@ import type { ProspectEquipmentItem } from "./crm-prospect-equipment.store";
         <div class="col-12" *ngIf="item.identifierLabelIssue">
             <div class="border rounded p-3 bg-warning-subtle">
                 <label class="form-label fw-semibold" [for]="'serie-exception-reason-' + item.id">
-                    Motivo de excepción (etiqueta rota o ilegible) <span class="text-danger">*</span>
+                    Motivo de excepción (equipo con etiqueta rota, ilegible o sin etiqueta) <span class="text-danger">*</span>
                 </label>
                 <input
                     class="form-control"

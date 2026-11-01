@@ -609,7 +609,7 @@ type SoftwareBackupInfo = {
                                                         <div class="col-12 col-lg-4">
                                                             <div class="form-check mb-0">
                                                                 <input class="form-check-input" type="checkbox" [id]="'label-issue-' + item.id" [(ngModel)]="item.identifierLabelIssue" [ngModelOptions]="{ standalone: true }" />
-                                                                <label class="form-check-label" [for]="'label-issue-' + item.id">Etiqueta rota o ilegible</label>
+                                                                <label class="form-check-label" [for]="'label-issue-' + item.id">Equipo con Etiqueta rota, ilegible o sin etiqueta</label>
                                                             </div>
                                                         </div>
                                                         <div class="col-12 col-lg-4">
@@ -942,7 +942,7 @@ type SoftwareBackupInfo = {
                                                     <p class="small text-secondary mb-3" *ngIf="!cameraScannerSupported">Este navegador no expone cámara para lectura continua. El campo manual sigue disponible.</p>
 
                                                     <label class="form-label">Tomar fotos / subir evidencia</label>
-                                                    <input class="form-control" type="file" accept="image/*" capture="environment" multiple (change)="handleEvidenceFilesSelected(item, $event)" />
+                                                    <input class="form-control" type="file" accept="image/*" capture="environment" multiple data-testid="evidence-files-input" (change)="handleEvidenceFilesSelected(item, $event)" />
                                                     <p class="small text-secondary mb-3 mt-2">En móvil, el atributo capture intenta abrir la cámara trasera. Puedes cargar tantas fotos como necesites.</p>
 
                                                     <label class="form-label">Formato físico firmado (imagen o PDF)</label>
@@ -1896,7 +1896,10 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy,
     readonly questionDefinitions: readonly ProspectEquipmentQuestionDefinition[] = PROSPECT_EQUIPMENT_QUESTION_DEFINITIONS;
     readonly priorityQuestionKey = "priorityPaidDiagnosis";
     readonly industrialCostQuestionKey = "costAboveTwoMillion";
-    readonly maxVisibleItemWarnings = 4;
+    // Ventana de chips visibles: debe cubrir las 5 warnings que pueden anteceder a label-issue
+    // (manual-entry, pending-homologation, missing-service, missing-location, missing-series).
+    // Con 4, marcar "Equipo con Etiqueta rota..." en modo manual enterraba su chip detrás del badge "+N".
+    readonly maxVisibleItemWarnings = 6;
     readonly requiredFaceEvidenceTypes = REQUIRED_FACE_EVIDENCE_TYPES;
     /**
      * Fase 6: el catálogo viene del servidor, así que ya no puede resolverse una

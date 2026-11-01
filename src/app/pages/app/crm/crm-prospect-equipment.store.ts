@@ -378,7 +378,7 @@ export function getProspectEquipmentWarnings(
     }
 
     if (Boolean(item.identifierLabelIssue)) {
-        warnings.push({ code: "label-issue", label: "Etiqueta rota" });
+        warnings.push({ code: "label-issue", label: "Equipo con Etiqueta rota, ilegible o sin etiqueta" });
     }
 
     if (!item.receivedIdentifier?.trim()) {
