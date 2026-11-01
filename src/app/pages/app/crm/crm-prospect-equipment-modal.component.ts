@@ -634,9 +634,10 @@ type SoftwareBackupInfo = {
                                             <div class="col-12 col-lg-6">
                                                 <app-crm-equipment-borrowed-list [item]="item" [itemIndex]="i"></app-crm-equipment-borrowed-list>
                                             </div>
-                                            <div class="col-12 col-lg-6">
+                                            <!-- 2026-11-01 — la descripción de falla ocupa el ancho completo (más espacio horizontal, no vertical): rows bajó a 2. -->
+                                            <div class="col-12">
                                                 <label class="form-label">Descripción de la falla / error / alarma que presenta el equipo</label>
-                                                <textarea class="form-control" rows="3" [(ngModel)]="item.failureDescription" [ngModelOptions]="{ standalone: true }"></textarea>
+                                                <textarea class="form-control" rows="2" [(ngModel)]="item.failureDescription" [ngModelOptions]="{ standalone: true }"></textarea>
                                             </div>
                                             <div class="col-12">
                                                 <div class="border rounded p-3 bg-light-subtle">
