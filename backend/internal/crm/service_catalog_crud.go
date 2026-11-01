@@ -18,11 +18,6 @@ func (s *Service) Catalogs(companyID string) (CatalogsResponse, error) {
 		return CatalogsResponse{}, err
 	}
 
-	sources, err := s.listCatalogItems(ctx, companyID, CatalogTypeSources)
-	if err != nil {
-		return CatalogsResponse{}, err
-	}
-
 	services, err := s.listCatalogItems(ctx, companyID, CatalogTypeServices)
 	if err != nil {
 		return CatalogsResponse{}, err
@@ -35,7 +30,6 @@ func (s *Service) Catalogs(companyID string) (CatalogsResponse, error) {
 
 	return CatalogsResponse{
 		Employees: employees,
-		Sources:   sources,
 		Services:  services,
 		Zones:     zones,
 	}, nil

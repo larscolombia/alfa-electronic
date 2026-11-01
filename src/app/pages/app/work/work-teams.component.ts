@@ -47,7 +47,6 @@ const WORK_DIRECT_PROSPECT: ProspectRecord = {
     pais: "Colombia",
     ciudad: "",
     direccion: "",
-    fuente: "Trabajo",
     ciiuCode: "",
     branches: [],
 };
@@ -792,7 +791,6 @@ export class WorkTeamsComponent implements AfterViewInit, OnDestroy {
             telefonoOficina: record.phone,
             ciudad: record.city,
             direccion: record.address,
-            fuente: record.sourceContext === "work" ? "Trabajo" : WORK_DIRECT_PROSPECT.fuente,
         };
     }
 

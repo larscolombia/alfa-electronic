@@ -39,5 +39,6 @@ func migrationStatements() []string {
 	statements = append(statements, migrationStatementsCRMProspectFieldCleanup()...)
 	statements = append(statements, migrationStatementsCRMAccountsBackfill()...)
 	statements = append(statements, migrationStatementsEquipmentCodeSequences()...)
+	statements = append(statements, migrationStatementsCRMDropSource()...)
 	return statements
 }

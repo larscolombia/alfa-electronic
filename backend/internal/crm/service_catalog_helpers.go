@@ -62,8 +62,6 @@ func normalizeCatalogType(raw string) (string, error) {
 	switch strings.ToLower(strings.TrimSpace(raw)) {
 	case CatalogTypeEmployees, "empleados", "empleado", "employee":
 		return CatalogTypeEmployees, nil
-	case CatalogTypeSources, "fuentes", "fuente", "source":
-		return CatalogTypeSources, nil
 	case CatalogTypeServices, "servicios", "servicio", "service":
 		return CatalogTypeServices, nil
 	case CatalogTypeZones, "zonas", "zona":

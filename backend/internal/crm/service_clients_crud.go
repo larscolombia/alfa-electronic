@@ -323,13 +323,13 @@ FOR UPDATE;
 		_, err = tx.ExecContext(ctx, `
 INSERT INTO crm_prospects (
     id, company_id, name, email, mobile, company, nit,
-    assigned_employee, source, ciiu_code, zone, prospect_value,
+    assigned_employee, ciiu_code, zone, prospect_value,
     allow_follow_up, status, service, note, website, office_phone,
     country, city, address, quotations, soft_delete, created_at, updated_at
 )
 VALUES (
     $1, $2, $3, $4, '', $5, $6,
-    '', '', '', $7, 0,
+    '', '', $7, 0,
     true, 'Pendiente', '', '', $8, $9,
     $10, $11, $12, 0, false, NOW(), NOW()
 );

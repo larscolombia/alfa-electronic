@@ -112,7 +112,6 @@ func (s *Service) normalizeProspectPayload(req UpsertProspectRequest) (normalize
 
 	allowFollowUp := boolValueOrDefault(req.AllowFollowUp, true)
 	assignedEmployee := normalizeCatalogSelection(req.AssignedEmployee, CatalogTypeEmployees)
-	source := normalizeCatalogSelection(req.Source, CatalogTypeSources)
 	ciiuCode := strings.TrimSpace(req.CiiuCode)
 	if len(ciiuCode) > 10 {
 		return normalizedProspectInput{}, newValidationError("el código CIIU no puede superar 10 caracteres")
@@ -134,7 +133,6 @@ func (s *Service) normalizeProspectPayload(req UpsertProspectRequest) (normalize
 		Company:          company,
 		Nit:              nit,
 		AssignedEmployee: assignedEmployee,
-		Source:           source,
 		CiiuCode:         ciiuCode,
 		Zone:             zone,
 		ProspectValue:    req.ProspectValue,
@@ -206,7 +204,6 @@ func scanProspect(scanner interface{ Scan(dest ...any) error }) (Prospect, error
 		&item.Company,
 		&item.Nit,
 		&item.AssignedEmployee,
-		&item.Source,
 		&item.CiiuCode,
 		&item.Zone,
 		&item.ProspectValue,

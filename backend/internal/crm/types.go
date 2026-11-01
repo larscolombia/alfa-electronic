@@ -7,7 +7,6 @@ type CatalogItem struct {
 
 type CatalogsResponse struct {
 	Employees []CatalogItem `json:"employees"`
-	Sources   []CatalogItem `json:"sources"`
 	Services  []CatalogItem `json:"services"`
 	Zones     []CatalogItem `json:"zones"`
 }
@@ -47,7 +46,6 @@ type Prospect struct {
 	Company          string   `json:"company"`
 	Nit              string   `json:"nit"`
 	AssignedEmployee string   `json:"assignedEmployee"`
-	Source           string   `json:"source"`
 	CiiuCode         string   `json:"ciiuCode"`
 	Zone             string   `json:"zone"`
 	ProspectValue    int64    `json:"prospectValue"`
@@ -79,7 +77,6 @@ type UpsertProspectRequest struct {
 	Company          string                `json:"company"`
 	Nit              string                `json:"nit"`
 	AssignedEmployee string                `json:"assignedEmployee"`
-	Source           string                `json:"source"`
 	CiiuCode         string                `json:"ciiuCode"`
 	Zone             string                `json:"zone"`
 	ProspectValue    int64                 `json:"prospectValue"`

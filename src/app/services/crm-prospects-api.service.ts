@@ -48,7 +48,6 @@ export interface CrmProspectRecord {
     pais: string;
     ciudad: string;
     direccion: string;
-    fuente: string;
     ciiuCode: string;
     nota: string;
     branches: CrmBranchRecord[];
@@ -73,7 +72,6 @@ export interface CrmUpsertProspectPayload {
     company: string;
     nit: string;
     assignedEmployee: string;
-    source: string;
     ciiuCode: string;
     zone: string;
     prospectValue: number;
@@ -92,14 +90,12 @@ export interface CrmUpsertProspectPayload {
 
 export interface CrmCatalogsResponse {
     employees: string[];
-    sources: string[];
     services: string[];
     zones: string[];
 }
 
 type CrmCatalogsApiResponse = {
     employees?: Array<{ id: string; name: string }>;
-    sources?: Array<{ id: string; name: string }>;
     services?: Array<{ id: string; name: string }>;
     zones?: Array<{ id: string; name: string }>;
 };
@@ -123,7 +119,6 @@ type CrmProspectApiRecord = {
     country: string;
     city: string;
     address: string;
-    source: string;
     ciiuCode: string;
     note: string;
     createdAt: string;
@@ -151,14 +146,13 @@ export class CrmProspectsApiService {
         return from(this.request<CrmCatalogsApiResponse>("/api/v1/crm/catalogs", { method: "GET" })).pipe(
             map((response) => ({
                 employees: (response.employees ?? []).map((item) => item.name),
-                sources: (response.sources ?? []).map((item) => item.name),
                 services: (response.services ?? []).map((item) => item.name),
                 zones: (response.zones ?? []).map((item) => item.name),
             }))
         );
     }
 
-    addCatalogItem(catalogType: "employees" | "sources" | "services", name: string): Observable<void> {
+    addCatalogItem(catalogType: "employees" | "services", name: string): Observable<void> {
         return from(
             this.request<Record<string, never>>(`/api/v1/crm/catalogs/${encodeURIComponent(catalogType)}`, {
                 method: "POST",
@@ -267,7 +261,6 @@ export class CrmProspectsApiService {
             pais: String(item.country ?? "").trim() || "--",
             ciudad: String(item.city ?? "").trim() || "--",
             direccion: String(item.address ?? "").trim() || "--",
-            fuente: String(item.source ?? "").trim() || "--",
             ciiuCode: String(item.ciiuCode ?? "").trim(),
             nota: String(item.note ?? "").trim(),
             branches: this.mapBranches(item.branches),

@@ -35,7 +35,6 @@ export interface ProspectRecord {
     pais: string;
     ciudad: string;
     direccion: string;
-    fuente: string;
     ciiuCode: string;
     branches: ProspectBranchRecord[];
     nota?: string;
@@ -107,7 +106,6 @@ function normalizeProspect(record: Partial<ProspectRecord>, index: number): Pros
         pais: normalizeText(record.pais),
         ciudad: normalizeText(record.ciudad),
         direccion: normalizeText(record.direccion),
-        fuente: normalizeText(record.fuente),
         ciiuCode: normalizeText(record.ciiuCode),
         branches: normalizeBranches(record.branches),
         nota: normalizeText(record.nota),

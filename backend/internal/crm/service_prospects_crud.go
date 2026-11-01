@@ -158,14 +158,14 @@ func (s *Service) CreateProspect(companyID string, req UpsertProspectRequest) (P
 	prospectID := uuid.NewString()
 	if _, err := s.db.ExecContext(ctx, `
 	INSERT INTO crm_prospects (
-		id, company_id, name, email, mobile, company, nit, assigned_employee, source,
+		id, company_id, name, email, mobile, company, nit, assigned_employee,
 		ciiu_code, zone, prospect_value, allow_follow_up, status, service, note, website,
 	office_phone, country, city, address, quotations, soft_delete, created_at, updated_at
 )
 VALUES (
-	$1, $2, $3, $4, $5, $6, $7, $8, $9,
-	$10, $11, $12, $13, $14, $15, $16, $17,
-	$18, $19, $20, $21, $22, false, NOW(), NOW()
+	$1, $2, $3, $4, $5, $6, $7, $8,
+	$9, $10, $11, $12, $13, $14, $15, $16, $17,
+	$18, $19, $20, $21, false, NOW(), NOW()
 );
 `,
 		prospectID,
@@ -176,7 +176,6 @@ VALUES (
 		payload.Company,
 		payload.Nit,
 		payload.AssignedEmployee,
-		payload.Source,
 		payload.CiiuCode,
 		payload.Zone,
 		payload.ProspectValue,
@@ -230,23 +229,22 @@ UPDATE crm_prospects
 	company = $4,
 	nit = $5,
 	assigned_employee = $6,
-	source = $7,
-	ciiu_code = $8,
-	zone = $9,
-	prospect_value = $10,
-	allow_follow_up = $11,
-	status = $12,
-	service = $13,
-	note = $14,
-	website = $15,
-	office_phone = $16,
-	country = $17,
-	city = $18,
-	address = $19,
-	quotations = $20,
+	ciiu_code = $7,
+	zone = $8,
+	prospect_value = $9,
+	allow_follow_up = $10,
+	status = $11,
+	service = $12,
+	note = $13,
+	website = $14,
+	office_phone = $15,
+	country = $16,
+	city = $17,
+	address = $18,
+	quotations = $19,
 	updated_at = NOW()
-WHERE company_id = $21
-  AND id = $22
+WHERE company_id = $20
+  AND id = $21
   AND soft_delete = false;
 `,
 		payload.Name,
@@ -255,7 +253,6 @@ WHERE company_id = $21
 		payload.Company,
 		payload.Nit,
 		payload.AssignedEmployee,
-		payload.Source,
 		payload.CiiuCode,
 		payload.Zone,
 		payload.ProspectValue,

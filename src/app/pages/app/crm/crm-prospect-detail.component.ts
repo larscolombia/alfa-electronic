@@ -94,7 +94,7 @@ type LinkedPurchaseOrderSummary = {
     fileName: string;
 };
 
-type EditableProfileField = "correo" | "compania" | "sitioWeb" | "movil" | "telefonoOficina" | "pais" | "ciudad" | "zona" | "direccion" | "empleado" | "fuente";
+type EditableProfileField = "correo" | "compania" | "sitioWeb" | "movil" | "telefonoOficina" | "pais" | "ciudad" | "zona" | "direccion" | "empleado";
 
 type EditableProfileFieldConfig = {
     key: EditableProfileField;
@@ -225,22 +225,6 @@ type EditableProfileFieldConfig = {
                                                                 }
                                                                 @for (name of noteEmployeeOptions; track name) {
                                                                     <option [value]="name">{{ name }}</option>
-                                                                }
-                                                            </select>
-                                                        } @else if (field.key === "fuente") {
-                                                            <select
-                                                                class="form-select"
-                                                                [(ngModel)]="editingProfileFieldValue"
-                                                                [ngModelOptions]="{ standalone: true }"
-                                                                [disabled]="isSavingProfileField">
-                                                                <option value="">--</option>
-                                                                @if (editingProfileFieldValue && !sourceOptions.includes(editingProfileFieldValue)) {
-                                                                    <option [value]="editingProfileFieldValue" disabled>
-                                                                        {{ editingProfileFieldValue }} (fuente anterior)
-                                                                    </option>
-                                                                }
-                                                                @for (source of sourceOptions; track source) {
-                                                                    <option [value]="source">{{ source }}</option>
                                                                 }
                                                             </select>
                                                         } @else {
@@ -1065,7 +1049,6 @@ export class CrmProspectDetailComponent {
         { key: "zona", label: "Zona" },
         { key: "direccion", label: "Direccion" },
         { key: "empleado", label: "Empleado asignado" },
-        { key: "fuente", label: "Fuente del Prospecto" },
     ];
 
     noteTitle = "";
@@ -1074,7 +1057,6 @@ export class CrmProspectDetailComponent {
     // El valor histórico guardado se pinta siempre desde la plantilla, incluso si
     // esa persona hoy está inactiva o cambió de rol.
     noteEmployeeOptions: string[] = [];
-    sourceOptions: string[] = [];
     noteEmployee = "";
     noteDetail = "";
     notePersistSuccessMessage = "";
@@ -1167,16 +1149,6 @@ export class CrmProspectDetailComponent {
         private readonly router: Router,
         private readonly equipmentHistoryContextService: WorkEquipmentHistoryContextService,
     ) {
-        this.crmProspectsApi.catalogs().subscribe({
-            next: (catalogs) => {
-                this.sourceOptions = [...catalogs.sources];
-                this.cdr.detectChanges();
-            },
-            error: () => {
-                this.sourceOptions = [];
-            },
-        });
-
         this.routeSub = this.route.paramMap.subscribe((params) => {
             const rawId = params.get("id") ?? "";
             this.resolveProspect(rawId);
@@ -2300,7 +2272,6 @@ export class CrmProspectDetailComponent {
             company: resolveFieldValue("compania"),
             nit: this.normalizeProfileFieldValue(prospect.nit),
             assignedEmployee: resolveFieldValue("empleado"),
-            source: resolveFieldValue("fuente"),
             ciiuCode: this.normalizeProfileFieldValue(prospect.ciiuCode),
             zone: resolveFieldValue("zona"),
             prospectValue: Math.max(0, Math.floor(Number(prospect.valor) || 0)),
@@ -2357,8 +2328,6 @@ export class CrmProspectDetailComponent {
                 return String(prospect.direccion ?? "");
             case "empleado":
                 return String(prospect.empleado ?? "");
-            case "fuente":
-                return String(prospect.fuente ?? "");
             default:
                 return "";
         }

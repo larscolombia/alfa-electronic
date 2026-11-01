@@ -10,7 +10,6 @@ import (
 
 const (
 	CatalogTypeEmployees = "employees"
-	CatalogTypeSources   = "sources"
 	CatalogTypeServices  = "services"
 	CatalogTypeZones     = "zones"
 
@@ -24,7 +23,7 @@ const (
 	maxProspectsListLimit = 500
 	maxClientsListLimit   = 500
 
-	prospectSelectColumns = `id, name, email, mobile, company, nit, assigned_employee, source, ciiu_code,
+	prospectSelectColumns = `id, name, email, mobile, company, nit, assigned_employee, ciiu_code,
 	zone, prospect_value, allow_follow_up, status, service, note, website, office_phone,
 	country, city, address, quotations, created_at, updated_at`
 )
@@ -60,14 +59,12 @@ var (
 
 var catalogTypeOrder = []string{
 	CatalogTypeEmployees,
-	CatalogTypeSources,
 	CatalogTypeServices,
 	CatalogTypeZones,
 }
 
 var defaultCatalogItems = map[string][]string{
 	CatalogTypeEmployees: {"Ana Torres", "Carlos Mendez"},
-	CatalogTypeSources:   {"Formulario web", "Referido", "Campana"},
 	CatalogTypeServices:  {"Consultoria", "Implementacion", "Soporte"},
 	CatalogTypeZones:     {"Bogota", "Medellin", "Cali", "Barranquilla"},
 }
@@ -90,7 +87,6 @@ type normalizedProspectInput struct {
 	Company          string
 	Nit              string
 	AssignedEmployee string
-	Source           string
 	CiiuCode         string
 	Zone             string
 	ProspectValue    int64

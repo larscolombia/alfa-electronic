@@ -20,7 +20,7 @@ import { COUNTRY_OPTIONS, citiesForCountry } from "./country-city.dataset";
 import { CIIU_REV5_AC_OPTIONS } from "./ciiu-rev5-ac.data";
 import { GlobalSearchResult, GlobalSearchService } from "../../../services/global-search.service";
 
-type QuickAddTarget = "fuentes" | "servicios";
+type QuickAddTarget = "servicios";
 
 type ProspectFollowupBadge = {
     label: string;
@@ -183,7 +183,7 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
                         </div>
 
                         <div class="col-12"><hr class="my-2"><h6 class="text-uppercase text-secondary small fw-bold my-3">Clasificación y responsable</h6></div>
-                        <div class="col-12 col-lg-4 mb-2">
+                        <div class="col-12 col-lg-6 mb-2">
                             <label class="form-label" for="prospect-owner">Empleado responsable</label>
                             <select appSearchableSelect id="prospect-owner" class="form-select" [(ngModel)]="formEmpleado" name="formEmpleado">
                                 <option value="">--</option>
@@ -191,17 +191,7 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
                             </select>
                             <div class="form-text text-secondary">Solo empleados activos de RRHH con rol comercial. Si no aparece quien necesitas, créalo en el directorio de RRHH.</div>
                         </div>
-                        <div class="col-12 col-lg-4 mb-2">
-                            <label class="form-label" for="prospect-source">Fuente del Prospecto</label>
-                            <div class="input-group">
-                                <select appSearchableSelect id="prospect-source" class="form-select" [(ngModel)]="formFuente" name="formFuente">
-                                    <option value="">--</option>
-                                    <option *ngFor="let option of sourceOptions" [value]="option">{{ option }}</option>
-                                </select>
-                                <button class="btn btn-outline-secondary" type="button" (click)="openQuickAddModal('fuentes')">Agregar</button>
-                            </div>
-                        </div>
-                        <div class="col-12 col-lg-4 mb-2">
+                        <div class="col-12 col-lg-6 mb-2">
                             <label class="form-label" for="prospect-ciiu">CIIU Colombia</label>
                             <select appSearchableSelect id="prospect-ciiu" class="form-select" [(ngModel)]="formCiiuCode" name="formCiiuCode">
                                 <option value="">Buscar código o actividad económica</option>
@@ -574,11 +564,10 @@ export class CrmProspectsComponent {
     selectedProspectZone = "";
 
     employeeOptions: string[] = [];
-    sourceOptions: string[] = [];
     serviceOptions: string[] = [];
 
     isQuickAddModalOpen = false;
-    quickAddTarget: QuickAddTarget = "fuentes";
+    quickAddTarget: QuickAddTarget = "servicios";
     quickAddInput = "";
     quickAddErrorMessage = "";
     showProspectForm = false;
@@ -632,7 +621,6 @@ export class CrmProspectsComponent {
     }
     formDireccion = "";
     formEmpleado = "";
-    formFuente = "";
     formCiiuCode = "";
     readonly ciiuOptions = CIIU_REV5_AC_OPTIONS;
     formEstado = "Pendiente";
@@ -681,7 +669,6 @@ export class CrmProspectsComponent {
             formCiudad?: string;
             formDireccion?: string;
             formEmpleado?: string;
-            formFuente?: string;
             formCiiuCode?: string;
             formEstado?: string;
             formServicio?: string;
@@ -709,8 +696,7 @@ export class CrmProspectsComponent {
             if (this.showProspectForm && !this.formEmpleado.trim()) {
                 this.formEmpleado = this.currentLoggedInEmployee();
             }
-            this.formFuente = String(draft.formFuente ?? this.formFuente);
-            this.formCiiuCode = String(draft.formCiiuCode ?? this.formCiiuCode);
+                        this.formCiiuCode = String(draft.formCiiuCode ?? this.formCiiuCode);
             this.formEstado = String(draft.formEstado ?? this.formEstado);
             this.formServicio = String(draft.formServicio ?? this.formServicio);
             this.formNota = String(draft.formNota ?? this.formNota);
@@ -730,7 +716,6 @@ export class CrmProspectsComponent {
             formCiudad: this.formCiudad,
             formDireccion: this.formDireccion,
             formEmpleado: this.formEmpleado,
-            formFuente: this.formFuente,
             formCiiuCode: this.formCiiuCode,
             formEstado: this.formEstado,
             formServicio: this.formServicio,
@@ -769,8 +754,6 @@ export class CrmProspectsComponent {
 
     get quickAddTargetLabel(): string {
         switch (this.quickAddTarget) {
-            case "fuentes":
-                return "fuente";
             case "servicios":
                 return "servicio";
             default:
@@ -1130,7 +1113,6 @@ export class CrmProspectsComponent {
             city: this.formCiudad.trim(),
             address: this.formDireccion.trim(),
             assignedEmployee: this.formEmpleado,
-            source: this.formFuente,
             ciiuCode: this.formCiiuCode,
             zone: this.selectedProspectZone,
             prospectValue: 0,
@@ -1242,7 +1224,6 @@ export class CrmProspectsComponent {
         this.formCiudad = "";
         this.formDireccion = "";
         this.formEmpleado = this.currentLoggedInEmployee();
-        this.formFuente = "";
         this.formCiiuCode = "";
         this.formEstado = "Pendiente";
         this.formServicio = "";
@@ -1282,7 +1263,6 @@ export class CrmProspectsComponent {
     private loadCatalogsFromApi(): void {
         this.crmProspectsApi.catalogs().subscribe({
             next: (catalogs) => {
-                this.sourceOptions = [...catalogs.sources];
                 this.serviceOptions = [...catalogs.services];
                 this.zoneOptions = catalogs.zones.map((name, index) => ({ id: index + 1, name }));
 
@@ -1294,7 +1274,6 @@ export class CrmProspectsComponent {
                 this.cdr.detectChanges();
             },
             error: (error) => {
-                this.sourceOptions = [];
                 this.serviceOptions = [];
                 this.zoneOptions = [];
                 this.selectedProspectZone = "";
@@ -1321,10 +1300,8 @@ export class CrmProspectsComponent {
         });
     }
 
-    private catalogTypeFromQuickTarget(target: QuickAddTarget): "sources" | "services" | null {
+    private catalogTypeFromQuickTarget(target: QuickAddTarget): "services" | null {
         switch (target) {
-            case "fuentes":
-                return "sources";
             case "servicios":
                 return "services";
             default:
