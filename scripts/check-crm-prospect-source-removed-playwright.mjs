@@ -97,17 +97,32 @@ try {
         }
 
         // Verificación en la lista vía búsqueda.
-        await page.locator("#prospects-search").fill(identity.company);
-        const results = page.locator('[data-testid="prospect-search-results"]');
-        await results.first().waitFor({ state: "visible", timeout: 30000 });
-        const firstResultText = await results.first().innerText();
-        if (!firstResultText.includes(identity.company)) {
-            throw new Error(`[B] El prospecto creado no aparece en los resultados de búsqueda. Visto: ${JSON.stringify(firstResultText)}`);
+        // El índice BM25 del backend se reconstruye cada 45s (solo ticker, sin hook de escritura):
+        // tras crear el prospecto puede tardar hasta ~45s en indexarse. Además el match BM25 es
+        // suelto (tokens comunes como "qa" traen cards antiguas), así que hay que esperar la fila
+        // EXACTA del registro nuevo, nunca .first() del contenedor de resultados.
+        const deadline = Date.now() + 95_000; // margen 2x sobre el intervalo de refresco del índice
+        let exactRowFound = false;
+        while (Date.now() < deadline && !exactRowFound) {
+            await page.locator("#prospects-search").fill("");
+            await page.waitForTimeout(150);
+            await page.locator("#prospects-search").fill(identity.company);
+            const exactRow = page.locator('[data-testid="prospect-search-results"] a.list-group-item', { hasText: identity.company });
+            try {
+                await exactRow.first().waitFor({ state: "visible", timeout: 3500 });
+                exactRowFound = true;
+            } catch {
+                // El índice aún no incluye el registro nuevo; se reintenta refrescando la búsqueda.
+            }
+        }
+        if (!exactRowFound) {
+            throw new Error(`[B] El prospecto creado (${identity.company}) no aparece en la búsqueda tras reintentar 95s. Revisa el guardado y/o el refresco del índice de búsqueda del backend.`);
         }
         console.log(JSON.stringify({ ok: true, scenario: "creacion-end-to-end" }));
 
         // ── Escenario C: detalle del prospecto recién creado sin campo fuente ──
-        await results.first().click();
+        const exactRow = page.locator('[data-testid="prospect-search-results"] a.list-group-item', { hasText: identity.company });
+        await exactRow.first().click();
         await page.waitForURL(/\/app\/crm-prospectos\/[^/]+/, { timeout: 20000 });
         console.log("[C] Detalle abierto:", page.url());
         const notFound = await page.getByText("No encontramos el prospecto solicitado.").count();
