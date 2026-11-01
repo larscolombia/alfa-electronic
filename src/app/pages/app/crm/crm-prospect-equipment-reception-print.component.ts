@@ -55,7 +55,7 @@ import { ProspectEquipmentAttachment, ProspectEquipmentItem, ProspectEquipmentRe
                         <div><strong>Servicio:</strong> {{ item.serviceTypeName || '--' }}</div>
                         <div><strong>Ubicación:</strong> {{ item.storageLocationName || '--' }}</div>
                         <div><strong>Falla reportada:</strong> {{ item.failureDescription || '--' }}</div>
-                        <div><strong>Accesorios:</strong> {{ item.accessories || '--' }}</div>
+                        <div [style.white-space]="'pre-line'"><strong>Accesorios:</strong> {{ item.accessories || '--' }}</div>
                         <div><strong>Técnico:</strong> {{ item.assignedTo || 'Sin asignar' }}</div>
                         <div><strong>Asignado:</strong> {{ item.assignedAt ? formatDate(item.assignedAt) : '--' }}</div>
                     </div>

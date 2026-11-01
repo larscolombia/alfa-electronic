@@ -299,7 +299,7 @@ type QuoteLine = {
                                                     <span class="d-block text-secondary small">Ubicación: {{ equipment.storageLocationName || 'Sin ubicación' }}</span>
                                                     <span class="d-block text-secondary small">Recepción: {{ equipment.receptionLabel }}</span>
                                                     <span class="d-block text-secondary small">Remisión: {{ equipment.customerShipmentReference || 'Sin referencia' }}</span>
-                                                    <span class="d-block text-secondary small">Accesorios: {{ equipment.accessories || 'Sin accesorios' }}</span>
+                                                    <span class="d-block text-secondary small" [style.white-space]="'pre-line'">Accesorios: {{ equipment.accessories || 'Sin accesorios' }}</span>
                                                     <span class="d-block text-secondary small">Falla: {{ equipment.failureDescription || 'Sin detalle' }}</span>
                                                 </label>
                                             </div>

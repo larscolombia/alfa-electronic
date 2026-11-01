@@ -493,7 +493,7 @@ type EditableProfileFieldConfig = {
                                                                 <td>{{ item.storageLocationName || "--" }}</td>
                                                                 <td>{{ item.equipmentCode || item.receivedIdentifier || "--" }}</td>
                                                                 <td>{{ item.customerShipmentReference || "--" }}</td>
-                                                                <td>{{ item.accessories || "--" }}</td>
+                                                                <td [style.white-space]="'pre-line'">{{ item.accessories || "--" }}</td>
                                                                 <td>{{ item.evidencePhotos.length }} foto(s)</td>
                                                                 <td>{{ item.failureDescription || "Sin detalle" }}</td>
                                                                 <td>
