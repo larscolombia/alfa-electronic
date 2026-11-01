@@ -26,6 +26,13 @@ export class SearchableSelectDirective implements AfterViewInit, OnDestroy {
             shouldSort: false,
         });
 
+        // ngModel puede fijar select.value DESPUÉS de la última mutación de <option>
+        // (borrador restaurado + opciones async: la escritura final cae 5ms después de
+        // que llegó la opción y no dispara ningún childList). El MutationObserver solo
+        // cubre cambios de DOM; este accesor captura también las escrituras de valor
+        // externas y vuelve a aplicar el modelo sobre Choices.
+        this.bindValueWrites(element);
+
         this.observer = new MutationObserver(() => this.queueRefresh());
         this.observer.observe(element, { childList: true, subtree: true });
     }
@@ -37,6 +44,27 @@ export class SearchableSelectDirective implements AfterViewInit, OnDestroy {
         this.choices = null;
     }
 
+    /**
+     * Redirige cada escritura externa a element.value por el pipeline de
+     * resincronización (solo cuando el valor realmente cambia, para no buclear:
+     * Choices también escribe select.value al aplicar una selección).
+     */
+    private bindValueWrites(element: HTMLSelectElement): void {
+        const desc = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value");
+        if (!desc?.set || !desc.get) return;
+        try {
+            Object.defineProperty(element, "value", {
+                configurable: true,
+                get: () => desc.get!.call(element),
+                set: (v: string) => {
+                    const prev = String(desc.get!.call(element) ?? "");
+                    desc.set!.call(element, v);
+                    if (String(v ?? "") !== prev) this.queueRefresh();
+                },
+            });
+        } catch { /* si no se puede redefinir, el MutationObserver sigue cubriendo mutaciones */ }
+    }
+
     private queueRefresh(): void {
         if (this.refreshQueued) return;
         this.refreshQueued = true;
@@ -46,16 +74,21 @@ export class SearchableSelectDirective implements AfterViewInit, OnDestroy {
             if (!choices) return;
             const select = this.elementRef.nativeElement;
             if (!select.isConnected) return;
-            choices.refresh();
+            try {
+                choices.refresh();
+            } catch { /* Choices puede destruirse entre frames; no romper el render */ }
             this.applyBoundValue(select, choices);
         });
     }
 
     /**
      * ngModel puede fijar un valor ANTES de que existan sus <option> (carga async,
-     * p.ej. "Empleado responsable" = usuario logueado mientras cargan los empleados).
-     * refresh() reconstruye la lista pero NO selecciona; sin esto el campo se ve vacío
-     * aunque el model ya tenga valor y lo guardaría correctamente.
+     * p.ej. "Empleado responsable" = usuario logueado mientras cargan los empleados)
+     * o DESPUÉS de la última mutación de opciones sin que nada más dispare aquí:
+     * en ambos casos el campo se vería vacío aunque el modelo tenga valor y lo
+     * guardaría correctamente. refresh() reconstruye la lista desde el DOM pero NO
+     * lee select.value (solo preserva selecciones previas del store), así que hay
+     * que aplicarla explícitamente.
      */
     private applyBoundValue(select: HTMLSelectElement, choices: Choices): void {
         const value = String(select.value ?? "").trim();
@@ -68,7 +101,10 @@ export class SearchableSelectDirective implements AfterViewInit, OnDestroy {
             if (current.includes(value)) return; // ya seleccionado: evita re-render/loop infinito
         } catch { /* si getValue falla, seguimos aplicando */ }
         try {
-            choices.setValue([value]);
+            // IMPORTANTE (choices.js v11): setValue(items) solo AÑADE opciones a la
+            // lista; nunca selecciona nada. setChoiceByValue() es el que encuentra
+            // la opción ya existente y la marca como item seleccionado visible.
+            choices.setChoiceByValue(value);
         } catch { /* Choices puede destruirse entre frames; no romper el render */ }
     }
 }

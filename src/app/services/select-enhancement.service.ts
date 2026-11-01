@@ -135,8 +135,11 @@ export class SelectEnhancementService {
             const current = (Array.isArray(raw) ? raw : [raw]).map(String);
             if (current.includes(value)) return; // ya seleccionado: evita re-render/loop infinito
         } catch { /* si getValue falla, seguimos aplicando */ }
+        // IMPORTANTE (choices.js v11): setValue(items) solo AÑADE opciones a la
+        // lista interna; nunca selecciona nada. setChoiceByValue() sí encuentra y
+        // selecciona una opción ya existente, que es lo que queremos aquí.
         try {
-            choices.setValue([value]);
+            choices.setChoiceByValue(value);
         } catch { /* Choices puede destruirse entre frames; no romper el render */ }
     }
 

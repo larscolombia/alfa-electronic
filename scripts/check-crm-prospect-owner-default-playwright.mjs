@@ -25,17 +25,49 @@ async function openProspectsPage(context, extraInit = {}) {
     return page;
 }
 
-/** Aserta que el select #prospect-owner muestra exactamente `expected` (modelo y visible). */
+/** Lee modelo + render visible del select #prospect-owner en un solo salto a página. */
+async function readOwnerState(page) {
+    return page.evaluate(() => {
+        const select = document.querySelector("#prospect-owner");
+        if (!select) return null;
+        // El usuario ve el wrapper de Choices, no el select nativo: si el item
+        // visible difiere del modelo, una suite solo-DOM da verde igual (falso verde).
+        const wrapper = select.closest(".choices") || select.parentElement;
+        const list = wrapper ? wrapper.querySelector(".choices__list.choices__list--single") : null;
+        const visibleText = list
+            ? (list.textContent || "").trim()
+            : (wrapper ? (wrapper.innerText || "").trim() : "");
+        return {
+            value: select.value,
+            visibleText,
+            options: Array.from(select.options).map((option) => option.textContent.trim()),
+        };
+    });
+}
+
+/** Aserta que #prospect-owner termina mostrando `expected` en modelo Y render visible.
+ * RRHH puede tardar (escenario D) o caer (E): se espera activamente hasta la
+ * coincidencia con tope de 12s; el valor SIEMPRE debe llegar autocompletado. */
 async function assertOwnerFilled(page, expected) {
     const owner = page.locator("#prospect-owner");
     await owner.waitFor({ state: "attached", timeout: 15000 });
-    await page.waitForTimeout(1500); // carga async de opciones RRHH
 
-    const value = await owner.inputValue();
-    const options = await owner.locator("option").allTextContents();
-    console.log(JSON.stringify({ expected, value, options }));
-    if (value !== expected) {
-        throw new Error(`Empleado responsable esperado: ${expected}; recibido: ${value || "(vacío)"}`);
+    const deadline = Date.now() + 12000;
+    let state = null;
+    while (Date.now() < deadline) {
+        state = await readOwnerState(page);
+        if (state && state.value === expected && state.visibleText === expected) break;
+        await page.waitForTimeout(250);
+    }
+    console.log(JSON.stringify({ expected, ...(state ?? { value: null, visibleText: null, options: [] }) }));
+    if (!state || !state.value) {
+        throw new Error(`Empleado responsable esperado en el modelo: ${expected}; recibido vacío tras 12s de espera.`);
+    }
+    if (state.value !== expected) {
+        throw new Error(`Empleado responsable esperado en el modelo: ${expected}; recibido: ${state.value || "(vacío)"}.`);
+    }
+    if (state.visibleText !== expected) {
+        throw new Error(`Empleado responsable visible para el usuario: ${JSON.stringify(state.visibleText)}; esperado: ${expected}. El select nativo tiene valor pero Choices no lo pinta.`);
     }
 }
 
@@ -124,7 +156,50 @@ try {
         await context.close();
     }
 
-    console.log("OK: Empleado responsable autocompletado en los tres escenarios.");
+    // ── Escenario D: RRHH responde LENTO (la opción llega después de que ngModel escribió el valor) ──
+    {
+        const context = await browser.newContext();
+        await context.addInitScript(({ authenticatedSession, apiUrl }) => {
+            localStorage.setItem("pika.auth.session", JSON.stringify(authenticatedSession));
+            localStorage.setItem("pika.apiBaseUrl", apiUrl);
+        }, { authenticatedSession: session, apiUrl: apiBaseUrl });
+
+        const page = await context.newPage();
+        // El endpoint de RRHH tarda 2.5s en responder: el formulario se abre con
+        // formEmpleado escrito pero SIN su <option> todavía (la carrera real).
+        // La route debe existir ANTES del goto: la llamada sale en ngOnInit.
+        await page.route(/crm-equipment\/technicians/, async (route) => {
+            await new Promise((resolve) => setTimeout(resolve, 2500));
+            await route.continue();
+        });
+        await page.goto(`${baseUrl}/app/crm-prospectos`, { waitUntil: "domcontentloaded" });
+        console.log("[D] RRHH lento; abriendo formulario por clic");
+        await page.getByRole("button", { name: /Agregar Prospecto/i }).click();
+        await assertOwnerFilled(page, expected);
+        console.log(JSON.stringify({ ok: true, scenario: "rrhh-lento" }));
+        await context.close();
+    }
+
+    // ── Escenario E: RRHH caído (optionsFor resuelve [] + current vía merge) ──
+    {
+        const context = await browser.newContext();
+        await context.addInitScript(({ authenticatedSession, apiUrl }) => {
+            localStorage.setItem("pika.auth.session", JSON.stringify(authenticatedSession));
+            localStorage.setItem("pika.apiBaseUrl", apiUrl);
+        }, { authenticatedSession: session, apiUrl: apiBaseUrl });
+
+        const page = await context.newPage();
+        // Aborto ANTES del goto: ngOnInit dispara la primera llamada a RRHH.
+        await page.route(/crm-equipment\/technicians/, (route) => route.abort());
+        await page.goto(`${baseUrl}/app/crm-prospectos`, { waitUntil: "domcontentloaded" });
+        console.log("[E] RRHH caído; abriendo formulario por clic");
+        await page.getByRole("button", { name: /Agregar Prospecto/i }).click();
+        await assertOwnerFilled(page, expected);
+        console.log(JSON.stringify({ ok: true, scenario: "rrhh-caido" }));
+        await context.close();
+    }
+
+    console.log("OK: Empleado responsable autocompletado en los cinco escenarios (modelo + render visible).");
 } catch (error) {
     console.error(error instanceof Error ? error.stack : String(error));
     process.exitCode = 1;

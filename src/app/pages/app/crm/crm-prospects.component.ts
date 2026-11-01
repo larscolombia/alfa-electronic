@@ -697,6 +697,9 @@ export class CrmProspectsComponent {
             if (this.showProspectForm && !this.formEmpleado.trim()) {
                 this.formEmpleado = this.currentLoggedInEmployee();
             }
+            // Si el formulario se reabre desde borrador, la opción del valor
+            // actual debe existir ya: Choices no puede seleccionar lo que no está.
+            if (this.showProspectForm) this.ensureEmployeeOption();
                         this.formCiiuCode = String(draft.formCiiuCode ?? this.formCiiuCode);
             this.formEstado = String(draft.formEstado ?? this.formEstado);
             this.formServicio = String(draft.formServicio ?? this.formServicio);
@@ -798,6 +801,7 @@ export class CrmProspectsComponent {
         // optionsFor() mezcla formEmpleado como "current". Sin esta llamada el
         // ngModel queda sin opción coincidente y el DOM se ve vacío aunque el
         // modelo tenga valor (también cubre borradores con un nombre antiguo).
+        this.ensureEmployeeOption();
         this.loadEmployeeOptions();
         this.cdr.detectChanges();
     }
@@ -1225,6 +1229,7 @@ export class CrmProspectsComponent {
         this.formCiudad = "";
         this.formDireccion = "";
         this.formEmpleado = this.currentLoggedInEmployee();
+        this.ensureEmployeeOption();
         this.formCiiuCode = "";
         this.formEstado = "Pendiente";
         this.formServicio = "";
@@ -1295,9 +1300,29 @@ export class CrmProspectsComponent {
      * respuesta correcta es crear al empleado en RRHH — no inventarlo aquí. El
      * valor histórico (formEmpleado) siempre se mantiene visible vía optionsFor.
      */
+    /**
+     * Garantiza que formEmpleado tenga opción coincidente INMEDIATAMENTE, sin
+     * esperar a RRHH: si el listado aún no cargó y no contiene al empleado
+     * logueado, se siembra. optionsFor() lo incluye siempre como "current",
+     * así que cuando RRHH responda la opción sigue presente (sin duplicados):
+     * Choices puede seleccionarla desde t=0 aunque la API tarde o caiga.
+     */
+    private ensureEmployeeOption(): void {
+        const name = this.formEmpleado.trim();
+        if (!name) return;
+        if (!this.employeeOptions.some((option) => option.trim() === name)) {
+            this.employeeOptions = [...this.employeeOptions, name];
+        }
+    }
+
     private loadEmployeeOptions(): void {
         void this.hrPeople.optionsFor(this.formEmpleado, [], "comercial").then((names) => {
-            this.employeeOptions = names;
+            const merged = new Set(names);
+            // Nunca perder la opción del valor actual aunque el backend no la
+            // devuelva (empleado inactivo/borrado entre cargas): merge idempotente.
+            const current = this.formEmpleado.trim();
+            if (current) merged.add(current);
+            this.employeeOptions = Array.from(merged);
         });
     }
 
