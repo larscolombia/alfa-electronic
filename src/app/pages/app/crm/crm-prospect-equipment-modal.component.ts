@@ -3,7 +3,7 @@ import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, EventEmitter, 
 import { FormsModule } from "@angular/forms";
 import { Router } from "@angular/router";
 import { BrowserMultiFormatReader } from "@zxing/browser";
-import { firstValueFrom, forkJoin, of } from "rxjs";
+import { Subscription, firstValueFrom, forkJoin, of } from "rxjs";
 import { catchError, take } from "rxjs/operators";
 
 import {
@@ -1793,7 +1793,9 @@ export class CrmProspectEquipmentModalComponent implements AfterViewInit, OnChan
 
     // Los canvases de firma solo existen en DOM con el paso "signatures" activo (*ngIf):
     // se inicializan y restauran al aparecer vía QueryList.changes (idempotente).
-    @ViewChildren("sigCanvas") sigCanvases?: QueryList<HTMLCanvasElement>;
+    // Angular 21: los queries por template reference variable devuelven ElementRef
+    // (no el nodo crudo): toda lectura usa signatureCanvasNative() para normalizar.
+    @ViewChildren("sigCanvas") sigCanvases?: QueryList<ElementRef<HTMLCanvasElement> | HTMLCanvasElement>;
 
     @HostListener("document:click")
     onDocumentClick(): void {
@@ -1970,6 +1972,7 @@ export class CrmProspectEquipmentModalComponent implements AfterViewInit, OnChan
     }
 
     ngOnDestroy(): void {
+        this.signatureChangesSub?.unsubscribe();
         this.catalogUnsubscribe();
         this.stopDraftWatch();
         this.stopScannerSession();
@@ -1983,21 +1986,31 @@ export class CrmProspectEquipmentModalComponent implements AfterViewInit, OnChan
 
     /** Inicializa los canvases de firma que estén actualmente en DOM y restaura las
      *  firmas del draft (registro existente con dataURL PNG) sobre ellos. Idempotente:
-     *  el WeakSet impide reinicializar un canvas ya preparado. Se invoca al abrir el
-     *  modal y tras cada cambio de paso, porque el contenido del paso Cierre vive detrás
-     *  de *ngIf: Angular destruye y vuelve a crear los canvases en cada navegación. */
+     *  el WeakSet impide reinicializar un canvas ya preparado. Se invoca desde la
+     *  suscripción a QueryList.changes de ngAfterViewInit, que emite SIEMPRE después
+     *  de que Angular monta/destruye los canvases del paso Cierre (*ngIf): así los
+     *  listeners de Pointer Events se registran sobre nodos reales y vivos. */
     syncVisibleSignatures(): void {
-        const canvases = this.sigCanvases ? this.sigCanvases.toArray() : [];
+        const canvases = this.sigCanvases
+            ? this.sigCanvases.toArray().map((item) => this.signatureCanvasNative(item)).filter((canvas): canvas is HTMLCanvasElement => !!canvas)
+            : [];
         for (const canvas of canvases) {
             this.initSignatureCanvas(canvas);
         }
         this.restoreSignaturesToCanvases();
     }
 
+    private signatureChangesSub?: Subscription;
+
     ngAfterViewInit(): void {
-        // Al abrir el modal: si el borrador restaurado ya estaba en el paso Cierre,
-        // los canvases existen y se pintan las firmas guardadas.
-        this.syncVisibleSignatures();
+        // QueryList.changes emite la lista actual (cubre abrir el modal ya en el paso
+        // Cierre con borrador restaurado) y cada cambio posterior. Cada vez que Angular
+        // monta los canvases del paso Firmas, esta suscripción los inicializa DESPUÉS
+        // del cambio de vista: sin race condition de timing, a diferencia de las llamadas
+        // síncronas desde nextStep/previousStep (causa raíz del bug "la firma no dibuja").
+        this.signatureChangesSub = this.sigCanvases?.changes.subscribe(() => {
+            this.syncVisibleSignatures();
+        });
     }
 
     private initSignatureCanvas(canvas: HTMLCanvasElement): void {
@@ -2146,12 +2159,27 @@ export class CrmProspectEquipmentModalComponent implements AfterViewInit, OnChan
     }
 
     private signatureCanvasFor(field: string): HTMLCanvasElement | null {
-        for (const canvas of this.sigCanvases?.toArray() ?? []) {
+        for (const item of this.sigCanvases?.toArray() ?? []) {
+            const canvas = this.signatureCanvasNative(item);
+            if (!canvas) {
+                continue;
+            }
             if (canvas.getAttribute("data-field") === field) {
                 return canvas;
             }
         }
         return null;
+    }
+
+    /** Normaliza el resultado de @ViewChildren: Angular 21 devuelve ElementRef para
+     *  template reference variables sobre nodos DOM; versiones anteriores devuelven
+     *  el nodo crudo. Un solo punto de verdad para ambos formatos (bug "la firma no dibuja"). */
+    private signatureCanvasNative(item: unknown): HTMLCanvasElement | null {
+        if (item instanceof HTMLCanvasElement) {
+            return item;
+        }
+        const native = (item as ElementRef<HTMLCanvasElement> | null)?.nativeElement ?? null;
+        return native instanceof HTMLCanvasElement ? native : null;
     }
 
     private signatureInited = new WeakSet<HTMLCanvasElement>();
@@ -2687,7 +2715,8 @@ export class CrmProspectEquipmentModalComponent implements AfterViewInit, OnChan
         this.currentStepIndex -= 1;
         this.validationMessage = "";
         this.saveDraftSuccess = false;
-        this.syncVisibleSignatures();
+        // Los canvases del paso Cierre se (re)inicializan solos vía QueryList.changes
+        // cuando Angular termina de montar la vista nueva.
     }
 
     nextStep(): void {
@@ -2709,7 +2738,8 @@ export class CrmProspectEquipmentModalComponent implements AfterViewInit, OnChan
                 this.validationMessage = "No fue posible generar la etiqueta QR de uno o más equipos.";
             });
         }
-        this.syncVisibleSignatures();
+        // Los canvases del paso Cierre se (re)inicializan solos vía QueryList.changes
+        // cuando Angular termina de montar la vista nueva.
     }
 
     openWizardSection(index: number): void {
@@ -2718,7 +2748,6 @@ export class CrmProspectEquipmentModalComponent implements AfterViewInit, OnChan
         }
         this.currentStepIndex = index;
         this.validationMessage = "";
-        this.syncVisibleSignatures();
     }
 
     close(): void {

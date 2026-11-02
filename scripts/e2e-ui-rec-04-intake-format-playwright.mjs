@@ -139,6 +139,10 @@ try {
   // dentro del draft (clientSignature/pikaSignature) antes de guardar.
   const drawSignature = async (testid) => {
     const canvas = modal.getByTestId(testid);
+    // El body del modal es scrollable: si el canvas está fuera del viewport, las
+    // coordenadas absolutas caen en el vacío y el trazo no deja tinta.
+    await canvas.scrollIntoViewIfNeeded();
+    await wait(page);
     const box = await canvas.boundingBox();
     if (!box) throw new Error(`Canvas ${testid} sin boundingBox`);
     const x0 = box.x + Math.max(12, box.width * 0.08);
@@ -153,9 +157,38 @@ try {
     await page.mouse.up();
     await wait(page);
   };
+  // Evidencia REAL de que el trazo se dibujó (regresión "la firma no dibuja", 2026-11-02):
+  // antes la suite marcaba signaturesDrawn=true sin verificar píxeles → pasaba en vacuo.
+  // Un canvas sin tinta = los pointer events nunca llegaron a un listener registrado.
+  const canvasHasInk = async (testid) => page.evaluate((tid) => {
+    const c = document.querySelector(`[data-testid="${tid}"]`);
+    if (!c || !c.getContext) return false;
+    try {
+      const data = c.getContext("2d").getImageData(0, 0, c.width, c.height).data;
+      for (let i = 3; i < data.length; i += 4) { if (data[i] > 0) return true; }
+    } catch { /* canvas sin contexto 2d: se cuenta como sin tinta */ }
+    return false;
+  }, testid);
+
   await drawSignature("signature-canvas-client");
+  if (!(await canvasHasInk("signature-canvas-client"))) {
+    throw new Error("La firma del cliente NO se dibujó: el canvas quedó SIN TINTA (los pointer events no llegan al listener)");
+  }
   await drawSignature("signature-canvas-pika");
+  if (!(await canvasHasInk("signature-canvas-pika"))) {
+    throw new Error("La firma de PIKA NO se dibujó: el canvas quedó SIN TINTA (los pointer events no llegan al listener)");
+  }
   result.signaturesDrawn = true;
+  // El trazo debe sobrevivir a navegar atrás y volver (Angular destruye/recrea los
+  // canvases por *ngIf; el draft conserva la dataURL PNG y se repinta al volver).
+  await modal.getByTestId("equipment-modal-previous").click(); await wait(page);
+  await modal.getByTestId("equipment-modal-next").click(); await wait(page);
+  if (!(await canvasHasInk("signature-canvas-client"))) {
+    throw new Error("La firma del cliente se PIERDIÓ al navegar atrás y volver (no se restauró desde el draft)");
+  }
+  if (!(await canvasHasInk("signature-canvas-pika"))) {
+    throw new Error("La firma de PIKA se PERDIÓ al navegar atrás y volver (no se restauró desde el draft)");
+  }
   const saveBtn = modal.getByTestId("equipment-modal-save");
   await saveBtn.waitFor({ state: "visible" });
   await saveBtn.click();
