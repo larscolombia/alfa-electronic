@@ -60,6 +60,8 @@ export function makeUtils({ base, pause, data }) {
         const trigger = wrapper.locator(".choices__inner").first();
         if (await trigger.isVisible().catch(() => false)) {
           await trigger.click();
+          // El dropdown vive dentro del propio wrapper: scoping estricto para no
+          // apuntar a listas de otros selects mejorados en la misma página.
           const choice = wrapper.locator(".choices__list--dropdown .choices__item--choice").filter({ hasText: new RegExp(`^\\s*${escapeRegExp(label)}\\s*$`) }).first();
           await visible(choice, `No encontré la opción visible: ${label}`);
           await choice.click();
@@ -71,6 +73,39 @@ export function makeUtils({ base, pause, data }) {
       }
     } else {
       await select.selectOption(option, opts);
+    }
+        // Verificación dura: el texto visible del widget NO garantiza que Angular
+    // haya recibido el change. El valor fijado debe ser el VALUE real de la opción
+    // elegida (no su etiqueta): así lo leen ngModel y las validaciones de la app.
+    // Si no queda en el <select> real, fallamos explícito en vez de seguir a
+    // ciegas (causó la cotización rechazada por línea sin servicio).
+    const wantedText = typeof option === "string" ? option : (option && option.label != null) ? String(option.label) : null;
+    let expectedValue = null;
+    if (typeof option === "object" && option !== null && option.index !== undefined) {
+      expectedValue = await resolveOptionValue(select.locator("option").nth(Number(option.index)));
+    } else if (wantedText) {
+      let optEl = select.locator("option").filter({ hasText: new RegExp(`^\\s*${escapeRegExp(wantedText)}\\s*$`) }).first();
+      if (!(await optEl.count().catch(() => 0)) && typeof option === "string") {
+        const byValue = select.locator(`option[value="${escapeCssAttribute(option)}"]`).first();
+        if (await byValue.count().catch(() => 0)) optEl = byValue;
+      }
+      expectedValue = await resolveOptionValue(optEl);
+    } else if (option && option.value != null) {
+      expectedValue = String(option.value);
+    }
+    async function resolveOptionValue(optEl) {
+      if (!(await optEl.count().catch(() => 0))) return null;
+      const v = await optEl.getAttribute("value").catch(() => null);
+      if (v !== null && String(v).trim() !== "") return String(v);
+      return ((await optEl.innerText().catch(() => "")) || "").trim();
+    }
+    if (!expectedValue) throw new Error(`No se pudo determinar el valor esperado de la selección (${JSON.stringify(option)})`);
+    const verifyDeadline = Date.now() + 2000;
+    for (;;) {
+      const fixed = await select.inputValue().catch(() => "");
+      if (fixed === expectedValue) break;
+      if (Date.now() > verifyDeadline) throw new Error(`La selección no quedó fijada en el control real: esperaba \"${expectedValue}\", tiene \"${fixed}\"`);
+      await page.waitForTimeout(120);
     }
     await page.waitForTimeout(pause);
   }

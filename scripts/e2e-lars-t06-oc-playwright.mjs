@@ -171,8 +171,8 @@ async function createEquipmentRecord() {
         items: [
             {
                 id: EQUIPMENT_ITEM_ID,
-                registrationMode: "manual",
-                equipmentModelId: "",
+                
+                
                 serviceTypeId: "",
                 serviceTypeName: "Reparacion",
                 storageLocationId: "",
@@ -190,7 +190,7 @@ async function createEquipmentRecord() {
                 accessories: "Sin accesorios",
                 borrowedEquipments: [],
                 failureDescription: "Falla de prueba E2E T06 (no enciende)",
-                pendingHomologation: false,
+                
                 estimatedData: false,
                 identifierLabelIssue: false,
                 evidencePhotos: [],
@@ -272,7 +272,7 @@ async function createQuote() {
 // ── UI: carga de la OC (acción de negocio 100% UI) ───────────────────────────
 
 async function openBrowser(session) {
-    browser = await chromium.launch({ headless });
+    browser = await chromium.launch({ headless, slowMo: Number(process.env.PW_SLOW_MO_MS || "0") });
     const context = await browser.newContext({ viewport: { width: 1600, height: 960 } });
     await context.addInitScript(
         ({ authSession, apiBase }) => {
@@ -304,9 +304,9 @@ async function loadOcViaUi(pdfPath) {
         throw new Error(`La cotización ${QUOTE_CODE} no aparece en /app/crm-cotizaciones.`);
     }
 
-    // Estado previo: Enviado, sin OC.
-    const estadoCell = await row.locator("td").nth(6).innerText().catch(() => "");
-    result.observations.push(`Estado previo de la cotización en tabla: '${estadoCell.trim()}'.`);
+    // Estado previo: Enviado, sin OC. (Columna Estado = índice 4.)
+    const estadoPrevio = await row.locator("td").nth(4).innerText().catch(() => "");
+    result.observations.push(`Estado previo de la cotización en tabla: '${estadoPrevio.trim()}'.`);
 
     const cargarBtn = row.locator("button", { hasText: /Cargar OC/ }).first();
     await cargarBtn.click();
@@ -392,8 +392,15 @@ async function loadOcViaUi(pdfPath) {
     const rowAfter = page.locator("table tbody tr", { hasText: QUOTE_CODE }).first();
     const ocBadge = rowAfter.locator("span.badge.text-bg-success", { hasText: OC_NUMBER }).first();
     check("ui-badge-oc-en-fila", await ocBadge.isVisible({ timeout: 15000 }).catch(() => false), `badge 'OC ${OC_NUMBER}'`);
-    const estadoAfter = (await rowAfter.locator("td").nth(6).innerText().catch(() => "")).trim();
-    check("ui-estado-aprobado-en-tabla", estadoAfter === "Aprobado", `estado='${estadoAfter}'`);
+    // Columnas de la tabla: [Cotización, Empresa, Total, OC, Estado, Acción]
+    // → Estado es el índice 4 (no 6: no existe y devolvía texto vacío).
+    const estadoCellAfter = rowAfter.locator("td").nth(4);
+    const approvedBadgeVisible = await estadoCellAfter
+        .locator("span.badge", { hasText: "Aprobado" })
+        .first()
+        .isVisible({ timeout: 15000 })
+        .catch(() => false);
+    check("ui-estado-aprobado-en-tabla", approvedBadgeVisible, `celda estado='${(await estadoCellAfter.innerText().catch(() => "")).trim()}'`);
 }
 
 // ── Verificaciones cruzadas por API (interconexión cotización→técnica) ───────
@@ -437,10 +444,29 @@ async function verifyKanbanUi() {
     check("ui-kanban-caso-en-pedir-repuestos", cardInColumn, `tarjeta ${PROJECT_ID} en columna pedir-repuestos`);
 
     if (cardInColumn) {
-        // La tarjeta debe lucir el badge con la OC propagada desde CRM.
-        const cardText = (await card.innerText().catch(() => "")).replace(/\s+/g, " ");
-        check("ui-kanban-tarjeta-muestra-oc", cardText.includes(OC_NUMBER), `badge OC en tarjeta: '${cardText.slice(0, 160)}'`);
-        await card.scrollIntoViewIfNeeded().catch(() => {});
+        // /app/work-projects renderiza chips compactas (ProjectsBoardComponent usa
+        // compactMode=true): la OC no se pinta en la chip. La evidencia visual real de la
+        // propagación CRM→técnica es: chip → detalle → 'Continuar a compras' → banner con la
+        // OC en /app/inventory-orders. Eso es lo que verificamos aquí.
+        await card.locator("button.compact-code-chip").first().click();
+        const continueBtn = page.getByRole("button", { name: /Continuar a compras/i }).first();
+        check(
+            "ui-detalle-boton-continuar-a-compras",
+            await continueBtn.waitFor({ state: "visible", timeout: 30000 }).then(() => true).catch(() => false),
+            `botón 'Continuar a compras' en detalle ${PROJECT_ID}`,
+        );
+        if (await continueBtn.isVisible().catch(() => false)) {
+            await continueBtn.click();
+            const banner = page.locator(".alert-success", { hasText: OC_NUMBER }).first();
+            check(
+                "ui-oc-visible-flujo-compras",
+                await banner.waitFor({ state: "visible", timeout: 30000 }).then(() => true).catch(() => false),
+                `banner en /app/inventory-orders con '${OC_NUMBER}'`,
+            );
+        }
+    } else {
+        check("ui-detalle-boton-continuar-a-compras", false, "chip no visible: sin detalle que abrir");
+        check("ui-oc-visible-flujo-compras", false, "chip no visible: sin banner que verificar");
     }
     await page.waitForTimeout(800);
     await shot("05-kanban-caso-pedir-repuestos");

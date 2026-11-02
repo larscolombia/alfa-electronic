@@ -197,8 +197,8 @@ async function createEquipmentRecord() {
         items: [
             {
                 id: `qa-t07-item-${stamp}`,
-                registrationMode: "manual",
-                equipmentModelId: "",
+                
+                
                 serviceTypeId: "",
                 serviceTypeName: "Reparacion",
                 storageLocationId: "",
@@ -216,7 +216,7 @@ async function createEquipmentRecord() {
                 accessories: "Sin accesorios",
                 borrowedEquipments: [],
                 failureDescription: "Falla de prueba E2E t07",
-                pendingHomologation: false,
+                
                 estimatedData: false,
                 identifierLabelIssue: false,
                 evidencePhotos: [],

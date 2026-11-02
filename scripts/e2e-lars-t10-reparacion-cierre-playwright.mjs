@@ -22,6 +22,7 @@
 import path from "node:path";
 import { promises as fs } from "node:fs";
 import { chromium } from "playwright";
+import { makeUtils } from "./ui-journey-helpers.mjs";
 
 const baseUrl = (process.env.PW_BASE_URL || "https://alfa.software.net.co").replace(/\/+$/, "");
 const timeoutMs = Number(process.env.PW_TIMEOUT_MS || "120000");
@@ -29,12 +30,14 @@ const headless = !["false", "0", "no"].includes((process.env.PW_HEADLESS || "tru
 const companyId = process.env.PW_COMPANY_ID || "demo-company";
 const artifactsDir = process.env.PW_ARTIFACTS_DIR || "playwright-artifacts";
 const apiBaseUrl = new URL(baseUrl).origin;
+// SelectEnhancementService puede ocultar <select> con Choices.js: selectFocus opera
+// sobre el widget visible y verifica duro que Angular fijó el value real.
+const ui = makeUtils({ base: baseUrl, pause: 300, data: {} });
 
 const now = Date.now();
 const IDENTIFIER = `PW-T10-${now}`;
 const SHORT_CODE = `CO-T10-${now}`;
 const TITLE = `Reparacion PLC optoacopladores ${IDENTIFIER}`;
-const HOURS = "3.5";
 const MEMO = `Se reemplazaron optoacopladores de aislamiento en las entradas digitales, se verificaron niveles de senal y se realizo prueba funcional completa. Caso ${IDENTIFIER}.`;
 const TECH_EMAIL = "pw-tecnico-t10@alfa.local";
 const TECH_PASSWORD = "Alfa2026!Pw";
@@ -72,6 +75,8 @@ const result = {
         reporteImprimible: false,
     },
     screenshots: {},
+    networkTrace: [],
+    boardBannerAfterSave: "",
     observations: [],
     consoleErrors: [],
     pageErrors: [],
@@ -196,7 +201,7 @@ try {
     techSession = await apiLogin(TECH_EMAIL, TECH_PASSWORD);
     result.checks.tecnicoLoggedIn = true;
 
-    browser = await chromium.launch({ headless });
+    browser = await chromium.launch({ headless, slowMo: Number(process.env.PW_SLOW_MO_MS || "0") });
     const context = await browser.newContext({ viewport: { width: 1540, height: 980 } });
     await context.addInitScript(
         ({ authSession, apiBase }) => {
@@ -209,6 +214,49 @@ try {
         { authSession: techSession, apiBase: apiBaseUrl },
     );
     const page = await context.newPage();
+    // Network trace: captura el status de CADA request a projects/worktime y cualquier
+    // /api/ >= 400. Esto identifica si el 2o PATCH del timer o el POST worktime fallaron.
+    const netCap = (entry) => {
+        if (result.networkTrace.length < 300) result.networkTrace.push(entry);
+    };
+    page.on("request", (req) => {
+        // Evidencia directa del payload de CADA write a projects/worktime: que valor real
+        // lleva actualHours en cada PUT (identifica si el 2o PATCH del timer viajo con horas=0).
+        try {
+            const url = req.url();
+            if (!/\/api\/v1\/(projects|worktime)/.test(url) || !/^(PUT|POST)$/.test(req.method())) return;
+            if (result.networkTrace.length >= 300) return;
+            let actualHours = null, testType = null, status = null;
+            const pd = req.postData();
+            if (pd) {
+                try { const b = JSON.parse(pd); actualHours = b?.properties?.actualHours ?? null; testType = b?.properties?.testType ?? null; status = b?.status ?? null; } catch {}
+            }
+            result.networkTrace.push({ req: true, method: req.method(), url, actualHours, testType, status, t: Date.now() });
+        } catch {}
+    });
+    page.on("response", (resp) => {
+        try {
+            const url = resp.url();
+            const isTimerWrite = /\/api\/v1\/(projects|worktime)/.test(url);
+            if (!isTimerWrite && !(url.includes("/api/") && resp.status() >= 400)) return;
+            netCap({ status: resp.status(), method: resp.request().method(), url, t: Date.now() });
+        } catch {}
+    });
+    page.on("response", async (resp) => {
+        // Body de los 403/4xx en worktime/projects: el mensaje del backend dice POR QUE se rechaza.
+        try {
+            const st = resp.status();
+            if (st < 400 || !/\/api\/v1\/(projects|worktime)/.test(resp.url())) return;
+            const body = await resp.text().catch(() => "");
+            result.networkTrace.push({ errBody: true, status: st, method: resp.request().method(), url: resp.url(), body: String(body).slice(0, 400), t: Date.now() });
+        } catch {}
+    });
+    page.on("requestfailed", (req) => {
+        try {
+            const url = req.url();
+            if (/\/api\//.test(url)) netCap({ failed: true, errorText: req.failure()?.errorText ?? "", method: req.method(), url });
+        } catch {}
+    });
     page.on("console", (msg) => { if (msg.type() === "error") pushUnique(result.consoleErrors, msg.text()); });
     page.on("pageerror", (err) => pushUnique(result.pageErrors, err?.stack || err?.message || String(err)));
 
@@ -276,13 +324,33 @@ try {
     await memoInput.fill(MEMO);
     result.checks.memoReparacionEntered = (await memoInput.inputValue()) === MEMO;
 
-    const hoursInput = page.locator("label.project-detail-field", { hasText: "Horas reales acumuladas" }).locator("input").first();
-    await hoursInput.fill(HOURS);
-    result.checks.horasRegistradas = (await hoursInput.inputValue()) === HOURS;
+    // El campo "Tiempo real acumulado" es un <output> solo-lectura: la app registra el tiempo
+    // REAL transcurrido con la ficha abierta (pointage por sesion; finalizeEquipmentSessionTimer
+    // lo suma a actualHours al cerrar). No existe input de horas manual en la interfaz.
+    const hoursOutput = page.locator("output[data-testid='equipment-accumulated-repair-time']");
+    await hoursOutput.waitFor({ state: "visible", timeout: 8000 });
+    // Verificacion REAL del pointage por sesion: el contador debe AVANZAR entre dos
+    // lecturas (el guardado suma este tiempo a actualHours al cerrar la ficha).
+    const readSessionTime = async () => ((await hoursOutput.textContent().catch(() => "")).trim());
+    const sessionRead1 = await readSessionTime();
+    await page.waitForTimeout(3200);
+    const sessionRead2 = await readSessionTime();
+    result.checks.horasRegistradas = /^\d{1,2}:\d{2}(?::\d{2})?$/.test(sessionRead1) && sessionRead2 !== sessionRead1;
+    if (!result.checks.horasRegistradas) {
+        result.observations.push(`FALLO: el contador de tiempo real no avanza entre lecturas (t0='${sessionRead1}' t+3s='${sessionRead2}') - el timer de sesion no esta corriendo.`);
+    } else {
+        result.observations.push(`INFO: pointage por sesion activo en ficha: ${sessionRead1} -> ${sessionRead2} (el cierre lo sumara a actualHours).`);
+    }
 
     const testSelect = page.locator("label.project-detail-field", { hasText: "Prueba de cierre" }).locator("select").first();
-    await testSelect.selectOption("banco-pruebas");
-    result.checks.pruebaDeCierreSeleccionada = (await testSelect.inputValue()) === "banco-pruebas";
+    // El select puede estar oculto por Choices.js (data-choice=active): intentar
+    // selectFocus sobre el widget visible; si el control es nativo, fallback a selectOption.
+    try {
+        await ui.selectFocus(page, testSelect, { label: "Banco de pruebas" });
+    } catch (err) {
+        await testSelect.selectOption("banco-pruebas");
+    }
+    result.checks.pruebaDeCierreSeleccionada = (await testSelect.inputValue().catch(() => "")) === "banco-pruebas";
     await shotStep(page, "03-campos-reparacion-llenos");
 
     // ── Step E: Guardar cambios y verificar persistencia via API ──
@@ -293,19 +361,34 @@ try {
     const saved = await getProject(adminSession, result.projectId);
     const props = saved.properties ?? {};
     const memoOk = String(props.repairNotes ?? "").includes("optoacopladores");
-    const hoursSaved = Number(props.actualHours ?? -1);
-    const hoursOk = hoursSaved >= Number(HOURS);
     const testOk = String(props.testType ?? "") === "banco-pruebas";
+    // Pointage por sesion: la app guarda primero y al cerrar la ficha hace una SEGUNDA
+    // updateProject sumando el tiempo real transcurrido (finalizeEquipmentSessionTimer).
+    // Se consulta con polling hasta que cae, en lugar de un timeout fijo arbitrario.
+    let hoursSaved = Number(props.actualHours ?? 0);
+    const hoursPollStart = Date.now();
+    while (hoursSaved <= 0 && Date.now() - hoursPollStart < 45_000) {
+        await page.waitForTimeout(750);
+        const probe = await getProject(adminSession, result.projectId);
+        hoursSaved = Number((probe.properties ?? {}).actualHours ?? 0);
+    }
+    // El error del timer (2o PATCH o POST worktime) cae en boardActionMessage y se pinta
+    // como .alert (aunque sea de error usa alert-success por defecto del template). Leerlo.
+    const bannerText = await page.locator(".project-detail-shell ~ div.alert, div.alert", { hasText: /Tiempo de sesion|pointage|NO se guardo/ })
+        .first().textContent({ timeout: 2500 }).catch(() => "");
+    result.boardBannerAfterSave = (bannerText || "").trim();
+    if (result.boardBannerAfterSave) {
+        result.observations.push(`BANNER del tablero tras guardar: '${result.boardBannerAfterSave}'`);
+    }
+    const hoursOk = hoursSaved > 0;
     result.checks.cambiosPersistidos = memoOk && hoursOk && testOk;
-    if (hoursSaved > Number(HOURS)) {
-        result.observations.push(
-            `INFO: al guardar, el punto de sesion del tablero sumo tiempo al contador (actualHours API=${hoursSaved} vs digitado=${HOURS}). Comportamiento 'Pointage de sesion'.`,
-        );
+    if (hoursOk) {
+        result.observations.push(`INFO: pointage de sesion confirmado - actualHours API=${hoursSaved} tras cerrar la ficha.`);
     }
     if (!result.checks.cambiosPersistidos || saveError) {
         result.observations.push(
             `FALLO persistencia: memoOk=${memoOk} hoursOk=${hoursOk} testOk=${testOk} visibleSaveError=${saveError}. ` +
-            `API actual: repairNotes='${String(props.repairNotes ?? "").slice(0, 80)}' actualHours=${props.actualHours} testType=${props.testType}`,
+            `API actual: repairNotes='${String(props.repairNotes ?? "").slice(0, 80)}' actualHoursInicial=${props.actualHours} horasDespuesPolling=${hoursSaved} testType=${props.testType}`,
         );
     }
     await shotStep(page, "04-cambios-guardados");

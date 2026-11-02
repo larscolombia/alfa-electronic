@@ -255,7 +255,7 @@ try {
 
     // ── Navegador (NO headless bajo xvfb-run) ──
     await fs.mkdir(artifactsDir, { recursive: true });
-    browser = await chromium.launch({ headless });
+    browser = await chromium.launch({ headless, slowMo: Number(process.env.PW_SLOW_MO_MS || "0") });
     const context = await browser.newContext({ viewport: { width: 1540, height: 980 } });
     await context.addInitScript(
         ({ authSession, apiBase }) => {

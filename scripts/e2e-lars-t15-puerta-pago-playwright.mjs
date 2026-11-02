@@ -27,11 +27,15 @@
 import path from "node:path";
 import { promises as fs } from "node:fs";
 import { chromium } from "playwright";
+import { makeUtils } from "./ui-journey-helpers.mjs";
 
 const baseUrl = (process.env.PW_BASE_URL || "https://alfa.software.net.co").replace(/\/+$/, "");
 const timeoutMs = Number(process.env.PW_TIMEOUT_MS || "120000");
 const headless = !["false", "0", "no"].includes((process.env.PW_HEADLESS || "true").toLowerCase());
 const slowMoMs = Number(process.env.PW_SLOW_MO_MS || "0");
+// Choices.js oculta el <select> nativo: selectFocus elige sobre el widget visible
+// y verifica duro que el value quedó fijado en el control real.
+const ui = makeUtils({ base: baseUrl, pause: slowMoMs > 0 ? slowMoMs : 300, data: {} });
 const userEmail = process.env.PW_USER_EMAIL || "admin@alfa.com";
 const userPassword = process.env.PW_USER_PASSWORD || "1234";
 const companyId = process.env.PW_COMPANY_ID || "demo-company";
@@ -46,6 +50,10 @@ const CLIENT_EMAIL = `pw-t15-${SERIE}@alfa.local`;
 const QUOTE_CODE = `COT-T15-${SERIE}`;
 const EQ_IDENTIFIER = `EQ-T15-${SERIE}`;
 const GUIDE = `GUIA-T15-${SERIE}`;
+// Evidencia de remisión firmada: el modal de confirmación deja 'Confirmar entrega'
+// deshabilitado hasta que la remisión tenga al menos una foto
+// (remissions.component.ts L429-432). Sin esto la puerta de pago nunca se evalúa.
+const PHOTO_FIXTURE = path.resolve(process.cwd(), "scripts/e2e-fixtures/remision-firmada-e2e.png");
 
 const result = {
     test: "e2e-lars-t15-puerta-pago",
@@ -240,7 +248,7 @@ try {
 
     await page.locator("[data-testid='remission-client']").fill(CLIENT_NAME);
     await page.locator("[data-testid='remission-contact-name']").fill("Ing. Logística T15");
-    await page.locator("[data-testid='dispatch-type-select']").selectOption("contra-entrega");
+    await ui.selectFocus(page, page.locator("[data-testid='dispatch-type-select']"), { label: "Contra entrega" });
     await page.locator("[data-testid='carrier-name-input']").fill("Transportadora T15");
     await page.locator("[data-testid='guide-number-input']").fill(GUIDE);
     await page.locator("[data-testid='purchase-order-input']").fill(`OC-T15-${SERIE}`);
@@ -254,6 +262,16 @@ try {
     // confirmación de accesorios y el bloqueo por pago queda aislado.
     await page.locator("input[placeholder='Precio']").fill("250000");
     await page.locator("input[placeholder='Cant']").fill("1");
+    // remissions.logic.ts exige garantia global o nota + garantia por item (L92-98).
+    // t12 lo llena igual; sin esto el guardado se bloquea en client-side.
+    await ui.selectFocus(page, page.locator("[data-testid='warranty-select']"), { label: "6 meses" });
+    await ui.selectFocus(page, page.locator("[data-testid='item-warranty-select']").first(), { label: "6 meses" });
+    // Evidencia firmada obligatoria: sin foto 'Marcar entregado' jamás pasa la
+    // confirmación. Esperar el thumbnail garantiza que FileReader ya metió la foto
+    // en form.dispatchPhotos (onPhotosSelected es asíncrono, L1105-1116).
+    await page.locator("[data-testid='dispatch-photos-input']").setInputFiles([PHOTO_FIXTURE]);
+    await page.locator("img[alt='remision-firmada-e2e.png']").first().waitFor({ state: "visible", timeout: 5000 })
+        .catch(() => result.observations.push("OBSERVACIÓN: la evidencia no se reflejó en el formulario antes de guardar."));
 
     await shot(page, "00-formulario-remision");
     await page.locator("button", { hasText: /^\s*Guardar\s*$/ }).first().click();
@@ -296,6 +314,16 @@ try {
     // ── 6. UI: intentar marcar entregado → debe BLOQUEAR ─────────────────
     const blockMarkBtn = row.locator("[data-testid='mark-delivered-btn']");
     await blockMarkBtn.click({ timeout: 15000 }).catch(() => blockMarkBtn.dispatchEvent("click"));
+    // El click abre el modal de confirmación; la puerta de pago se evalúa al
+    // confirmar (patchDelivered → 409 backend → override a admin).
+    const deliveryModal = page.locator("[data-testid='delivery-confirm-modal']");
+    if (await deliveryModal.waitFor({ state: "visible", timeout: 8000 }).then(() => true).catch(() => false)) {
+        const accCheck = deliveryModal.locator("[data-testid='accessories-delivered-check']");
+        if (!(await accCheck.isChecked().catch(() => true))) await accCheck.check().catch(() => {});
+        await page.locator("[data-testid='confirm-delivered-btn']").click({ timeout: 8000 });
+    } else {
+        result.observations.push("OBSERVACIÓN: no apareció el modal de confirmación al intentar marcar entregado.");
+    }
     await page.waitForTimeout(2000);
     await nudge(page);
 
@@ -479,6 +507,11 @@ try {
         // si Playwright no logra estabilidad para el click, se dispara el evento
         // directamente sobre el mismo elemento.
         await markBtn.click({ timeout: 15000 }).catch(() => markBtn.dispatchEvent("click"));
+        // Mismo modal de confirmación: confirmar es lo que dispara el PATCH entregado.
+        const deliveryModal2 = page.locator("[data-testid='delivery-confirm-modal']");
+        if (await deliveryModal2.waitFor({ state: "visible", timeout: 8000 }).then(() => true).catch(() => false)) {
+            await page.locator("[data-testid='confirm-delivered-btn']").click({ timeout: 8000 });
+        }
         await page.waitForTimeout(2500);
         await nudge(page);
         const successMsg = String(await page.locator("[data-testid='dispatch-action-message']").textContent().catch(() => "")).trim();

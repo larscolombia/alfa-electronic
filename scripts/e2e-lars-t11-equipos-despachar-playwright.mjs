@@ -93,7 +93,7 @@ async function createRecord(recordId, itemId, prospectId, prospectName, email, c
         intakeMethod: "transportadora", intakeCarrier: `Transportadora LARS T11`, intakeTrackingNumber: `GUIA-${equipoId}`,
         intakeReceivedAt: new Date().toISOString(), companyName: company, contactName: `Contacto ${prospectName}`, email,
         items: [{
-            id: itemId, registrationMode: "manual", isIndustrial: true, serviceTypeName: "Reparación",
+            id: itemId, isIndustrial: true, serviceTypeName: "Reparación",
             familyName: "Variadores", marca, tipo, serie, receivedIdentifier: equipoId, receivedIdentifierType: "placa",
             failureDescription: "Falla de potencia T11", repairStatus, storageLocationName: "Bodega principal",
         }],
@@ -157,10 +157,15 @@ async function setup() {
     check("5.api-panel-source", itemA && itemB, `items endpoint: A=${itemA?.repairStatus} B=${itemB?.repairStatus}`);
     if (!itemA || String(itemA.repairStatus) !== "listo-entrega") find(`El ítem A no llegó con repairStatus=listo-entrega al endpoint /crm-equipment/items (valor=${itemA?.repairStatus}). El panel quedaría vacío para este equipo.`);
     if (itemB && ["listo-entrega", "garantia", "no-reparable"].includes(String(itemB.repairStatus))) find(`El ítem B (control negativo) aparece con estado despachable ${itemB.repairStatus}.`);
+
+    // El panel muestra el CÓDIGO INTERNO que asigna el backend (serie CO+YYMM+NNNN),
+    // no la placa/receivedIdentifier que enviamos. Los checks UI se validan contra ese código.
+    results.codes.equipmentCodeA = String(itemA?.equipmentCode || "");
+    results.codes.equipmentCodeB = String(itemB?.equipmentCode || "");
 }
 
 async function verifyUi(sessionData) {
-    browser = await chromium.launch({ headless });
+    browser = await chromium.launch({ headless, slowMo: Number(process.env.PW_SLOW_MO_MS || "0") });
     const context = await browser.newContext({ viewport: { width: 1560, height: 980 } });
     await context.addInitScript(({ s, a }) => {
         window.localStorage.setItem("pika.auth.session", JSON.stringify(s));
@@ -204,33 +209,44 @@ async function verifyUi(sessionData) {
     const groupA = groups.filter({ hasText: PROSPECT_A }).first();
     const groupAVisible = await groupA.waitFor({ state: "visible", timeout: 15000 }).then(() => true).catch(() => false);
     check("8.ui-grupo-cliente", groupAVisible, `grupo de cliente '${PROSPECT_A}' presente en el panel`);
+    // El badge del panel muestra el código interno real asignado por el backend, no la placa que enviamos.
+    const realCodeA = results.codes.equipmentCodeA || EQUIPO_A;
     let equipoCodeOk = false, datosOk = false;
     if (groupAVisible) {
-        equipoCodeOk = (await groupA.locator("[data-testid='equipment-code']").filter({ hasText: EQUIPO_A }).count()) > 0;
+        equipoCodeOk = (await groupA.locator("[data-testid='equipment-code']").filter({ hasText: realCodeA }).count()) > 0;
         const bodyText = await groupA.innerText();
         datosOk = bodyText.includes(MARCA_A) && bodyText.includes(TIPO_A) && bodyText.includes(SERIE_A);
     }
-    check("9.ui-equipo-en-panel", equipoCodeOk, `código ${EQUIPO_A} visible en el panel`);
+    check("9.ui-equipo-en-panel", equipoCodeOk, `equipo A visible en el panel (placa=${EQUIPO_A}, código interno=${realCodeA})`);
     check("10.ui-datos-equipo", datosOk, `marca/tipo/serie (${MARCA_A}/${TIPO_A}/${SERIE_A}) visibles en el panel`);
-    if (!equipoCodeOk) find(`El equipo listo ${EQUIPO_A} NO aparece en el panel Equipos a despachar. Interconexión técnico→logística rota.`);
+    if (!equipoCodeOk) find(`El equipo listo (placa ${EQUIPO_A} / código interno ${realCodeA}) NO aparece en el panel Equipos a despachar. Interconexión técnico→logística rota.`);
     if (groupAVisible) {
         const gp = path.resolve(artifactsDir, `e2e-lars-t11-02-grupo-cliente-${Date.now()}.png`);
         await groupA.screenshot({ path: gp, timeout: 20000 }).catch(() => {});
         results.screenshots.push(gp);
     }
 
-    // Control negativo: equipo NO listo y su cliente no deben aparecer
+    // Control negativo: equipo NO listo y su cliente no deben aparecer.
     const panelText = await panel.innerText();
-    const negCode = !panelText.includes(EQUIPO_B);
+    // Señales negativas ÚNICAS por corrida (placa CO-T11N-* y nombre de cliente con
+    // sufijo TS). El código interno EQ-* solo cuenta si DIFIERE del código de A: el
+    // backend asigna el MISMO code a ítems creados en la misma corrida, y ese code sí
+    // aparece legítimamente por el equipo A (colisión documentada 2026-11-02).
+    const codeBReal = String(results.codes.equipmentCodeB || "");
+    const codeCollidesWithA = Boolean(codeBReal) && codeBReal === String(results.codes.equipmentCodeA || "");
     const negClient = !panelText.includes(PROSPECT_B);
-    check("11.ui-control-negativo", negCode && negClient, `${EQUIPO_B} / '${PROSPECT_B}' ausentes del panel`);
-    if (!negCode || !negClient) find(`El equipo NO listo ${EQUIPO_B} (o su cliente) SÍ aparece en el panel Equipos a despachar: filtro de estados roto.`);
+    const negUniqueCode = !(codeBReal && !codeCollidesWithA && panelText.includes(codeBReal));
+    const negPlaca = !panelText.includes(EQUIPO_B);
+    check("11.ui-control-negativo", negClient && negUniqueCode && negPlaca,
+        `${EQUIPO_B} / '${PROSPECT_B}' ausentes del panel${codeCollidesWithA ? " (código interno compartido con A: excluido de la señal negativa)" : ""}`);
+    if (!negClient || !negUniqueCode) find(`El equipo NO listo ${EQUIPO_B} (o su cliente) SÍ aparece en el panel Equipos a despachar: filtro de estados roto.`);
 
     // "No en otros lados": el equipo sin remisión no debe figurar en la tabla
     // de remisiones (se identifica por el encabezado "Consecutivo").
     const remissionTable = page.locator("table").filter({ hasText: "Consecutivo" }).first();
-    const inRemissionList = (await remissionTable.locator(`text=${EQUIPO_A}`).count()) > 0;
-    check("12.ui-no-en-remisiones", !inRemissionList, `${EQUIPO_A} ausente de la tabla de remisiones creadas`);
+    const inRemissionList = (await remissionTable.locator(`text=${EQUIPO_A}`).count()) > 0 ||
+        Boolean(results.codes.equipmentCodeA && (await remissionTable.locator(`text=${results.codes.equipmentCodeA}`).count()) > 0);
+    check("12.ui-no-en-remisiones", !inRemissionList, `equipo A (${EQUIPO_A}/${results.codes.equipmentCodeA || "sin-código"}) ausente de la tabla de remisiones creadas`);
 
     // Observación: el mismo caso también se lista en "Proyectos listos para entrega"
     const readyCard = page.locator("[data-testid='ready-for-delivery-panel']");

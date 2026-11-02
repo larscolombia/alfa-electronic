@@ -61,13 +61,13 @@ async function assertOwnerFilled(page, expected) {
     }
     console.log(JSON.stringify({ expected, ...(state ?? { value: null, visibleText: null, options: [] }) }));
     if (!state || !state.value) {
-        throw new Error(`Empleado responsable esperado en el modelo: ${expected}; recibido vacío tras 12s de espera.`);
+        throw new Error(`Comercial responsable esperado en el modelo: ${expected}; recibido vacío tras 12s de espera.`);
     }
     if (state.value !== expected) {
-        throw new Error(`Empleado responsable esperado en el modelo: ${expected}; recibido: ${state.value || "(vacío)"}.`);
+        throw new Error(`Comercial responsable esperado en el modelo: ${expected}; recibido: ${state.value || "(vacío)"}.`);
     }
     if (state.visibleText !== expected) {
-        throw new Error(`Empleado responsable visible para el usuario: ${JSON.stringify(state.visibleText)}; esperado: ${expected}. El select nativo tiene valor pero Choices no lo pinta.`);
+        throw new Error(`Comercial responsable visible para el usuario: ${JSON.stringify(state.visibleText)}; esperado: ${expected}. El select nativo tiene valor pero Choices no lo pinta.`);
     }
 }
 
@@ -199,7 +199,7 @@ try {
         await context.close();
     }
 
-    console.log("OK: Empleado responsable autocompletado en los cinco escenarios (modelo + render visible).");
+    console.log("OK: Comercial responsable autocompletado en los cinco escenarios (modelo + render visible).");
 } catch (error) {
     console.error(error instanceof Error ? error.stack : String(error));
     process.exitCode = 1;

@@ -11,11 +11,18 @@
  *     node scripts/e2e-lars-t01-prospecto-playwright.mjs
  */
 import { chromium } from "playwright";
+import { makeUtils } from "./ui-journey-helpers.mjs";
 
 const baseUrl = (process.env.PW_BASE_URL || "https://alfa.software.net.co").replace(/\/$/, "");
 const timeoutMs = Number(process.env.PW_TIMEOUT_MS || "120000");
 const headless = !["false", "0", "no"].includes((process.env.PW_HEADLESS || "true").toLowerCase());
 const slowMoMs = Number(process.env.PW_SLOW_MO_MS || "0");
+// Helper compartido (ui-journey-helpers.mjs): SelectEnhancementService mejora
+// TODOS los <select> de la página con Choices.js (nodo nativo queda hidden),
+// así que selectOption directo timeoutea. selectFocus elige sobre el widget
+// visible y verifica que Angular fijó el value real; awaitSelectReady espera a
+// que el control quede interactuable (widget activo o select nativo visible).
+const ui = makeUtils({ base: baseUrl, pause: slowMoMs > 0 ? slowMoMs : 300, data: {} });
 const adminEmail = process.env.PW_ADMIN_EMAIL || "admin@alfa.com";
 const adminPassword = process.env.PW_ADMIN_PASSWORD || "1234";
 const ventasEmail = process.env.PW_VENTAS_EMAIL || "pw-ventas-t01@alfa.local";
@@ -73,6 +80,19 @@ async function apiRequest(method, path, token, body) {
         parsed = text;
     }
     return { status: response.status, body: parsed };
+}
+
+// GET con reintentos: la persistencia del backend puede tardar unos segundos
+// tras el guardado UI; un solo chequeo inmediato es flaky (lo demostró t01).
+async function apiGetPoll(path, token, predicate, { tries = 12, delayMs = 1500 } = {}) {
+    let lastResp = null;
+    for (let i = 1; i <= tries; i++) {
+        const resp = await apiRequest("GET", path, token);
+        lastResp = resp;
+        if (predicate(resp)) return resp;
+        if (i < tries) await new Promise((r) => setTimeout(r, delayMs));
+    }
+    return lastResp;
 }
 
 async function loginApi(email, password) {
@@ -166,38 +186,47 @@ try {
     const addBtn = page.getByRole("button", { name: /Agregar Prospecto/i }).first();
     await addBtn.waitFor({ state: "visible", timeout: timeoutMs });
     await addBtn.click();
+    // El formulario es un <details id="prospect-form-card"> con [open]="showProspectForm":
+    // se espera visible y abierto antes de interactuar.
+    const formCard = page.locator("#prospect-form-card");
+    await formCard.waitFor({ state: "visible", timeout: timeoutMs });
     await page.waitForFunction(
-        () =>
-            Array.from(document.querySelectorAll("h5")).some((n) =>
-                (n.textContent || "").toLowerCase().includes("detalles del prospecto"),
-            ),
+        () => document.querySelector("#prospect-form-card")?.open === true,
         null,
         { timeout: timeoutMs },
     );
 
-    await page.locator("input[name='formNombre']").fill(prospectName);
+    // El formulario actual no tiene campo "formNombre": la empresa se captura en
+    // formCompania. País/Ciudad son <select> (la ciudad queda habilitada al elegir país).
     await page.locator("input[name='formCompania']").fill(prospectName);
     await page.locator("input[name='formNit']").fill(`901${String(ts).slice(-6)}-1`);
     await page.locator("input[name='formCorreo']").fill(runEmail);
     await page.locator("input[name='formMovil']").fill(runMobile);
-    await page.locator("input[name='formPais']").fill("Colombia");
-    await page.locator("input[name='formCiudad']").fill("Bogota");
+    const countrySelect = page.locator('[data-testid="prospect-country"]');
+    await ui.awaitSelectReady(page, countrySelect, "El selector de País no quedó disponible");
+    await ui.selectFocus(page, countrySelect, { label: "Colombia" });
+    const citySelect = page.locator('[data-testid="prospect-city"]');
+    await page.waitForFunction(
+        () => !document.querySelector('[data-testid="prospect-city"]').disabled,
+        null,
+        { timeout: timeoutMs },
+    );
+    await ui.awaitSelectReady(page, citySelect, "El selector de Ciudad no quedó disponible");
+    await ui.selectFocus(page, citySelect, { label: "Bogotá" });
     await shot(page, "03-prospecto-form-llenado");
 
-    await page.locator(".card-footer button", { hasText: "Guardar" }).first().click();
+    await page.locator('[data-testid="prospect-save-btn"]').click();
 
     // Manejar modal de posible duplicado (re-ejecuciones del script). La
     // verificación de duplicados tarda varios segundos: se espera una de dos
     // salidas — el formulario se cierra, o aparece el modal de duplicado.
+    // Cerrado = el <details> del formulario ya no está abierto (o fue removido).
+    const formClosedPredicate = () => {
+        const card = document.querySelector("#prospect-form-card");
+        return !card || card.open === false;
+    };
     const formClosedOrModal = page
-        .waitForFunction(
-            () =>
-                !Array.from(document.querySelectorAll("h5")).some((n) =>
-                    (n.textContent || "").toLowerCase().includes("detalles del prospecto"),
-                ),
-            null,
-            { timeout: 90000 },
-        )
+        .waitForFunction(formClosedPredicate, null, { timeout: 90000 })
         .then(() => "closed")
         .catch(() => "timeout");
     const modalAppears = page
@@ -211,16 +240,7 @@ try {
         console.log("  ↳ modal de duplicado detectado → 'Crear de todos modos'");
         await shot(page, "03b-modal-duplicado");
         await page.getByRole("button", { name: /Crear de todos modos/i }).first().click();
-        await page
-            .waitForFunction(
-                () =>
-                    !Array.from(document.querySelectorAll("h5")).some((n) =>
-                        (n.textContent || "").toLowerCase().includes("detalles del prospecto"),
-                    ),
-                null,
-                { timeout: 90000 },
-            )
-            .catch(() => {});
+        await page.waitForFunction(formClosedPredicate, null, { timeout: 90000 }).catch(() => {});
     }
     results.prospectCreatedViaUi = true;
     console.log("  ✓ formulario de prospecto guardado y cerrado");
@@ -237,28 +257,44 @@ try {
     const created = items.find((i) => String(i.email ?? "") === runEmail) ?? null;
     createdProspectId = String(created?.id ?? "").trim();
     results.prospectFoundInApiAfterCreate = createdProspectId !== "";
+    // La API devuelve la ciudad con tilde ("Bogotá"): se normalizan acentos
+    // en ambos lados para que el chequeo no falle por grafía.
+    const normalize = (s) => String(s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     results.prospectDataCompleteInApi =
         !!created &&
         String(created.company ?? "") === prospectName &&
-        String(created.city ?? "").toLowerCase().includes("bogota") &&
+        normalize(String(created.city ?? "")).toLowerCase().includes(normalize("bogotá")) &&
         String(created.nit ?? "") !== "";
     console.log(
         `  ${results.prospectFoundInApiAfterCreate ? "✓" : "✗"} prospecto id=${createdProspectId}` +
             ` | nit=${created?.nit} ciudad=${created?.city} empresa=${created?.company}`,
     );
 
-    // ── PASO 5: Abrir ficha del prospecto ───────────────────────────────────
-    console.log("[5] Abrir ficha del prospecto desde el listado …");
+    // ── PASO 5: Abrir ficha del prospecto vía buscador global ───────────────
+    console.log("[5] Abrir ficha del prospecto vía buscador global …");
     await gotoAndWaitStable(page, `${baseUrl}/app/crm-prospectos`);
     await waitForHeading(page, "prospect");
-    const row = page.locator("tbody tr").filter({ hasText: runEmail }).first();
-    await row.waitFor({ state: "visible", timeout: timeoutMs });
-    await row.getByRole("button", { name: /^\s*Acciones\s*$/i }).first().click();
-    await page
-        .locator("ul.dropdown-menu.show a.dropdown-item", { hasText: "Abrir ficha" })
-        .first()
-        .waitFor({ state: "visible", timeout: timeoutMs });
-    await page.locator("ul.dropdown-menu.show a.dropdown-item", { hasText: "Abrir ficha" }).first().click();
+    // El listado actual es el buscador global (debounce 300ms): se escribe el correo —único
+    // por corrida— y se clica el link del resultado. El índice BM25 se refresca de forma
+    // síncrona tras crear el prospecto, así que aquí ya debe aparecer.
+    const searchInput = page.locator('[data-testid="prospects-search"]');
+    await searchInput.waitFor({ state: "visible", timeout: timeoutMs });
+    await searchInput.fill(runEmail);
+    // El email de búsqueda es único por corrida, PERO el índice BM25 también devuelve
+    // prospectos viejos con la misma empresa ("LARS Empresa Industrial") y un .first()
+    // genérico abría SIEMPRE la ficha más antigua → contacto guardado en otro ID y
+    // el chequeo API de esta run veía items=0. Determinismo: se prefiere SIEMPRE el
+    // resultado cuya URL contenga el ID que confirmó el paso 4.
+    let targetLink = page.locator(`[data-testid="prospect-search-results"] a[href*="${createdProspectId}"]`);
+    if ((await targetLink.count().catch(() => 0)) === 0) {
+        // Fallback defensivo (cambio de formato de ruta): match por nombre y luego
+        // el primer resultado, como antes.
+        const byName = page.locator('[data-testid="prospect-search-results"] a').filter({ hasText: prospectName });
+        targetLink = (await byName.count()) > 0 ? byName.first() : page.locator('[data-testid="prospect-search-results"] a').first();
+    }
+    await targetLink.first().waitFor({ state: "visible", timeout: 90000 });
+    await targetLink.first().click();
+    // Los resultados son <a routerLink> directos a /app/crm-prospectos/{id}.
     await page.waitForURL(/\/app\/crm-prospectos\/[^/?#]+$/, { timeout: timeoutMs });
     await page.waitForFunction(
         () =>
@@ -297,10 +333,11 @@ try {
     console.log(`  ✓ contacto "${contactName}" visible en la ficha`);
     await shot(page, "07-contacto-agregado");
 
-    const contactsResp = await apiRequest(
-        "GET",
-        `/api/v1/crm/prospects/${encodeURIComponent(createdProspectId)}/contacts`,
+    const contactsPath = `/api/v1/crm/prospects/${encodeURIComponent(createdProspectId)}/contacts`;
+    const contactsResp = await apiGetPoll(
+        contactsPath,
         ventasToken,
+        (r) => ((r.body?.items ?? []).some((c) => String(c.name ?? "").includes("Rugeles"))),
     );
     const contacts = contactsResp.body?.items ?? [];
     const foundContact = contacts.find((c) => String(c.name ?? "").includes("Rugeles"));
@@ -312,57 +349,238 @@ try {
 
     // ── PASO 7: Registrar accion comercial (visita + recordatorio) ──────────
     console.log(`[7] Registrar accion comercial "${actionType}" …`);
-    await page.locator("button.nav-link", { hasText: "Acciones comerciales" }).first().click();
-    await page.getByRole("button", { name: /Nueva accion comercial/i }).first().waitFor({ state: "visible", timeout: timeoutMs });
-    await page.getByRole("button", { name: /Nueva accion comercial/i }).first().click();
-
     const actionModal = page.locator(".modal-dialog", { hasText: "Agregar Seguimiento" }).first();
-    await actionModal.waitFor({ state: "visible", timeout: timeoutMs });
 
-    // El select de "Contacto relacionado" se alimenta de prospectos/clientes
-    // por empresa (NO de los contactos de la pestaña anterior): se inspeccionan
-    // las opciones para evidenciar la interconexión.
-    const contactOptions = await actionModal
-        .locator("select.form-select")
-        .nth(0)
-        .locator("option")
-        .allTextContents();
-    console.log("  ↳ opciones de 'Contacto relacionado' en modal:", JSON.stringify(contactOptions));
+    // Si algún evento residual (backdrop del modal anterior, animación) cierra el
+    // modal antes o durante el llenado, se reintenta hasta 3 veces. Las
+    // verificaciones duras exigen que el modal PERMANEZCA visible tras cada
+    // interacción y que la selección quede fijada en el control real (selectFocus).
+    // ── Helper: click con auditoría de overlays ────────────────────────────
+    // elementFromPoint dice quién recibe REALMENTE el puntero en la posición
+    // del objetivo. Si no es él, algo lo tapa: limpamos backdrops/modales
+    // residuales (sin tocar código de la app) y reintentamos una vez.
+    const clickWithOverlayAudit = async (pageX, target, label) => {
+        for (let round = 0; round < 2; round++) {
+            const probe = await target.evaluate((el) => {
+                const r = el.getBoundingClientRect();
+                if (!r.width || !r.height) return { rect: "zero", targetOk: false, hitDesc: null };
+                const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+                return {
+                    rect: [Math.round(r.left), Math.round(r.top), Math.round(r.width), Math.round(r.height)],
+                    targetOk: !!(hit && (el === hit || el.contains(hit))),
+                    hitDesc: hit ? `${hit.tagName}.${String(hit.className).slice(0, 70)}` : "null",
+                };
+            }).catch((e) => ({ probeError: String(e?.message || e).slice(0, 160) }));
+            if (probe.probeError) throw new Error(`No se pudo sondear ${label}: ${probe.probeError}`);
+            if (probe.targetOk) {
+                await target.click();
+                return probe;
+            }
+            console.log(`  ↳ [${label}] cubierto por: ${probe.hitDesc} (rect=${JSON.stringify(probe.rect)}) → limpiando overlays residuales …`);
+            await pageX.evaluate(() => {
+                document.querySelectorAll(".modal-backdrop").forEach((e) => e.remove());
+                Array.from(document.querySelectorAll(".modal.fade.show.d-block"))
+                    .filter((m) => !/Agregar Seguimiento/.test(m.textContent || ""))
+                    .forEach((m) => m.remove());
+            }).catch(() => {});
+        }
+        await target.click(); // última vía: si falla, Playwright reporta la causa real.
+    };
 
-    await actionModal.locator("select.form-select").nth(1).selectOption({ label: actionType });
-    await actionModal.locator("input[type='date']").fill(actionDate);
-    await actionModal.locator("input[type='time']").fill(actionTime);
-    const reminderCheckbox = actionModal.locator("input[type='checkbox']#sendCommercialReminder");
-    if (!(await reminderCheckbox.isChecked())) {
-        await reminderCheckbox.check();
+    // El SPA renderiza duplicados OCULTOS de botones/nav-links (pestañas inactivas,
+    // templates @if apilados). `locator.first()` puede resolver a uno invisible y
+    // timeoutear aunque el visible exista (probado con probe-t01-step7: click real OK).
+    // Estrategia: iterar candidatos y elegir el PRIMER elemento realmente visible.
+    const visibleFirst = async (loc) => {
+        const n = await loc.count().catch(() => 0);
+        for (let i = 0; i < n; i++) {
+            if (await loc.nth(i).isVisible()) return loc.nth(i);
+        }
+        return null;
+    };
+
+    const openActionModal = async () => {
+        const navLink = page.locator("button.nav-link", { hasText: "Acciones comerciales" });
+        let navVisible = await visibleFirst(navLink);
+        if (!navVisible) throw new Error("no se encontró la pestaña 'Acciones comerciales' visible");
+        await clickWithOverlayAudit(page, navVisible, "tab Acciones comerciales");
+        // El botón real dice "Nueva acción comercial" (tilde en la O: ó).
+        // La regex debe aceptar ambas grafías (ó/ó) o el filter de Playwright
+        // no casa NINGÚN candidato y visibleFirst devuelve null siempre.
+        const candidates = page.locator("button", { hasText: /Nueva acci[oó]n comercial/i });
+        await page
+            .waitForFunction(
+                () =>
+                    Array.from(document.querySelectorAll("button"))
+                        .some((b) => /nueva acc/i.test(b.textContent || "") && (b.offsetWidth || b.offsetHeight)),
+                null,
+                { timeout: 20000, polling: 250 },
+            )
+            .catch(() => {});
+        const pwCount = await candidates.count().catch(() => -1);
+        let newBtn = await visibleFirst(candidates);
+        if (!newBtn) {
+            // Volcado del estado real: quién está activo en la ficha, quién tapa el
+            // botón por centro de rect y qué ancestro lo oculta (visibility/display).
+            const diag = await page.evaluate(() => {
+                const auditAncestors = (el) => {
+                    const out = [];
+                    let n = el.parentElement;
+                    while (n && n !== document.body) {
+                        const cs = getComputedStyle(n);
+                        if (cs.visibility !== "visible" || cs.display === "none" || Number(cs.opacity) < 1) {
+                            out.push(`${String(n.tagName).toLowerCase()}.${String(n.className).slice(0, 50)} vis=${cs.visibility} disp=${cs.display} op=${cs.opacity}`);
+                        }
+                        n = n.parentElement;
+                    }
+                    return out;
+                };
+                const btns = Array.from(document.querySelectorAll("button"))
+                    .filter((b) => /nueva acc/i.test(b.textContent || ""))
+                    .map((b) => {
+                        const r = b.getBoundingClientRect();
+                        const cs = getComputedStyle(b);
+                        const cx = Math.round(r.x + r.width / 2), cy = Math.round(r.y + r.height / 2);
+                        let hit = null;
+                        try { hit = document.elementFromPoint(cx, cy)?.outerHTML?.slice(0, 160) ?? "null"; } catch (e) { hit = String(e); }
+                        return {
+                            text: (b.textContent || "").trim().slice(0, 40),
+                            rect: `${Math.round(r.x)},${Math.round(r.y)} ${Math.round(r.width)}x${Math.round(r.height)}`,
+                            ownVis: cs.visibility, ownDisp: cs.display,
+                            hiddenAncestors: auditAncestors(b).slice(0, 4),
+                            centerHit: hit,
+                        };
+                    });
+                const fichaList = document.querySelector('ul[aria-label="Secciones de la ficha del prospecto"]');
+                return {
+                    btns,
+                    fichaActiveTab: fichaList?.querySelector(".nav-link.active")?.textContent?.trim() ?? "ninguna",
+                    overlays: Array.from(document.querySelectorAll(".modal-backdrop, .modal.fade.show.d-block"))
+                        .map((o) => `${String(o.className).slice(0, 60)} rect=${JSON.stringify(o.getBoundingClientRect())}`),
+                };
+            }).catch(() => null);
+            console.log(`  ↳ DIAG newBtn (pwCount=${pwCount}):`, JSON.stringify(diag)?.slice(0, 1500));
+            throw new Error("no se encontró un botón 'Nueva acción comercial' visible tras abrir la pestaña");
+        }
+        await clickWithOverlayAudit(page, newBtn, "Nueva acción comercial");
+    };
+
+    const fillActionModal = async () => {
+        // El select de "Contacto relacionado" se alimenta de prospectos/clientes
+        // por empresa (NO de los contactos de la pestaña anterior): se inspeccionan
+        // las opciones para evidenciar la interconexión.
+        const contactOptions = await actionModal
+            .locator("select.form-select")
+            .nth(0)
+            .locator("option")
+            .allTextContents();
+        console.log("  ↳ opciones de 'Contacto relacionado' en modal:", JSON.stringify(contactOptions));
+
+        const actionTypeSelect = actionModal.locator("select.form-select").nth(1);
+        await ui.awaitSelectReady(page, actionTypeSelect, "El selector de acción comercial no quedó disponible");
+        if (!(await actionModal.isVisible().catch(() => false))) {
+            throw new Error("El modal 'Agregar Seguimiento' se cerró antes de elegir la acción comercial");
+        }
+        await ui.selectFocus(page, actionTypeSelect, { label: actionType });
+        if (!(await actionModal.isVisible().catch(() => false))) {
+            throw new Error("El modal 'Agregar Seguimiento' se cerró al elegir la acción comercial");
+        }
+        await actionModal.locator("input[type='date']").fill(actionDate);
+        await actionModal.locator("input[type='time']").fill(actionTime);
+        const reminderCheckbox = actionModal.locator("input[type='checkbox']#sendCommercialReminder");
+        if (!(await reminderCheckbox.isChecked())) {
+            await reminderCheckbox.check();
+        }
+        // El input de número queda [disabled] hasta marcar el checkbox: se exige habilitado.
+        const remindValueInput = actionModal.locator("input[type='number']").first();
+        if (!(await remindValueInput.isEnabled().catch(() => false))) {
+            throw new Error("'Recordar antes de' quedó inhabilitado tras marcar el recordatorio");
+        }
+        await remindValueInput.fill("1");
+        const observationArea = actionModal.locator("textarea").first();
+        await observationArea.fill("Primera visita comercial LARS - levantamiento de necesidades (e2e t01)");
+        if (!(await actionModal.isVisible().catch(() => false))) {
+            throw new Error("El modal 'Agregar Seguimiento' se cerró durante el llenado");
+        }
+        await shot(page, "08-accion-modal-llenado");
+
+        await actionModal.locator(".modal-footer button.btn-danger", { hasText: "Guardar" }).click();
+        // El botón Guardar del template invoca saveCommercialAction(false): guarda
+        // pero NO cierra el modal (borrador se reinicia para permitir otra acción).
+        const saved = await page
+            .waitForFunction(
+                (modalText) => {
+                    const modal = Array.from(document.querySelectorAll(".modal-dialog")).find((el) =>
+                        el.textContent.includes(modalText),
+                    );
+                    if (!modal) return "cerrado"; // modal ya cerrado
+                    const alertBox = modal.querySelector(".alert-warning");
+                    if (alertBox && alertBox.textContent.trim()) {
+                        return `error:${alertBox.textContent.trim()}`;
+                    }
+                    const textarea = modal.querySelector("textarea");
+                    if (!textarea || textarea.value === "") return "guardado"; // borrador reiniciado
+                    return "";
+                },
+                "Agregar Seguimiento",
+                { timeout: 20000, polling: 250 },
+            )
+            .then(async (handle) => String(await handle.jsonValue()))
+            .catch(() => "timeout");
+        if (!saved.startsWith("guardado") && saved !== "cerrado") {
+            throw new Error(`La acción comercial no se guardó (estado: ${saved})`);
+        }
+    };
+
+    let lastActionError = null;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+            if (attempt > 1) console.log(`[7] reintento de acción comercial (${attempt}/3) …`);
+            await openActionModal();
+            await actionModal.waitFor({ state: "visible", timeout: 20000 });
+            await fillActionModal();
+            lastActionError = null;
+            break;
+        } catch (err) {
+            lastActionError = err;
+            console.log(`[7] intento ${attempt}/3 falló: ${String(err?.message || err).slice(0, 200)}`);
+        }
     }
-    await actionModal.locator("input[type='number']").fill("1");
-    await actionModal.locator("textarea").fill("Primera visita comercial LARS - levantamiento de necesidades (e2e t01)");
-    await shot(page, "08-accion-modal-llenado");
-
-    await actionModal.locator(".modal-footer button.btn-danger", { hasText: "Guardar" }).click();
-    // El botón Guardar del template invoca saveCommercialAction(false): guarda
-    // pero NO cierra el modal (borrador se reinicia para permitir otra acción).
-    await actionModal
-        .locator("textarea")
-        .first()
-        .waitFor({ state: "visible", timeout: timeoutMs });
-    await page.waitForFunction(
-        (modalText) => {
-            const modal = Array.from(document.querySelectorAll(".modal-dialog")).find((el) =>
-                el.textContent.includes(modalText),
-            );
-            if (!modal) return true; // modal ya cerrado
-            const textarea = modal.querySelector("textarea");
-            return !textarea || textarea.value === "";
-        },
-        "Agregar Seguimiento",
-        { timeout: timeoutMs },
-    );
+    if (lastActionError) {
+        await shot(page, "08b-accion-FALLIDA").catch(() => {});
+        throw new Error(`paso 7 falló tras 3 intentos: ${String(lastActionError?.message || lastActionError).slice(0, 240)}`);
+    }
     results.commercialActionCreatedViaUi = true;
     console.log("  ✓ accion comercial guardada (modal sigue abierto por diseño)");
     await shot(page, "08b-accion-guardada-modal-abierto");
-    await actionModal.locator(".modal-footer button.btn-link", { hasText: "Cerrar" }).click();
+    // Cierre robusto: el template lo deja abierto tras Guardar (saveCommercialAction(false));
+    // si por algún estado el botón no resuelve a visible, se dispara su handler Angular
+    // con un click JS directo en el DOM mismo elemento.
+    const closeBtn = actionModal.locator(".modal-footer button", { hasText: /^\s*Cerrar\s*$/ }).first();
+    if (await closeBtn.isVisible().catch(() => false)) {
+        await closeBtn.click({ timeout: 10000 });
+    } else {
+        const jsClose = await page
+            .evaluate((title) => {
+                const dialog = Array.from(document.querySelectorAll(".modal-dialog")).find((el) => el.textContent.includes(title));
+                const btn = dialog?.querySelector('.modal-footer button') &&
+                    Array.from(dialog.querySelector(".modal-footer").querySelectorAll("button"))
+                        .find((b) => (b.textContent || "").trim() === "Cerrar");
+                if (btn) { btn.click(); return true; }
+                return false;
+            }, "Agregar Seguimiento")
+            .catch(() => false);
+        console.log(`  ↳ cierre por ${jsClose ? "click JS directo" : "fallback Escape/backdrop"}`);
+    }
+    if (await actionModal.isVisible().catch(() => true)) {
+        // Último recurso: el backdrop cierra vía $event.target === currentTarget.
+        await page.keyboard.press("Escape").catch(() => {});
+        await page.evaluate((title) => {
+            const modal = Array.from(document.querySelectorAll(".modal.fade.show.d-block"))
+                .find((el) => el.textContent.includes(title));
+            if (modal) modal.click(); // target === currentTrigger → closeCommercialActionModal()
+        }, "Agregar Seguimiento").catch(() => {});
+    }
     await page
         .waitForFunction(
             () =>
@@ -389,10 +607,15 @@ try {
     console.log(`  fila accion: ${actionRowText}`);
     await shot(page, "09-accion-visible-ficha");
 
-    const followupsResp = await apiRequest(
-        "GET",
-        `/api/v1/crm/prospects/${encodeURIComponent(createdProspectId)}/followups`,
+    const followupsPath = `/api/v1/crm/prospects/${encodeURIComponent(createdProspectId)}/followups`;
+    const followupsResp = await apiGetPoll(
+        followupsPath,
         ventasToken,
+        (r) =>
+            ((r.body?.items ?? []).some((f) =>
+                String(f.tipo ?? "") === actionType &&
+                String(f.fecha ?? "") === actionDate &&
+                String(f.hora ?? "") === actionTime)),
     );
     const followups = followupsResp.body?.items ?? [];
     const foundAction = followups.find(

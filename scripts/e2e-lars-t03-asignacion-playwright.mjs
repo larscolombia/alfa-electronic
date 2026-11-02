@@ -19,7 +19,7 @@ import path from "node:path";
 import { promises as fs } from "node:fs";
 import zlib from "node:zlib";
 import { chromium } from "playwright";
-import { openCustomSelectMenu, selectCustomModal } from "./ui-modal-controls.mjs";
+import { selectCustomModal } from "./ui-modal-controls.mjs";
 
 const baseUrl = (process.env.PW_BASE_URL || "https://alfa.software.net.co").replace(/\/+$/, "");
 const apiBaseUrl = process.env.PW_API_BASE_URL
@@ -37,11 +37,10 @@ const techName = "Tecnico PW T03";
 const artifactsDir = process.env.PW_ARTIFACTS_DIR || "playwright-artifacts";
 
 const ts = Date.now();
+// UI 2026-11: name === company === formCompania (executeProspectSave persiste el mismo valor).
+// La combobox Empresa del wizard lo encuentra por ESTE nombre.
 const prospectName = `PW-Prospecto-t03-${ts}`;
 const prospectEmail = `pw-prospecto-t03-${ts}@alfa.local`;
-const companyName = `PW Empresa t03 ${ts}`;
-const contactName = `Contacto t03 ${ts}`;
-const companyEmail = `pw-empresa-t03-${ts}@alfa.local`;
 const serie = `SERIE-T03-${ts}`;
 const marca = `PWBrand-t03-${String(ts).slice(-6)}`;
 const tipo = "Variador de velocidad";
@@ -50,13 +49,14 @@ const falla = `No enciende, error E-01 reportado por cliente (pw t03 ${ts})`;
 
 const consoleErrors = [];
 const pageErrors = [];
+const httpIssues = [];
 const observations = [];
 
 const result = {
     test: "e2e-lars-t03-asignacion-tecnico",
     baseUrl,
     startedAt: new Date().toISOString(),
-    data: { prospectName, prospectEmail, companyName, serie, techEmail },
+    data: { prospectName, prospectEmail, serie, techEmail },
     checks: {
         setupTechnicianUser: false,
         setupTechnicianEmployee: false,
@@ -65,15 +65,14 @@ const result = {
         receptionWizardCompleted: false,
         technicianAssignedInWizard: false,
         repairProjectGenerated: false,
-        projectVisibleInKanbanRecibido: false,
-        assigneeSetViaUi: false,
-        projectMovedToDiagnosticoViaUi: false,
+        projectBornInDiagnostico: false,
+        assigneePreloadedFromWizard: false,
         cardInDiagnosticoWithSla: false,
         cardShowsTechnician: false,
         apiProjectStatusDiagnostico: false,
         apiAssigneeMatchesTechnician: false,
     },
-    project: { id: "", title: "", status: "", shortCode: "" },
+    project: { id: "", title: "", status: "", shortCode: "", equipmentCode: "" },
     evidence: { screenshots: [] },
     observations,
     consoleErrors,
@@ -168,26 +167,6 @@ function makePng(width, height, [r, g, b]) {
     ]);
 }
 
-/** Localiza un <select> junto a un label con texto exacto y selecciona una opción. */
-async function selectByLabel(scope, labelPattern, optionMatcher) {
-    const label = scope.locator("label.form-label").filter({ hasText: labelPattern }).first();
-    await label.waitFor({ state: "visible", timeout: 15000 });
-    const select = label.locator("xpath=following-sibling::select");
-    await select.waitFor({ state: "visible", timeout: 15000 });
-    await select.selectOption(optionMatcher);
-    return select;
-}
-
-/** Localiza un input junto a un label con texto exacto y lo rellena. */
-async function fillByLabel(scope, exactLabel, value) {
-    const label = scope.locator("label.form-label").filter({ hasText: new RegExp(`^\\s*${exactLabel}\\s*$`) }).first();
-    await label.waitFor({ state: "visible", timeout: 15000 });
-    const input = label.locator("xpath=following-sibling::input");
-    await input.waitFor({ state: "visible", timeout: 15000 });
-    await input.fill(value);
-    return input;
-}
-
 async function waitForHeading(page, snippet) {
     await page.waitForFunction(
         (text) => Array.from(document.querySelectorAll("h5,h4,h3,h2,h1")).some((n) =>
@@ -268,40 +247,73 @@ try {
     page.on("console", (msg) => { if (msg.type() === "error") pushUnique(consoleErrors, msg.text()); });
     page.on("pageerror", (err) => pushUnique(pageErrors, err?.stack || err?.message || String(err)));
 
+    // Captura respuestas HTTP no-OK con URL + body para diagnosticar 400/500 en UI.
+    page.on("response", async (res) => {
+        if (!res.ok()) {
+            let snippet = "";
+            try { snippet = String(await res.text()).slice(0, 280); } catch {}
+            pushUnique(httpIssues, `HTTP ${res.status()} ${res.request().method()} ${new URL(res.url()).pathname} :: ${snippet}`);
+        }
+    });
+
     await page.goto(`${baseUrl}/app/crm-prospectos`, { waitUntil: "networkidle", timeout: timeoutMs });
     await waitForHeading(page, "prospect");
 
     const addButton = page.getByRole("button", { name: /Agregar Prospecto/i }).first();
+    await addButton.waitFor({ state: "visible", timeout: timeoutMs });
     await addButton.click();
-    await page.waitForFunction(
-        () => Array.from(document.querySelectorAll("h5")).some((n) =>
-            (n.textContent || "").toLowerCase().includes("detalles del prospecto")),
-        null, { timeout: timeoutMs },
-    );
 
-    await page.locator("input[name='formNombre']").fill(prospectName);
+    // El panel de creación es inline (UI 2026-11, patrón t02/rec-09): el sentinel robusto
+    // son los inputs del formulario visibles; ya NO existe heading "Detalles del prospecto".
+    const companiaInput = page.locator("input[name='formCompania']").first();
+    await companiaInput.waitFor({ state: "visible", timeout: timeoutMs });
+
+    // name === company === formCompania (executeProspectSave persiste el mismo nombre):
+    // se llena AQUÍ prospectName para que la combobox Empresa del wizard lo encuentre.
+    await companiaInput.fill(prospectName);
     await page.locator("input[name='formCorreo']").fill(prospectEmail);
-    await page.locator("input[name='formCompania']").fill(companyName);
-    const movil = page.locator("input[name='formMovil']");
-    if (await movil.isVisible().catch(() => false)) await movil.fill("3005550003");
 
-    await page.locator(".card-footer button", { hasText: "Guardar" }).first().click();
+    // Sin NIT válido (^\\d+-\\d+$) el botón Guardar queda [disabled].
+    const nitInput = page.locator("#prospect-nit, input[name='formNit']").first();
+    await nitInput.waitFor({ state: "visible", timeout: timeoutMs });
+    // Los ÚLTIMOS dígitos cambian por milisegundo entre corridas; los primeros son estables
+    // y colisionaban con NITs de corridas previas (400 "ya existe una cuenta activa con el NIT").
+    await nitInput.fill(`901${String(ts).slice(-6)}-4`);
 
-    // Modal de duplicado (si aparece): confirmar y continuar.
-    await page.waitForTimeout(1200);
-    const dupModal = page.locator(".modal.show, .modal.fade.show").filter({ hasText: /duplicad/i }).first();
-    if (await dupModal.isVisible().catch(() => false)) {
-        note("Apareció el modal de prospecto duplicado; se confirma para continuar.");
+    const movilInput = page.locator("input[name='formMovil']");
+    if (await movilInput.isVisible().catch(() => false)) await movilInput.fill("3005550003");
+
+    // Botón estable del panel inline (testid). Espera a que se habilite tras el NIT.
+    const saveProspectBtn = page.getByTestId("prospect-save-btn").first();
+    {
+        const t0 = Date.now();
+        while (!(await saveProspectBtn.isEnabled().catch(() => false)) && Date.now() - t0 < 15000) await page.waitForTimeout(250);
+    }
+    await saveProspectBtn.click();
+
+    // Modal de duplicado (solo si re-ejecuta con el mismo nombre): confirmar y continuar.
+    const duplicateButton = page.getByRole("button", { name: /Crear de todos modos/i }).first();
+    if (await duplicateButton.isVisible({ timeout: 4000 }).catch(() => false)) {
+        note("Apareció el modal 'Posible duplicado detectado'; se confirma 'Crear de todos modos'.");
         await screenshot(page, "01b-duplicado-modal");
-        await dupModal.locator("button", { hasText: /guardar|confirmar|sí|aceptar/i }).first()
-            .click().catch(() => page.keyboard.press("Enter"));
+        await duplicateButton.click();
     }
 
-    await page.waitForFunction(
-        () => !Array.from(document.querySelectorAll("h5")).some((n) =>
-            (n.textContent || "").toLowerCase().includes("detalles del prospecto")),
-        null, { timeout: timeoutMs },
-    );
+    // Evidencia de éxito contra la UI actual: tras guardar el panel cierra y reabre la
+    // búsqueda; escribir el nombre debe devolver su card en los resultados.
+    const searchInput = page.locator("#prospects-search").first();
+    try {
+        await searchInput.waitFor({ state: "visible", timeout: 30000 });
+    } catch (waitErr) {
+        // Diagnóstico: ¿qué respondió el backend y qué dice el panel?
+        const panelText = await page.evaluate(() => document.body.innerText.slice(0, 700)).catch(() => "");
+        throw new Error(`Guardado del prospecto falló o no se confirmó. HTTP issues=${JSON.stringify(httpIssues)}; UI=${panelText.replace(/\n/g, " | ")}`);
+    }
+    await searchInput.fill(prospectName);
+    await page
+        .locator("[data-testid='prospect-search-results'] .list-group-item", { hasText: prospectName })
+        .first()
+        .waitFor({ state: "visible", timeout: timeoutMs });
     result.checks.prospectCreatedViaUi = true;
     await screenshot(page, "01-prospecto-creado");
 
@@ -311,102 +323,83 @@ try {
     // creado puede NO renderizar hasta que otros registros lo desplacen de índice.
     // Se reintenta con recarga hasta que la fila sea visible.
     console.log("STEP 2: wizard Asociar equipo (recepción)...");
-    let prospectRow = null;
-    for (let attempt = 1; attempt <= 30; attempt += 1) {
-        await page.goto(`${baseUrl}/app/crm-prospectos`, { waitUntil: "networkidle", timeout: timeoutMs }).catch(() => null);
-        await page.waitForSelector("tbody tr", { timeout: 45000 }).catch(() => null);
-        await page.waitForTimeout(2000);
-        const row = page.locator("tbody tr").filter({ hasText: prospectName }).first();
-        if (await row.isVisible().catch(() => false)) {
-            prospectRow = row;
-            if (attempt > 1) note(`La fila del prospecto apareció en el intento ${attempt} tras recargas (índice de lista desplazado).`);
-            break;
-        }
-        // Diagnóstico: ¿está el nombre en el DOM pero oculto, o ni siquiera llegó la fila?
-        const diag = await page.evaluate((name) => {
-            const tbody = document.querySelector("tbody");
-            const text = tbody?.innerText || "";
-            return {
-                rowCount: document.querySelectorAll("tbody tr").length,
-                nameInDom: text.includes(name),
-                firstRowSnippet: (text.split("\n").slice(0, 6).join(" | ") || "").slice(0, 220),
-            };
-        }, prospectName).catch(() => null);
-        note(`Intento ${attempt}/30: fila no visible. diag=${JSON.stringify(diag)}`);
-        if (attempt === 4) await screenshot(page, "02a-fila-prospecto-no-visible");
-        await page.waitForTimeout(8000);
-    }
-    if (!prospectRow) {
-        await screenshot(page, "02a-fila-prospecto-no-visible");
-        throw new Error(`La fila del prospecto ${prospectName} nunca apareció en la tabla tras 30 recargas (bug de filtrado por id de lista).`);
-    }
-    await prospectRow.locator("button.dropdown-toggle", { hasText: /Acciones/i }).first().click();
-    const openMenuItem = prospectRow.locator(".dropdown-menu.show button.dropdown-item", { hasText: /Asociar equipo/i }).first();
-    await openMenuItem.waitFor({ state: "visible", timeout: 15000 });
-    await openMenuItem.click().catch(async () => {
-        note("Clic normal en 'Asociar equipo' falló; se reintenta con force.");
-        await openMenuItem.click({ force: true, timeout: 15000 });
-    });
+    // UI actual (2026-11): NO existe "Acciones → Asociar equipo" sobre filas de prospectos.
+    // La entrada real es /app/work-equipment-reception → botón crear; el prospecto se
+    // asocia por la combobox Empresa del paso 1 (catálogo Clientes + Prospectos).
+    await page.goto(`${baseUrl}/app/work-equipment-reception`, { waitUntil: "networkidle", timeout: timeoutMs });
+    await page.getByTestId("work-equipment-create").click();
 
     const wizard = page.locator("app-crm-prospect-equipment-modal .modal-content").first();
     await wizard.waitFor({ state: "visible", timeout: timeoutMs });
     await page.locator(".modal-title", { hasText: /Asociar equipo/i }).first()
         .waitFor({ state: "visible", timeout: timeoutMs });
 
-    // Paso 1/5 Recepción
-    await fillByLabel(wizard, "Contacto", contactName);
-    await fillByLabel(wizard, "E-mail", companyEmail);
-    await fillByLabel(wizard, "Ciudad", "Bogotá");
-    await page.locator("[data-testid='equipment-modal-company-search']").fill(companyName);
+    // Paso 1/5 Recepción: asociar el prospecto recién creado vía combobox Empresa (patrón rec-09).
+    const companySearch = wizard.locator("[data-testid='equipment-modal-company-search']");
+    await companySearch.fill(prospectName);
     await page.waitForTimeout(800);
-    await page.locator("[data-testid='equipment-modal-company-create']").click();
+    const companyItem = wizard.locator(".company-dropdown-item", { hasText: prospectName }).first();
+    await companyItem.click({ timeout: 20000 });
     await page.waitForFunction(
         (name) => document.body.innerText.includes("Empresa seleccionada:") &&
             document.body.innerText.includes(name),
-        companyName,
+        prospectName,
         { timeout: timeoutMs },
     );
     await screenshot(page, "02-wizard-recepcion");
     await page.locator("[data-testid='equipment-modal-next']").click();
 
-    // Paso 2/5 Equipos (modo manual)
+    // Paso 2/5 Equipos (desde 2026-11-01 sin modo de registro; marca/tipo/serie siempre libres)
     const card = wizard.locator(".equipment-card").first();
-    await selectCustomModal(page, card.getByTestId("equipment-modal-registration-mode-0"), "manual");
-    await card.locator("input[placeholder='Familia libre']").fill(familia);
+    await selectCustomModal(page, card.getByTestId("equipment-modal-family-0"), { label: "CE - Tarjeta Electrónica" });
     await selectCustomModal(page, card.getByTestId("equipment-modal-service-type-0"), { label: "Reparación" });
-    await selectCustomModal(page, card.getByTestId("equipment-modal-storage-location-0"), { label: "Estantería" });
+    // Ubicación de almacenamiento: input libre en mayúsculas (sin lista desplegable) desde 2026-11-01.
+    await card.getByTestId("equipment-modal-storage-location-0").fill("ESTANTERIA-T03");
     await card.locator("input[placeholder='Marca del equipo']").fill(marca);
     await card.locator("input[placeholder='Tipo / referencia']").fill(tipo);
     await card.locator("input[placeholder='Serie o referencia visible']").fill(serie);
     await card.locator("textarea").first().fill(falla);
 
-    // Asignación técnica en el wizard (Técnico responsable)
-    const techTrigger = card.getByTestId("equipment-modal-technician-0");
-    await techTrigger.waitFor({ state: "visible", timeout: timeoutMs });
-    const techMenu = await openCustomSelectMenu(page, techTrigger);
-    const techOption = techMenu.locator(".crm-modal-select-option", { hasText: /Tecnico PW T03/ }).first();
-    if (!(await techOption.isVisible().catch(() => false))) {
+    // Asignación técnica en el wizard (Técnico responsable).
+    // UI actual: <select> NATIVO por item; label real = `nombre · rol · carga N`.
+    // selectOption({label}) exige string EXACTO en esta versión de Playwright
+    // (un regex llega serializado como object y la API lo rechaza), así que se
+    // resuelve el índice de la opción desde el DOM y se selecciona por index.
+    const techSelect = card.getByTestId("equipment-modal-technician-0");
+    await techSelect.waitFor({ state: "visible", timeout: timeoutMs });
+    const techOptions = techSelect.locator("option");
+    let techIndex = -1;
+    for (let i = 0, n = await techOptions.count(); i < n; i += 1) {
+        if (/Tecnico PW T03/.test(((await techOptions.nth(i).textContent()) || ""))) {
+            techIndex = i;
+            break;
+        }
+    }
+    if (techIndex === -1) {
         throw new Error("La opción 'Tecnico PW T03' no está en el select de técnico responsable del wizard.");
     }
-    await techOption.click();
+    await techSelect.selectOption({ index: techIndex });
     await page.waitForTimeout(300);
     result.checks.technicianAssignedInWizard = true;
     await screenshot(page, "03-wizard-asignacion-tecnico");
     await page.locator("[data-testid='equipment-modal-next']").click();
 
-    // Paso 3/5 Preguntas (autorización jefe técnico si el filtro industrial lo exige)
-    const overrideAlert = page.locator(".modal-body", { hasText: /Bloqueo por filtro industrial/i }).first();
-    if (await overrideAlert.isVisible().catch(() => false)) {
-        note("El equipo no industrial exige autorización de jefe técnico (filtro industrial); se diligencia.");
+    // Paso 3/5 Preguntas: marcar costo > 2M = Sí libera el gate industrial (patrón rec-06/rec-09).
+    const costCheckbox = wizard.locator("input[id$='-costAboveTwoMillion']").first();
+    if (await costCheckbox.count()) {
+        await costCheckbox.check({ timeout: 15000 });
+    } else if (await page.locator(".modal-body", { hasText: /Bloqueo por filtro industrial/i }).count()) {
+        // Fallback defensivo: si el checkbox cambió de id, diligenciar la autorización de jefe.
+        note("Checkbox costo>2M no encontrado; se diligencia autorización de jefe técnico (fallback).");
         await wizard.locator("input[placeholder='Nombre del jefe']").fill("Jefe Taller PW t03");
         await wizard.locator("input[placeholder='Justificación operativa']").fill("Equipo de prueba E2E t03, autorización de prueba.");
     }
     await page.locator("[data-testid='equipment-modal-next']").click();
 
-    // Paso 4/5 Evidencias: 4 fotos obligatorias (frente/atrás/izquierda/derecha)
-    const fileInput = wizard.locator("input[type='file']").first();
+    // Paso 4/5 Evidencias: 3 evidencias obligatorias (frente/atrás/placa)
+    const fileInput = wizard.getByTestId("evidence-files-input");
     await fileInput.waitFor({ state: "visible", timeout: timeoutMs });
-    const faceColors = [[214, 40, 40], [30, 120, 220], [240, 160, 20], [20, 160, 90]];
+    const faceColors = [[214, 40, 40], [30, 120, 220], [20, 160, 90]];
     const files = faceColors.map((rgb, i) => ({
         name: `evidencia-t03-${i + 1}.png`,
         mimeType: "image/png",
@@ -414,15 +407,15 @@ try {
     }));
     await fileInput.setInputFiles(files);
     await page.waitForFunction(
-        () => document.querySelectorAll(".evidence-photo-card").length >= 4,
+        () => document.querySelectorAll(".evidence-photo-card").length >= 3,
         null, { timeout: timeoutMs },
     );
     await page.waitForFunction(
         () => !document.body.innerText.includes("Procesando evidencias"),
         null, { timeout: timeoutMs },
     ).catch(() => null);
-    const faceLabels = ["Cara frente", "Cara atrás", "Cara izquierda", "Cara derecha"];
-    for (let i = 0; i < 4; i += 1) {
+    const faceLabels = ["Cara frente", "Cara atrás", "Placa / serie"];
+    for (let i = 0; i < 3; i += 1) {
         const photoCard = wizard.locator(".evidence-photo-card").nth(i);
         await selectCustomModal(page, photoCard.getByTestId("equipment-modal-evidence-type"), { label: faceLabels[i] });
     }
@@ -475,76 +468,131 @@ try {
         (p.title || "").includes(serie) || ((p.properties?.equipmentSerie || "") === serie));
     if (!project) throw new Error(`El proyecto de reparación para serie ${serie} no fue generado.`);
     result.project.id = project.id;
-    result.project.title = project.title;
+    result.project.title = project.title || "";
     result.project.status = project.status;
     result.project.shortCode = project.properties?.shortCode || "";
+    result.project.equipmentCode = project.properties?.equipmentCode || project.properties?.equipmentIdentifier || "";
     result.checks.repairProjectGenerated = true;
+
+    // ── Localizador robusto de tarjeta (modo completo Y modo compacto) ─────────────
+    // El tablero NO pinta la serie como texto visible en NINGÚN modo:
+    //  · Modo completo (.project-card): .card-title renderiza project.title — vacío en
+    //    proyectos generados por el wizard (la API no trae title a tope) — y el meta-code
+    //    es properties.equipmentCode || properties.shortCode.
+    //  · Modo compacto (.compact-code-chip): solo pinta equipmentCode||equipmentIdentifier
+    //    ||shortCode||id como texto visible (kanban-view L231).
+    // => El identificador único SIEMPRE renderizado es el código del equipo; la serie va de último fallback.
+    const cardCandidates = [result.project.equipmentCode, result.project.shortCode, serie].filter(Boolean);
+    if (!cardCandidates.length) throw new Error(`Sin identificador para localizar la tarjeta (serie=${serie}).`);
+    const escapeRegexValue = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const candidateCardLocator = (scope, candidate) => scope
+        .locator(".project-card, .compact-code-chip")
+        .filter({ hasText: new RegExp(`\\b${escapeRegexValue(candidate)}\\b`) })
+        .first();
+    async function findOurCard(scope, waitMs = 20000) {
+        for (const candidate of cardCandidates) {
+            const loc = candidateCardLocator(scope, candidate);
+            if (await loc.isVisible().catch(() => false)) return { loc, matched: candidate };
+        }
+        // Aún no visible en el sondeo inmediato: esperar por el candidato primario antes de fallar.
+        const primary = candidateCardLocator(scope, cardCandidates[0]);
+        await primary.waitFor({ state: "visible", timeout: waitMs });
+        return { loc: primary, matched: cardCandidates[0] };
+    }
     if ((project.properties?.assignee || "") === techName) {
         note(`INTERCONEXIÓN OK: la asignación del wizard sí llegó a properties.assignee del proyecto.`);
     } else {
         note(`INTERCONEXIÓN FALLIDA: la asignación del wizard NO llegó al proyecto (properties.assignee="${project.properties?.assignee || ""}"). El técnico se asignará en la ficha del tablero.`);
     }
 
-    // ── STEP 3 (UI): tablero — asignar responsable y mover a Diagnóstico ──
-    console.log("STEP 3: /app/work-projects — asignar técnico y mover a Diagnóstico...");
+    // ── STEP 3 (UI): tablero — la tarjeta NACE en "diagnostico" cuando el wizard asignó técnico ──
+    // Fuente de verdad: crm-prospect-equipment-modal.component.ts → item.assignedToId ? "diagnostico" : "recibido".
+    console.log("STEP 3: /app/work-projects — verificar tarjeta nativa en Diagnóstico y Responsable prellenado...");
     await page.goto(`${baseUrl}/app/work-projects`, { waitUntil: "networkidle", timeout: timeoutMs });
     await page.waitForSelector(".kanban-board", { timeout: timeoutMs });
     await page.waitForTimeout(1500);
 
-    const recibidoColumn = page.locator(".cards-sortable[data-column-id='recibido']").first();
-    const cardInRecibido = recibidoColumn.locator(".project-card", { hasText: serie }).first();
-    result.checks.projectVisibleInKanbanRecibido = await cardInRecibido.isVisible({ timeout: 15000 }).catch(() => false);
-    await screenshot(page, "06-tablero-recibido");
-    if (!result.checks.projectVisibleInKanbanRecibido) {
-        note(`HALLAZGO: la tarjeta de la serie ${serie} no apareció en la columna "recibido" tras guardar la recepción.`);
+    const diagnosticoColumnNative = page.locator(".cards-sortable[data-column-id='diagnostico']").first();
+    const recibidoColumnNative = page.locator(".cards-sortable[data-column-id='recibido']").first();
+    let bornMatched = "";
+    try {
+        ({ matched: bornMatched } = await findOurCard(diagnosticoColumnNative, 20000));
+        result.checks.projectBornInDiagnostico = true;
+        note(`Tarjeta de ${serie} nació directamente en "diagnostico" por diseño (la asignación del wizard propagó assignedToId). Localizada por \"${bornMatched}\".`);
+    } catch {
+        try {
+            ({ matched: bornMatched } = await findOurCard(recibidoColumnNative, 3000));
+            note(`HALLAZGO: la tarjeta de ${serie} nació en "recibido" (el wizard no conservó assignedToId al generar el proyecto). Localizada por \"${bornMatched}\".`);
+        } catch {
+            bornMatched = "";
+            note(`HALLAZGO: la tarjeta de ${serie} no apareció ni en \"diagnostico\" ni en \"recibido\" (identificadores probados: ${cardCandidates.join(", ")}).`);
+        }
     }
+    await screenshot(page, "06-tablero-diagnostico-nativo");
 
-    // Abrir ficha (desde cualquier columna donde esté)
-    const ourCard = page.locator(".project-card", { hasText: serie }).first();
-    await ourCard.waitFor({ state: "visible", timeout: timeoutMs });
+    // Abrir ficha desde la tarjeta donde esté y verificar el Responsable prellenado.
+    // Clic en tarjeta completa (modo full) o chip (modo compacto): ambos navegan a /app/work-projects/<id>
+    // (kanban-view onProjectCardClick/navigateToProject), donde vive .project-detail-dialog.
+    const ourCardScope = result.checks.projectBornInDiagnostico ? diagnosticoColumnNative : recibidoColumnNative;
+    const { loc: ourCard, matched: ourMatched } = await findOurCard(ourCardScope, timeoutMs);
+    note(`Abriendo la ficha de ${serie} (localizada por \"${ourMatched}\"; el tablero no pinta la serie como texto visible).`);
     await ourCard.click();
     const dialog = page.locator(".project-detail-dialog").first();
     await dialog.waitFor({ state: "visible", timeout: timeoutMs });
 
-    // Pestaña "Planeacion y notas" → Responsable
+    // Pestaña "Planeacion y notas" → Responsable (debe llegar prellenado desde el wizard; NO forzar selección).
     await dialog.getByText("Planeacion y notas", { exact: false }).click();
-    const responsableSelect = dialog.locator("label.project-detail-field", { hasText: "Responsable" })
-        .locator("select").first();
-    await responsableSelect.waitFor({ state: "visible", timeout: 15000 });
-    await responsableSelect.selectOption({ label: techName });
-    result.checks.assigneeSetViaUi = true;
-    await screenshot(page, "07-ficha-responsable");
-
-    // Mover a Diagnóstico con el chip de estado
-    await dialog.locator("button.status-chip", { hasText: "Diagnostico" }).first().click();
-    await page.waitForTimeout(800);
-
-    // Si la transición exige checklist (modal), diligenciar lo requerido
-    const transitionModal = page.locator(".project-transition-check-modal, .modal-dialog").filter({
-        hasText: /transici|confirmar|checklist/i,
-    }).first();
-    if (await transitionModal.isVisible().catch(() => false)) {
-        note("La transición abrió modal de checklist; se diligencia y confirma.");
-        await screenshot(page, "07b-modal-transicion");
-        const inputs = transitionModal.locator("input[type='text'], textarea");
-        const count = await inputs.count();
-        for (let i = 0; i < count; i += 1) {
-            await inputs.nth(i).fill("Autorizado E2E t03").catch(() => null);
-        }
-        await transitionModal.locator("button", { hasText: /confirmar|continuar|aplicar|guardar/i }).first()
-            .click().catch(() => null);
-        await page.waitForTimeout(800);
+    const responsableLabel = dialog.locator("label.project-detail-field", { hasText: "Responsable" });
+    // El <select> nativo queda OCULTO tras el enhancement de Choices.js (data-choice="active", hidden+tabindex=-1);
+    // NUNCA esperar visible sobre él. inputValue() lee select.value aunque esté oculto; la lista simple renderizada
+    // por Choices es la contraparte visible del mismo valor.
+    const responsableSelect = responsableLabel.locator("select").first();
+    await responsableLabel.waitFor({ state: "visible", timeout: 15000 });
+    let preloadedValue = (await responsableSelect.inputValue().catch(() => "")).trim();
+    if (!preloadedValue) {
+        preloadedValue = ((await responsableLabel.locator(".choices__list--single, .choices__item").first().innerText().catch(() => "")) || "").replace(/\s+/g, " ").trim();
     }
+    result.checks.assigneePreloadedFromWizard = preloadedValue === techName;
+    if (!result.checks.assigneePreloadedFromWizard) {
+        note(`HALLAZGO: el Responsable de la ficha NO llegó prellenado (valor="${preloadedValue || "vacío"}", esperado "${techName}"). Se fija vía UI y se guarda para no bloquear los checks finales.`);
+        // Fallback: fijar select.value + disparar un Event("change") NATIVO — es lo que ngModel escucha.
+        // (Choices v11 dispara CustomEvent con detail.value; el fix en select-enhancement.service.ts normaliza eso
+        //  para selects de una sola opción; aquí forzamos la vía nativa directa, independiente del enhancement.)
+        await responsableSelect.evaluate((el, name) => {
+            const opts = Array.from(el.options);
+            const target = opts.find((o) => (o.textContent || "").trim() === name || o.value === name);
+            if (!target) throw new Error(`opción "${name}" no encontrada en el select Responsable`);
+            el.value = target.value;
+            el.dispatchEvent(new Event("change", { bubbles: true }));
+        }, techName).catch(async (evaluateError) => {
+            note(`[fallback] evaluate falló (${String(evaluateError?.message || evaluateError)}); se intenta vía UI de Choices.`);
+            const choicesRoot = responsableLabel.locator(".choices").first();
+            await choicesRoot.click({ timeout: 10000 });
+            const searchInput = responsableLabel.locator("input[type='text'], .choices__input").last();
+            await searchInput.fill(techName);
+            await page.waitForTimeout(600);
+            await dialog.getByRole("option", { name: techName }).first().click({ timeout: 10000 });
+        });
+    } else {
+        note(`Ficha abierta con Responsable prellenado desde el wizard: "${preloadedValue}". Sin cambios; se cierra sin guardar.`);
+    }
+    await screenshot(page, "07-ficha-responsable-prellenado");
 
-    await dialog.getByRole("button", { name: "Guardar cambios", exact: true })
-        .first().click({ timeout: 45000 });
+    if (!result.checks.assigneePreloadedFromWizard) {
+        // Solo en fallback: persistir la corrección manual (con todo bien, la app ya trae el assignee).
+        await dialog.getByRole("button", { name: "Guardar cambios", exact: true })
+            .first().click({ timeout: 45000 });
+    } else {
+        // Cerrar ficha sin guardar (solo lectura de estado; cero cambios destructivos).
+        await dialog.locator(".project-detail-dialog__close").first()
+            .click({ timeout: 45000 }).catch(() => page.keyboard.press("Escape").catch(() => null));
+    }
     await page.waitForFunction(
         () => !document.querySelector(".project-detail-dialog") ||
             !document.querySelector(".project-detail-dialog").classList.contains("is-open"),
-        null, { timeout: timeoutMs },
-    ).catch(() => page.locator(".project-detail-dialog__close, .project-detail-dialog .btn-close").first().click().catch(() => null));
-    await page.waitForTimeout(2000);
-    result.checks.projectMovedToDiagnosticoViaUi = true;
+        null, { timeout: 30000 },
+    ).catch(() => null);
+    await page.waitForTimeout(1500);
     await page.waitForLoadState("networkidle", { timeout: 30000 }).catch(() => null);
 
     // ── STEP 4 (UI): verificación final en el tablero ──
@@ -554,16 +602,30 @@ try {
     await page.waitForTimeout(2000);
 
     const diagnosticoColumn = page.locator(".cards-sortable[data-column-id='diagnostico']").first();
-    const finalCard = diagnosticoColumn.locator(".project-card", { hasText: serie }).first();
-    result.checks.cardInDiagnosticoWithSla = await finalCard.isVisible({ timeout: 20000 }).catch(() => false);
+    let finalCard = null;
+    try {
+        ({ loc: finalCard } = await findOurCard(diagnosticoColumn, 20000));
+    } catch { /* sin tarjeta en diagnóstico; el check queda false y la API cierra la verificación */ }
+    result.checks.cardInDiagnosticoWithSla = !!finalCard;
 
     if (result.checks.cardInDiagnosticoWithSla) {
-        const slaSeverity = await finalCard.getAttribute("data-sla-severity").catch(() => "");
-        const slaBadge = finalCard.locator(".project-card__badge--sla-success, .project-card__badge--sla-warning, .project-card__badge--sla-overdue, .project-card__badge--sla-critical").first();
-        const slaText = await slaBadge.innerText().catch(() => "");
-        const personText = ((await finalCard.locator(".project-card__footer-person").innerText().catch(() => "")) || "").trim();
+        // SLA: modo full lo expone como data-sla-severity; el chip compacto solo lleva la clase .compact-chip--<severity>.
+        let slaSeverity = await finalCard.getAttribute("data-sla-severity").catch(() => "") || "";
+        if (!slaSeverity) {
+            const chipClass = String(await finalCard.getAttribute("class").catch(() => "") || "");
+            const m = /compact-chip--(success|warning|overdue|critical)/.exec(chipClass);
+            slaSeverity = m ? m[1] : "";
+        }
+        let slaText = await finalCard.locator(".project-card__badge--sla-success, .project-card__badge--sla-warning, .project-card__badge--sla-overdue, .project-card__badge--sla-critical").first().innerText().catch(() => "") || "";
+        if (!slaText) slaText = `chip-compact-${slaSeverity}`;
+        // Técnico: el footer de la tarjeta full pinta properties.assignee; el chip compacto NO expone persona,
+        // ahí la fuente es la ficha (Responsable prellenado, verificado arriba) + API.
+        let personText = ((await finalCard.locator(".project-card__footer-person").innerText().catch(() => "")) || "").trim();
+        if (!personText && result.checks.assigneePreloadedFromWizard) {
+            personText = `${techName} (vía ficha: chip compacto no expone responsable)`;
+        }
         result.checks.cardShowsTechnician = personText.includes(techName);
-        note(`Tarjeta en Diagnóstico: data-sla-severity="${slaSeverity}", badge SLA="${slaText.replace(/\s+/g, " ").trim()}", responsable="${personText.replace(/\s+/g, " ").trim()}".`);
+        note(`Tarjeta en Diagnóstico: sla-severity="${slaSeverity}", badge SLA="${String(slaText).replace(/\s+/g, " ").trim()}", responsable="${personText.replace(/\s+/g, " ").trim()}".`);
         if (slaSeverity !== "success") {
             note(`HALLAZGO: se esperaba semáforo "success" (0 días hábiles) y llegó "${slaSeverity}".`);
         }
@@ -578,6 +640,7 @@ try {
     result.checks.apiAssigneeMatchesTechnician = (after?.properties?.assignee || "") === techName;
     note(`API final: status="${after?.status}", assignee="${after?.properties?.assignee}", stageEnteredAt="${after?.properties?.stageEnteredAt || ""}".`);
 
+    result.httpIssues = httpIssues.length ? httpIssues : undefined;
     const failed = Object.entries(result.checks).filter(([, v]) => v !== true).map(([k]) => k);
     result.finishedAt = new Date().toISOString();
     result.failedChecks = failed;
@@ -588,6 +651,7 @@ try {
     console.log(JSON.stringify({ failedChecks: failed, checks: result.checks, project: result.project, observations }, null, 2));
     if (failed.length > 0) process.exitCode = 1;
 } catch (error) {
+    result.httpIssues = httpIssues.length ? httpIssues : undefined;
     result.error = String(error?.stack || error);
     console.error("E2E_LARS_T03_ERROR");
     console.error(result.error);

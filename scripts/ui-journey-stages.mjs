@@ -59,7 +59,7 @@ export function makeStages({ base, pause, data, stamp, snap, utils }) {
     const citySelect=page.locator("select[name=formCiudad]").first();
     await page.waitForFunction(()=>{const el=document.querySelector("select[name=formCiudad]");return Boolean(el&&!el.disabled);},{timeout:10000});
     await selectFocus(page,citySelect,{label:"Bogotá"},{force:true});
-    // Empleado responsable y fuente: Choices.js; se elige la primera opción real
+    // Comercial responsable y fuente: Choices.js; se elige la primera opción real
     // si existen (no son obligatorios para guardar).
     const pickFirstOption=async(name)=>{
       const sel=page.locator(`select[name=${name}]`).first();
@@ -158,9 +158,7 @@ export function makeStages({ base, pause, data, stamp, snap, utils }) {
     // ---- Paso Equipos --------------------------------------------------------
     const card=w.locator(".equipment-card").first();
     await visible(card,"No aparece la tarjeta del equipo en el paso Equipos");
-    console.log("UI_ONLY_RECEPTION selector: modo de registro (select nativo)");
-    await selectFocus(page,card.getByTestId("equipment-modal-registration-mode-0"),{value:"manual"},{force:true});
-    // El modo manual habilita marca/tipo/serie para captura libre.
+    console.log("UI_ONLY_RECEPTION selector: familia (select nativo)");
     await selectFocus(page,card.getByTestId("equipment-modal-family-0"),{label:"CE - Tarjeta Electrónica"},{force:true});
     console.log("UI_ONLY_RECEPTION selector: tipo de servicio (select nativo)");
     await selectFocus(page,card.getByTestId("equipment-modal-service-type-0"),{label:"Reparación"},{force:true});
@@ -187,11 +185,19 @@ export function makeStages({ base, pause, data, stamp, snap, utils }) {
     }
 
     // Segundo equipo (validación de serie): los controles Agregar/Eliminar solo
-    // existen en este paso. Se agrega ahora; su consecutivo se verifica en
-    // Evidencia y luego regresa aquí para eliminarlo antes del guardado.
-    await click(page,w.locator("[data-testid=equipment-modal-add-item]"),"Agregar segundo equipo");
-    const removeSecond=w.locator("[data-testid=equipment-modal-remove-item-1]").first();
-    await visible(removeSecond,"No apareció el botón Eliminar del segundo equipo tras Agregar");
+    // existen en este paso cuando la vista habilita multi-equipo. En recepción el
+    // botón "Agregar equipo" está oculto por diseño (un equipo a la vez); si alguna
+    // vista lo habilita, esta rama cubre el flujo múltiple completo y su consecutivo
+    // se verifica en Evidencia antes de eliminarlo del guardado.
+    const multiEnabled=await w.locator("[data-testid=equipment-modal-add-item]").first().isVisible().catch(()=>false);
+    let removeSecond=null;
+    if(multiEnabled){
+      await click(page,w.locator("[data-testid=equipment-modal-add-item]"),"Agregar segundo equipo");
+      removeSecond=w.locator("[data-testid=equipment-modal-remove-item-1]").first();
+      await visible(removeSecond,"No apareció el botón Eliminar del segundo equipo tras Agregar");
+    } else {
+      console.log("UI_ONLY_RECEPTION CTA 'Agregar equipo' oculta en esta vista: se continúa con un solo equipo (diseño vigente)");
+    }
 
     await nextStep(page,w,"Siguiente equipo");
 
@@ -219,15 +225,16 @@ export function makeStages({ base, pause, data, stamp, snap, utils }) {
     if(!data.internalCode.includes(coPeriod)) throw new Error(`El código interno ${data.internalCode} no incluye el periodo actual (CO${coPeriod})`);
     console.log("UI_ONLY_RECEPTION code assigned", data.internalCode);
 
-    // Cuatro caras obligatorias: inputs file en orden DOM front/back/left/right
+    // Tres evidencias obligatorias: inputs file en orden DOM frente/atrás/placa
     // (requiredFaceEvidenceTypes). El handler asigna el tipo de evidencia.
     const faceInputs=w.locator("input[type=file][id^='evidence-face-']");
-    if((await faceInputs.count())<4) throw new Error(`Se esperaban 4 inputs de caras obligatorias y hay ${await faceInputs.count()}`);
-    for(let i=0;i<4;i++){
+    if((await faceInputs.count())<3) throw new Error(`Se esperaban 3 inputs de evidencias obligatorias y hay ${await faceInputs.count()}`);
+    for(let i=0;i<3;i++){
       await attachFocus(page,faceInputs.nth(i),{name:`cara-${i}.png`,mimeType:"image/png",buffer:png()});
     }
     await visible(w.locator(".evidence-card").getByText("Caras completas",{exact:true}).first(),"Las 4 caras no quedaron completas tras adjuntar las fotos");
 
+    if(multiEnabled){
     // El segundo equipo (agregado en el paso Equipos) debió recibir el siguiente
     // consecutivo; su campo de código solo es visible en este paso.
     const secondCodeInput=w.locator("[data-testid=equipment-internal-code-1]").first();
@@ -267,6 +274,7 @@ export function makeStages({ base, pause, data, stamp, snap, utils }) {
     // El primer equipo conserva su código original; el del segundo desapareció.
     if((await firstCodeInput.inputValue())!==data.internalCode) throw new Error(`El código del primer equipo cambió al eliminar el segundo: ${await firstCodeInput.inputValue()}`);
     if(await w.locator("[data-testid=equipment-internal-code-1]").count()) throw new Error("Tras eliminar el segundo equipo aún existe su campo de código interno");
+    }
 
     // Siguiente desde Evidencia avanza al paso Cierre.
     await nextStep(page,w,"Siguiente a cierre");
@@ -321,9 +329,10 @@ export function makeStages({ base, pause, data, stamp, snap, utils }) {
     if(!(await newRow.innerText()).includes(data.serie)) throw new Error(`La fila de ${data.company} no muestra la serie del equipo ${data.serie}`);
     console.log("UI_ONLY_RECEPTION guardado; recepción visible en el tablero con su serie");
 
-    // Verificación +2: una nueva recepción debe continuar la serie sin repetir
-    // códigos (el ítem eliminado antes quemó su consecutivo). El wizard nuevo
-    // reserva el código en ngOnInit, pero solo es visible en Evidencia.
+    // Verificación de serie: una nueva recepción debe continuar la serie sin
+    // repetir códigos. Si la vista habilita multi-equipo, el ítem eliminado antes
+    // quemó un consecutivo (+1 adicional). El wizard nuevo reserva el código en
+    // ngOnInit, pero solo es visible en Evidencia.
     const w2=await openWizard(page);
     await nextStep(page,w2,"Verificación: siguiente recepción");
     await nextStep(page,w2,"Verificación: siguiente equipos");
@@ -332,8 +341,9 @@ export function makeStages({ base, pause, data, stamp, snap, utils }) {
     await nextStep(page,w2,"Verificación: siguiente preguntas");
     const nextCodeInput=w2.locator("[data-testid=equipment-internal-code-0]").first();
     await visible(nextCodeInput,"La recepción de verificación no expone el código interno en Evidencia");
+    const expectedSeq=codeSeq(data.internalCode)+1+(multiEnabled?1:0);
     const nextInternalCode=await waitCode(nextCodeInput);
-    if(codeSeq(nextInternalCode)!==codeSeq(data.internalCode)+2) throw new Error(`Tras guardar y reabrir, la serie debió continuar en ${data.internalCode}+2 y quedó en "${nextInternalCode || "(vacío)"}"`);
+    if(codeSeq(nextInternalCode)!==expectedSeq) throw new Error(`Tras guardar y reabrir, la serie debió continuar en +${expectedSeq-codeSeq(data.internalCode)} (${data.internalCode}) y quedó en "${nextInternalCode || "(vacío)"}"`);
     console.log("UI_ONLY_RECEPTION code series continued", data.internalCode, "->", nextInternalCode);
     await click(page,w2.locator("[data-testid=equipment-modal-cancel]"),"Cerrar sin guardar la recepción de verificación");
   }

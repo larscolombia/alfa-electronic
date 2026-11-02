@@ -38,8 +38,12 @@ const apiBaseUrl = (process.env.PW_API_BASE_URL || baseUrl).replace(/\/+$/, "");
 const stamp = Date.now();
 const projectBlockedId = `qa-t09-gate-bloqueado-${stamp}`;
 const projectFreeId = `qa-t09-gate-libre-${stamp}`;
-const referenceBlocked = `QA-T09-REP-BLOQ-${stamp}`;
-const referenceFree = `QA-T09-REP-LIBRE-${stamp}`;
+// Colas aleatorias independientes: el scoring de duplicados (Levenshtein ratio)
+// rechaza referencias con similitud >= 0.72; compartiendo solo prefijo corto
+// y cola distinta, BLOQ/LIBRE se quedan por debajo del umbral.
+const rand = () => Math.random().toString(36).slice(2, 8);
+const referenceBlocked = `QA-T09-BLOQ-${stamp}-${rand()}`;
+const referenceFree = `QA-T09-LIBRE-${stamp}-${rand()}`;
 const shortBlocked = `QA-T09-A-${stamp}`;
 const shortFree = `QA-T09-B-${stamp}`;
 
@@ -181,6 +185,38 @@ async function createPurchaseLine(token, projectId, reference, quantity) {
     return payload.item;
 }
 
+// ReceivePurchaseLine sólo suma stock si la referencia YA existe en inventory_references:
+// por eso se crea antes de la línea de compra (mismo patrón que t16).
+async function createInventoryReference(token, referenceCode) {
+    const basePayload = {
+        reference: referenceCode,
+        internalCode: referenceCode,
+        designation: `Repuesto QA t09 ${referenceCode}`,
+        brand: "QA",
+        unitMeasure: "Unidad",
+        // Proveedor identico = score 1.0 en el scoring de duplicados:
+        // cada ficha lleva su propio proveedor para no rechazarse entre si.
+        preferredSupplierName: `Proveedor QA t09 ${referenceCode}`,
+        minStock: 0,
+        targetStock: 2,
+    };
+    let { status, payload } = await apiFetch(token, "POST", "/api/v1/inventory/references", basePayload);
+    if (status === 400 && /duplicada/i.test(JSON.stringify(payload))) {
+        // Rechazo por duplicado: solo es reutilizable si la ficha SI existe.
+        const list = await apiFetch(token, "GET", "/api/v1/inventory/references");
+        const items = Array.isArray(list.payload?.items) ? list.payload.items : [];
+        const norm = (v) => String(v || "").toLowerCase().trim();
+        if (items.some((it) => norm(it.reference) === norm(referenceCode))) {
+            return "reusada (ya existia en el catalogo)";
+        }
+        throw new Error(`crear referencia ${referenceCode}: rechazada por duplicado pero NO existe en el catalogo. Candidatos: ${JSON.stringify(payload).slice(0, 300)}`);
+    }
+    if (status !== 200 && status !== 201) {
+        throw new Error(`crear referencia ${referenceCode} fallo: HTTP ${status} ${JSON.stringify(payload).slice(0, 300)}`);
+    }
+    return "creada";
+}
+
 async function receivePurchaseLine(token, lineId, quantity) {
     const { status, payload } = await apiFetch(token, "POST", `/api/v1/inventory/purchase-lines/${lineId}/receive`, { quantity });
     if (status !== 200) {
@@ -287,6 +323,7 @@ try {
     await createProject(adminSession.accessToken, projectBlockedId, `QA t09 GATE bloqueado ${stamp}`, shortBlocked);
     result.checks.projectBlockedCreated = true;
 
+    result.observations.push(`Referencia bloqueada: ${await createInventoryReference(adminSession.accessToken, referenceBlocked)}.`);
     const lineBlocked = await createPurchaseLine(adminSession.accessToken, projectBlockedId, referenceBlocked, 2);
     result.checks.lineBlockedCreated = true;
     result.codes.purchaseLineBlockedId = lineBlocked.id;
@@ -294,6 +331,7 @@ try {
     await createProject(adminSession.accessToken, projectFreeId, `QA t09 GATE libre ${stamp}`, shortFree);
     result.checks.projectFreeCreated = true;
 
+    result.observations.push(`Referencia libre: ${await createInventoryReference(adminSession.accessToken, referenceFree)}.`);
     const lineFree = await createPurchaseLine(adminSession.accessToken, projectFreeId, referenceFree, 1);
     result.checks.lineFreeCreated = true;
     result.codes.purchaseLineFreeId = lineFree.id;

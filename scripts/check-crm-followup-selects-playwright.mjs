@@ -1,12 +1,12 @@
 /**
- * CRM — Selects del modal "Agregar Seguimiento" + precarga de "Empleado responsable".
+ * CRM — Selects del modal "Agregar Seguimiento" + precarga de "Comercial responsable".
  *
  * Verifica (UI, modo no-headless opcional) que los dos selects afectados por el
  * fix `applyBoundValue` funcionan como un usuario real:
  *
  *   1. "Accion comercial realizada" — al hacer click DESPLIEGA su lista de opciones
  *      visibles y permite ligar una opción (valor nativo + texto visible).
- *   2. "Empleado responsable" (formulario de prospecto) — PRECARGA el empleado logueado,
+ *   2. "Comercial responsable" (formulario de prospecto) — PRECARGA el comercial logueado,
  *      aunque las opciones carguen async después de fijarse el modelo.
  *
  * Detección de dropdown abierto por la clase canónica de Choices v11 que usa esta app:
@@ -84,7 +84,36 @@ try {
     await tab.waitFor({ state: "visible", timeout });
     await tab.click();
     await page.waitForTimeout(1200);
-    await page.getByRole("button", { name: /Nueva accion comercial|Nueva acción comercial/i }).first().click({ timeout, force: true });
+
+    // ── 0. Regresión de backdrop (draft LIMPIO) ────────────────────────────────
+    // Contrato real de closeCommercialActionModal() (crm-prospect-detail.component.ts):
+    //   · sin cambios pendientes → cierra inmediato;
+    //   · con cambios inválidos → se queda abierto y explica por qué (evita pérdida de datos).
+    // Por eso "clic en el fondo cierra" debe medirse sobre un modal FRESCO: en uno sucio
+    // estaríamos probando la ruta de guardado, que depende del estado async de contactos/empresa.
+    const newActionBtn = page.getByRole("button", { name: /Nueva accion comercial|Nueva acción comercial/i }).first();
+
+    await newActionBtn.click({ timeout, force: true });
+    let followupDialog = page.locator('.modal-dialog', { hasText: 'Agregar Seguimiento' });
+    await followupDialog.waitFor({ state: "visible", timeout });
+
+    // (a) Clic DENTRO del contenido → NO debe cerrar.
+    await followupDialog.locator("h5.modal-title").click({ timeout: 5000 }).catch(() => {});
+    await page.waitForTimeout(300);
+    if ((await followupDialog.count()) === 0) throw new Error("Regresión: un clic dentro del modal lo cerró");
+
+    // (b) Clic en el fondo (.modal, fuera de .modal-dialog) → DEBE cerrar. Polling hasta 5 s por re-render en visible.
+    await page.mouse.click(6, 6);
+    let backdropClosed = false;
+    for (let i = 0; i < 25 && !backdropClosed; i++) {
+        if ((await followupDialog.count()) === 0) { backdropClosed = true; break; }
+        await page.waitForTimeout(200);
+    }
+    if (!backdropClosed) throw new Error("Regresión: un clic en el fondo del modal (draft limpio) no lo cerró");
+    console.log(JSON.stringify({ step: "backdrop-regression-clean", ok: true }, null, 1));
+
+    // ── 1. Modal "Agregar Seguimiento": select "Accion comercial realizada" ────────
+    await newActionBtn.click({ timeout, force: true });
 
     const modal = page.locator(".modal-dialog", { hasText: "Agregar Seguimiento" });
     await modal.waitFor({ state: "visible", timeout });
@@ -96,7 +125,12 @@ try {
     const nativeSelect = modal.locator('label:has-text("Accion comercial realizada")').locator("xpath=following::select[1]");
     await nativeSelect.waitFor({ state: "attached", timeout });
 
-    accion.optionCount = (await nativeSelect.locator("option").all()).length;
+    // Las opciones cargan async sobre el <select>; darles hasta ~6 s en modo visible antes de fallar.
+    for (let i = 0; i < 30; i++) {
+        accion.optionCount = (await nativeSelect.locator("option").all()).length;
+        if (accion.optionCount > 1) break;
+        await page.waitForTimeout(200);
+    }
     if (accion.optionCount <= 1) throw new Error(`Carga async de opciones falló: solo ${accion.optionCount} opción(es)`);
     accion.sampleOptions = (await nativeSelect.locator("option").allTextContents()).slice(1, 5).map((t) => t.trim());
 
@@ -205,20 +239,7 @@ try {
     console.log(JSON.stringify({ step: "accion-comercial", ...accion }, null, 1));
     await capture(page, "02-accion-seleccionada");
 
-    // Regresión del cierre por backdrop (fix select): un clic DENTRO del contenido no debe
-    // cerrar el modal; un clic en el fondo (.modal, fuera del dialog) SÍ debe cerrarlo.
-    const followupDialog = page.locator('.modal-dialog', { hasText: 'Agregar Seguimiento' });
-    await followupDialog.locator("h5.modal-title").click({ timeout: 5000 }).catch(() => {});
-    await page.waitForTimeout(300);
-    if ((await followupDialog.count()) === 0) throw new Error("Regresión: un clic dentro del modal lo cerró");
-    await page.mouse.click(6, 6); // esquina superior izquierda = zona de fondo (.modal)
-    await page.waitForTimeout(400);
-    if ((await followupDialog.count()) !== 0) {
-        throw new Error("Regresión: un clic en el fondo del modal no lo cerró");
-    }
-    console.log(JSON.stringify({ step: "backdrop-regression", ok: true }, null, 1));
-
-    // ── 2. Formulario de prospecto: "Empleado responsable" precarga el logueado ─────
+    // ── 2. Formulario de prospecto: "Comercial responsable" precarga el logueado ─────
     await page.goto(`${baseUrl}/app/crm-prospectos`, { waitUntil: "domcontentloaded", timeout });
     await page.getByRole("button", { name: /Agregar Prospecto/i }).click();
     const owner = page.locator("#prospect-owner");
@@ -230,7 +251,7 @@ try {
     const ownerInner = owner.locator("xpath=ancestor::div[contains(@class,'choices')][1]//div[@class='choices__item--selectable']").first();
     result.empleadoResponsable.visibleText = (await ownerInner.textContent({ timeout: 2000 }).catch(() => "") || "").trim();
 
-    if (!result.empleadoResponsable.value) throw new Error(`"Empleado responsable": el modelo no tiene valor precargado`);
+    if (!result.empleadoResponsable.value) throw new Error(`"Comercial responsable": el modelo no tiene valor precargado`);
     console.log(JSON.stringify({ step: "empleado-responsable", ...result.empleadoResponsable }, null, 1));
 } catch (error) {
     result.error = String(error?.stack || error);

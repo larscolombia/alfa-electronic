@@ -10,7 +10,7 @@
  *     servicio, ubicación/estantería, falla impresora Heidelberg) → Preguntas
  *     (valor nuevo >2M: Sí, componentes electrónicos accesibles/falla electrónica: Sí,
  *     autorización jefe por equipo no industrial en modo manual) → Evidencia (identificador
- *     + 4 caras fotográficas) → Cierre (guardar).
+ *     + frente/atrás/placa) → Cierre (guardar).
  *  5. Captura del código generado (record id + shortCode QR) vía API de verificación.
  *  6. Verificación: equipo listado en Trabajo > Equipos y hoja/etiqueta QR imprimible.
  *
@@ -51,7 +51,7 @@ const failureText = "No energiza salidas (impresora Heidelberg)";
 const intakeCarrier = `Coordinadora t02 ${now}`;
 const trackingNumber = `GUIA-LARS-T02-${now}`;
 
-const faceFixturePaths = Array.from({ length: 4 }, (_, index) =>
+const faceFixturePaths = Array.from({ length: 3 }, (_, index) =>
     path.resolve(artifactsDir, `${artifactPrefix}face-${now}-${index + 1}.jpg`),
 );
 const faceFixtureSourcePath = path.resolve("src/assets/img/modern-ai-image/image-1.jpg");
@@ -175,11 +175,10 @@ async function answerQuestionYes(page, questionSnippet) {
 async function setRequiredFaceEvidence(page) {
     await page.locator("input[placeholder='QR, código de barras, serial o placa']").first().fill(equipmentCode);
 
-    // UI actual (required-evidence-grid): un input único por cara, oculto y single-file,
+    // UI actual (required-evidence-grid): un input único por evidencia obligatoria, oculto y single-file,
     // id = 'evidence-face-' + item.id + '-' + faceType. handleRequiredFaceEvidenceSelected()
-    // fija photo.evidenceType solo: ya no hay input multiple que reciba las 4 fotos a la vez
-    // ni tarjetas que reclasificar (el slot ya nace clasificada).
-    const faceTypes = ["face-front", "face-back", "face-left", "face-right"];
+    // fija photo.evidenceType al subir: el slot ya nace clasificado.
+    const faceTypes = ["face-front", "face-back", "serial-plate"];
     for (let index = 0; index < faceTypes.length; index += 1) {
         const slotInput = page.locator(`input[type='file'][accept='image/*'][id$="-${faceTypes[index]}"]`).first();
         await slotInput.setInputFiles(faceFixturePaths[index]);
@@ -389,7 +388,6 @@ try {
     result.checks.receptionStepCompleted = true;
 
     console.log("STEP 3: paso Equipos (PLC Siemens) …");
-    await selectCustomModal(page, page.getByTestId("equipment-modal-registration-mode-0"), "manual");
     // Familia es un <select> nativo (STANDARD_EQUIPMENT_FAMILIES: A - Alimentacion | CE - Tarjeta
     // Electrónica), NO un input libre. { label } → selectOption({label}) sobre el option real.
     await selectCustomModal(page, page.getByTestId("equipment-modal-family-0"), { label: "CE - Tarjeta Electrónica" });
@@ -463,7 +461,7 @@ try {
         await scannerInput.waitFor({ state: "visible", timeout: timeoutMs });
     }
 
-    console.log("STEP 5: paso Evidencia (identificador + 4 caras) …");
+    console.log("STEP 5: paso Evidencia (identificador + frente/atrás/placa) …");
     await setRequiredFaceEvidence(page);
     // En el paso de ingreso la señal de estado es el badge del panel "Fotos obligatorias"
     // (.evidence-side-panel): 'Completas' cuando hasRequiredFaceEvidence() pasa. El texto
@@ -477,7 +475,7 @@ try {
         .then(() => true)
         .catch(() => false);
     if (!result.checks.evidenceUploaded) {
-        result.observations.push("HALLAZGO: la evidencia no quedó con las 4 caras obligatorias completas.");
+        result.observations.push("HALLAZGO: la evidencia no quedó con las 3 evidencias obligatorias (frente/atrás/placa) completas.");
     }
     await screenshotStep(page, "05-evidence-step");
 
@@ -529,7 +527,8 @@ try {
         String(savedItem?.answers?.costAboveTwoMillion || "") === "Sí" &&
         String(savedItem?.answers?.electronicsAccessible || "") === "Sí" &&
         Boolean(savedItem?.storageLocationName || savedItem?.storageLocationId) &&
-        (savedItem?.evidencePhotos || []).length >= 4;
+        // 3 evidencias obligatorias actuales: FRENTE, ATRÁS y PLACA (requiredFaceEvidenceTypes).
+        (savedItem?.evidencePhotos || []).length >= 3;
     result.checks.apiRecordVerified = apiChecks;
     if (!apiChecks) {
         result.observations.push(`HALLAZGO: verificación API incompleta para item ${result.generated.itemId}: ${JSON.stringify(savedItem).slice(0, 900)}`);

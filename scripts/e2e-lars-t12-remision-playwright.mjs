@@ -14,6 +14,7 @@
 import path from "node:path";
 import { promises as fs } from "node:fs";
 import { chromium } from "playwright";
+import { makeUtils } from "./ui-journey-helpers.mjs";
 
 const baseUrl = process.env.PW_BASE_URL || "https://alfa.software.net.co";
 const timeoutMs = Number(process.env.PW_TIMEOUT_MS || "120000");
@@ -22,6 +23,9 @@ const userEmail = process.env.PW_USER_EMAIL || "admin@alfa.com";
 const userPassword = process.env.PW_USER_PASSWORD || "1234";
 const companyId = process.env.PW_COMPANY_ID || "demo-company";
 const artifactsDir = process.env.PW_ARTIFACTS_DIR || "playwright-artifacts";
+// Choices.js oculta el <select> nativo: selectFocus elige sobre el widget visible
+// y verifica duro que el value quedó fijado en el control real.
+const ui = makeUtils({ base: baseUrl, pause: Number(process.env.PW_SLOW_MO_MS || "300"), data: {} });
 const prefix = "e2e-lars-t12-";
 
 const normalizedBaseUrl = baseUrl.replace(/\/+$/, "");
@@ -152,8 +156,7 @@ try {
         sourceContext: "crm", assignedTo: "",
         items: [{
             id: `qa-t12-item-${stamp}`,
-            registrationMode: "manual",
-            equipmentModelId: "", serviceTypeId: "", serviceTypeName: "Reparacion",
+            serviceTypeId: "", serviceTypeName: "Reparacion",
             storageLocationId: "", storageLocationName: "",
             familyId: "", familyName: "Variadores",
             marca: "LARS", tipo: "Variador de velocidad",
@@ -166,7 +169,7 @@ try {
             accessories: "Cargador y cable de poder",
             borrowedEquipments: [],
             failureDescription: "Falla de prueba E2E t12",
-            pendingHomologation: false, estimatedData: false, identifierLabelIssue: false,
+            estimatedData: false, identifierLabelIssue: false,
             evidencePhotos: [], attachments: [], answers: {},
             repairStatus: "listo-entrega",
             repairStatusUpdatedAt: new Date().toISOString(),
@@ -273,12 +276,12 @@ try {
 
     // ── Llenar formulario completo ──
     await page.locator("[data-testid='remission-contact-name']").fill(CONTACT_NAME);
-    await page.locator("[data-testid='dispatch-type-select']").selectOption({ label: "Servientrega" });
+    await ui.selectFocus(page, page.locator("[data-testid='dispatch-type-select']"), { label: "Servientrega" });
     await page.locator("[data-testid='carrier-name-input']").fill("Servientrega");
     await page.locator("[data-testid='guide-number-input']").fill(GUIDE);
-    await page.locator("[data-testid='warranty-select']").selectOption({ label: "6 meses" });
+    await ui.selectFocus(page, page.locator("[data-testid='warranty-select']"), { label: "6 meses" });
     const itemWarranty = page.locator("div.row.g-2 select").first();
-    if (await itemWarranty.isVisible().catch(() => false)) await itemWarranty.selectOption({ label: "6 meses" });
+    if (await itemWarranty.isVisible().catch(() => false)) await ui.selectFocus(page, itemWarranty, { label: "6 meses" });
     const warrantyLabel = await page.locator("[data-testid='warranty-select']")
         .evaluate((el) => String(el.selectedOptions[0]?.textContent || "").trim()).catch(() => "");
     result.checks.warranty6MonthsSelected = warrantyLabel === "6 meses";

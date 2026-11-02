@@ -27,11 +27,15 @@
 import path from "node:path";
 import { promises as fs } from "node:fs";
 import { chromium } from "playwright";
+import { makeUtils } from "./ui-journey-helpers.mjs";
 
 const baseUrl = (process.env.PW_BASE_URL || "https://alfa.software.net.co").replace(/\/+$/, "");
 const timeoutMs = Number(process.env.PW_TIMEOUT_MS || "120000");
 const headless = !["false", "0", "no"].includes((process.env.PW_HEADLESS || "true").toLowerCase());
 const slowMoMs = Number(process.env.PW_SLOW_MO_MS || "0");
+// Choices.js oculta el <select> nativo: selectFocus elige sobre el widget visible
+// y verifica duro que el value quedó fijado en el control real.
+const ui = makeUtils({ base: baseUrl, pause: slowMoMs > 0 ? slowMoMs : 300, data: {} });
 const userEmail = process.env.PW_USER_EMAIL || "admin@alfa.com";
 const userPassword = process.env.PW_USER_PASSWORD || "1234";
 const companyId = process.env.PW_COMPANY_ID || "demo-company";
@@ -241,7 +245,9 @@ async function main() {
         // Formulario: Agregar pago
         await page.locator('button:has-text("Agregar pago")').first().click();
         const invoiceSelect = page.locator('select[name="invoiceNumber"]');
-        await invoiceSelect.waitFor({ state: "visible", timeout: 30000 });
+        // El <select> puede estar oculto por Choices.js (data-choice=active): esperar
+        // "attached" no "visible", el widget es el control interactuable.
+        await invoiceSelect.waitFor({ state: "attached", timeout: 30000 });
 
         // Esperar a que el dropdown traiga la factura del backend (excluye Borrador/Cancelado)
         const invoiceCode = result.artifacts.invoiceCode;
@@ -276,7 +282,19 @@ async function main() {
             check("8.factura-en-dropdown", true, invoiceCode);
         }
 
-        await invoiceSelect.selectOption({ value: result.artifacts.invoiceCode });
+        // La opción se renderiza como "CÓDIGO - CLIENTE": capturar su texto exacto
+        // desde el DOM y elegirlo con selectFocus (valida duro el value real).
+        const invoiceOptionText = await page.evaluate((needle) => {
+            const sel = document.querySelector('select[name="invoiceNumber"]');
+            if (!sel) return "";
+            const opt = Array.from(sel.options).find((o) => o.value === needle || (o.textContent || "").includes(needle));
+            return opt ? String(opt.textContent).trim() : "";
+        }, result.artifacts.invoiceCode);
+        if (invoiceOptionText) {
+            await ui.selectFocus(page, invoiceSelect, { label: invoiceOptionText });
+        } else {
+            await invoiceSelect.selectOption({ value: result.artifacts.invoiceCode }, { force: true });
+        }
         await page.waitForTimeout(400);
 
         // Fecha "Pagado el" = hoy
@@ -344,7 +362,8 @@ async function main() {
         const remaining = total - payAmount;
         await page.locator('button:has-text("Agregar pago")').first().click();
         const invoiceSelect2 = page.locator('select[name="invoiceNumber"]');
-        await invoiceSelect2.waitFor({ state: "visible", timeout: 30000 });
+        // Mismo caso que el select anterior: Choices.js lo puede ocultar.
+        await invoiceSelect2.waitFor({ state: "attached", timeout: 30000 });
         await page
             .waitForFunction(
                 (needle) => {
@@ -355,7 +374,20 @@ async function main() {
                 { timeout: 45000, polling: 300 },
             )
             .catch(() => {});
-        await invoiceSelect2.selectOption({ value: result.artifacts.invoiceCode }).catch(() => {});
+        // Best effort (como el selectOption anterior): si el widget no coopera,
+        // cae a selectOption nativo forzado sin tumbar la suite.
+        const invoiceOptionText2 = await page.evaluate((needle) => {
+            const sel = document.querySelector('select[name="invoiceNumber"]');
+            if (!sel) return "";
+            const opt = Array.from(sel.options).find((o) => o.value === needle || (o.textContent || "").includes(needle));
+            return opt ? String(opt.textContent).trim() : "";
+        }, result.artifacts.invoiceCode);
+        try {
+            await ui.selectFocus(page, invoiceSelect2, { label: invoiceOptionText2 });
+        } catch (err) {
+            console.log(`[OBSERVACIÓN] selectFocus segundo pago (${String(err).slice(0, 160)}); fallback a selectOption nativo`);
+            await invoiceSelect2.selectOption({ value: result.artifacts.invoiceCode }).catch(() => {});
+        }
         await page.waitForTimeout(400);
         await page.locator('input[name="paidAt"]').fill(todayIso);
         await page.locator('input[name="amount"]').fill(String(remaining));

@@ -229,7 +229,7 @@ try {
 
     // ── 5. UI: sesión sembrada y lista de cotizaciones ─────────────────────
     await fs.mkdir(artifactsDir, { recursive: true });
-    browser = await chromium.launch({ headless });
+    browser = await chromium.launch({ headless, slowMo: Number(process.env.PW_SLOW_MO_MS || "0") });
     const context = await browser.newContext({ viewport: { width: 1600, height: 980 } });
     await context.addInitScript(
         ({ authSession, apiBase }) => {

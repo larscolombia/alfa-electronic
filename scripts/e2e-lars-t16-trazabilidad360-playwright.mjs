@@ -138,7 +138,6 @@ async function setupChain() {
         email: PROSPECT_EMAIL,
         items: [{
             id: ITEM_ID,
-            registrationMode: "manual",
             isIndustrial: true,
             serviceTypeName: "Reparación",
             familyName: "PLC",
@@ -386,7 +385,7 @@ async function setupChain() {
 
 // ─── FASE 2: VERIFICACIÓN 100% UI ───────────────────────────────────────────
 async function verifyUi(sessionData) {
-    const browser = await chromium.launch({ headless });
+    const browser = await chromium.launch({ headless, slowMo: Number(process.env.PW_SLOW_MO_MS || "0") });
     try {
         const context = await browser.newContext({ viewport: { width: 1560, height: 980 } });
         await context.addInitScript(
@@ -535,7 +534,10 @@ async function verifyUi(sessionData) {
 
         // ── V6: Pagos — el pago contra la factura ──
         await gotoApp("finance-pagos");
-        await page.waitForSelector("h5:has-text('Pagos')", { timeout: timeoutMs });
+        // finance-pagos no renderiza <h5>: el título es un breadcrumb (nav.breadcrumb-theme).
+        // Ancla estable del listado: input[name='searchTerm'] + botón "Agregar pago".
+        await page.waitForSelector("input[name='searchTerm']", { timeout: timeoutMs });
+        await page.waitForSelector("text=Agregar pago", { timeout: timeoutMs });
         await page.waitForSelector("table", { timeout: timeoutMs });
         // Filtrar por cliente para no depender del orden ni de la paginación.
         const paySearch = page.locator("input[name='searchTerm']").first();
@@ -549,8 +551,13 @@ async function verifyUi(sessionData) {
 
         // ── V7: CRM — prospecto y cliente maestro ──
         await gotoApp("crm-prospectos");
-        await page.waitForSelector("h5:has-text('Prospectos')", { timeout: timeoutMs });
-        await page.waitForSelector("table", { timeout: timeoutMs });
+        // La página NO tiene <h5> "Prospectos" ni <table>: el título es la breadcrumb
+        // (li.breadcrumb-item) y el cuerpo es el buscador global [data-testid=prospects-search].
+        // Anclas reales del markup actual (crm-prospects.component.ts).
+        await page.waitForSelector(
+            "li.breadcrumb-item:has-text('Prospectos'), [data-testid='prospects-search']",
+            { timeout: timeoutMs },
+        );
         await page.waitForTimeout(2000);
         const prospectText = await bodyText();
         const prospectoEnLista = prospectText.includes(PROSPECT_NAME);
@@ -571,9 +578,19 @@ async function verifyUi(sessionData) {
         }
         await shot("07-prospecto");
         await gotoApp("crm-clientes");
-        await page.waitForTimeout(2500);
+        // /app/crm-clientes es una página de BÚSQUEDA GLOBAL que arranca vacía: no hay <table>
+        // ni listado fijo; nada se renderiza hasta escribir en el input (mismo patrón que
+        // crm-prospectos, ver paso 5 de t01). Anclas reales de crm-clients.component.ts:
+        // [data-testid=clients-search] + resultados [data-testid=client-search-results].
+        await page.waitForSelector("[data-testid='clients-search']", { timeout: timeoutMs });
+        const clientSearchInput = page.locator('[data-testid="clients-search"]').first();
+        await clientSearchInput.fill(CLIENT_COMPANY);
+        // El buscador global tiene debounce (~300ms) + roundtrip al backend BM25:
+        // esperar el contenedor de resultados antes de leer el body.
+        await page.waitForSelector("[data-testid='client-search-results']", { timeout: 20000 });
         const clientText = await bodyText();
-        chainStep("V7.cliente-visible", clientText.includes(CLIENT_COMPANY), `cliente maestro ${CLIENT_COMPANY} listado`);
+        chainStep("V7.cliente-visible", clientText.includes(CLIENT_COMPANY), `cliente maestro ${CLIENT_COMPANY} listado en resultados de búsqueda`);
+        if (!clientText.includes(CLIENT_COMPANY)) find("cliente", `El cliente maestro ${CLIENT_COMPANY} no aparece al buscarlo por nombre en /app/crm-clientes.`);
         await shot("08-cliente");
 
         return consoleErrors;

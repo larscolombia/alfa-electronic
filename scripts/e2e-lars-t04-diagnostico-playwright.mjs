@@ -9,10 +9,15 @@
 import path from "node:path";
 import { promises as fs } from "node:fs";
 import { chromium } from "playwright";
+import { makeUtils } from "./ui-journey-helpers.mjs";
 
 const baseUrl = (process.env.PW_BASE_URL || "https://alfa.software.net.co").replace(/\/+$/, "");
 const timeoutMs = Number(process.env.PW_TIMEOUT_MS || "120000");
 const headless = !["false", "0", "no"].includes((process.env.PW_HEADLESS || "true").toLowerCase());
+const slowMoMs = Number(process.env.PW_SLOW_MO_MS || "0");
+// Helper compartido (ui-journey-helpers.mjs): selectFocus/pickByLabel resuelven
+// los <select> mejorados por SelectEnhancementService (Choices.js oculta el nodo nativo).
+const ui = makeUtils({ base: baseUrl, pause: slowMoMs > 0 ? slowMoMs : 300, data: {} });
 const companyId = process.env.PW_COMPANY_ID || "demo-company";
 const artifactsDir = process.env.PW_ARTIFACTS_DIR || "playwright-artifacts";
 const apiBaseUrl = new URL(baseUrl).origin;
@@ -44,6 +49,7 @@ const result = {
     audienceTecnicoHidesClosed: false,
     audienceAdministrativoShowsClosed: false,
     persistedAfterReload: false,
+    nextActorQuoteEntryVisible: false,
     memoVisibleForNextActor: false,
     apiStatusPorCotizar: false,
   },
@@ -142,7 +148,7 @@ try {
   if (!created.ok) result.messages.createCase = `status ${created.status}: ${JSON.stringify(created.body)}`;
 
   await fs.mkdir(artifactsDir, { recursive: true });
-  browser = await chromium.launch({ headless });
+  browser = await chromium.launch({ headless, slowMo: slowMoMs });
   const context = await browser.newContext({ viewport: { width: 1540, height: 980 } });
   await context.addInitScript(
     ({ authSession, apiBase }) => {
@@ -170,7 +176,8 @@ try {
   await page.locator("h5", { hasText: "Diagnostico (Posicion 0)" }).first().waitFor({ state: "visible", timeout: timeoutMs });
   result.checks.diagnosisBlockVisible = true;
 
-  const closeBtn = page.getByRole("button", { name: "Cerrar diagnostico" }).first();
+  // Botón real en kanban-view.component.ts (L1746): "Cerrar diagnóstico y pasar a cotización".
+  const closeBtn = page.getByRole("button", { name: /cerrar diagnóstico/i }).first();
   await closeBtn.click();
   const err = page.locator(".project-detail-dialog__feedback.text-danger").first();
   await err.waitFor({ state: "visible", timeout: timeoutMs });
@@ -192,11 +199,16 @@ try {
   await fieldInput(page, "Horas hombre estimadas").fill("6");
   await fieldInput(page, "Presupuesto repuestos (USD)").fill("150");
   await setRangeValue(page, 85);
-  await page
+  // El <select> es mejorado por SelectEnhancementService (Choices.js): el nodo
+  // nativo queda hidden y selectOption directo timeoutea. awaitSelectReady espera
+  // que el control quede interactuable como usuario real; selectFocus elige la
+  // opción visible y verifica que Angular fijó el value real.
+  const closeTestSelect = page
     .locator(".project-detail-field", { has: page.locator("span.project-detail-field__label", { hasText: "Prueba de cierre" }) })
     .locator("select")
-    .first()
-    .selectOption({ label: "Laboratorio parcial" });
+    .first();
+  await ui.awaitSelectReady(page, closeTestSelect, 'El selector "Prueba de cierre" no quedó disponible');
+  await ui.selectFocus(page, closeTestSelect, { label: "Laboratorio parcial" });
   result.checks.checklistFilled = true;
   result.checks.memoAndFieldsFilled = (await fieldInput(page, "Horas hombre estimadas").inputValue()) === "6";
   await shot(page, "03-diagnosis-form-filled");
@@ -230,11 +242,16 @@ try {
   await page.waitForSelector(".kanban-board", { timeout: timeoutMs });
   result.checks.persistedAfterReload = (await cardByShortCode(page, shortCode).count()) > 0;
 
+  // En 'por-cotizar' la ficha kanban NO renderiza el memo (diseño de app: solo se
+  // muestra en etapas diagnostico/reparacion). El siguiente actor consume el
+  // diagnóstico desde aquí vía "Crear cotización con diagnóstico" (kanban-view
+  // data-testid=save-and-quote-btn); la persistencia del texto se verifica sobre
+  // properties.diagnosticNotes en el bloque de API justo debajo.
   await cardByShortCode(page, shortCode).first().click();
   await page.waitForSelector(".project-detail-dialog", { state: "visible", timeout: timeoutMs });
-  result.memoPersisted = (await fieldInput(page, "Memo diagnostico").inputValue()).trim();
-  result.checks.memoVisibleForNextActor = result.memoPersisted.includes(memoText.slice(0, 40));
-  await shot(page, "06-memo-visible-next-actor");
+  const quoteEntryBtn = page.locator('[data-testid="save-and-quote-btn"]').first();
+  result.checks.nextActorQuoteEntryVisible = (await quoteEntryBtn.isVisible().catch(() => false)) && (await quoteEntryBtn.isEnabled().catch(() => false));
+  await shot(page, "06-case-open-for-next-actor");
 
   const apiProject = await fetch(`${apiBaseUrl}/api/v1/projects/${encodeURIComponent(projectId)}`, { headers: headers(adminSession) });
   if (apiProject.ok) {
@@ -244,6 +261,8 @@ try {
     result.codes.diagnosisClosedBy = p.properties?.diagnosisClosedAt ? (p.properties?.diagnosisClosedBy || "") : "";
     result.codes.repairabilityPercent = p.properties?.repairabilityPercent;
     result.codes.estimatedHours = p.properties?.estimatedHours;
+    result.memoPersisted = String(p.properties?.diagnosticNotes ?? "").trim();
+    result.checks.memoVisibleForNextActor = result.memoPersisted.includes(memoText.slice(0, 40));
     result.checks.apiStatusPorCotizar = p.status === "por-cotizar" && Boolean(p.properties?.diagnosisClosedAt);
   }
 

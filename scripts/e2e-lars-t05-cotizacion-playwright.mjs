@@ -20,6 +20,7 @@
 import path from "node:path";
 import { promises as fs } from "node:fs";
 import { chromium } from "playwright";
+import { makeUtils } from "./ui-journey-helpers.mjs";
 
 const baseUrl = (process.env.PW_BASE_URL || "https://alfa.software.net.co").replace(/\/+$/, "");
 const apiBaseUrl = process.env.PW_API_BASE_URL
@@ -73,6 +74,11 @@ const result = {
     screenshots: [],
     error: "",
 };
+
+// Interacciones de selector por la suite UI compartida: abre el widget visible
+// (Choices.js), clickea la opción real y verifica que el value quedó fijado en el
+// <select> nativo — exactamente el contrato que ngModel necesita para no perderlo.
+const utils = makeUtils({ base: baseUrl, pause: 400, data: { serie } });
 
 let browser;
 let session;
@@ -147,8 +153,8 @@ async function setupProspectAndEquipment() {
         items: [
             {
                 id: itemId,
-                registrationMode: "manual",
-                equipmentModelId: "",
+                
+                
                 serviceTypeId: "",
                 serviceTypeName: "Reparacion",
                 storageLocationId: "",
@@ -166,7 +172,7 @@ async function setupProspectAndEquipment() {
                 accessories: "Sin accesorios",
                 borrowedEquipments: [],
                 failureDescription: "PLC no encienda / falla de comunicación E/S",
-                pendingHomologation: false,
+                
                 estimatedData: false,
                 identifierLabelIssue: false,
                 evidencePhotos: [],
@@ -190,19 +196,27 @@ async function fillLastQuoteLine(page, { servicioPattern, descripcion, precio })
     if (count === 0) throw new Error("no hay líneas de servicio en la cotización");
     const row = rows.nth(count - 1);
 
+    // Los selects de línea pueden estar mejorados con Choices.js, que oculta el
+    // <select> nativo y NO fija select.value al elegir (bug raíz del rechazo de
+    // cotización por "línea sin servicio"). Se opera sobre el widget visible como
+    // un usuario real; selectFocus verifica duro que el value quedó en el nodo real.
     const servicioSelect = row.locator("td").first().locator("select.form-select");
-    const options = await servicioSelect.locator("option").allTextContents();
+    // Se excluye el placeholder (value="") para no "elegir" una opción vacía.
+    const options = (await servicioSelect.locator("option").allTextContents()).map((o) => o.trim()).filter(Boolean);
     const wanted = options.find((o) => servicioPattern.test(o)) || options[options.length - 1];
-    await servicioSelect.selectOption({ label: wanted.trim() });
+    if (!wanted) throw new Error("el select de servicios no tiene opciones válidas");
+    await utils.selectFocus(page, servicioSelect, wanted);
 
     await row.locator("input[placeholder='Descripcion del servicio']").fill(descripcion);
     const qty = row.locator("td").nth(1).locator("input[type='number']").first();
     await qty.fill("1");
     const price = row.locator("td").nth(2).locator("input[type='number']");
     await price.fill(String(precio));
+    // Impuesto [ngValue]: el value DOM es sintético ("id: 0"); selectFocus lo resuelve
+    // desde la propia <option> y exige que quede fijado en el select nativo.
     const tax = row.locator("td").nth(3).locator("select.form-select");
-    await tax.selectOption({ label: "0%" }); // valor sin IVA
-    return { servicioElegido: wanted.trim(), opcionesServicio: options.map((o) => o.trim()) };
+    await utils.selectFocus(page, tax, "0%"); // valor sin IVA
+    return { servicioElegido: wanted.trim(), opcionesServicio: options };
 }
 
 try {
@@ -221,7 +235,7 @@ try {
     await setupProspectAndEquipment();
 
     await fs.mkdir(artifactsDir, { recursive: true });
-    browser = await chromium.launch({ headless });
+    browser = await chromium.launch({ headless, slowMo: Number(process.env.PW_SLOW_MO_MS || "0") });
     const context = await browser.newContext({ viewport: { width: 1600, height: 980 } });
     await context.addInitScript(
         ({ authSession, apiBase }) => {
@@ -246,7 +260,9 @@ try {
     // ── Abrir CRM cotizaciones y el formulario ───────────────────────────
     await page.goto(`${baseUrl}/app/crm-cotizaciones`, { waitUntil: "networkidle", timeout: timeoutMs });
     await page.waitForTimeout(2500);
-    const createBtn = page.getByRole("button", { name: /Crear Cotizacion/i }).first();
+    // 2026-11-01 — el botón dice "Crear cotización" (con tilde): la regex antigua
+    // (/Crear Cotizacion/i) nunca matcheaba y rompía el suite aunque la app estuviera sana.
+    const createBtn = page.getByRole("button", { name: /crear cotizaci[oó]n/i }).first();
     if (!(await createBtn.isVisible({ timeout: 15000 }).catch(() => false))) {
         // Carga transitoria (servidor compartido con otros agentes): reintentar una vez.
         await page.reload({ waitUntil: "networkidle", timeout: timeoutMs }).catch(() => {});
@@ -254,7 +270,7 @@ try {
     }
     await createBtn.click({ timeout: 20000 });
     await page.waitForFunction(
-        () => Array.from(document.querySelectorAll("h5")).some((n) => (n.textContent || "").toLowerCase().includes("nueva cotizacion")),
+        () => Array.from(document.querySelectorAll("h5")).some((n) => (n.textContent || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().includes("nueva cotizacion")),
         null,
         { timeout: timeoutMs },
     );
@@ -262,12 +278,25 @@ try {
     await shoot(page, "01-formulario-nueva-cotizacion");
 
     // ── Seleccionar prospecto y el equipo asociado ───────────────────────
-    const prospectSelect = page.locator("select.form-select").first();
-    await prospectSelect.selectOption({ label: prospectName }).catch(async () => {
-        await prospectSelect.selectOption(prospectName);
-    });
-    await page.waitForTimeout(3000);
-    result.checks.prospectSelected = (await prospectSelect.inputValue().catch(() => "")) === prospectName;
+    // El option de "Empresa" usa [value]="nombre" pero muestra "compania || nombre":
+    // se clickea por el texto visible (la company) y la verificación dura del helper
+    // confirma que el value real (el nombre) quedó fijado en el select nativo.
+    const empresaField = page.locator("label.form-label", { hasText: /^Empresa$/ }).first();
+    await utils.visible(empresaField, "No aparece el campo Empresa del formulario de cotización");
+    // Choices v11 (SelectEnhancementService): el <select> nativo ya NO es sibling del
+    // label — queda adentro del wrapper .choices con display:none. pickByLabel resuelve
+    // ambos modos: opera el widget visible como usuario real, o cae al select nativo si
+    // aún no fue mejorado; y verifica que el value quedó fijado en el control real.
+    await utils.pickByLabel(page, page, /^Empresa$/, `PW T05 Company ${stamp}`);
+    let prospectValue = "";
+    const inWidgetSelect = empresaField.locator("xpath=following-sibling::*[contains(@class,'choices')][1]/descendant::select").first();
+    if (await inWidgetSelect.count().catch(() => 0)) {
+        prospectValue = await inWidgetSelect.inputValue().catch(() => "");
+    } else {
+        const nativeSelect = empresaField.locator("xpath=following-sibling::select").first();
+        prospectValue = await nativeSelect.inputValue().catch(() => "");
+    }
+    result.checks.prospectSelected = prospectValue === prospectName;
     if (!result.checks.prospectSelected) throw new Error(`no se pudo seleccionar el prospecto ${prospectName}`);
 
     const equipmentLabel = page.locator("label.form-check", { hasText: serie }).first();
@@ -323,7 +352,7 @@ try {
     // ── Guardar ──────────────────────────────────────────────────────────
     await page.locator(".card-footer").getByRole("button", { name: /^Guardar$/ }).first().click();
     await page.waitForFunction(
-        () => !Array.from(document.querySelectorAll("h5")).some((n) => (n.textContent || "").toLowerCase().includes("nueva cotizacion")),
+        () => !Array.from(document.querySelectorAll("h5")).some((n) => (n.textContent || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().includes("nueva cotizacion")),
         null,
         { timeout: timeoutMs },
     );
@@ -386,12 +415,20 @@ try {
     // ── Interconexión: el equipo cotizado ya no es seleccionable ────────
     await createBtn.click({ timeout: 15000 }).catch(() => {});
     await page.waitForFunction(
-        () => Array.from(document.querySelectorAll("h5")).some((n) => (n.textContent || "").toLowerCase().includes("nueva cotizacion")),
+        () => Array.from(document.querySelectorAll("h5")).some((n) => (n.textContent || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().includes("nueva cotizacion")),
         null,
         { timeout: timeoutMs },
     ).catch(() => {});
-    const prospectSelect2 = page.locator("select.form-select").first();
-    await prospectSelect2.selectOption({ label: prospectName }).catch(() => {});
+    // Mismo select "Empresa" del formulario recién abierto (mismas reglas que arriba).
+    const empresaField2 = page.locator("label.form-label", { hasText: /^Empresa$/ }).first();
+    if (!(await utils.visible(empresaField2, "No reaparece el campo Empresa en la nueva cotización").then(() => true).catch(() => false))) {
+        result.observations.push("OBSERVACION interconexión: no se pudo reabrir el formulario; la exclusión del equipo queda sin verificar.");
+    } else {
+        // Misma estrategia dual que arriba (el select vive dentro del widget .choices).
+        await utils.pickByLabel(page, page, /^Empresa$/, `PW T05 Company ${stamp}`).catch(() => {
+            result.observations.push("OBSERVACION interconexión: no se pudo re-seleccionar el prospecto en la nueva cotización.");
+        });
+    }
     await page.waitForTimeout(3000);
     const stillVisible = await page.locator("label.form-check", { hasText: serie }).first().isVisible({ timeout: 8000 }).catch(() => false);
     result.checks.equipmentExcludedAfterQuote = !stillVisible;
@@ -413,15 +450,18 @@ try {
         // capturarse antes de que Angular pinte la cotización (timing flake).
         await previewPage.waitForFunction(
             () => {
-                const text = (document.body?.innerText || "").toLowerCase();
-                return text.includes("cotizacion") || text.includes("presupuesto") || text.includes("total") || text.includes("estimacion");
+                // Acento-independiente: la vista previa puede decir "Cotización"/"Estimación" con tilde.
+                const norm = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+                const text = norm(document.body?.innerText || "");
+                return ["cotizacion", "presupuesto", "total", "estimacion"].some((k) => text.includes(k));
             },
             null,
             { timeout: 30000 },
         ).catch(() => {});
         const previewText = await previewPage.evaluate(() => (document.body?.innerText || "").toLowerCase());
-        result.checks.quotePreviewLoaded =
-            previewText.includes("cotizacion") || previewText.includes("presupuesto") || previewText.includes("total") || previewText.includes("estimacion");
+        // Acento-independiente (mismos criterios que el wait anterior).
+        const normPreview = (previewText || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        result.checks.quotePreviewLoaded = ["cotizacion", "presupuesto", "total", "estimacion"].some((k) => normPreview.includes(k));
         await previewPage.waitForTimeout(1500);
         await previewPage.screenshot({ path: path.resolve(artifactsDir, `${prefix}06-vista-previa-${Date.now()}.png`), fullPage: true }).catch(() => "");
         const downloadBtn = previewPage.getByRole("button", { name: /Descargar/i }).first();
