@@ -378,7 +378,22 @@ try {
     if (techIndex === -1) {
         throw new Error("La opción 'Tecnico PW T03' no está en el select de técnico responsable del wizard.");
     }
+
+    // 2026-11-02 — Petición del usuario: la celda Asignación técnica ya NO muestra el botón
+    // "Actualizar carga" ni el texto "Especialidad detectada", y al seleccionar el técnico la
+    // carga laboral se refresca SOLA (GET /technicians) sin clic extra.
+    result.checks.assignCellSimplified =
+        (await card.getByRole("button", { name: /Actualizar carga/i }).count()) === 0 &&
+        (await card.getByText(/Especialidad detectada/i).count()) === 0;
+    if (!result.checks.assignCellSimplified) throw new Error('La celda Asignación técnica aún muestra "Actualizar carga" o "Especialidad detectada".');
+
+    const autoRefreshRequest = page.waitForRequest(
+        (req) => req.method() === "GET" && /\/api\/v1\/crm-equipment\/technicians\?/.test(req.url()),
+        { timeout: 10000 },
+    );
     await techSelect.selectOption({ index: techIndex });
+    const autoRefreshed = await autoRefreshRequest;
+    if (!autoRefreshed) throw new Error("Seleccionar el técnico no disparó la actualización automática de carga laboral.");
     await page.waitForTimeout(300);
     result.checks.technicianAssignedInWizard = true;
     await screenshot(page, "03-wizard-asignacion-tecnico");

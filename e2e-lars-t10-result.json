@@ -2,9 +2,9 @@
   "test": "e2e-lars-t10-reparacion-cierre",
   "role": "Tecnico",
   "baseUrl": "http://localhost:4200",
-  "identifier": "PW-T10-1793627947850",
-  "shortCode": "CO-T10-1793627947850",
-  "projectId": "t10-proj-1793627947850",
+  "identifier": "PW-T10-1793629282946",
+  "shortCode": "CO-T10-1793629282946",
+  "projectId": "t10-proj-1793629282946",
   "checks": {
     "adminLoggedIn": true,
     "tecnicoUserReady": true,
@@ -27,21 +27,21 @@
     "reporteImprimible": true
   },
   "screenshots": {
-    "00-projects-board-shell-vacio": "C:\\Users\\ludwi\\Desktop\\Proyectos\\LARS\\ALFA ELECTRONICS\\playwright-artifacts\\e2e-lars-t10-00-projects-board-shell-vacio-1793627952717.png",
-    "01-board-tecnico": "C:\\Users\\ludwi\\Desktop\\Proyectos\\LARS\\ALFA ELECTRONICS\\playwright-artifacts\\e2e-lars-t10-01-board-tecnico-1793627954205.png",
-    "02-ficha-caso-abierta": "C:\\Users\\ludwi\\Desktop\\Proyectos\\LARS\\ALFA ELECTRONICS\\playwright-artifacts\\e2e-lars-t10-02-ficha-caso-abierta-1793627954833.png",
-    "03-campos-reparacion-llenos": "C:\\Users\\ludwi\\Desktop\\Proyectos\\LARS\\ALFA ELECTRONICS\\playwright-artifacts\\e2e-lars-t10-03-campos-reparacion-llenos-1793627960306.png",
-    "04-cambios-guardados": "C:\\Users\\ludwi\\Desktop\\Proyectos\\LARS\\ALFA ELECTRONICS\\playwright-artifacts\\e2e-lars-t10-04-cambios-guardados-1793627966022.png",
-    "05-cierre-validado": "C:\\Users\\ludwi\\Desktop\\Proyectos\\LARS\\ALFA ELECTRONICS\\playwright-artifacts\\e2e-lars-t10-05-cierre-validado-1793627998589.png",
-    "06-reporte-intervencion": "C:\\Users\\ludwi\\Desktop\\Proyectos\\LARS\\ALFA ELECTRONICS\\playwright-artifacts\\e2e-lars-t10-06-reporte-intervencion-1793628000764.png",
-    "07-board-listo-entrega": "C:\\Users\\ludwi\\Desktop\\Proyectos\\LARS\\ALFA ELECTRONICS\\playwright-artifacts\\e2e-lars-t10-07-board-listo-entrega-1793628006055.png"
+    "00-projects-board-shell-vacio": "C:\\Users\\ludwi\\Desktop\\Proyectos\\LARS\\ALFA ELECTRONICS\\playwright-artifacts\\e2e-lars-t10-00-projects-board-shell-vacio-1793629287827.png",
+    "01-board-tecnico": "C:\\Users\\ludwi\\Desktop\\Proyectos\\LARS\\ALFA ELECTRONICS\\playwright-artifacts\\e2e-lars-t10-01-board-tecnico-1793629289346.png",
+    "02-ficha-caso-abierta": "C:\\Users\\ludwi\\Desktop\\Proyectos\\LARS\\ALFA ELECTRONICS\\playwright-artifacts\\e2e-lars-t10-02-ficha-caso-abierta-1793629289975.png",
+    "03-campos-reparacion-llenos": "C:\\Users\\ludwi\\Desktop\\Proyectos\\LARS\\ALFA ELECTRONICS\\playwright-artifacts\\e2e-lars-t10-03-campos-reparacion-llenos-1793629295401.png",
+    "04-cambios-guardados": "C:\\Users\\ludwi\\Desktop\\Proyectos\\LARS\\ALFA ELECTRONICS\\playwright-artifacts\\e2e-lars-t10-04-cambios-guardados-1793629301086.png",
+    "05-cierre-validado": "C:\\Users\\ludwi\\Desktop\\Proyectos\\LARS\\ALFA ELECTRONICS\\playwright-artifacts\\e2e-lars-t10-05-cierre-validado-1793629333653.png",
+    "06-reporte-intervencion": "C:\\Users\\ludwi\\Desktop\\Proyectos\\LARS\\ALFA ELECTRONICS\\playwright-artifacts\\e2e-lars-t10-06-reporte-intervencion-1793629335829.png",
+    "07-board-listo-entrega": "C:\\Users\\ludwi\\Desktop\\Proyectos\\LARS\\ALFA ELECTRONICS\\playwright-artifacts\\e2e-lars-t10-07-board-listo-entrega-1793629341150.png"
   },
   "networkTrace": [
     {
       "status": 200,
       "method": "GET",
       "url": "http://localhost:4200/api/v1/worktime/entries",
-      "t": 1793627948636
+      "t": 1793629283710
     },
     {
       "req": true,
@@ -50,13 +50,13 @@
       "actualHours": null,
       "testType": null,
       "status": null,
-      "t": 1793627948640
+      "t": 1793629283714
     },
     {
       "status": 403,
       "method": "PUT",
       "url": "http://localhost:4200/api/v1/worktime/usage",
-      "t": 1793627948648
+      "t": 1793629283720
     },
     {
       "errBody": true,
@@ -64,7 +64,7 @@
       "method": "PUT",
       "url": "http://localhost:4200/api/v1/worktime/usage",
       "body": "{\"error\":\"permiso denegado: el rol 'Técnico' no tiene 'actualizar' sobre el modulo 'registro-horas'\"}\n",
-      "t": 1793627948650
+      "t": 1793629283722
     },
     {
       "req": true,
@@ -73,7 +73,7 @@
       "actualHours": null,
       "testType": null,
       "status": null,
-      "t": 1793627952958
+      "t": 1793629288099
     },
     {
       "failed": true,
@@ -85,7 +85,7 @@
       "status": 200,
       "method": "GET",
       "url": "http://localhost:4200/api/v1/worktime/entries",
-      "t": 1793627953041
+      "t": 1793629288178
     },
     {
       "req": true,
@@ -94,13 +94,13 @@
       "actualHours": null,
       "testType": null,
       "status": null,
-      "t": 1793627953043
+      "t": 1793629288181
     },
     {
       "status": 403,
       "method": "PUT",
       "url": "http://localhost:4200/api/v1/worktime/usage",
-      "t": 1793627953047
+      "t": 1793629288184
     },
     {
       "errBody": true,
@@ -108,79 +108,79 @@
       "method": "PUT",
       "url": "http://localhost:4200/api/v1/worktime/usage",
       "body": "{\"error\":\"permiso denegado: el rol 'Técnico' no tiene 'actualizar' sobre el modulo 'registro-horas'\"}\n",
-      "t": 1793627953048
+      "t": 1793629288185
     },
     {
       "status": 200,
       "method": "GET",
       "url": "http://localhost:4200/api/v1/projects/board-config",
-      "t": 1793627953185
+      "t": 1793629288330
     },
     {
       "status": 200,
       "method": "GET",
       "url": "http://localhost:4200/api/v1/projects/sla-config",
-      "t": 1793627953186
+      "t": 1793629288331
     },
     {
       "status": 200,
       "method": "GET",
       "url": "http://localhost:4200/api/v1/projects",
-      "t": 1793627953186
+      "t": 1793629288331
     },
     {
       "status": 200,
       "method": "GET",
       "url": "http://localhost:4200/api/v1/worktime/test-batches",
-      "t": 1793627953270
+      "t": 1793629288419
     },
     {
       "status": 200,
       "method": "GET",
       "url": "http://localhost:4200/api/v1/worktime/holidays?year=2025",
-      "t": 1793627953272
-    },
-    {
-      "status": 200,
-      "method": "GET",
-      "url": "http://localhost:4200/api/v1/worktime/holidays?year=2026",
-      "t": 1793627953274
+      "t": 1793629288421
     },
     {
       "status": 200,
       "method": "GET",
       "url": "http://localhost:4200/api/v1/worktime/holidays?year=2027",
-      "t": 1793627953276
+      "t": 1793629288424
+    },
+    {
+      "status": 200,
+      "method": "GET",
+      "url": "http://localhost:4200/api/v1/worktime/holidays?year=2026",
+      "t": 1793629288426
     },
     {
       "status": 200,
       "method": "GET",
       "url": "http://localhost:4200/api/v1/projects",
-      "t": 1793627954446
+      "t": 1793629289584
     },
     {
       "req": true,
       "method": "PUT",
-      "url": "http://localhost:4200/api/v1/projects/t10-proj-1793627947850",
+      "url": "http://localhost:4200/api/v1/projects/t10-proj-1793629282946",
       "actualHours": 0,
       "testType": "banco-pruebas",
       "status": "reparacion",
-      "t": 1793627960584
+      "t": 1793629295642
     },
     {
       "status": 200,
       "method": "PUT",
-      "url": "http://localhost:4200/api/v1/projects/t10-proj-1793627947850",
-      "t": 1793627960597
+      "url": "http://localhost:4200/api/v1/projects/t10-proj-1793629282946",
+      "t": 1793629295657
     },
     {
       "req": true,
       "method": "PUT",
-      "url": "http://localhost:4200/api/v1/projects/t10-proj-1793627947850",
-      "actualHours": 0.0016891666666666667,
+      "url": "http://localhost:4200/api/v1/projects/t10-proj-1793629282946",
+      "actualHours": 0.0016669444444444444,
       "testType": "banco-pruebas",
       "status": "reparacion",
-      "t": 1793627960609
+      "t": 1793629295671
     },
     {
       "req": true,
@@ -189,19 +189,19 @@
       "actualHours": null,
       "testType": null,
       "status": null,
-      "t": 1793627960609
+      "t": 1793629295671
     },
     {
       "status": 200,
       "method": "PUT",
-      "url": "http://localhost:4200/api/v1/projects/t10-proj-1793627947850",
-      "t": 1793627960613
+      "url": "http://localhost:4200/api/v1/projects/t10-proj-1793629282946",
+      "t": 1793629295675
     },
     {
       "status": 403,
       "method": "POST",
       "url": "http://localhost:4200/api/v1/worktime/entries",
-      "t": 1793627960616
+      "t": 1793629295679
     },
     {
       "errBody": true,
@@ -209,34 +209,34 @@
       "method": "POST",
       "url": "http://localhost:4200/api/v1/worktime/entries",
       "body": "{\"error\":\"permiso denegado: el rol 'Técnico' no tiene 'agregar' sobre el modulo 'registro-horas'\"}\n",
-      "t": 1793627960619
+      "t": 1793629295682
     },
     {
       "status": 200,
       "method": "GET",
       "url": "http://localhost:4200/api/v1/projects",
-      "t": 1793627960631
+      "t": 1793629295691
     },
     {
       "status": 200,
       "method": "GET",
       "url": "http://localhost:4200/api/v1/projects",
-      "t": 1793627966230
+      "t": 1793629301296
     },
     {
       "req": true,
       "method": "PUT",
-      "url": "http://localhost:4200/api/v1/projects/t10-proj-1793627947850",
-      "actualHours": 0.0016891666666666667,
+      "url": "http://localhost:4200/api/v1/projects/t10-proj-1793629282946",
+      "actualHours": 0.0016669444444444444,
       "testType": "banco-pruebas",
       "status": "listo-entrega",
-      "t": 1793627966648
+      "t": 1793629301714
     },
     {
       "status": 200,
       "method": "PUT",
-      "url": "http://localhost:4200/api/v1/projects/t10-proj-1793627947850",
-      "t": 1793627966664
+      "url": "http://localhost:4200/api/v1/projects/t10-proj-1793629282946",
+      "t": 1793629301730
     },
     {
       "req": true,
@@ -245,13 +245,13 @@
       "actualHours": null,
       "testType": null,
       "status": null,
-      "t": 1793627968023
+      "t": 1793629303166
     },
     {
       "status": 403,
       "method": "PUT",
       "url": "http://localhost:4200/api/v1/worktime/usage",
-      "t": 1793627968027
+      "t": 1793629303169
     },
     {
       "errBody": true,
@@ -259,7 +259,7 @@
       "method": "PUT",
       "url": "http://localhost:4200/api/v1/worktime/usage",
       "body": "{\"error\":\"permiso denegado: el rol 'Técnico' no tiene 'actualizar' sobre el modulo 'registro-horas'\"}\n",
-      "t": 1793627968029
+      "t": 1793629303171
     },
     {
       "req": true,
@@ -268,13 +268,13 @@
       "actualHours": null,
       "testType": null,
       "status": null,
-      "t": 1793627983040
+      "t": 1793629318166
     },
     {
       "status": 403,
       "method": "PUT",
       "url": "http://localhost:4200/api/v1/worktime/usage",
-      "t": 1793627983044
+      "t": 1793629318169
     },
     {
       "errBody": true,
@@ -282,7 +282,7 @@
       "method": "PUT",
       "url": "http://localhost:4200/api/v1/worktime/usage",
       "body": "{\"error\":\"permiso denegado: el rol 'Técnico' no tiene 'actualizar' sobre el modulo 'registro-horas'\"}\n",
-      "t": 1793627983046
+      "t": 1793629318172
     },
     {
       "req": true,
@@ -291,13 +291,13 @@
       "actualHours": null,
       "testType": null,
       "status": null,
-      "t": 1793627998024
+      "t": 1793629333168
     },
     {
       "status": 403,
       "method": "PUT",
       "url": "http://localhost:4200/api/v1/worktime/usage",
-      "t": 1793627998028
+      "t": 1793629333171
     },
     {
       "errBody": true,
@@ -305,16 +305,16 @@
       "method": "PUT",
       "url": "http://localhost:4200/api/v1/worktime/usage",
       "body": "{\"error\":\"permiso denegado: el rol 'Técnico' no tiene 'actualizar' sobre el modulo 'registro-horas'\"}\n",
-      "t": 1793627998030
+      "t": 1793629333173
     },
     {
       "req": true,
       "method": "PUT",
-      "url": "http://localhost:4200/api/v1/projects/t10-proj-1793627947850",
-      "actualHours": 0.012061944444444445,
+      "url": "http://localhost:4200/api/v1/projects/t10-proj-1793629282946",
+      "actualHours": 0.012050833333333334,
       "testType": "banco-pruebas",
       "status": "listo-entrega",
-      "t": 1793628003624
+      "t": 1793629338733
     },
     {
       "req": true,
@@ -323,19 +323,19 @@
       "actualHours": null,
       "testType": null,
       "status": null,
-      "t": 1793628003624
+      "t": 1793629338733
     },
     {
       "status": 200,
       "method": "PUT",
-      "url": "http://localhost:4200/api/v1/projects/t10-proj-1793627947850",
-      "t": 1793628003632
+      "url": "http://localhost:4200/api/v1/projects/t10-proj-1793629282946",
+      "t": 1793629338741
     },
     {
       "status": 403,
       "method": "POST",
       "url": "http://localhost:4200/api/v1/worktime/entries",
-      "t": 1793628003633
+      "t": 1793629338743
     },
     {
       "errBody": true,
@@ -343,21 +343,21 @@
       "method": "POST",
       "url": "http://localhost:4200/api/v1/worktime/entries",
       "body": "{\"error\":\"permiso denegado: el rol 'Técnico' no tiene 'agregar' sobre el modulo 'registro-horas'\"}\n",
-      "t": 1793628003637
+      "t": 1793629338745
     },
     {
       "status": 200,
       "method": "GET",
       "url": "http://localhost:4200/api/v1/projects",
-      "t": 1793628003642
+      "t": 1793629338753
     }
   ],
   "boardBannerAfterSave": "",
   "observations": [
     "Usuario Tecnico ya existia (409): pw-tecnico-t10@alfa.local",
     "Ruta muerta confirmada: /app/projects-board responde 200 pero renderiza shell vacio sin tablero (columnas=0, kanban-board=0); la ruta operativa del Tecnico es /app/work-projects.",
-    "INFO: pointage por sesion activo en ficha: 00:01 -> 00:04 (el cierre lo sumara a actualHours).",
-    "INFO: pointage de sesion confirmado - actualHours API=0.0016891666666666667 tras cerrar la ficha."
+    "INFO: pointage por sesion activo en ficha: 00:00 -> 00:04 (el cierre lo sumara a actualHours).",
+    "INFO: pointage de sesion confirmado - actualHours API=0.0016669444444444444 tras cerrar la ficha."
   ],
   "consoleErrors": [
     "Failed to load resource: the server responded with a status of 403 (Forbidden)"

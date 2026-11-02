@@ -581,15 +581,10 @@ type SoftwareBackupInfo = {
                                             </div>
                                             <div class="col-12">
                                                 <div class="border rounded p-3 bg-light-subtle">
-                                                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
-                                                        <h6 class="mb-0">Asignación técnica</h6>
-                                                        <button class="btn btn-sm btn-outline-secondary" type="button" (click)="refreshTechniciansForItem(item)" [disabled]="technicianCatalogLoading">
-                                                            Actualizar carga
-                                                        </button>
-                                                    </div>
-                                                    <p class="small text-secondary mb-2">
-                                                        Especialidad detectada: <strong>{{ resolveItemAssignmentSpeciality(item) }}</strong>
-                                                    </p>
+                                                    <!-- 2026-11-02 — Petición del usuario: se retiró el botón "Actualizar carga" y el texto
+                                                         "Especialidad detectada". La carga laboral de los técnicos se actualiza sola al
+                                                         seleccionar (ver assignDraftTechnicianToItem). Suite de guardia: e2e-lars-t03-asignacion. -->
+                                                    <h6 class="mb-2">Asignación técnica</h6>
                                                     <div class="row gx-3 gy-2 align-items-end">
                                                         <div class="col-12 col-lg-8">
                                                             <label class="form-label">Técnico responsable</label>
@@ -1839,7 +1834,6 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy,
         return getEquipmentLocations();
     }
     private readonly catalogUnsubscribe: () => void;
-    technicianCatalogLoading = false;
     techniciansAll: EquipmentTechnicianOption[] = [];
     techniciansBySpeciality = new Map<string, EquipmentTechnicianOption[]>();
     private companyProspectsByKey = new Map<string, CrmProspectRecord[]>();
@@ -3373,6 +3367,10 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy,
         item.assignedTo = selected?.name || item.assignedTo || "";
         item.assignedAt = new Date().toISOString();
         item.assignedBy = this.authService.getCurrentUserName() || "jefe-tecnico";
+
+        // 2026-11-02 — Petición del usuario: al cambiar de técnico se actualiza sola la carga laboral
+        // (antes era manual vía botón "Actualizar carga", retirado de esta celda).
+        this.refreshTechniciansForItem(item);
     }
 
     getItemQrAttachment(item: ProspectEquipmentItem): ProspectEquipmentAttachment | null {
@@ -4078,7 +4076,6 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy,
     }
 
     private loadTechniciansCatalog(): void {
-        this.technicianCatalogLoading = true;
         this.techniciansBySpeciality.clear();
 
         // Contexto 'tecnica': este select asigna el TÉCNICO RESPONSABLE del equipo.
@@ -4097,7 +4094,6 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy,
                 });
 
                 if (specialitySet.size === 0) {
-                    this.technicianCatalogLoading = false;
                     this.changeDetectorRef.detectChanges();
                     return;
                 }
@@ -4112,17 +4108,14 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy,
                         grouped.forEach((group, index) => {
                             this.techniciansBySpeciality.set(pendingSpecialities[index], group);
                         });
-                        this.technicianCatalogLoading = false;
                         this.changeDetectorRef.detectChanges();
                     },
                     error: () => {
-                        this.technicianCatalogLoading = false;
                         this.changeDetectorRef.detectChanges();
                     },
                 });
             },
             error: () => {
-                this.technicianCatalogLoading = false;
                 this.techniciansAll = [];
                 this.changeDetectorRef.detectChanges();
             },
