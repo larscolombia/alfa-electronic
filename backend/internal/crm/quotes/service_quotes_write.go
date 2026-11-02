@@ -313,8 +313,14 @@ VALUES (
 	false, NOW(), NOW()
 );
 `, companyID, uuid.NewString(), normalizedName, normalizedEmail, normalizedCompany, normalizedZone)
+	if err != nil {
+		return err
+	}
 
-	return err
+	// Busqueda global (indice BM25): este cliente acaba de nacer y todavia no esta en el indice.
+	// Se refresca de forma sincrona para que aparezca al instante; el ticker de fondo sigue cubriendo como red.
+	s.refreshGlobalSearch(ctx)
+	return nil
 }
 
 func (s *Service) applyPurchaseOrderWorkflow(ctx context.Context, companyID string, quote Quote) error {

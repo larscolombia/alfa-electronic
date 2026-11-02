@@ -142,6 +142,12 @@ func main() {
 		return searchService.ReindexFromDB(ctx)
 	})
 
+	// La cotizacion aceptada de un prospecto nuevo crea el cliente maestro (ensureClientFromAcceptedQuote);
+	// sin este refresco solo la veia el ticker de fondo cada 45s y el buscador global lo perdía por timing.
+	crmQuotesService.SetSearchRefresher(func(ctx context.Context) error {
+		return searchService.ReindexFromDB(ctx)
+	})
+
 	// Identidad de la empresa (logo, nombre, contacto, titulo del tab): una fila
 	// por company_id. GET publico para la pagina de cotizacion del cliente; PUT
 	// admin para /app/company-profile.

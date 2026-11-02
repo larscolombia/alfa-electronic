@@ -1,8 +1,10 @@
 package quotes
 
 import (
+	"context"
 	"database/sql"
 	"errors"
+	"log"
 
 	"pika.software.net.co/backend/internal/platform/mailer"
 )
@@ -45,8 +47,29 @@ type Service struct {
 	// SetEmailOutbox desde main.go; nil significa que el envío de correos no
 	// está cableado y SendQuoteEmail lo reporta en vez de fingir éxito.
 	emailOutbox *mailer.Outbox
+
+	// Refresco del índice de búsqueda global (BM25, ver internal/search): se invoca tras
+	// crear el cliente maestro desde una cotización aceptada para que el buscador lo muestre
+	// al instante. nil = sin cablear; el refresco en segundo plano sigue cubriendo como red.
+	searchRefresher func(ctx context.Context) error
 }
 
 func NewService(db *sql.DB) *Service {
 	return &Service{db: db}
+}
+
+// SetSearchRefresher conecta el refresco del índice de búsqueda global (lo cablea main.go
+// contra internal/search). Mismo contrato que crm.Service.SetSearchRefresher: se ejecuta
+// síncronamente, después de que la escritura a base de datos confirmó éxito.
+func (s *Service) SetSearchRefresher(fn func(ctx context.Context) error) {
+	s.searchRefresher = fn
+}
+
+func (s *Service) refreshGlobalSearch(ctx context.Context) {
+	if s.searchRefresher == nil {
+		return
+	}
+	if err := s.searchRefresher(ctx); err != nil {
+		log.Printf("quotes: refresco de indice de busqueda global: %v", err)
+	}
 }
