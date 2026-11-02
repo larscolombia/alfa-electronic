@@ -3,11 +3,11 @@
   "requirement": "Aprobar solicitud -> linea de compra pendiente -> enviar -> recibir -> stock acreditado con auditoria",
   "baseUrl": "http://localhost:4200",
   "data": {
-    "reference": "SOL-T08-1793626659216",
-    "purchaseRequest": "SOL-T08-1793626659216",
+    "reference": "SOL-T08-1793627861544",
+    "purchaseRequest": "SOL-T08-1793627861544",
     "quantity": 3,
     "technician": "pw-tecnico-t08@alfa.local",
-    "ghostReference": "GHOST-T08-1793626659216"
+    "ghostReference": "GHOST-T08-1793627861544"
   },
   "checks": {
     "adminLoggedIn": true,
@@ -28,34 +28,34 @@
     "ghostStockNotCredited": true
   },
   "bugEvidence": {
-    "reference": "GHOST-T08-1793626659216",
-    "lineId": "po-1793626687571-ee6y2",
+    "reference": "GHOST-T08-1793627861544",
+    "lineId": "po-1793627890181-meiiu",
     "receiveHttpStatus": 400,
-    "feedbackText": "La referencia 'GHOST-T08-1793626659216' no existe en el catalogo de inventario. Cree la ficha primero o corrija la linea de compra.",
+    "feedbackText": "La referencia 'GHOST-T08-1793627861544' no existe en el catalogo de inventario. Cree la ficha primero o corrija la linea de compra.",
     "receivedQuantityAfter": 0,
     "referenceCreatedByReceipt": false,
     "stockMovementForReference": null
   },
   "observations": [
     "OK: usuario tecnico ya existia (409): pw-tecnico-t08@alfa.local.",
-    "OK: solicitud SOL-T08-1793626659216 creada por 'pw-tecnico-t08@alfa.local' (cantidad 3).",
-    "OK: linea generada po-1793626665462-6mqu6 (purchaseLineId enlazado en la solicitud), estado pendiente/aprobada.",
-    "OK: stock de SOL-T08-1793626659216 0 -> 3 (+3).",
-    "OK: movimiento de entrada mov-1793626682677-uyiee + auditoria RECEIVE_PURCHASE_LINE registrados.",
-    "OK (check negativo): el sistema rechazo o advirtio el recibo sin ficha de inventario (http=400, feedback='La referencia 'GHOST-T08-1793626659216' no existe en el catalogo de inventario. Cree la ficha primero o corrija la linea')."
+    "OK: solicitud SOL-T08-1793627861544 creada por 'pw-tecnico-t08@alfa.local' (cantidad 3).",
+    "OK: linea generada po-1793627867861-y66ye (purchaseLineId enlazado en la solicitud), estado pendiente/aprobada.",
+    "OK: stock de SOL-T08-1793627861544 0 -> 3 (+3).",
+    "OK: movimiento de entrada mov-1793627885165-maquy + auditoria RECEIVE_PURCHASE_LINE registrados.",
+    "OK (check negativo): el sistema rechazo o advirtio el recibo sin ficha de inventario (http=400, feedback='La referencia 'GHOST-T08-1793627861544' no existe en el catalogo de inventario. Cree la ficha primero o corrija la linea')."
   ],
   "consoleErrors": [
     "Failed to load resource: the server responded with a status of 400 (Bad Request)"
   ],
   "pageErrors": [],
   "screenshots": {
-    "01-solicitud-pendiente-listada": "C:\\Users\\ludwi\\Desktop\\Proyectos\\LARS\\ALFA ELECTRONICS\\playwright-artifacts\\e2e-lars-t08-1793626659216-01-solicitud-pendiente-listada.png",
-    "02-solicitud-aprobada": "C:\\Users\\ludwi\\Desktop\\Proyectos\\LARS\\ALFA ELECTRONICS\\playwright-artifacts\\e2e-lars-t08-1793626659216-02-solicitud-aprobada.png",
-    "03-linea-compra-generada": "C:\\Users\\ludwi\\Desktop\\Proyectos\\LARS\\ALFA ELECTRONICS\\playwright-artifacts\\e2e-lars-t08-1793626659216-03-linea-compra-generada.png",
-    "04-linea-enviada": "C:\\Users\\ludwi\\Desktop\\Proyectos\\LARS\\ALFA ELECTRONICS\\playwright-artifacts\\e2e-lars-t08-1793626659216-04-linea-enviada.png",
-    "05-linea-recibida": "C:\\Users\\ludwi\\Desktop\\Proyectos\\LARS\\ALFA ELECTRONICS\\playwright-artifacts\\e2e-lars-t08-1793626659216-05-linea-recibida.png",
-    "06-stock-acreditado": "C:\\Users\\ludwi\\Desktop\\Proyectos\\LARS\\ALFA ELECTRONICS\\playwright-artifacts\\e2e-lars-t08-1793626659216-06-stock-acreditado.png",
-    "07-ghost-recibo-sin-aviso": "C:\\Users\\ludwi\\Desktop\\Proyectos\\LARS\\ALFA ELECTRONICS\\playwright-artifacts\\e2e-lars-t08-1793626659216-07-ghost-recibo-sin-aviso.png"
+    "01-solicitud-pendiente-listada": "C:\\Users\\ludwi\\Desktop\\Proyectos\\LARS\\ALFA ELECTRONICS\\playwright-artifacts\\e2e-lars-t08-1793627861544-01-solicitud-pendiente-listada.png",
+    "02-solicitud-aprobada": "C:\\Users\\ludwi\\Desktop\\Proyectos\\LARS\\ALFA ELECTRONICS\\playwright-artifacts\\e2e-lars-t08-1793627861544-02-solicitud-aprobada.png",
+    "03-linea-compra-generada": "C:\\Users\\ludwi\\Desktop\\Proyectos\\LARS\\ALFA ELECTRONICS\\playwright-artifacts\\e2e-lars-t08-1793627861544-03-linea-compra-generada.png",
+    "04-linea-enviada": "C:\\Users\\ludwi\\Desktop\\Proyectos\\LARS\\ALFA ELECTRONICS\\playwright-artifacts\\e2e-lars-t08-1793627861544-04-linea-enviada.png",
+    "05-linea-recibida": "C:\\Users\\ludwi\\Desktop\\Proyectos\\LARS\\ALFA ELECTRONICS\\playwright-artifacts\\e2e-lars-t08-1793627861544-05-linea-recibida.png",
+    "06-stock-acreditado": "C:\\Users\\ludwi\\Desktop\\Proyectos\\LARS\\ALFA ELECTRONICS\\playwright-artifacts\\e2e-lars-t08-1793627861544-06-stock-acreditado.png",
+    "07-ghost-recibo-sin-aviso": "C:\\Users\\ludwi\\Desktop\\Proyectos\\LARS\\ALFA ELECTRONICS\\playwright-artifacts\\e2e-lars-t08-1793627861544-07-ghost-recibo-sin-aviso.png"
   },
   "error": ""
 }

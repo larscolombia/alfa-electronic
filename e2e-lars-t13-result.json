@@ -21,35 +21,35 @@
     "apiRefacturarReturns409": true
   },
   "codes": {
-    "prospectId": "c44f9f55-b3d6-4bb0-a492-5a5979a93bbd",
-    "clientId": "c57d1691-0770-4b17-ba96-4727cf049ba8",
-    "quoteId": "7324dd8f-50f8-48b4-9fcf-381df40943c5",
-    "quoteCodigo": "PW-T13-1793626842539",
-    "quoteToken": "855f413f79bd02d04ff0a2ab187d4081",
-    "invoiceId": 32,
-    "invoiceCode": "FAC-2026-000032",
+    "prospectId": "bd92b181-4014-4d91-bc57-02daa9141299",
+    "clientId": "d163c996-7e9d-4500-8ac7-949c1cf18aa1",
+    "quoteId": "f8570cbe-d1a2-4596-8e9c-4c51f101b402",
+    "quoteCodigo": "PW-T13-1793628046903",
+    "quoteToken": "fc9d3e7effad9e5b9d160a24c9204f1a",
+    "invoiceId": 37,
+    "invoiceCode": "FAC-2026-000037",
     "invoiceSeriesPrefix": "FAC-2026-",
-    "invoiceSequenceNumber": 32
+    "invoiceSequenceNumber": 37
   },
   "observations": [
-    "DATO: conversión prospecto→cliente (nuevo), clientId=c57d1691-0770-4b17-ba96-4727cf049ba8.",
+    "DATO: conversión prospecto→cliente (nuevo), clientId=d163c996-7e9d-4500-8ac7-949c1cf18aa1.",
     "DATO: GET /finance/invoices en la vista de finanzas: disparado.",
     "OBSERVACION: tras facturar, el botón 'Convertir en factura' ya no aparece (la UI oculta la acción). Se verifica idempotencia por API.",
-    "DATO: factura FAC-2026-000032 (id=32) source='quote' cliente='PW T13 Fact Company 1793626842539' issue=2026-11-02 due=2026-12-17 (45d) total=1508000 estado='Borrador'."
+    "DATO: factura FAC-2026-000037 (id=37) source='quote' cliente='PW T13 Fact Company 1793628046903' issue=2026-11-02 due=2026-12-17 (45d) total=1508000 estado='Borrador'."
   ],
   "consoleErrors": [],
   "pageErrors": [],
   "screenshots": [
-    "C:\\Users\\ludwi\\Desktop\\Proyectos\\LARS\\ALFA ELECTRONICS\\playwright-artifacts\\e2e-lars-t13-01-cotizacion-aprobada-lista-1793626847458.png",
-    "C:\\Users\\ludwi\\Desktop\\Proyectos\\LARS\\ALFA ELECTRONICS\\playwright-artifacts\\e2e-lars-t13-02-factura-creada-mensaje-1793626848091.png",
-    "C:\\Users\\ludwi\\Desktop\\Proyectos\\LARS\\ALFA ELECTRONICS\\playwright-artifacts\\e2e-lars-t13-03-factura-en-modulo-finanzas-1793626850722.png",
-    "C:\\Users\\ludwi\\Desktop\\Proyectos\\LARS\\ALFA ELECTRONICS\\playwright-artifacts\\e2e-lars-t13-04-refacturar-boton-oculto-1793626855081.png"
+    "C:\\Users\\ludwi\\Desktop\\Proyectos\\LARS\\ALFA ELECTRONICS\\playwright-artifacts\\e2e-lars-t13-01-cotizacion-aprobada-lista-1793628052143.png",
+    "C:\\Users\\ludwi\\Desktop\\Proyectos\\LARS\\ALFA ELECTRONICS\\playwright-artifacts\\e2e-lars-t13-02-factura-creada-mensaje-1793628052759.png",
+    "C:\\Users\\ludwi\\Desktop\\Proyectos\\LARS\\ALFA ELECTRONICS\\playwright-artifacts\\e2e-lars-t13-03-factura-en-modulo-finanzas-1793628055407.png",
+    "C:\\Users\\ludwi\\Desktop\\Proyectos\\LARS\\ALFA ELECTRONICS\\playwright-artifacts\\e2e-lars-t13-04-refacturar-boton-oculto-1793628059780.png"
   ],
   "cleanupLog": [
-    "factura 32 → HTTP 204",
-    "cotización 7324dd8f-50f8-48b4-9fcf-381df40943c5 → HTTP 204",
-    "cliente c57d1691-0770-4b17-ba96-4727cf049ba8 → HTTP 204",
-    "prospecto c44f9f55-b3d6-4bb0-a492-5a5979a93bbd → HTTP 404"
+    "factura 37 → HTTP 204",
+    "cotización f8570cbe-d1a2-4596-8e9c-4c51f101b402 → HTTP 204",
+    "cliente d163c996-7e9d-4500-8ac7-949c1cf18aa1 → HTTP 204",
+    "prospecto bd92b181-4014-4d91-bc57-02daa9141299 → HTTP 404"
   ],
   "error": ""
 }

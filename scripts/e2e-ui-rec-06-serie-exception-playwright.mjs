@@ -24,8 +24,9 @@ const result = {
   accessoryAddedViaEnter: false,
   accessoryInlineEditWorks: false,
   accessoryRemoveSecond: false,
-  accessoryEmptyState: false,
-  borrowedSectionKept: false,
+  accessoryCollapsedWhenEmpty: false,
+  reExpandedAfterAdd: false,
+  finalCollapsedEmpty: false,
   borrowedAddRemoveWorks: false,
   labelIssueCheckRemoved: false,
   exceptionPromptRemoved: false,
@@ -111,23 +112,43 @@ try {
   result.accessoryRemoveSecond = (await modal.locator("input[aria-label^='Accesorio ']").count()) === 1;
   if (!result.accessoryRemoveSecond) throw new Error(`Quitar el segundo accesorio no dejo 1 fila: count=${await modal.locator("input[aria-label^='Accesorio ']").count()}`);
 
-  // Quitar el ultimo -> estado vacio visible.
+  // Quitar el ultimo -> la seccion colapsa (simplificación visual, 2026-11-02):
+  // sin estado vacío "Sin accesorios registrados." y sin sección de préstamos.
   await modal.getByTestId("equipment-modal-remove-accessory-0-0").click(); await wait(page);
-  result.accessoryEmptyState = (await modal.locator("input[aria-label^='Accesorio ']").count()) === 0 && (await modal.getByText("Sin accesorios registrados.", { exact: true }).isVisible());
-  if (!result.accessoryEmptyState) throw new Error(`Quitar el ultimo accesorio no mostro el estado vacio`);
+  result.accessoryCollapsedWhenEmpty =
+    (await modal.locator("input[aria-label^='Accesorio ']").count()) === 0 &&
+    (await modal.getByText("Sin accesorios registrados.", { exact: true }).count()) === 0 &&
+    !(await modal.getByText("¿El cliente prestó algo para la prueba?").first().isVisible());
+  if (!result.accessoryCollapsedWhenEmpty) throw new Error(`Quitar el ultimo accesorio no colapsó la seccion (estado vacio o préstamos visibles)`);
 
-  // La seccion "Elementos prestados para prueba" (la que queda) sigue operativa:
+  // Re-agregar un accesorio -> vuelve a expandirse: fila editable + sección de préstamos.
+  await accDraft.fill("Cargador original"); await wait(page);
+  await accAdd.click(); await wait(page);
+  result.reExpandedAfterAdd =
+    (await modal.locator("input[aria-label^='Accesorio ']").count()) === 1 &&
+    (await modal.getByText("¿El cliente prestó algo para la prueba?").first().isVisible());
+  if (!result.reExpandedAfterAdd) throw new Error(`La seccion no volvió a expandirse al re-agregar un accesorio`);
+
+  // La seccion "Elementos prestados para prueba" sigue operativa:
   // abrir details -> Agregar una entrada -> fila editable -> quitarla -> lista vacia.
   const borrowedSummary = modal.getByText("¿El cliente prestó algo para la prueba?").first();
-  result.borrowedSectionKept = await borrowedSummary.isVisible();
-  if (!result.borrowedSectionKept) throw new Error(`Falta la seccion "Elementos prestados para prueba" tras eliminar la celda de accesorios`);
   await borrowedSummary.click(); await wait(page);
   await modal.getByTestId("equipment-modal-add-borrowed-0").click(); await wait(page);
-  const borrowedRows = modal.locator("section.received-items .input-group.input-group-sm");
+  // Locales acotados a <details>: hay 1 fila de accesorio fuera que no debe contar.
+  const borrowedRows = modal.locator("details.borrowed-equipment-repeater .input-group.input-group-sm");
   result.borrowedAddRemoveWorks = (await borrowedRows.count()) === 1 && (await borrowedRows.nth(0).locator("input.form-control").first().isVisible());
   if (!result.borrowedAddRemoveWorks) throw new Error(`Agregar una entrada de "Elementos prestados" no dejo una fila editable: count=${await borrowedRows.count()}`);
   await modal.getByTestId("equipment-modal-remove-borrowed-0-0").click(); await wait(page);
   result.borrowedAddRemoveWorks = (await borrowedRows.count()) === 0;
+
+  // Cierre del ciclo: quitar el ultimo accesorio -> la seccion colapsa otra vez.
+  // IMPORTANTE (contrato de Evidencia): la celda debe quedar VACIA al final; un accesorio
+  // registrado dispara evidencia adicional y bloquearia el avance a Resumen de la recepción.
+  await modal.getByTestId("equipment-modal-remove-accessory-0-0").click(); await wait(page);
+  result.finalCollapsedEmpty =
+    (await modal.locator("input[aria-label^='Accesorio ']").count()) === 0 &&
+    !(await modal.getByText("¿El cliente prestó algo para la prueba?").first().isVisible());
+  if (!result.finalCollapsedEmpty) throw new Error(`Al final la celda no quedo vacia/colapsada`);
 
   // VERIFICACIÓN DE RETIRO (2026-11-01): el checkbox de etiqueta y la caja "Motivo de excepción"
   // ya no deben existir en NINGÚN paso del modal.

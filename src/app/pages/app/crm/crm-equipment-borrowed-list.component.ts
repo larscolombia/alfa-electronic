@@ -34,10 +34,13 @@ import { createBorrowedEntry, normalizeBorrowedEntry } from "./crm-prospect-equi
                     <i class="bi bi-plus-lg me-1" aria-hidden="true"></i> Agregar
                 </button>
             </div>
-            <div class="form-text">Quedan registrados como parte del equipo recibido. Pulsa Enter o el botón para agregar.</div>
-
-            <div class="vstack gap-2 mt-2" *ngIf="accessoryItems.length > 0; else accessoryEmptyState">
-                <div class="input-group input-group-sm" *ngFor="let acc of accessoryItems; let accIndex = index; trackBy: trackByAccessoryIndex">
+            <!-- 2026-11-02 — Simplificación visual (petición del usuario): con la celda vacía solo se ve
+                 input + botón Agregar. La lista de accesorios y la sección de préstamos aparecen SOLO cuando
+                 ya existe algo registrado (o hay datos históricos de préstamo). El estado vacío "Sin
+                 accesorios registrados." se eliminó por completo. Suite de guardia: e2e-ui-rec-06. -->
+            <ng-container *ngIf="expanded">
+                <div class="vstack gap-2 mt-2" *ngIf="accessoryItems.length > 0">
+                    <div class="input-group input-group-sm" *ngFor="let acc of accessoryItems; let accIndex = index; trackBy: trackByAccessoryIndex">
                     <span class="input-group-text">{{ accIndex + 1 }}</span>
                     <input
                         class="form-control"
@@ -53,13 +56,10 @@ import { createBorrowedEntry, normalizeBorrowedEntry } from "./crm-prospect-equi
                         (click)="removeAccessory(accIndex)">
                         Quitar
                     </button>
+                    </div>
                 </div>
-            </div>
-            <ng-template #accessoryEmptyState>
-                <div class="small text-secondary border rounded px-2 py-2 mt-2">Sin accesorios registrados.</div>
-            </ng-template>
 
-            <details class="borrowed-equipment-repeater mt-3" [open]="entries.length > 0">
+                <details class="borrowed-equipment-repeater mt-3" [open]="entries.length > 0">
                 <summary class="d-flex align-items-center justify-content-between gap-2">
                     <span>¿El cliente prestó algo para la prueba?</span>
                     <span class="badge text-bg-light border">{{ entries.length ? entries.length + ' registrado' + (entries.length === 1 ? '' : 's') : 'Opcional' }}</span>
@@ -98,7 +98,8 @@ import { createBorrowedEntry, normalizeBorrowedEntry } from "./crm-prospect-equi
                         <div class="small text-secondary border rounded px-2 py-2">No hay elementos prestados para prueba.</div>
                     </ng-template>
                 </div>
-            </details>
+                </details>
+            </ng-container>
         </section>
     `,
     styles: [`
@@ -119,6 +120,11 @@ export class CrmEquipmentBorrowedListComponent {
     get accessoryItems(): string[] {
         const raw = this.item.accessories ?? "";
         return String(raw).split(/\r?\n/).map((part) => part.trim()).filter(Boolean);
+    }
+
+    // Estado expandido: hay accesorios registrados O préstamos (incluye datos históricos con solo préstamo).
+    get expanded(): boolean {
+        return this.accessoryItems.length > 0 || this.entries.length > 0;
     }
 
     trackByAccessoryIndex(index: number): number {
