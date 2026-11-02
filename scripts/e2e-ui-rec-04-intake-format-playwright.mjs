@@ -1,5 +1,7 @@
 import { chromium } from "playwright";
 import { writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { selectCustomModal } from "./ui-modal-controls.mjs";
 
 const base = (process.env.PW_BASE_URL || "http://127.0.0.1:4200").replace(/\/$/, "");
@@ -7,8 +9,9 @@ const apiBaseUrl = (process.env.PW_API_BASE_URL || "").replace(/\/$/, "");
 const id = String(Date.now()).slice(-8);
 const companyName = `QA REC04 ${id}`;
 const wait = page => page.waitForTimeout(500);
-const pdfPath = `/tmp/formato-rec04-${id}.pdf`;
-const pngPaths = ["front", "back", "left", "right"].map(face => `/tmp/cara-${face}-${id}.png`);
+// Windows: /tmp no existe → tmpdir() (patrón rec-06).
+const pdfPath = join(tmpdir(), `formato-rec04-${id}.pdf`);
+const pngPaths = ["front", "back", "serial-plate"].map(face => join(tmpdir(), `cara-${face}-${id}.png`));
 const pngBase64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
 const result = {
   case: "REC-04",
@@ -41,18 +44,18 @@ try {
   await page.locator("#passwd").fill(process.env.PW_USER_PASSWORD || "1234"); await wait(page);
   await page.locator("form.auth-form button[type='submit']").click();
   await page.waitForURL(url => url.href.includes("/app")); result.login = true;
-  await page.goto(`${base}/app/crm-prospectos`, { waitUntil: "networkidle" });
-  await page.getByRole("button", { name: /Agregar Prospecto/i }).click();
-  for (const [field, value] of [["formCompania", companyName], ["formNit", "900123456-7"], ["formCorreo", `rec04-${id}@alfa.local`]]) await page.locator(`input[name='${field}']`).fill(value);
-  await page.getByTestId("prospect-save-btn").waitFor({ state: "visible" });
-  if (await page.getByTestId("prospect-save-btn").isDisabled()) throw new Error("El formulario de prospecto quedó inválido antes de guardar");
-  await page.getByTestId("prospect-save-btn").click();
-  const row = page.locator("tbody tr", { hasText: companyName }).first(); await row.waitFor({ state: "visible" });
-  await row.getByRole("button", { name: /^Acciones$/ }).click();
-  await row.getByRole("button", { name: /Asociar equipo/i }).click(); await wait(page);
+  // Entrada por recepción directa (layout actual): el listado de prospectos ya no expone la acción
+  // "Asociar equipo"; el modal es el mismo componente, abierto desde /app/work-equipment-reception.
+  await page.goto(`${base}/app/work-equipment-reception`, { waitUntil: "networkidle" });
+  await page.getByTestId("work-equipment-create").click(); await wait(page);
+
+  // El host <app-crm-prospect-equipment-modal> es inline 0x0: NO esperar visibility sobre el host,
+  // sino sobre el botón next del footer (solo existe con el modal abierto).
   const modal = page.locator("app-crm-prospect-equipment-modal");
+  await page.getByTestId("equipment-modal-next").waitFor({ state: "visible", timeout: 15000 });
   await page.getByTestId("equipment-modal-next").click(); await wait(page);
-  await selectCustomModal(page, modal.locator("[data-testid^='equipment-modal-registration-mode-']").first(), "manual");
+
+  // Familia es un <select> nativo (catálogo fijo) y la ubicación es input libre en mayúsculas.
   const familySelect = modal.locator("[data-testid^='equipment-modal-family-']").first();
   const serviceSelect = modal.locator("[data-testid^='equipment-modal-service-type-']").first();
   const familyOptions = await familySelect.locator("option").allTextContents();
@@ -73,26 +76,37 @@ try {
   if (!result.customLocationCreated) throw new Error("La ubicación escrita no quedó en mayúsculas en el formulario");
   for (const [placeholder, value] of [["Marca del equipo", "Marca QA"], ["Tipo / referencia", "Tipo QA"], ["Serie o referencia visible", `SER-${id}`]]) await modal.locator(`input[placeholder='${placeholder}']`).fill(value);
   await modal.getByTestId("equipment-modal-next").click(); await wait(page);
+  // Costo > $2'000.000 = Sí libera el filtro industrial (requiresIndustrialOverride → false en el
+  // componente). El ack de sospecha de software (software-suspicion-ack) ya NO existe en la UI:
+  // el flujo REC-12 fue refactorizado y hoy solo quedan previous-intervention-warning,
+  // failure-pending-badge y el override industrial, así que aquí no hay nada que aceptar.
   const costSwitch = modal.locator("input[id$='-costAboveTwoMillion']");
   await costSwitch.waitFor({ state: "visible" });
-  await costSwitch.click(); await wait(page);
-  const softwareAck = modal.getByTestId("software-suspicion-ack");
-  await softwareAck.waitFor({ state: "visible" });
-  await softwareAck.check(); await wait(page);
+  if (!(await costSwitch.isChecked())) { await costSwitch.click(); await wait(page); }
+  // Aserción positiva del gate: con costo > 2M el recuadro de override debe estar oculto.
+  const industrialOverrideBox = modal.getByText("Bloqueo por filtro industrial", { exact: false }).first();
+  if (await industrialOverrideBox.isVisible().catch(() => false)) {
+    throw new Error("El bloqueo por filtro industrial no se liberó con costo > $2'000.000 = Sí");
+  }
   await modal.getByTestId("equipment-modal-next").click(); await wait(page);
   await modal.getByTestId("intake-format-file-input").setInputFiles(pdfPath); await wait(page);
   const removeBtn = modal.getByTestId("intake-format-remove-0");
   await removeBtn.waitFor({ state: "visible" }); result.pdfAttached = true;
-  await modal.locator('input[type="file"][accept="image/*"]').setInputFiles(pngPaths);
-  await modal.locator(".evidence-photo-card").nth(3).waitFor({ state: "visible" });
-  const faceLabels = ["Cara frente", "Cara atrás", "Cara izquierda", "Cara derecha"];
-  for (let i = 0; i < faceLabels.length; i += 1) await selectCustomModal(page, modal.locator(".evidence-photo-card").nth(i).getByTestId("equipment-modal-evidence-type"), { label: faceLabels[i] });
-  await wait(page);
+  // UI actual (required-evidence-grid): un input por evidencia obligatoria; el handler
+  // handleRequiredFaceEvidenceSelected fija photo.evidenceType al subir, así que el slot nace clasificado.
+  const faceSlotSuffixes = ["-face-front", "-face-back", "serial-plate"];
+  for (let i = 0; i < pngPaths.length; i += 1) {
+    await modal.locator(`input[type='file'][accept='image/*'][id$="${faceSlotSuffixes[i]}"]`).setInputFiles(pngPaths[i]);
+    await wait(page);
+  }
+  await modal.getByText("Caras completas", { exact: false }).first().waitFor({ state: "visible", timeout: 15000 });
   result.facesComplete = await modal.getByText("Caras completas").first().isVisible();
-  if (!result.facesComplete) throw new Error("El checklist de caras no quedó completo tras subir las 4 fotos");
+  if (!result.facesComplete) throw new Error("El checklist de caras no quedó completo tras subir las 3 evidencias obligatorias");
   await modal.getByTestId("equipment-modal-next").click(); await wait(page);
   const summary = await modal.innerText();
-  result.summaryPreserved = ["A - Alimentacion", "Intercambio", locationName].every(value => summary.includes(value));
+  // La ubicación se fuerza a mayúsculas en el draft (onStorageLocationInput), por lo que el
+  // resumen la muestra en mayúsculas: comparar contra esa forma normalizada.
+  result.summaryPreserved = ["A - Alimentacion", "Intercambio", locationName.toUpperCase()].every(value => summary.includes(value));
   if (!result.summaryPreserved) throw new Error(`El cierre no conservó familia, servicio y ubicación: ${summary.slice(-1800)}`);
   const saveBtn = modal.getByTestId("equipment-modal-save");
   await saveBtn.waitFor({ state: "visible" });

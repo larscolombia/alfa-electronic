@@ -1,5 +1,7 @@
 import { chromium } from "playwright";
 import { writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { selectCustomModal } from "./ui-modal-controls.mjs";
 
 const base = (process.env.PW_BASE_URL || "http://127.0.0.1:4200").replace(/\/$/, "");
@@ -9,35 +11,30 @@ const result = { case: "REC-14", login: false, firstSaved: false, dialogVisible:
 let browser;
 
 const PNG_1X1 = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "base64");
-const FACE_LABELS = ["Cara frente", "Cara atrás", "Cara izquierda", "Cara derecha"];
+const FACE_LABELS = ["Cara frente", "Cara atrás", "Placa / serie"];
 const DUP_IDENTIFIER = `SER-DUP-${id}`;
 
 async function newProspectWithEquipment(page, suffix) {
-  const name = `QA REC-14 ${suffix} ${id}`;
-  await page.goto(`${base}/app/crm-prospectos`, { waitUntil: "networkidle" });
-  await page.getByRole("button", { name: /Agregar Prospecto/i }).click();
-  for (const [field, value] of [["formNombre", name], ["formCompania", `Empresa ${suffix} ${id}`], ["formCorreo", `rec14-${suffix}-${id}@alfa.local`]]) await page.locator(`input[name='${field}']`).fill(value);
-  await page.getByTestId("prospect-save-btn").click();
-  const row = page.locator("tbody tr", { hasText: name }).first();
-  await row.waitFor({ state: "visible", timeout: 15000 }).catch(async () => {
-    await page.reload({ waitUntil: "networkidle" });
-    await row.waitFor({ state: "visible", timeout: 15000 });
-  });
-  await row.getByRole("button", { name: /^Acciones$/ }).click();
-  await row.getByRole("button", { name: /Asociar equipo/i }).click(); await wait(page);
+  // Entrada por recepción directa (layout actual): el prospecto se resuelve solo desde la sesión
+  // (authService); ya no se crea desde el listado con formNombre/"Asociar equipo".
+  await page.goto(`${base}/app/work-equipment-reception`, { waitUntil: "networkidle" });
+  await page.getByTestId("work-equipment-create").click(); await wait(page);
   const modal = page.locator("app-crm-prospect-equipment-modal");
+  // El host es inline 0x0: esperar el botón next del footer, nunca visibility sobre el host.
+  await page.getByTestId("equipment-modal-next").waitFor({ state: "visible", timeout: 15000 });
   await modal.getByTestId("equipment-modal-next").click(); await wait(page);
-  await selectCustomModal(page, modal.locator("[data-testid^='equipment-modal-registration-mode-']").first(), "manual");
-  for (const [placeholder, value] of [["Familia libre", "Instrumento"], ["Marca del equipo", "Marca QA"], ["Tipo / referencia", "Multímetro"], ["Serie o referencia visible", `${DUP_IDENTIFIER}-${suffix}`]]) await modal.locator(`input[placeholder='${placeholder}']`).fill(value);
+  // Familia es un <select> nativo (STANDARD_EQUIPMENT_FAMILIES), no el input libre antiguo.
+  await selectCustomModal(page, modal.locator("[data-testid^='equipment-modal-family-']").first(), { label: "CE - Tarjeta Electrónica" }); await wait(page);
+  for (const [placeholder, value] of [["Marca del equipo", "Marca QA"], ["Tipo / referencia", "Multímetro"], ["Serie o referencia visible", `${DUP_IDENTIFIER}-${suffix}`]]) await modal.locator(`input[placeholder='${placeholder}']`).fill(value);
   await modal.getByTestId("equipment-modal-next").click(); await wait(page);
   await modal.locator("input[id$='-costAboveTwoMillion']").check(); await wait(page);
   await modal.locator("input[id$='-softwareIssueRuledOut']").check(); await wait(page);
   await modal.getByTestId("equipment-modal-next").click(); await wait(page);
   // Identificador recibido: entrada manual (sin testid; placeholder fijo).
   await modal.locator("input[placeholder='QR, código de barras, serial o placa']").fill(DUP_IDENTIFIER); await wait(page);
-  const facePaths = FACE_LABELS.map((label, i) => { const p = `/tmp/rec14-face-${i}-${id}.png`; writeFileSync(p, PNG_1X1); return p; });
-  await modal.locator("input[type='file'][accept='image/*'][capture]").setInputFiles(facePaths);
-  await modal.locator(".evidence-photo-card").nth(3).waitFor({ state: "visible", timeout: 30000 });
+  const facePaths = FACE_LABELS.map((label, i) => { const p = join(tmpdir(), `rec14-face-${i}-${id}.png`); writeFileSync(p, PNG_1X1); return p; }); // /tmp no existe en Windows
+  await modal.getByTestId("evidence-files-input").setInputFiles(facePaths);
+  await modal.locator(".evidence-photo-card").nth(2).waitFor({ state: "visible", timeout: 30000 });
   for (let i = 0; i < FACE_LABELS.length; i++) await selectCustomModal(page, modal.locator(".evidence-photo-card").nth(i).getByTestId("equipment-modal-evidence-type"), { label: FACE_LABELS[i] });
   await wait(page);
   await modal.getByTestId("equipment-modal-next").click(); await wait(page);

@@ -6,9 +6,14 @@ import { selectCustomModal } from "./ui-modal-controls.mjs";
 
 const base = (process.env.PW_BASE_URL || "http://127.0.0.1:4200").replace(/\/$/, "");
 const id = String(Date.now()).slice(-8);
-// Screenshot opcional del chip de warning para revisar el layout de la frase larga.
-const chipShotPath = process.env.PW_CHIP_SHOT_PATH || join(tmpdir(), `rec06-chip-${id}.png`);
 const wait = page => page.waitForTimeout(500);
+// 2026-11-01 — REC-06 reescrito: el flujo "Motivo de excepción" (check de etiqueta + input de motivo)
+// se RETIRÓ de la UI por decisión del usuario. Esta prueba ahora cubre:
+//   1. celda ACCESORIOS RECIBIDOS CON EL EQUIPO (add/edit/remove, botón y Enter),
+//   2. sección "Elementos prestados para prueba" operativa,
+//   3. VERIFICACIÓN DE RETIRO: ya no existe el checkbox de etiqueta ni la caja "Motivo de excepción",
+//      y el paso Equipos SÍ avanza sin motivo (antes se bloqueaba),
+//   4. override industrial por costo, evidencia obligatoria FRENTE/ATRÁS/PLACA y guardado completo.
 const result = {
   case: "REC-06",
   login: false,
@@ -22,16 +27,11 @@ const result = {
   accessoryEmptyState: false,
   borrowedSectionKept: false,
   borrowedAddRemoveWorks: false,
-  checkboxLabelExact: false,
-  checkboxChecked: false,
-  warningChipVisible: false,
-  promptLabelExact: false,
-  exactErrorPhrase: false,
-  exceptionInputVisible: false,
-  blockedWithoutReason: false,
-  reasonAccepted: false,
-  serialPlateWarningVisible: false,
-  blockedWithoutEvidence: false,
+  labelIssueCheckRemoved: false,
+  exceptionPromptRemoved: false,
+  reasonInputRemoved: false,
+  advancedToQuestions: false,
+  serialPlateEvidenceStillRequired: true,
   saved: false,
   error: "",
 };
@@ -70,8 +70,8 @@ try {
   // Paso Recepción (intakeMethod=personal por defecto, sin bloqueos) → paso Equipos.
   await page.getByTestId("equipment-modal-next").click(); await wait(page);
 
-  // Ruta de registro manual libera los inputs Marca/Tipo/Serie (en el modo catálogo quedan readonly).
-  await selectCustomModal(page, modal.locator("[data-testid^='equipment-modal-registration-mode-']").first(), "manual");
+  // Desde 2026-11-01 no hay modo de registro: Familia por catálogo fijo y Marca/Tipo/Serie siempre libres.
+  await selectCustomModal(page, modal.locator("[data-testid^='equipment-modal-family-']").first(), { label: "CE - Tarjeta Electrónica" });
   for (const [placeholder, value] of [["Marca del equipo", "Marca QA"], ["Tipo / referencia", "Tipo QA"], ["Serie o referencia visible", `SER-${id}`]]) await modal.locator(`input[placeholder='${placeholder}']`).fill(value);
 
   // Celda ACCESORIOS RECIBIDOS CON EL EQUIPO (input libre + boton AGREGAR). Cada accesorio
@@ -129,52 +129,30 @@ try {
   await modal.getByTestId("equipment-modal-remove-borrowed-0-0").click(); await wait(page);
   result.borrowedAddRemoveWorks = (await borrowedRows.count()) === 0;
 
-  // El checkbox debe existir con la etiqueta nueva EXACTA (una sola ocurrencia en el modal).
-  const labelIssueBox = modal.getByLabel(/^Equipo con Etiqueta rota, ilegible o sin etiqueta$/i);
-  result.checkboxLabelExact = (await labelIssueBox.count()) === 1;
-  if (!result.checkboxLabelExact) throw new Error(`El checkbox "Equipo con Etiqueta rota, ilegible o sin etiqueta" no se encontró exactamente: ${JSON.stringify(await modal.locator("label.form-check-label").allInnerTexts()).slice(0, 600)}`);
-  await labelIssueBox.check(); await wait(page);
-  result.checkboxChecked = await labelIssueBox.isChecked();
+  // VERIFICACIÓN DE RETIRO (2026-11-01): el checkbox de etiqueta y la caja "Motivo de excepción"
+  // ya no deben existir en NINGÚN paso del modal.
+  const equipmentStepText = await modal.innerText();
+  result.labelIssueCheckRemoved =
+    (await modal.getByLabel(/Equipo con Etiqueta rota, ilegible o sin etiqueta/i).count()) === 0 &&
+    (await modal.getByTestId("equipment-label-issue-toggle").count()) === 0;
+  if (!result.labelIssueCheckRemoved) throw new Error(`El checkbox de etiqueta aun existe en el paso Equipos`);
 
-  // Chip de warning del ítem debe mostrar la misma nomenclatura nueva.
-  const labelChip = modal.locator(".equipment-warning-list .warning-chip", { hasText: /^Equipo con Etiqueta rota, ilegible o sin etiqueta$/i });
-  // isVisible() NO espera: responde según el instante exacto y bajo headless:false + slowMo el
-  // re-render de Angular del chip puede estar unos ms por detrás. waitFor({state:'visible'}) sí sondea.
-  result.warningChipVisible = await labelChip.first().waitFor({ state: "visible", timeout: 15000 }).then(() => true, () => false);
-  if (result.warningChipVisible) await modal.screenshot({ path: chipShotPath }).catch(() => {});
+  result.exceptionPromptRemoved = !/Motivo de excepción/i.test(equipmentStepText);
+  result.reasonInputRemoved = (await modal.getByTestId("serie-exception-reason").count()) === 0;
+  if (!result.exceptionPromptRemoved || !result.reasonInputRemoved) throw new Error(`La caja "Motivo de excepción" aun existe en el paso Equipos`);
 
-  // El prompt del motivo de excepción debe usar la nomenclatura nueva.
-  const modalTextBeforeReason = await modal.innerText();
-  result.promptLabelExact = /Motivo de excepción \(equipo con etiqueta rota, ilegible o sin etiqueta\)/i.test(modalTextBeforeReason);
-
-  const reasonInput = modal.getByTestId("serie-exception-reason");
-  result.exceptionInputVisible = await reasonInput.isVisible();
-
-  // Ruta bloqueada: sin motivo no debe dejar el paso Equipos; el error debe citar la nomenclatura nueva.
+  // El gate de motivo desapareció: Siguiente debe avanzar directo a Preguntas (antes se bloqueaba sin motivo).
   await modal.getByTestId("equipment-modal-next").click(); await wait(page);
-  const blockedText = await modal.innerText();
-  result.exactErrorPhrase = /Equipo con Etiqueta rota, ilegible o sin etiqueta/i.test(blockedText);
-  result.blockedWithoutReason = (await modal.getByTestId("equipment-modal-validation-message").isVisible()) && /motivo de excepción/i.test(blockedText) && result.exactErrorPhrase;
-  if (!result.checkboxLabelExact || !result.checkboxChecked || !result.warningChipVisible || !result.promptLabelExact || !result.exceptionInputVisible || !result.blockedWithoutReason) throw new Error(`La excepción de serie sin motivo no fue bloqueada con la nomenclatura nueva: ${blockedText.slice(-400)}`);
-
-  await reasonInput.fill(`Placa borrada por humedad QA ${id}`); await wait(page);
-  await modal.getByTestId("equipment-modal-next").click(); await wait(page);
-  result.reasonAccepted = /Preguntas por equipo/.test(await modal.innerText());
-  if (!result.reasonAccepted) throw new Error("Con motivo escrito no avanzó al paso Preguntas");
+  result.advancedToQuestions = /Preguntas por equipo/.test(await modal.innerText());
+  if (!result.advancedToQuestions) throw new Error(`Sin el gate de motivo no avanzó al paso Preguntas. Texto: ${(await modal.innerText()).slice(-400)}`);
 
   // Evita el bloqueo del filtro industrial REC-01: costo nuevo > $2M = Sí libera requiresIndustrialOverride() (no hay más ack en la UI actual).
   const costQuestion = modal.locator("div.border.rounded.p-3.bg-light-subtle", { hasText: /superior a/ }).first();
   await costQuestion.locator("input.form-check-input").check(); await wait(page);
   await modal.getByTestId("equipment-modal-next").click(); await wait(page);
 
-  // Ruta bloqueada en Evidencia: alerta serial-plate y Siguiente bloqueado.
-  result.serialPlateWarningVisible = await modal.getByTestId("serial-plate-evidence-required").isVisible();
-  await modal.getByTestId("equipment-modal-next").click(); await wait(page);
-  // La app bloquea con SERIAL_PLATE_EVIDENCE_ERROR ("Placa o serie ilegible: registra el motivo..."); la frase "Checklist..." no existe en el código.
-  result.blockedWithoutEvidence = (await modal.getByTestId("equipment-modal-validation-message").isVisible()) && /placa o serie ilegible/i.test(await modal.innerText());
-  if (!result.serialPlateWarningVisible || !result.blockedWithoutEvidence) throw new Error(`La evidencia sin placa/serie no quedó bloqueada. Texto modal: ${(await modal.innerText()).slice(0, 900)}`);
-
-  // Ruta exitosa: foto placa/serie + 2 caras (frente y atrás).
+  // Evidencia: la foto tipo "Placa / serie" sigue siendo OBLIGATORIA para todo equipo (cara requerida),
+  // igual que FRENTE y ATRÁS. Subir las 3 caras y avanzar al cierre.
   const files = evidenceTypes.map((type) => {
     const path = join(tmpdir(), `rec06-${type}-${id}.png`);
     writeFileSync(path, png1x1);
@@ -188,6 +166,9 @@ try {
     await wait(page);
   }
   await modal.getByText("Caras completas").waitFor({ state: "visible", timeout: 10000 });
+  result.serialPlateEvidenceStillRequired = /Placa \/ serie/.test(await modal.innerText());
+  if (!result.serialPlateEvidenceStillRequired) throw new Error(`La evidencia obligatoria "Placa / serie" ya no aparece como cara requerida`);
+
   await modal.getByTestId("equipment-modal-next").click(); await wait(page);
   if (!/Resumen de la recepción/.test(await modal.innerText())) throw new Error("No avanzó al paso Cierre con la evidencia completa");
 

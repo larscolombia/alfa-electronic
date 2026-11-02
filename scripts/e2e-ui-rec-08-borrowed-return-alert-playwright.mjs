@@ -1,5 +1,8 @@
 import { chromium } from "playwright";
 import { writeFileSync } from "node:fs";
+// Windows: /tmp no existe → tmpdir() (patrón rec-04/rec-06).
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { selectCustomModal } from "./ui-modal-controls.mjs";
 
 const base = (process.env.PW_BASE_URL || "http://127.0.0.1:4200").replace(/\/$/, "");
@@ -10,7 +13,9 @@ const result = { case: "REC-08", login: false, borrowedCode: "", codeFormatOk: f
 let browser;
 
 const PNG_1X1 = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "base64");
-const FACES = ["face-front", "face-back", "face-left", "face-right"];
+const FACES = ["face-front", "face-back", "serial-plate"];
+const facePaths = ["front", "back", "serial-plate"].map(face => join(tmpdir(), `rec08-${face}-${id}.png`));
+for (const p of facePaths) writeFileSync(p, PNG_1X1);
 
 try {
   browser = await chromium.launch({ headless: false, slowMo: 500 });
@@ -20,21 +25,24 @@ try {
   await page.locator("#passwd").fill(process.env.PW_USER_PASSWORD || "1234"); await wait(page);
   await page.locator("form.auth-form button[type='submit']").click();
   await page.waitForURL(url => url.href.includes("/app")); result.login = true;
-  await page.goto(`${base}/app/crm-prospectos`, { waitUntil: "networkidle" });
-  await page.getByRole("button", { name: /Agregar Prospecto/i }).click();
-  for (const [field, value] of [["formNombre", name], ["formCompania", `Empresa ${id}`], ["formCorreo", `rec08-${id}@alfa.local`]]) await page.locator(`input[name='${field}']`).fill(value);
-  await page.getByTestId("prospect-save-btn").click();
-  const row = page.locator("tbody tr", { hasText: name }).first(); await row.waitFor({ state: "visible" });
-  await row.getByRole("button", { name: /^Acciones$/ }).click();
-  await row.getByRole("button", { name: /Asociar equipo/i }).click(); await wait(page);
+  // Entrada por recepción directa (layout actual): el listado de prospectos ya no expone la acción
+  // "Asociar equipo"; el modal es el mismo componente, abierto desde /app/work-equipment-reception.
+  await page.goto(`${base}/app/work-equipment-reception`, { waitUntil: "networkidle" });
+  await page.getByTestId("work-equipment-create").click(); await wait(page);
   const modal = page.locator("app-crm-prospect-equipment-modal");
+  // El host es inline 0x0: esperar el botón next del footer, nunca visibility sobre el host.
+  await page.getByTestId("equipment-modal-next").waitFor({ state: "visible", timeout: 15000 });
   await modal.getByTestId("equipment-modal-next").click(); await wait(page);
 
-  // Paso Equipos: modo manual + datos del equipo.
-  await selectCustomModal(page, modal.locator("[data-testid^='equipment-modal-registration-mode-']").first(), "manual");
-  for (const [placeholder, value] of [["Familia libre", "Instrumento"], ["Marca del equipo", "Marca QA"], ["Tipo / referencia", "Multímetro"], ["Serie o referencia visible", `SER-${id}`]]) await modal.locator(`input[placeholder='${placeholder}']`).fill(value);
+  // Paso Equipos: familia por catálogo fijo (select nativo) + datos libres del equipo.
+  // Familia es un <select> nativo (STANDARD_EQUIPMENT_FAMILIES), no el input libre antiguo.
+  await selectCustomModal(page, modal.locator("[data-testid^='equipment-modal-family-']").first(), { label: "CE - Tarjeta Electrónica" }); await wait(page);
+  for (const [placeholder, value] of [["Marca del equipo", "Marca QA"], ["Tipo / referencia", "Multímetro"], ["Serie o referencia visible", `SER-${id}`]]) await modal.locator(`input[placeholder='${placeholder}']`).fill(value);
 
-  // REC-08: préstamo anclado con código BLD-XXXXXXXX.
+  // REC-08: préstamo anclado con código BLD-XXXXXXXX. El <details> nace cerrado sin entradas → expandir primero.
+  const borrowedDetails = modal.locator("app-crm-equipment-borrowed-list details").first();
+  if (!(await borrowedDetails.evaluate(el => el.open))) await modal.locator("app-crm-equipment-borrowed-list summary").click();
+  await wait(page);
   await modal.getByTestId("equipment-modal-add-borrowed-0").click(); await wait(page);
   await modal.getByTestId("equipment-modal-add-borrowed-0").click(); await wait(page);
   const removeBtn = modal.getByTestId("equipment-modal-remove-borrowed-0-1");
@@ -52,14 +60,16 @@ try {
   await modal.locator("input[id$='-costAboveTwoMillion']").check(); await wait(page);
   await modal.locator("input[id$='-softwareIssueRuledOut']").check(); await wait(page);
 
-  // Paso Evidencia: 4 fotos de caras obligatorias.
+  // Paso Evidencia: UI actual (required-evidence-grid) — un input por evidencia obligatoria,
+  // id = 'evidence-face-' + item.id + '-' + faceType; el slot nace clasificado al subir
+  // (handleRequiredFaceEvidenceSelected fija photo.evidenceType), sin select posterior.
   await modal.getByTestId("equipment-modal-next").click(); await wait(page);
-  const facePaths = FACES.map(face => { const p = `/tmp/rec08-${face}-${id}.png`; writeFileSync(p, PNG_1X1); return p; });
-  await modal.locator("input[type='file'][accept='image/*'][capture]").setInputFiles(facePaths);
-  await modal.locator(".evidence-photo-card").nth(3).waitFor({ state: "visible", timeout: 30000 });
-  const faceLabels = { "face-front": "Cara frente", "face-back": "Cara atrás", "face-left": "Cara izquierda", "face-right": "Cara derecha" };
-  for (let i = 0; i < FACES.length; i++) await selectCustomModal(page, modal.locator(".evidence-photo-card").nth(i).getByTestId("equipment-modal-evidence-type"), { label: faceLabels[FACES[i]] });
-  await wait(page);
+  const faceSlotSuffixes = ["-face-front", "-face-back", "serial-plate"];
+  for (let i = 0; i < FACES.length; i += 1) {
+    await modal.locator(`input[type='file'][accept='image/*'][id$="${faceSlotSuffixes[i]}"]`).setInputFiles(facePaths[i]);
+    await wait(page);
+  }
+  await modal.getByText("Caras completas", { exact: false }).first().waitFor({ state: "visible", timeout: 15000 });
 
   // Paso Cierre: badge de préstamo pendiente de devolución con el código.
   await modal.getByTestId("equipment-modal-next").click(); await wait(page);

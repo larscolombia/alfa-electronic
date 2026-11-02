@@ -1,75 +1,77 @@
 import { chromium } from "playwright";
 import { writeFileSync } from "node:fs";
+// Windows: /tmp no existe → tmpdir() (patrón rec-04/rec-06).
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { selectCustomModal } from "./ui-modal-controls.mjs";
 
 const base = (process.env.PW_BASE_URL || "http://127.0.0.1:4200").replace(/\/$/, "");
 const id = String(Date.now()).slice(-8);
-const name = `QA REC12 ${id}`;
-const wait = p => p.waitForTimeout(500);
-const result = { case: "REC-12", login: false, warningVisible: false, advanceBlocked: false, blockMessage: "", ackUnblocks: false, warningInCierre: false, saved: false, error: "" };
+// REC-12 (contrato post-retiro del gate de sospecha de software, commit 9ca92a3b):
+// con costo > $2M el wizard debe avanzar DIRECTO a Evidencia sin warning ni ack.
+// Entrada por recepción directa (layout actual): el modal se abre desde /app/work-equipment-reception.
+const result = { case: "REC-12", login: false, warningGone: false, advanceDirect: false, goneInCierre: false, saved: false, error: "" };
 let browser;
 
 const PNG_1X1 = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "base64");
-const FACE_LABELS = ["Cara frente", "Cara atrás", "Cara izquierda", "Cara derecha"];
+const facePaths = ["front", "back", "serial-plate"].map(face => join(tmpdir(), `rec12-${face}-${id}.png`));
+for (const p of facePaths) writeFileSync(p, PNG_1X1);
 
 try {
-  browser = await chromium.launch({ headless: false, slowMo: 500 });
+  browser = await chromium.launch({ headless: false, slowMo: 400 });
   const page = await (await browser.newContext()).newPage();
   await page.goto(`${base}/auth/signin`, { waitUntil: "networkidle" });
-  await page.locator("#emailadd").fill(process.env.PW_USER_EMAIL || "admin@alfa.com"); await wait(page);
-  await page.locator("#passwd").fill(process.env.PW_USER_PASSWORD || "1234"); await wait(page);
+  await page.locator("#emailadd").fill(process.env.PW_USER_EMAIL || "admin@alfa.com");
+  await page.locator("#passwd").fill(process.env.PW_USER_PASSWORD || "1234");
   await page.locator("form.auth-form button[type='submit']").click();
   await page.waitForURL(url => url.href.includes("/app")); result.login = true;
-  await page.goto(`${base}/app/crm-prospectos`, { waitUntil: "networkidle" });
-  await page.getByRole("button", { name: /Agregar Prospecto/i }).click();
-  for (const [field, value] of [["formNombre", name], ["formCompania", `Empresa ${id}`], ["formCorreo", `rec12-${id}@alfa.local`]]) await page.locator(`input[name='${field}']`).fill(value);
-  await page.getByTestId("prospect-save-btn").click();
-  const row = page.locator("tbody tr", { hasText: name }).first(); await row.waitFor({ state: "visible" });
-  await row.getByRole("button", { name: /^Acciones$/ }).click();
-  await row.getByRole("button", { name: /Asociar equipo/i }).click(); await wait(page);
+
+  // El listado de prospectos ya no expone la acción "Asociar equipo"; el modal es el mismo
+  // componente, abierto desde /app/work-equipment-reception (contrato rec-05/rec-13).
+  await page.goto(`${base}/app/work-equipment-reception`, { waitUntil: "networkidle" });
+  await page.getByTestId("work-equipment-create").click();
   const modal = page.locator("app-crm-prospect-equipment-modal");
-  await modal.getByTestId("equipment-modal-next").click(); await wait(page);
+  // El host es inline 0x0: esperar el botón next del footer, nunca visibility sobre el host.
+  await page.getByTestId("equipment-modal-next").waitFor({ state: "visible", timeout: 15000 });
 
-  // Paso Equipos: modo manual + datos del equipo.
-  await selectCustomModal(page, modal.locator("[data-testid^='equipment-modal-registration-mode-']").first(), "manual");
-  for (const [placeholder, value] of [["Familia libre", "Instrumento"], ["Marca del equipo", "Marca QA"], ["Tipo / referencia", "Multímetro"], ["Serie o referencia visible", `SER-${id}`]]) await modal.locator(`input[placeholder='${placeholder}']`).fill(value);
+  // Paso Recepción con defaults válidos → avanzar a Equipos (contrato rec-13).
+  await modal.getByTestId("equipment-modal-next").click();
+  await modal.locator("[data-testid^='equipment-modal-family-']").first().waitFor({ state: "visible", timeout: 10000 });
 
-  // Paso Preguntas: >2M = Sí (evita gate REC-01); softwareIssueRuledOut queda en "No".
-  await modal.getByTestId("equipment-modal-next").click(); await wait(page);
-  await modal.locator("input[id$='-costAboveTwoMillion']").check(); await wait(page);
+  // Paso Equipos: familia por catálogo fijo + datos libres del equipo.
+  await selectCustomModal(page, modal.locator("[data-testid^='equipment-modal-family-']").first(), { label: "CE - Tarjeta Electrónica" });
+  for (const [placeholder, value] of [["Marca del equipo", "Marca QA"], ["Tipo / referencia", "Tarjeta de control industrial"], ["Serie o referencia visible", `SER-REC12-${id}`]]) await modal.locator(`input[placeholder='${placeholder}']`).fill(value);
 
-  // REC-12: con software = "No" debe aparecer el warning de sospecha de software.
-  const warning = modal.getByTestId("software-suspicion-warning").first();
-  result.warningVisible = await warning.isVisible();
-  if (!result.warningVisible) throw new Error("No apareció software-suspicion-warning con softwareIssueRuledOut = No");
+  // Paso Preguntas: costo > $2M (disparador histórico del gate REC-12).
+  // Solo este check: si el ack de sospecha de software aún existiera, "Next" quedaría bloqueado.
+  await modal.getByTestId("equipment-modal-next").click();
+  await modal.locator("input[id$='-costAboveTwoMillion']").check();
 
-  // Intentar avanzar sin el ack: bloqueado con mensaje y sin salir de Preguntas.
-  await modal.getByTestId("equipment-modal-next").click(); await wait(page);
-  const blockMsg = modal.getByTestId("equipment-modal-validation-message");
-  result.advanceBlocked = (await blockMsg.isVisible()) && /Posible falla de software/.test(await blockMsg.innerText());
-  result.blockMessage = await blockMsg.innerText().catch(() => "");
-  const evidenceInput = modal.locator("input[type='file'][accept='image/*']");
-  if (!result.advanceBlocked || await evidenceInput.isVisible()) throw new Error(`Avance no bloqueado (blocked=${result.advanceBlocked}, evidenceVisible=${await evidenceInput.isVisible()})`);
+  // Aserción central REC-12: el gate de sospecha de software ya NO existe en la UI.
+  result.warningGone = (await modal.getByTestId("software-suspicion-warning").count()) === 0;
+  if (!result.warningGone) throw new Error("El gate de sospecha de software sigue presente en la UI (debería estar retirado)");
 
-  // Marcar ack "Cliente informado" → ya se puede avanzar a Evidencia.
-  await modal.getByTestId("software-suspicion-ack").check(); await wait(page);
-  await modal.getByTestId("equipment-modal-next").click(); await wait(page);
-  await evidenceInput.first().waitFor({ state: "attached", timeout: 10000 });
-  result.ackUnblocks = true;
+  // Avance directo a Evidencia sin confirmación adicional.
+  await modal.getByTestId("equipment-modal-next").click();
+  const evidenceInput = modal.locator(`input[type='file'][accept='image/*'][id$="-face-front"]`);
+  await evidenceInput.waitFor({ state: "attached", timeout: 10000 });
+  result.advanceDirect = true;
 
-  // Paso Evidencia: 4 caras obligatorias.
-  const facePaths = FACE_LABELS.map((_, i) => { const p = `/tmp/rec12-face-${i}-${id}.png`; writeFileSync(p, PNG_1X1); return p; });
-  await modal.locator("input[type='file'][accept='image/*'][capture]").setInputFiles(facePaths);
-  await modal.locator(".evidence-photo-card").nth(3).waitFor({ state: "visible", timeout: 30000 });
-  for (let i = 0; i < FACE_LABELS.length; i++) await selectCustomModal(page, modal.locator(".evidence-photo-card").nth(i).getByTestId("equipment-modal-evidence-type"), { label: FACE_LABELS[i] });
-  await wait(page);
+  // Paso Evidencia (UI actual required-evidence-grid, contrato rec-13): un input por cara obligatoria.
+  const faceSlotSuffixes = ["-face-front", "-face-back", "serial-plate"];
+  for (let i = 0; i < facePaths.length; i += 1) {
+    await modal.locator(`input[type='file'][accept='image/*'][id$="${faceSlotSuffixes[i]}"]`).setInputFiles(facePaths[i]);
+  }
+  await modal.getByText("Caras completas", { exact: false }).first().waitFor({ state: "visible", timeout: 15000 });
 
-  // Paso Cierre: el warning persiste y el guardado completo tiene éxito.
-  await modal.getByTestId("equipment-modal-next").click(); await wait(page);
-  result.warningInCierre = await modal.getByTestId("software-suspicion-warning").first().isVisible();
+  // Paso Cierre: sin warning (gate retirado) y guardado completo con éxito.
+  await modal.getByTestId("equipment-modal-next").click();
+  result.goneInCierre = (await modal.getByTestId("software-suspicion-warning").count()) === 0;
+  if (!result.goneInCierre) throw new Error("El warning de sospecha de software reapareció en Cierre");
   await modal.getByTestId("equipment-modal-save").click();
   await modal.waitFor({ state: "hidden", timeout: 60000 });
   result.saved = true;
 } catch (error) { result.error = String(error?.stack || error); }
 finally { if (browser) await browser.close(); }
-console.log(JSON.stringify(result)); process.exit(result.error ? 1 : 0);
+const ok = !result.error && result.warningGone === true && result.advanceDirect === true && result.goneInCierre === true && result.saved === true;
+console.log(JSON.stringify(result)); process.exit(ok ? 0 : 1);

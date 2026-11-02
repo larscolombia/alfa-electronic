@@ -1,5 +1,7 @@
 import { chromium } from "playwright";
 import { writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { selectCustomModal } from "./ui-modal-controls.mjs";
 
 const base = (process.env.PW_BASE_URL || "http://127.0.0.1:4200").replace(/\/$/, "");
@@ -7,8 +9,8 @@ const id = String(Date.now()).slice(-8);
 const name = `QA REC11 ${id}`;
 const wait = p => p.waitForTimeout(500);
 const PNG = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
-const faces = ["Cara frente", "Cara atrás", "Cara izquierda", "Cara derecha"].map((label, i) => {
-  const path = `/tmp/rec11-face-${i}-${id}.png`;
+const faces = ["Cara frente", "Cara atrás", "Placa / serie"].map((label, i) => {
+  const path = join(tmpdir(), `rec11-face-${i}-${id}.png`); // /tmp no existe en Windows
   writeFileSync(path, Buffer.from(PNG, "base64"));
   return { label, path };
 });
@@ -33,21 +35,17 @@ try {
   await page.locator("form.auth-form button[type='submit']").click();
   await page.waitForURL(url => url.href.includes("/app")); result.login = true;
 
-  await page.goto(`${base}/app/crm-prospectos`, { waitUntil: "networkidle" });
-  await page.getByRole("button", { name: /Agregar Prospecto/i }).click();
-  for (const [field, value] of [["formNombre", name], ["formCompania", `Empresa ${id}`], ["formCorreo", `rec11-${id}@alfa.local`]]) {
-    await page.locator(`input[name='${field}']`).fill(value);
-  }
-  await page.getByTestId("prospect-save-btn").click();
-  const row = page.locator("tbody tr", { hasText: name }).first(); await row.waitFor({ state: "visible" });
-  await row.getByRole("button", { name: /^Acciones$/ }).click();
-  await row.getByRole("button", { name: /Asociar equipo/i }).click(); await wait(page);
-  await page.getByTestId("equipment-modal-next").click(); await wait(page);
-
+  // Entrada por recepción directa (layout actual): el listado de prospectos ya no expone la acción
+  // "Asociar equipo"; el modal es el mismo componente, abierto desde /app/work-equipment-reception.
+  await page.goto(`${base}/app/work-equipment-reception`, { waitUntil: "networkidle" });
+  await page.getByTestId("work-equipment-create").click(); await wait(page);
   const modal = page.locator("app-crm-prospect-equipment-modal");
-  await selectCustomModal(page, modal.locator("[data-testid^='equipment-modal-registration-mode-']").first(), "manual");
+  // El host es inline 0x0: esperar el botón next del footer, nunca visibility sobre el host.
+  await page.getByTestId("equipment-modal-next").waitFor({ state: "visible", timeout: 15000 });
+  await modal.getByTestId("equipment-modal-next").click(); await wait(page);
+  // Familia es un <select> nativo (STANDARD_EQUIPMENT_FAMILIES), no el input libre antiguo.
+  await selectCustomModal(page, modal.locator("[data-testid^='equipment-modal-family-']").first(), { label: "CE - Tarjeta Electrónica" }); await wait(page);
   for (const [placeholder, value] of [
-    ["Familia libre", "Control"],
     ["Marca del equipo", "Marca QA"],
     ["Tipo / referencia", "Tipo QA"],
     ["Serie o referencia visible", `SER-${id}`],
@@ -69,9 +67,8 @@ try {
 
   await modal.getByText("Tomar fotos / subir evidencia").waitFor({ state: "visible" });
   result.advanceNotBlocked = true;
-  const photoInput = modal.locator("input[type='file'][accept='image/*']").first();
-  await photoInput.setInputFiles(faces.map(f => f.path));
-  await modal.locator(".evidence-photo-card").nth(3).waitFor({ state: "visible" }); await wait(page);
+  await modal.getByTestId("evidence-files-input").setInputFiles(faces.map(f => f.path));
+  await modal.locator(".evidence-photo-card").nth(2).waitFor({ state: "visible" }); await wait(page);
   const cards = modal.locator(".evidence-photo-card");
   for (let i = 0; i < faces.length; i++) await selectCustomModal(page, cards.nth(i).getByTestId("equipment-modal-evidence-type"), { label: faces[i].label });
   await wait(page);

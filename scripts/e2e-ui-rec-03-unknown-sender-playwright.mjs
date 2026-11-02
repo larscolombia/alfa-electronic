@@ -1,10 +1,11 @@
 import { chromium } from "playwright";
 import { writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { selectCustomModal } from "./ui-modal-controls.mjs";
 
 const base = (process.env.PW_BASE_URL || "http://127.0.0.1:4200").replace(/\/$/, "");
 const id = String(Date.now()).slice(-8);
-const name = `QA REC03 ${id}`;
 const wait = page => page.waitForTimeout(500);
 const result = {
     case: "REC-03",
@@ -23,29 +24,32 @@ let browser;
 let modal;
 
 const PNG_1X1 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
-const FACE_LABELS = ["Cara frente", "Cara atrás", "Cara izquierda", "Cara derecha"];
+const FACE_LABELS = ["Cara frente", "Cara atrás", "Placa / serie"];
+// Windows: /tmp no existe → tmpdir() (patrón rec-06).
 const facePaths = FACE_LABELS.map((label, i) => {
-    const path = `/tmp/rec03-face-${id}-${i}.png`;
+    const path = join(tmpdir(), `rec03-face-${id}-${i}.png`);
     writeFileSync(path, Buffer.from(PNG_1X1, "base64"));
     return path;
 });
 
 try {
-    browser = await chromium.launch({ headless: false, slowMo: 500 });
+    browser = await chromium.launch({ headless: process.env.PW_HEADLESS !== "false", slowMo: Number(process.env.PW_SLOW_MO_MS || 0) });
     const page = await (await browser.newContext()).newPage();
     await page.goto(`${base}/auth/signin`, { waitUntil: "networkidle" });
     await page.locator("#emailadd").fill(process.env.PW_USER_EMAIL || "admin@alfa.com"); await wait(page);
     await page.locator("#passwd").fill(process.env.PW_USER_PASSWORD || "1234"); await wait(page);
     await page.locator("form.auth-form button[type='submit']").click();
     await page.waitForURL(url => url.href.includes("/app")); result.login = true;
-    await page.goto(`${base}/app/crm-prospectos`, { waitUntil: "networkidle" });
-    await page.getByRole("button", { name: /Agregar Prospecto/i }).click();
-    for (const [field, value] of [["formNombre", name], ["formCompania", `Empresa ${id}`], ["formCorreo", `rec03-${id}@alfa.local`]]) await page.locator(`input[name='${field}']`).fill(value);
-    await page.getByTestId("prospect-save-btn").click();
-    const row = page.locator("tbody tr", { hasText: name }).first(); await row.waitFor({ state: "visible" });
-    await row.getByRole("button", { name: /^Acciones$/ }).click();
-    await row.getByRole("button", { name: /Asociar equipo/i }).click(); await wait(page);
+
+    // Entrada por recepción directa (layout actual): el listado de prospectos ya no expone la acción
+    // "Asociar equipo"; el modal es el mismo componente, abierto desde /app/work-equipment-reception.
+    await page.goto(`${base}/app/work-equipment-reception`, { waitUntil: "networkidle" });
+    await page.getByTestId("work-equipment-create").click(); await wait(page);
+
+    // El host <app-crm-prospect-equipment-modal> es inline 0x0: NO esperar visibility sobre el host,
+    // sino sobre el botón next del footer (solo existe con el modal abierto).
     modal = page.locator("app-crm-prospect-equipment-modal");
+    await page.getByTestId("equipment-modal-next").waitFor({ state: "visible", timeout: 15000 });
 
     // Paso Recepción: activar "No se identifica remitente".
     await modal.getByTestId("sender-unknown-check").check(); await wait(page);
@@ -64,8 +68,10 @@ try {
     if (!result.technicianDisabled || !result.technicianHintVisible) {
         throw new Error("La asignación de técnico no quedó bloqueada con su hint");
     }
-    await selectCustomModal(page, modal.locator("[data-testid^='equipment-modal-registration-mode-']").first(), "manual");
-    for (const [placeholder, value] of [["Familia libre", "Control"], ["Marca del equipo", "Marca QA"], ["Tipo / referencia", "Tipo QA"], ["Serie o referencia visible", `SER-${id}`]]) await modal.locator(`input[placeholder='${placeholder}']`).fill(value);
+    // Familia es un <select> nativo (STANDARD_EQUIPMENT_FAMILIES), NO el input libre antiguo.
+    // Marca/Tipo/Serie siguen siendo inputs con placeholder (verificados en rec-06).
+    await selectCustomModal(page, modal.locator("[data-testid^='equipment-modal-family-']").first(), { label: "CE - Tarjeta Electrónica" });
+    for (const [placeholder, value] of [["Marca del equipo", "Marca QA"], ["Tipo / referencia", "Tipo QA"], ["Serie o referencia visible", `SER-${id}`]]) await modal.locator(`input[placeholder='${placeholder}']`).fill(value);
     await modal.getByTestId("equipment-modal-next").click(); await wait(page);
 
     // Paso Preguntas: costo > 2M = Sí (evita el gate REC-01) y se descarta
@@ -78,9 +84,9 @@ try {
     result.industrialGatePassed = true;
     await modal.getByTestId("equipment-modal-next").click(); await wait(page);
 
-    // Paso Evidencia: 4 fotos de caras obligatorias.
+    // Paso Evidencia: 3 evidencias obligatorias (frente/atrás/placa).
     await modal.locator("input[type='file'][multiple]").setInputFiles(facePaths);
-    await modal.locator(".evidence-photo-card").nth(3).waitFor({ state: "visible", timeout: 30000 }); await wait(page);
+    await modal.locator(".evidence-photo-card").nth(2).waitFor({ state: "visible", timeout: 30000 }); await wait(page);
     for (let i = 0; i < FACE_LABELS.length; i += 1) {
         await selectCustomModal(page, modal.locator(".evidence-photo-card").nth(i).getByTestId("equipment-modal-evidence-type"), { label: FACE_LABELS[i] }); await wait(page);
     }

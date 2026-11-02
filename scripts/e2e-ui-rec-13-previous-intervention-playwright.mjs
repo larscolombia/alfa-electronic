@@ -1,5 +1,8 @@
 import { chromium } from "playwright";
 import { writeFileSync } from "node:fs";
+// Windows: /tmp no existe → tmpdir() (patrón rec-04/rec-06).
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { selectCustomModal } from "./ui-modal-controls.mjs";
 
 const base = (process.env.PW_BASE_URL || "http://127.0.0.1:4200").replace(/\/$/, "");
@@ -10,6 +13,8 @@ const result = { case: "REC-13", login: false, bannerInQuestions: false, bannerI
 let browser;
 
 const PNG_1X1 = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "base64");
+const facePaths = ["front", "back", "serial-plate"].map(face => join(tmpdir(), `rec13-${face}-${id}.png`));
+for (const p of facePaths) writeFileSync(p, PNG_1X1);
 
 try {
   browser = await chromium.launch({ headless: false, slowMo: 500 });
@@ -19,19 +24,19 @@ try {
   await page.locator("#passwd").fill(process.env.PW_USER_PASSWORD || "1234"); await wait(page);
   await page.locator("form.auth-form button[type='submit']").click();
   await page.waitForURL(url => url.href.includes("/app")); result.login = true;
-  await page.goto(`${base}/app/crm-prospectos`, { waitUntil: "networkidle" });
-  await page.getByRole("button", { name: /Agregar Prospecto/i }).click();
-  for (const [field, value] of [["formNombre", name], ["formCompania", `Empresa ${id}`], ["formCorreo", `rec13-${id}@alfa.local`]]) await page.locator(`input[name='${field}']`).fill(value);
-  await page.getByTestId("prospect-save-btn").click();
-  const row = page.locator("tbody tr", { hasText: name }).first(); await row.waitFor({ state: "visible" });
-  await row.getByRole("button", { name: /^Acciones$/ }).click();
-  await row.getByRole("button", { name: /Asociar equipo/i }).click(); await wait(page);
+  // Entrada por recepción directa (layout actual): el listado de prospectos ya no expone la acción
+  // "Asociar equipo"; el modal es el mismo componente, abierto desde /app/work-equipment-reception.
+  await page.goto(`${base}/app/work-equipment-reception`, { waitUntil: "networkidle" });
+  await page.getByTestId("work-equipment-create").click(); await wait(page);
   const modal = page.locator("app-crm-prospect-equipment-modal");
+  // El host es inline 0x0: esperar el botón next del footer, nunca visibility sobre el host.
+  await page.getByTestId("equipment-modal-next").waitFor({ state: "visible", timeout: 15000 });
   await modal.getByTestId("equipment-modal-next").click(); await wait(page);
 
-  // Paso Equipos: modo manual + datos del equipo (sin falla declarada: REC-11 queda para otro caso).
-  await selectCustomModal(page, modal.locator("[data-testid^='equipment-modal-registration-mode-']").first(), "manual");
-  for (const [placeholder, value] of [["Familia libre", "Instrumento"], ["Marca del equipo", "Marca QA"], ["Tipo / referencia", "Osciloscopio"], ["Serie o referencia visible", `SER-REC13-${id}`]]) await modal.locator(`input[placeholder='${placeholder}']`).fill(value);
+  // Paso Equipos: familia por catálogo fijo + datos libres (sin falla declarada: REC-11 queda para otro caso).
+  // Familia es un <select> nativo (STANDARD_EQUIPMENT_FAMILIES), no el input libre antiguo.
+  await selectCustomModal(page, modal.locator("[data-testid^='equipment-modal-family-']").first(), { label: "CE - Tarjeta Electrónica" }); await wait(page);
+  for (const [placeholder, value] of [["Marca del equipo", "Marca QA"], ["Tipo / referencia", "Osciloscopio"], ["Serie o referencia visible", `SER-REC13-${id}`]]) await modal.locator(`input[placeholder='${placeholder}']`).fill(value);
 
   // Paso Preguntas: marcar Sí en "reparación previa" (REC-13) y liberar los gates REC-01 / REC-12.
   await modal.getByTestId("equipment-modal-next").click(); await wait(page);
@@ -45,14 +50,15 @@ try {
   await modal.locator("input[id$='-costAboveTwoMillion']").check(); await wait(page);
   await modal.locator("input[id$='-softwareIssueRuledOut']").check(); await wait(page);
 
-  // Paso Evidencia: 4 fotos de caras obligatorias.
+  // Paso Evidencia: UI actual (required-evidence-grid) — un input por evidencia obligatoria,
+  // id = 'evidence-face-' + item.id + '-' + faceType; el slot nace clasificado al subir.
   await modal.getByTestId("equipment-modal-next").click(); await wait(page);
-  const facePaths = ["face-front", "face-back", "face-left", "face-right"].map(face => { const p = `/tmp/rec13-${face}-${id}.png`; writeFileSync(p, PNG_1X1); return p; });
-  await modal.locator("input[type='file'][accept='image/*'][capture]").setInputFiles(facePaths);
-  await modal.locator(".evidence-photo-card").nth(3).waitFor({ state: "visible", timeout: 30000 });
-  const faceLabels = ["Cara frente", "Cara atrás", "Cara izquierda", "Cara derecha"];
-  for (let i = 0; i < faceLabels.length; i++) await selectCustomModal(page, modal.locator(".evidence-photo-card").nth(i).getByTestId("equipment-modal-evidence-type"), { label: faceLabels[i] });
-  await wait(page);
+  const faceSlotSuffixes = ["-face-front", "-face-back", "serial-plate"];
+  for (let i = 0; i < facePaths.length; i += 1) {
+    await modal.locator(`input[type='file'][accept='image/*'][id$="${faceSlotSuffixes[i]}"]`).setInputFiles(facePaths[i]);
+    await wait(page);
+  }
+  await modal.getByText("Caras completas", { exact: false }).first().waitFor({ state: "visible", timeout: 15000 });
 
   // Paso Cierre (signatures): el banner debe seguir visible y la respuesta conservada (switch sigue en Sí).
   await modal.getByTestId("equipment-modal-next").click(); await wait(page);
