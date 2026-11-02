@@ -846,12 +846,6 @@ type SoftwareBackupInfo = {
                                                         </div>
                                                     </div>
 
-                                                    <div class="border rounded p-3 bg-light-subtle small text-secondary">
-                                                        <div class="fw-semibold text-dark mb-2">Checklist de auditoría</div>
-                                                        <div class="mb-1">Original al backend Echo, miniatura en frontend.</div>
-                                                        <div class="mb-1">Hash SHA-256 para trazabilidad del archivo.</div>
-                                                        <div>Fecha EXIF visible y sello servidor pendiente.</div>
-                                                    </div>
                                                 </div>
                                             </div>
 
