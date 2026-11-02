@@ -64,6 +64,10 @@ const result = {
         prospectCreatedViaUi: false,
         receptionWizardCompleted: false,
         technicianAssignedInWizard: false,
+        destinationRadioPresent: false,
+        quotePrefillCompanyMatched: false,
+        quotePrefillDescriptionApplied: false,
+        wizardDraftSurvivesRoundTrip: false,
         repairProjectGenerated: false,
         projectBornInDiagnostico: false,
         assigneePreloadedFromWizard: false,
@@ -397,6 +401,92 @@ try {
     await page.waitForTimeout(300);
     result.checks.technicianAssignedInWizard = true;
     await screenshot(page, "03-wizard-asignacion-tecnico");
+
+    // ── 2026-11-02 — Radio "Destino del equipo" → opción "Cotización automática": round-trip ──
+    // Bug que cierra este bloque: en recepción el prospecto es sintético (compania="Trabajo >
+    // Equipos") y crm-quotes empareja al cliente por compania real; el snapshot debe usar la
+    // empresa del draft (combobox Empresa) para encontrar el prospecto correcto.
+    const destinationPanel = card.getByTestId("equipment-modal-destination-panel");
+    result.checks.destinationRadioPresent = await destinationPanel.isVisible();
+    if (!result.checks.destinationRadioPresent) {
+        throw new Error("El panel 'Destino del equipo' no existe en la celda del wizard.");
+    }
+
+    // Edge case: la falla SÍ llegó al item antes de navegar (es la fuente del snapshot).
+    const failureValue = await card.locator("textarea").first().inputValue();
+    if (!failureValue || !failureValue.includes(falla)) {
+        throw new Error(`La descripción de falla no persiste en el item: valor="${failureValue}", esperado contiene "${falla}".`);
+    }
+
+    const autoquoteRadio = card.getByTestId("equipment-modal-destination-autoquote");
+    await autoquoteRadio.check({ timeout: 20000 });
+    const autoQuoteBtn = card.getByTestId("equipment-modal-autoquote-btn");
+    await autoQuoteBtn.waitFor({ state: "visible", timeout: 20000 });
+
+    await autoQuoteBtn.click();
+    await page.waitForURL(/\/app\/crm-cotizaciones/, { timeout: timeoutMs });
+    const quoteForm = page.getByTestId("quote-form-card");
+    await quoteForm.waitFor({ state: "visible", timeout: timeoutMs });
+
+    // 1) Empresa emparejada por compania real (t03 crea el prospecto con compania === nombre).
+    if ((await quoteForm.getByTestId("quote-prefill-notice").count().catch(() => 0)) > 0) {
+        throw new Error("crm-quotes mostró el aviso de prefill: la empresa del snapshot NO emparejó al prospecto.");
+    }
+    await page.waitForFunction(
+        (name) => {
+            const cardEl = document.querySelector('[data-testid="quote-form-card"]');
+            if (!cardEl) return false;
+            const sel = cardEl.querySelector("select.form-select");
+            return Boolean(sel) && sel.value === name;
+        },
+        prospectName,
+        { timeout: 20000 },
+    );
+    result.checks.quotePrefillCompanyMatched = true;
+
+    // 2) Falla → primer textarea del form (quoteDescription / "Condiciones generales").
+    await page.waitForFunction(
+        (fallaText) => {
+            const cardEl = document.querySelector('[data-testid="quote-form-card"]');
+            if (!cardEl) return false;
+            const ta = cardEl.querySelector("textarea");
+            return Boolean(ta) && ((ta.value || "").includes(fallaText));
+        },
+        falla,
+        { timeout: 20000 },
+    );
+    result.checks.quotePrefillDescriptionApplied = true;
+
+    // 3) Equipo preseleccionado (pendingEquipmentItemId) — informativo, no bloqueante.
+    const serieVisibleInQuoteForm = await page.evaluate(
+        (serieText) => {
+            const cardEl = document.querySelector('[data-testid="quote-form-card"]');
+            return Boolean(cardEl) && ((cardEl.textContent || "").includes(serieText));
+        },
+        serie,
+    ).catch(() => false);
+    if (!serieVisibleInQuoteForm) note("AVISO: la serie del equipo no aparece pre-seleccionada en el form de cotizaciones.");
+
+    await screenshot(page, "03b-cotizacion-prefilled");
+
+    // 4) Retorno: el draft se borra SOLO al guardar; reabrir el wizard debe mostrar serie/falla
+    // intactas (restoreModalDraft restaura draft + currentStepIndex).
+    await page.goto(`${baseUrl}/app/work-equipment-reception`, { waitUntil: "networkidle", timeout: timeoutMs });
+    await page.getByTestId("work-equipment-create").click();
+    const cardBack = wizard.locator(".equipment-card").first();
+    await cardBack.waitFor({ state: "visible", timeout: 20000 });
+    let draftSurvives = true;
+    const serieInput = cardBack.locator("input[placeholder='Serie o referencia visible']").first();
+    if ((await serieInput.count()) === 0 || (await serieInput.inputValue().catch(() => "")) !== serie) {
+        draftSurvives = false;
+        note(`AVISO: tras el round-trip la serie no persiste en la celda (esperado ${serie}).`);
+    }
+    const fallaBack = await cardBack.locator("textarea").first().inputValue().catch(() => "");
+    if (!fallaBack.includes(falla)) {
+        draftSurvives = false;
+        note(`AVISO: tras el round-trip la falla no persiste en la celda ("${String(fallaBack).slice(0, 80)}").`);
+    }
+    result.checks.wizardDraftSurvivesRoundTrip = draftSurvives;
     await page.locator("[data-testid='equipment-modal-next']").click();
 
     // Paso 3/5 Preguntas: marcar costo > 2M = Sí libera el gate industrial (patrón rec-06/rec-09).

@@ -122,6 +122,9 @@ export interface ProspectEquipmentItem {
     assignedToId?: string;
     assignedAt?: string;
     assignedBy?: string;
+    /** 2026-11-02 — Radio "Destino del equipo" del wizard de recepción. Ausente (datos
+     * históricos) = "tech-assignment", el comportamiento original por defecto. */
+    quoteDestination?: "auto-quote" | "tech-assignment";
     industrialOverrideAuthorizedBy?: string;
     industrialOverrideReason?: string;
     industrialOverrideAuthorizedAt?: string;

@@ -49,6 +49,7 @@ import {
 import { COUNTRY_OPTIONS, citiesForCountry } from "./country-city.dataset";
 import { buildEquipmentQrShortCode, estimateDataUrlBinarySize, generateEquipmentQrDataUrl, resolveEquipmentCode } from "./equipment-qr.util";
 import { resolveEquipmentProspectId } from "./crm-prospect-equipment-match.logic";
+import { setQuotePrefill } from "./quote-prefill.store";
 import { ProspectRecord } from "./crm-prospects.store";
 import { Project } from "../projects/models";
 import { ProjectService } from "../projects/services";
@@ -580,31 +581,72 @@ type SoftwareBackupInfo = {
                                                 <textarea class="form-control" rows="2" [(ngModel)]="item.failureDescription" [ngModelOptions]="{ standalone: true }"></textarea>
                                             </div>
                                             <div class="col-12">
-                                                <div class="border rounded p-3 bg-light-subtle">
-                                                    <!-- 2026-11-02 — Petición del usuario: se retiró el botón "Actualizar carga" y el texto
-                                                         "Especialidad detectada". La carga laboral de los técnicos se actualiza sola al
-                                                         seleccionar (ver assignDraftTechnicianToItem). Suite de guardia: e2e-lars-t03-asignacion. -->
-                                                    <h6 class="mb-2">Asignación técnica</h6>
-                                                    <div class="row gx-3 gy-2 align-items-end">
-                                                        <div class="col-12 col-lg-8">
-                                                            <label class="form-label">Técnico responsable</label>
-                                                            <select
-                                                                class="form-select"
-                                                                [ngModel]="item.assignedToId || ''"
-                                                                [ngModelOptions]="{ standalone: true }"
-                                                                (ngModelChange)="assignDraftTechnicianToItem(item, $event)"
-                                                                [attr.data-testid]="'equipment-modal-technician-' + i"
-                                                                [disabled]="draft.senderUnknown === true">
-                                                                <option *ngFor="let option of technicianSelectOptionsForItem(item)" [value]="option.value">{{ option.label }}</option>
-                                                            </select>
-                                                            <div class="small text-warning mt-1" *ngIf="draft.senderUnknown" data-testid="technician-assignment-blocked">
-                                                                Incidencia de custodia: identifica empresa/contacto antes de asignar técnico.
-                                                            </div>
+                                                <div class="border rounded p-3 bg-light-subtle" data-testid="equipment-modal-destination-panel">
+                                                    <!-- 2026-11-02 — Petición del usuario: la celda de destino es un radio horizontal con dos
+                                                         opciones. Por defecto queda "Aplica para asignación técnica" (flujo actual; el select
+                                                         y su hint permanecen intactos dentro de esa opción, conservando los testids que usan
+                                                         t03 / rec-03 / ui-journey-stages). La otra opción, "Cotización automática", muestra un
+                                                         botón que navega a /app/crm-cotizaciones con snapshot del equipo (quote-prefill.store,
+                                                         mismo puente one-shot del kanban) para no transcribir nada. Suite de guardia: e2e-lars-t03-asignacion.
+                                                         2026-11-02 — Se retiró el botón "Actualizar carga" y el texto "Especialidad detectada":
+                                                         la carga laboral se actualiza sola al seleccionar (ver assignDraftTechnicianToItem). -->
+                                                    <div class="d-flex flex-wrap align-items-center gap-3">
+                                                        <span class="fw-semibold">Destino del equipo</span>
+                                                        <div class="form-check form-check-inline mb-0 ms-0">
+                                                            <input
+                                                                class="form-check-input"
+                                                                type="radio"
+                                                                [id]="'destination-autoquote-' + item.id"
+                                                                [attr.name]="'equipment-modal-destination-' + i"
+                                                                [checked]="destinationFor(item) === 'auto-quote'"
+                                                                (change)="setItemQuoteDestination(item, 'auto-quote')"
+                                                                data-testid="equipment-modal-destination-autoquote" />
+                                                            <label class="form-check-label" [for]="'destination-autoquote-' + item.id">Cotización automática</label>
                                                         </div>
-                                                        <div class="col-12 col-lg-4">
-                                                            <div class="small text-secondary">Asignado por</div>
-                                                            <div class="fw-semibold">{{ item.assignedBy || '--' }}</div>
-                                                            <div class="small text-secondary">{{ item.assignedAt ? formatEvidenceDate(item.assignedAt) : 'Sin fecha' }}</div>
+                                                        <div class="form-check form-check-inline mb-0">
+                                                            <input
+                                                                class="form-check-input"
+                                                                type="radio"
+                                                                [id]="'destination-tech-' + item.id"
+                                                                [attr.name]="'equipment-modal-destination-' + i"
+                                                                [checked]="destinationFor(item) === 'tech-assignment'"
+                                                                (change)="setItemQuoteDestination(item, 'tech-assignment')"
+                                                                data-testid="equipment-modal-destination-tech" />
+                                                            <label class="form-check-label" [for]="'destination-tech-' + item.id">Aplica para asignación técnica</label>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Opción 1: Cotización automática → snapshot del equipo al formulario de cotizaciones. -->
+                                                    <div *ngIf="destinationFor(item) === 'auto-quote'" class="mt-2" data-testid="equipment-modal-autoquote-panel">
+                                                        <p class="small text-secondary mb-2">Pasa a Cotizaciones con este equipo ya precargado (cliente, falla y datos del equipo); no hay que transcribir nada.</p>
+                                                        <button type="button" class="btn btn-sm btn-primary" data-testid="equipment-modal-autoquote-btn" (click)="startAutoQuoteForItem(item)">
+                                                            Cotizar este equipo &rarr;
+                                                        </button>
+                                                    </div>
+
+                                                    <!-- Opción 2: Asignación técnica — bloque actual intacto (select + "Asignado por"). -->
+                                                    <div *ngIf="destinationFor(item) === 'tech-assignment'" data-testid="equipment-modal-tech-panel">
+                                                        <div class="row gx-3 gy-2 align-items-end mt-2">
+                                                            <div class="col-12 col-lg-8">
+                                                                <label class="form-label">Técnico responsable</label>
+                                                                <select
+                                                                    class="form-select"
+                                                                    [ngModel]="item.assignedToId || ''"
+                                                                    [ngModelOptions]="{ standalone: true }"
+                                                                    (ngModelChange)="assignDraftTechnicianToItem(item, $event)"
+                                                                    [attr.data-testid]="'equipment-modal-technician-' + i"
+                                                                    [disabled]="draft.senderUnknown === true">
+                                                                    <option *ngFor="let option of technicianSelectOptionsForItem(item)" [value]="option.value">{{ option.label }}</option>
+                                                                </select>
+                                                                <div class="small text-warning mt-1" *ngIf="draft.senderUnknown" data-testid="technician-assignment-blocked">
+                                                                    Incidencia de custodia: identifica empresa/contacto antes de asignar técnico.
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-12 col-lg-4">
+                                                                <div class="small text-secondary">Asignado por</div>
+                                                                <div class="fw-semibold">{{ item.assignedBy || '--' }}</div>
+                                                                <div class="small text-secondary">{{ item.assignedAt ? formatEvidenceDate(item.assignedAt) : 'Sin fecha' }}</div>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -3371,6 +3413,63 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy,
         // 2026-11-02 — Petición del usuario: al cambiar de técnico se actualiza sola la carga laboral
         // (antes era manual vía botón "Actualizar carga", retirado de esta celda).
         this.refreshTechniciansForItem(item);
+    }
+
+    /** 2026-11-02 — Radio "Destino del equipo". Dato ausente = asignación técnica (comportamiento original). */
+    destinationFor(item: ProspectEquipmentItem): "auto-quote" | "tech-assignment" {
+        return item.quoteDestination === "auto-quote" ? "auto-quote" : "tech-assignment";
+    }
+
+    setItemQuoteDestination(item: ProspectEquipmentItem, value: string): void {
+        const normalized = value === "auto-quote" ? "auto-quote" : "tech-assignment";
+        if (item.quoteDestination !== normalized) {
+            item.quoteDestination = normalized;
+        }
+    }
+
+    /**
+     * 2026-11-02 — Opción "Cotización automática": arma el snapshot del equipo y salta a
+     * /app/crm-cotizaciones con el formulario precargado. Reutiliza quote-prefill.store, el mismo
+     * puente one-shot que usa el kanban en saveAndGoToQuote: la vista de cotizaciones lo consume
+     * una sola vez en ngOnInit (match de cliente por empresa/nombre, falla → descripción, item →
+     * selección automática del equipo). Antes de navegar se persiste el borrador del wizard para no
+     * perder el estado al volver.
+     */
+    startAutoQuoteForItem(item: ProspectEquipmentItem): void {
+        // 2026-11-02 — Bug "Cotización automática": en recepción el prospecto es sintético
+        // (WORK_DIRECT_PROSPECT, compania="Trabajo > Equipos") y crm-quotes empareja al
+        // cliente por compania real. La empresa del cliente vive en draft.companyName
+        // (la combobox Empresa la setea); usarla primero hace que el prefill encuentre
+        // el prospecto correcto tanto desde recepción como desde /crm-prospectos.
+        const company = String(this.draft?.companyName || "").trim()
+            || String(this.prospect?.compania || "").trim();
+        const clientName = company || String(this.prospect?.nombre || "").trim();
+
+        this.formDraftService.save(this.resolveDraftKey(), {
+            currentStepIndex: this.currentStepIndex,
+            generateRepairProjectsOnSave: this.generateRepairProjectsOnSave,
+            draft: this.draft,
+        });
+
+        const equipmentParts = [item.marca, item.tipo, item.serie]
+            .map((value) => String(value || "").trim())
+            .filter(Boolean);
+        const sourceTitleParts = [
+            item.equipmentCode ? `Recepción ${item.equipmentCode}` : "Recepción de equipo",
+            equipmentParts.join(" "),
+        ].filter(Boolean);
+
+        setQuotePrefill({
+            prospectoName: clientName,
+            currency: "COP",
+            validUntil: "",
+            description: String(item.failureDescription || "").trim(),
+            linePrice: null,
+            equipmentItemId: item.id,
+            sourceTitle: sourceTitleParts.join(" · "),
+        });
+
+        void this.router.navigate(["/app/crm-cotizaciones"]);
     }
 
     getItemQrAttachment(item: ProspectEquipmentItem): ProspectEquipmentAttachment | null {
