@@ -567,9 +567,9 @@ type SoftwareBackupInfo = {
                                             <div class="col-12 col-lg-3">
                                                 <label class="form-label">Remisión del cliente / guía</label>
                                                 <input class="form-control" [(ngModel)]="item.customerShipmentReference" [ngModelOptions]="{ standalone: true }" placeholder="BL o referencia de transporte" />
-                                                <div class="alert alert-warning py-2 mt-2 mb-0" *ngIf="!item.customerShipmentReference?.trim()" data-testid="missing-intake-format-warning">
-                                                    Formato/remisión pendiente: registra la custodia ahora y solicita el soporte al cliente antes del diagnóstico.
-                                                </div>
+                                                <!-- 2026-11-02 — Se eliminó el warning inline "Formato/remisión pendiente..." (petición explícita del usuario).
+                                                     La remisión vacía ya no muestra alerta en la celda; su estado sigue visible vía chip
+                                                     "Sin remisión" del breadcrumb del header. Suite de guardia: e2e-ui-rec-02. -->
                                             </div>
                                             <div class="col-12 col-lg-6">
                                                 <app-crm-equipment-borrowed-list [item]="item" [itemIndex]="i"></app-crm-equipment-borrowed-list>

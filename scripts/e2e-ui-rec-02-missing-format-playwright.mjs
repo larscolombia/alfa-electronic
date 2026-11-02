@@ -6,7 +6,10 @@ const id = String(Date.now()).slice(-8);
 const wait = page => page.waitForTimeout(500);
 // 2026-11-01 — Migrado al layout actual (entrada por /app/work-equipment-reception) y
 // extendido para verificar el breadcrumb de warnings en el header del modal ("Sin remisión").
-const result = { case: "REC-02", login: false, warningVisible: false, headerChipSinRemision: false, canContinue: false, error: "" };
+// 2026-11-02 — El warning inline "Formato/remisión pendiente..." fue RETIRADO de la UI por petición
+// explícita del usuario; esta suite ahora verifica que NO aparezca, que el chip "Sin remisión"
+// siga en el breadcrumb y que la recepción vacía no bloquee.
+const result = { case: "REC-02", login: false, inlineWarningAbsent: false, headerChipSinRemision: false, canContinue: false, error: "" };
 let browser;
 let modal;
 
@@ -33,8 +36,9 @@ try {
     await selectCustomModal(page, modal.locator("[data-testid^='equipment-modal-family-']").first(), { label: "CE - Tarjeta Electrónica" });
     for (const [placeholder, value] of [["Marca del equipo", "Marca QA"], ["Tipo / referencia", "Tipo QA"], ["Serie o referencia visible", `SER-${id}`]]) await modal.locator(`input[placeholder='${placeholder}']`).fill(value);
 
-    // Aserción 1: el warning inline de formato/remisión pendiente es visible en la celda.
-    result.warningVisible = await modal.getByTestId("missing-intake-format-warning").isVisible().catch(() => false);
+    // Aserción 1 (regresión, 2026-11-02): el warning inline de formato/remisión fue RETIRADO de la celda;
+    // con remisión vacía NO debe aparecer.
+    result.inlineWarningAbsent = !(await modal.getByTestId("missing-intake-format-warning").isVisible().catch(() => false));
 
     // Aserción 2 (breadcrumb nuevo): el chip "Sin remisión" aparece en el header, junto al título.
     const headerChip = modal.locator(".modal-header .equipment-warning-list .warning-chip", { hasText: "Sin remisión" });
@@ -43,7 +47,7 @@ try {
     // Aserción 3: la advertencia no bloquea — se puede continuar a Preguntas.
     await modal.getByTestId("equipment-modal-next").click(); await wait(page);
     result.canContinue = /Preguntas por equipo/.test(await modal.innerText());
-    if (!result.warningVisible) throw new Error(`El warning "Formato/remisión pendiente" no apareció en el paso Equipos: ${(await modal.innerText()).slice(-500)}`);
+    if (!result.inlineWarningAbsent) throw new Error('El warning inline "Formato/remisión pendiente" sigue visible en la celda; debía estar eliminado');
     if (!result.headerChipSinRemision) throw new Error('El chip "Sin remisión" no aparece en el breadcrumb del header del modal');
     if (!result.canContinue) throw new Error("La recepción sin formato fue bloqueada indebidamente: debía poder continuar a Preguntas");
 } catch (error) { result.error = String(error?.stack || error); }
