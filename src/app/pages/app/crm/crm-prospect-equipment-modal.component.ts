@@ -1,5 +1,5 @@
 import { CommonModule } from "@angular/common";
-import { ChangeDetectorRef, Component, ElementRef, EventEmitter, HostListener, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges, ViewChild } from "@angular/core";
+import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, EventEmitter, HostListener, Input, OnChanges, OnDestroy, OnInit, Output, QueryList, SimpleChanges, ViewChild, ViewChildren } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { Router } from "@angular/router";
 import { BrowserMultiFormatReader } from "@zxing/browser";
@@ -1088,14 +1088,24 @@ type SoftwareBackupInfo = {
                                 <div class="col-12 col-xl-5">
                                     <div class="border rounded p-3 h-100">
                                         <h6 class="mb-3">Firmas</h6>
+                                        <!-- Firmas táctiles (2026-11-02): canvas con Pointer Events reemplaza los
+                                             inputs de texto. El trazo se serializa a dataURL PNG dentro de los MISMOS
+                                             campos clientSignature/pikaSignature → cero cambios backend/store.
+                                             Textos legacy (registros antiguos) no se pintan pero sí se conservan. -->
                                         <div class="row gx-3 gy-3">
                                             <div class="col-12">
-                                                <label class="form-label">Firma CLIENTE</label>
-                                                <input class="form-control" [(ngModel)]="draft.clientSignature" [ngModelOptions]="{ standalone: true }" placeholder="Nombre o referencia de firma" />
+                                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                                    <label class="form-label mb-0">Firma CLIENTE</label>
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" data-testid="signature-clear-client" (click)="clearSignature('client')">Limpiar</button>
+                                                </div>
+                                                <canvas #sigCanvas data-field="clientSignature" data-testid="signature-canvas-client" class="signature-pad border rounded bg-white"></canvas>
                                             </div>
                                             <div class="col-12">
-                                                <label class="form-label">Firma PIKA</label>
-                                                <input class="form-control" [(ngModel)]="draft.pikaSignature" [ngModelOptions]="{ standalone: true }" placeholder="Nombre o referencia de firma" />
+                                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                                    <label class="form-label mb-0">Firma PIKA</label>
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" data-testid="signature-clear-pika" (click)="clearSignature('pika')">Limpiar</button>
+                                                </div>
+                                                <canvas #sigCanvas data-field="pikaSignature" data-testid="signature-canvas-pika" class="signature-pad border rounded bg-white"></canvas>
                                             </div>
                                         </div>
                                     </div>
@@ -1166,6 +1176,15 @@ type SoftwareBackupInfo = {
         </div>
     `,
     styles: [`
+        /* Firmas táctiles (mouse + touch) en el paso Cierre/Firmas */
+        .signature-pad {
+            width: 100%;
+            height: 140px;
+            display: block;
+            touch-action: none;
+            cursor: crosshair;
+        }
+
         .wizard-steps-grid {
             display: grid;
             grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -1686,7 +1705,7 @@ type SoftwareBackupInfo = {
         }
     `],
 })
-export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy, OnInit {
+export class CrmProspectEquipmentModalComponent implements AfterViewInit, OnChanges, OnDestroy, OnInit {
     readonly wizardSteps: readonly WizardStepDefinition[] = [
         { key: "reception", title: "Recepción", description: "Datos del cliente y la orden" },
         { key: "equipment", title: "Equipos", description: "Modelos, servicio y logística" },
@@ -1771,6 +1790,10 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy,
     @Output() closed = new EventEmitter<void>();
     @Output() saved = new EventEmitter<void>();
     @ViewChild("scannerVideo") scannerVideo?: ElementRef<HTMLVideoElement>;
+
+    // Los canvases de firma solo existen en DOM con el paso "signatures" activo (*ngIf):
+    // se inicializan y restauran al aparecer vía QueryList.changes (idempotente).
+    @ViewChildren("sigCanvas") sigCanvases?: QueryList<HTMLCanvasElement>;
 
     @HostListener("document:click")
     onDocumentClick(): void {
@@ -1957,6 +1980,181 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy,
         // input "Código interno" muestre la serie CO+YYMM+NNNN antes de guardar.
         void this.assignMissingEquipmentCodes();
     }
+
+    /** Inicializa los canvases de firma que estén actualmente en DOM y restaura las
+     *  firmas del draft (registro existente con dataURL PNG) sobre ellos. Idempotente:
+     *  el WeakSet impide reinicializar un canvas ya preparado. Se invoca al abrir el
+     *  modal y tras cada cambio de paso, porque el contenido del paso Cierre vive detrás
+     *  de *ngIf: Angular destruye y vuelve a crear los canvases en cada navegación. */
+    syncVisibleSignatures(): void {
+        const canvases = this.sigCanvases ? this.sigCanvases.toArray() : [];
+        for (const canvas of canvases) {
+            this.initSignatureCanvas(canvas);
+        }
+        this.restoreSignaturesToCanvases();
+    }
+
+    ngAfterViewInit(): void {
+        // Al abrir el modal: si el borrador restaurado ya estaba en el paso Cierre,
+        // los canvases existen y se pintan las firmas guardadas.
+        this.syncVisibleSignatures();
+    }
+
+    private initSignatureCanvas(canvas: HTMLCanvasElement): void {
+        if (this.signatureInited.has(canvas)) {
+            return;
+        }
+        this.signatureInited.add(canvas);
+        try {
+            const dpr = Math.max(1, window.devicePixelRatio || 1);
+            canvas.width = Math.round((canvas.clientWidth || 560) * dpr);
+            canvas.height = 140 * dpr;
+            const ctx = canvas.getContext("2d");
+            if (!ctx) {
+                return;
+            }
+            ctx.scale(dpr, dpr);
+            ctx.lineWidth = 2;
+            ctx.lineCap = "round";
+            ctx.lineJoin = "round";
+            ctx.strokeStyle = "#111827";
+
+            let drawing = false;
+            let last: { x: number; y: number } | null = null;
+
+            const pointFromEvent = (event: PointerEvent): { x: number; y: number } => {
+                const rect = canvas.getBoundingClientRect();
+                return {
+                    x: ((event.clientX - rect.left) / Math.max(1, rect.width)) * (canvas.width / dpr),
+                    y: ((event.clientY - rect.top) / Math.max(1, rect.height)) * (canvas.height / dpr),
+                };
+            };
+
+            canvas.addEventListener("pointerdown", (event) => {
+                if (event.pointerType === "mouse" && event.button !== 0) {
+                    return;
+                }
+                drawing = true;
+                try {
+                    canvas.setPointerCapture(event.pointerId);
+                } catch {
+                    /* sin soporte de captura: el trazo igual se dibuja */
+                }
+                last = pointFromEvent(event);
+            });
+
+            canvas.addEventListener("pointermove", (event) => {
+                if (!drawing || !last) {
+                    return;
+                }
+                const ctxMove = canvas.getContext("2d");
+                if (!ctxMove) {
+                    return;
+                }
+                const point = pointFromEvent(event);
+                ctxMove.beginPath();
+                ctxMove.moveTo(last.x, last.y);
+                ctxMove.lineTo(point.x, point.y);
+                ctxMove.stroke();
+                last = point;
+            });
+
+            const finishStroke = (event: PointerEvent) => {
+                if (!drawing) {
+                    return;
+                }
+                drawing = false;
+                last = null;
+                try {
+                    canvas.releasePointerCapture(event.pointerId);
+                } catch {
+                    /* sin captura activa */
+                }
+                this.commitSignature(canvas, canvas.toDataURL("image/png"));
+            };
+
+            canvas.addEventListener("pointerup", finishStroke);
+            canvas.addEventListener("pointercancel", finishStroke);
+        } catch (error) {
+            console.error("[Firmas] No fue posible inicializar el canvas de firma:", error);
+        }
+    }
+
+    /** Serializa la firma terminada al draft: MISMO campo que antes guardaba texto,
+     *  ahora dataURL PNG (columna TEXT en backend → cero migraciones). */
+    private commitSignature(canvas: HTMLCanvasElement, dataUrl: string): void {
+        const field = canvas.getAttribute("data-field");
+        if (!field || !/^data:image\//.test(dataUrl)) {
+            return;
+        }
+        try {
+            (this.draft as unknown as Record<string, unknown>)[field] = dataUrl;
+        } catch (error) {
+            console.error("[Firmas] No fue posible guardar la firma en el borrador:", error);
+        }
+    }
+
+    /** Limpia el trazo y vacía el campo de firma del draft. */
+    clearSignature(which: "client" | "pika"): void {
+        const field = which === "client" ? "clientSignature" : "pikaSignature";
+        try {
+            (this.draft as unknown as Record<string, unknown>)[field] = "";
+            const canvas = this.signatureCanvasFor(field);
+            if (!canvas) {
+                return;
+            }
+            const ctx = canvas.getContext("2d");
+            if (ctx) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+        } catch (error) {
+            console.error("[Firmas] No fue posible limpiar la firma:", error);
+        }
+    }
+
+    /** Pinta sobre el canvas las firmas del draft que sean imagen; los textos legacy
+     *  NO se pintan pero SÍ permanecen en el draft para no perderlos al re-guardar. */
+    restoreSignaturesToCanvases(): void {
+        for (const field of ["clientSignature", "pikaSignature"] as const) {
+            try {
+                const canvas = this.signatureCanvasFor(field);
+                if (!canvas || !this.signatureInited.has(canvas)) {
+                    continue;
+                }
+                const ctx = canvas.getContext("2d");
+                if (!ctx) {
+                    return;
+                }
+                const value = String((this.draft as unknown as Record<string, unknown>)[field] ?? "").trim();
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                if (!value.startsWith("data:image/")) {
+                    continue; // texto legacy: se conserva en el draft sin pintarlo
+                }
+                const image = new Image();
+                image.onload = () => {
+                    try {
+                        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+                    } catch (error) {
+                        console.error("[Firmas] No fue posible pintar la firma guardada:", error);
+                    }
+                };
+                image.src = value;
+            } catch (error) {
+                console.error("[Firmas] Error restaurando firmas al canvas:", error);
+            }
+        }
+    }
+
+    private signatureCanvasFor(field: string): HTMLCanvasElement | null {
+        for (const canvas of this.sigCanvases?.toArray() ?? []) {
+            if (canvas.getAttribute("data-field") === field) {
+                return canvas;
+            }
+        }
+        return null;
+    }
+
+    private signatureInited = new WeakSet<HTMLCanvasElement>();
 
     /** Flags de la reserva atómica de códigos (serie CO+YYMM+NNNN): impiden
      * duplicar reservas cuando el usuario agrega equipos en rápida sucesión. */
@@ -2489,6 +2687,7 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy,
         this.currentStepIndex -= 1;
         this.validationMessage = "";
         this.saveDraftSuccess = false;
+        this.syncVisibleSignatures();
     }
 
     nextStep(): void {
@@ -2510,6 +2709,7 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy,
                 this.validationMessage = "No fue posible generar la etiqueta QR de uno o más equipos.";
             });
         }
+        this.syncVisibleSignatures();
     }
 
     openWizardSection(index: number): void {
@@ -2518,6 +2718,7 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy,
         }
         this.currentStepIndex = index;
         this.validationMessage = "";
+        this.syncVisibleSignatures();
     }
 
     close(): void {

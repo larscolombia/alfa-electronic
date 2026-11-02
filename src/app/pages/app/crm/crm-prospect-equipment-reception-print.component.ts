@@ -78,9 +78,13 @@ import { ProspectEquipmentAttachment, ProspectEquipmentItem, ProspectEquipmentRe
 
                 <section class="reception-sheet__section">
                     <h2>Firmas</h2>
+                    <!-- Firmas (2026-11-02): firma táctil = dataURL PNG → se renderiza como imagen;
+                         texto (registro legacy) sigue mostrándose como antes. -->
                     <div class="sheet-grid">
-                        <div><strong>Firma cliente:</strong> {{ currentRecord.clientSignature || '--' }}</div>
-                        <div><strong>Firma PIKA:</strong> {{ currentRecord.pikaSignature || '--' }}</div>
+                        <div *ngIf="(currentRecord.clientSignature || '').startsWith('data:image/')"><strong>Firma cliente:</strong><br /><img [src]="currentRecord.clientSignature" alt="Firma cliente" style="max-height:90px; max-width:100%;" /></div>
+                        <div *ngIf="!(currentRecord.clientSignature || '').startsWith('data:image/')"><strong>Firma cliente:</strong> {{ currentRecord.clientSignature || '--' }}</div>
+                        <div *ngIf="(currentRecord.pikaSignature || '').startsWith('data:image/')"><strong>Firma PIKA:</strong><br /><img [src]="currentRecord.pikaSignature" alt="Firma PIKA" style="max-height:90px; max-width:100%;" /></div>
+                        <div *ngIf="!(currentRecord.pikaSignature || '').startsWith('data:image/')"><strong>Firma PIKA:</strong> {{ currentRecord.pikaSignature || '--' }}</div>
                     </div>
                 </section>
             </article>

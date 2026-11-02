@@ -27,6 +27,8 @@ const result = {
   catalogOptionsVerified: false,
   customLocationCreated: false,
   summaryPreserved: false,
+  signaturesCanvasPresent: false, // canvas táctiles de firma (cliente + PIKA) presentes en el paso Cierre
+  signaturesDrawn: false,        // trazo dibujado por pointer events sobre ambos canvases
   saved: false,
   error: "",
 };
@@ -126,6 +128,34 @@ try {
   await modal.getByTestId("industrial-override-by").first().fill("Jefe QA");
   await modal.getByTestId("industrial-override-reason").first().fill(`Aprobado por QA ${id}`);
   await wait(page);
+  // Firmas táctiles (2026-11-02): los inputs de texto fueron reemplazados por canvases
+  // con Pointer Events. El mouse de Playwright dispara pointer events → trazo compatible.
+  const clientSig = modal.getByTestId("signature-canvas-client");
+  const pikaSig = modal.getByTestId("signature-canvas-pika");
+  await clientSig.waitFor({ state: "visible" });
+  await pikaSig.waitFor({ state: "visible" });
+  result.signaturesCanvasPresent = true;
+  // Dibuja un trazo sobre el canvas; al soltar, el componente serializa a dataURL PNG
+  // dentro del draft (clientSignature/pikaSignature) antes de guardar.
+  const drawSignature = async (testid) => {
+    const canvas = modal.getByTestId(testid);
+    const box = await canvas.boundingBox();
+    if (!box) throw new Error(`Canvas ${testid} sin boundingBox`);
+    const x0 = box.x + Math.max(12, box.width * 0.08);
+    const x1 = box.x + box.width - Math.max(12, box.width * 0.08);
+    const yBase = box.y + box.height * 0.65;
+    await page.mouse.move(x0, yBase);
+    await page.mouse.down();
+    for (let i = 1; i <= 30; i += 1) {
+      const t = i / 30;
+      await page.mouse.move(x0 + (x1 - x0) * t, yBase - Math.sin(t * Math.PI * 2.5) * box.height * 0.18, { steps: 1 });
+    }
+    await page.mouse.up();
+    await wait(page);
+  };
+  await drawSignature("signature-canvas-client");
+  await drawSignature("signature-canvas-pika");
+  result.signaturesDrawn = true;
   const saveBtn = modal.getByTestId("equipment-modal-save");
   await saveBtn.waitFor({ state: "visible" });
   await saveBtn.click();
