@@ -332,7 +332,7 @@ func (h *Handler) addItemAttachment(c echo.Context) error {
 	item, err := h.service.AddItemAttachment(companyID, recordID, itemID, req)
 	if err != nil {
 		switch {
-		case errors.Is(err, errRecordIDRequired), errors.Is(err, errItemIDRequired), errors.Is(err, errAttachmentInvalid), errors.Is(err, errAttachmentTooLarge), errors.Is(err, errAttachmentTypeDenied):
+		case errors.Is(err, errRecordIDRequired), errors.Is(err, errItemIDRequired), errors.Is(err, errAttachmentInvalid), errors.Is(err, errAttachmentTooLarge):
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 		case errors.Is(err, errRecordNotFound), errors.Is(err, errItemNotFound):
 			return c.JSON(http.StatusNotFound, map[string]string{"error": err.Error()})

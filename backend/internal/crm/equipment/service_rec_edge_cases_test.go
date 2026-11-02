@@ -262,26 +262,8 @@ func TestDuplicateConfirmValid(t *testing.T) {
 	}
 }
 
-func TestAttachmentMIMEAllowed(t *testing.T) {
-	cases := []struct {
-		mime string
-		want bool
-	}{
-		{"image/jpeg", true},
-		{"image/png", true},
-		{"application/pdf", true},
-		{"", true},
-		{"application/zip", false},
-		{"application/octet-stream", false},
-		{"video/mp4", false},
-	}
-	for _, tc := range cases {
-		if got := attachmentMIMEAllowed(tc.mime); got != tc.want {
-			t.Errorf("attachmentMIMEAllowed(%q) = %v, esperaba %v", tc.mime, got, tc.want)
-		}
-	}
-}
-
+// REC-04 (ampliacion): el whitelist de MIME fue eliminado; el formato fisico firmado admite cualquier documento.
+// El contrato 'acepta cualquier tipo + limite 10MB' queda cubierto por la suite e2e scripts/e2e-ui-rec-04-intake-format-playwright.mjs.
 func TestSenderUnknownAssignmentErrorText(t *testing.T) {
 	const want = "Remitente no identificado: no se puede asignar técnico ni cotizar hasta identificar empresa/contacto"
 	if errSenderUnknownAssignment.Error() != want {

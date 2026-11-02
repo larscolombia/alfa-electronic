@@ -815,17 +815,17 @@ type SoftwareBackupInfo = {
                                                     <input class="form-control" type="file" accept="image/*" capture="environment" multiple data-testid="evidence-files-input" (change)="handleEvidenceFilesSelected(item, $event)" />
                                                     <p class="small text-secondary mb-3 mt-2">En móvil, el atributo capture intenta abrir la cámara trasera. Puedes cargar tantas fotos como necesites.</p>
 
-                                                    <label class="form-label">Formato físico firmado (imagen o PDF)</label>
+                                                    <label class="form-label">Formato físico firmado (cualquier documento)</label>
                                                     <input
                                                         class="form-control"
                                                         type="file"
-                                                        accept="image/*,application/pdf"
+                                                        multiple
                                                         data-testid="intake-format-file-input"
                                                         (change)="handleIntakeFormatFilesSelected(item, $event)" />
-                                                    <p class="small text-secondary mb-2 mt-2">Adjunta el formato de recepción firmado. Se permiten imágenes o PDF de máximo 10MB.</p>
+                                                    <p class="small text-secondary mb-2 mt-2">Adjunta el formato de recepción firmado. Puedes seleccionar varios archivos en cualquier formato; máximo 10MB por archivo.</p>
                                                     <div class="vstack gap-1 mb-3" *ngIf="intakeFormatAttachments(item).length > 0">
                                                         <div class="d-flex align-items-center gap-2 small border rounded px-2 py-1" *ngFor="let attachment of intakeFormatAttachments(item); let attachmentIndex = index">
-                                                            <i class="bi" [ngClass]="attachment.mimeType === 'application/pdf' ? 'bi-file-earmark-pdf' : 'bi-file-earmark-image'"></i>
+                                                            <i class="bi" [ngClass]="getAttachmentIcon(attachment)"></i>
                                                             <span class="text-truncate flex-grow-1">{{ attachment.fileName }}</span>
                                                             <a
                                                                 class="btn btn-sm btn-outline-secondary"
@@ -2350,6 +2350,13 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy,
         return (item.attachments ?? []).filter((attachment) => (attachment.attachmentType || "").trim().toLowerCase() === "intake-format");
     }
 
+    getAttachmentIcon(attachment: ProspectEquipmentAttachment): string {
+        const mime = (attachment.mimeType || "").toLowerCase();
+        if (mime === "application/pdf") return "bi-file-earmark-pdf";
+        if (mime.startsWith("image/")) return "bi-file-earmark-image";
+        return "bi-file-earmark"; // cualquier otro documento (docx, xlsx, txt...)
+    }
+
     removeIntakeFormatAttachment(item: ProspectEquipmentItem, attachmentId: string): void {
         item.attachments = (item.attachments ?? []).filter((attachment) => attachment.id !== attachmentId);
     }
@@ -2362,9 +2369,9 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy,
         }
 
         const maxBytes = 10 * 1024 * 1024;
-        const accepted = files.filter((file) => (file.type.startsWith("image/") || file.type === "application/pdf") && file.size <= maxBytes);
+        const accepted = files.filter((file) => file.size <= maxBytes);
         if (accepted.length !== files.length) {
-            this.validationMessage = "Solo se permiten imágenes o PDF de máximo 10MB para el formato físico firmado.";
+            this.validationMessage = "El formato físico firmado admite hasta 10MB por archivo. Revisa el tamaño de los archivos seleccionados.";
             if (input) {
                 input.value = "";
             }
@@ -2380,7 +2387,7 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy,
                 mimeType: file.type,
                 sizeBytes: file.size,
                 dataUrl,
-                thumbnailDataUrl: file.type === "application/pdf" ? undefined : dataUrl,
+                thumbnailDataUrl: file.type.startsWith("image/") ? dataUrl : undefined, // solo imagenes llevan miniatura; pdf/doc/xlsx/txt no la muestran
                 notes: "Formato físico firmado",
                 uploadedAt: new Date().toISOString(),
                 uploadedBy: this.authService.getCurrentUserName() || "recepcion",

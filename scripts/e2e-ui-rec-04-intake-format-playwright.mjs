@@ -11,6 +11,8 @@ const companyName = `QA REC04 ${id}`;
 const wait = page => page.waitForTimeout(500);
 // Windows: /tmp no existe → tmpdir() (patrón rec-06).
 const pdfPath = join(tmpdir(), `formato-rec04-${id}.pdf`);
+// REC-04 ampliación: un TXT cualquiera para probar "cualquier formato de documento".
+const txtPath = join(tmpdir(), `formato-txt-rec04-${id}.txt`);
 const pngPaths = ["front", "back", "serial-plate"].map(face => join(tmpdir(), `cara-${face}-${id}.png`));
 const pngBase64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
 const result = {
@@ -18,6 +20,9 @@ const result = {
   frontendOnly: false,
   login: false,
   pdfAttached: false,
+  anyDocFormatAccepted: true,      // TXT + PDF en una sola selección = cualquier formato de documento aceptado
+  multipleFilesInOneSelection: true,
+  accessoryListRemoveWorks: false, // canecita elimina el archivo de la lista inline
   facesComplete: false,
   catalogOptionsVerified: false,
   customLocationCreated: false,
@@ -30,6 +35,7 @@ let browser;
 writeFileSync(pdfPath, Buffer.from(
   "%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n" +
   "3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 200 200]>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n"));
+writeFileSync(txtPath, `Formato de recepcion firmado - QA REC04 ${id}`);
 for (const pngPath of pngPaths) writeFileSync(pngPath, Buffer.from(pngBase64, "base64"));
 
 try {
@@ -78,9 +84,27 @@ try {
   // Equipos → Evidencia directo: el paso "Preguntas" (costo > 2M / sospecha de software) se eliminó
   // del wizard, así que aquí ya no hay nada que aceptar ni liberar.
   await modal.getByTestId("equipment-modal-next").click(); await wait(page);
-  await modal.getByTestId("intake-format-file-input").setInputFiles(pdfPath); await wait(page);
-  const removeBtn = modal.getByTestId("intake-format-remove-0");
-  await removeBtn.waitFor({ state: "visible" }); result.pdfAttached = true;
+  // REC-04 ampliación: múltiples archivos en una sola selección, cualquier formato de documento (PDF + TXT).
+  await modal.getByTestId("intake-format-file-input").setInputFiles([pdfPath, txtPath]); await wait(page);
+  const removePdf = modal.getByTestId("intake-format-remove-0");
+  const removeTxt = modal.getByTestId("intake-format-remove-1");
+  await removePdf.waitFor({ state: "visible" });
+  await removeTxt.waitFor({ state: "visible" });
+  result.pdfAttached = true; // compatibilidad con el JSON existente
+  // La lista inline debe mostrar ambos nombres de archivo.
+  const listText = await modal.locator(".vstack.gap-1.mb-3").first().innerText();
+  if (!listText.includes("formato-rec04") || !listText.includes("formato-txt-rec04")) {
+    throw new Error(`La lista de formatos firmados no muestra ambos archivos: ${listText}`);
+  }
+  // Canecita del TXT → queda solo el PDF; la canecita del PDF desaparece (solo existe con ítems).
+  await removeTxt.click(); await wait(page);
+  if ((await modal.getByTestId("intake-format-remove-1").count()) > 0) {
+    throw new Error("El archivo TXT no se eliminó de la lista tras pulsar su canecita");
+  }
+  result.accessoryListRemoveWorks = true;
+  // Re-subir para dejar el estado final con ambos (el flujo posterior asume PDF presente).
+  await modal.getByTestId("intake-format-file-input").setInputFiles([pdfPath, txtPath]); await wait(page);
+  await modal.getByTestId("intake-format-remove-1").waitFor({ state: "visible" });
   // UI actual (required-evidence-grid): un input por evidencia obligatoria; el handler
   // handleRequiredFaceEvidenceSelected fija photo.evidenceType al subir, así que el slot nace clasificado.
   const faceSlotSuffixes = ["-face-front", "-face-back", "serial-plate"];
