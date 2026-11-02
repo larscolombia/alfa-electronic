@@ -162,15 +162,10 @@ try {
   result.reasonInputRemoved = (await modal.getByTestId("serie-exception-reason").count()) === 0;
   if (!result.exceptionPromptRemoved || !result.reasonInputRemoved) throw new Error(`La caja "Motivo de excepción" aun existe en el paso Equipos`);
 
-  // El gate de motivo desapareció: Siguiente debe avanzar directo a Preguntas (antes se bloqueaba sin motivo).
+  // El gate de motivo desapareció y el paso "Preguntas" se eliminó: Siguiente debe avanzar directo a Evidencia.
   await modal.getByTestId("equipment-modal-next").click(); await wait(page);
-  result.advancedToQuestions = /Preguntas por equipo/.test(await modal.innerText());
-  if (!result.advancedToQuestions) throw new Error(`Sin el gate de motivo no avanzó al paso Preguntas. Texto: ${(await modal.innerText()).slice(-400)}`);
-
-  // Evita el bloqueo del filtro industrial REC-01: costo nuevo > $2M = Sí libera requiresIndustrialOverride() (no hay más ack en la UI actual).
-  const costQuestion = modal.locator("div.border.rounded.p-3.bg-light-subtle", { hasText: /superior a/ }).first();
-  await costQuestion.locator("input.form-check-input").check(); await wait(page);
-  await modal.getByTestId("equipment-modal-next").click(); await wait(page);
+  result.advancedToQuestions = /Evidencia|Fotos obligatorias/i.test(await modal.innerText());
+  if (!result.advancedToQuestions) throw new Error(`Sin el gate de motivo no avanzó al paso Evidencia. Texto: ${(await modal.innerText()).slice(-400)}`);
 
   // Evidencia: la foto tipo "Placa / serie" sigue siendo OBLIGATORIA para todo equipo (cara requerida),
   // igual que FRENTE y ATRÁS. Subir las 3 caras y avanzar al cierre.
@@ -192,6 +187,11 @@ try {
 
   await modal.getByTestId("equipment-modal-next").click(); await wait(page);
   if (!/Resumen de la recepción/.test(await modal.innerText())) throw new Error("No avanzó al paso Cierre con la evidencia completa");
+
+  // Gate industrial en Cierre (paso Preguntas eliminado): todo item exige autorización de jefe.
+  await modal.getByTestId("industrial-override-by").first().fill("Jefe QA");
+  await modal.getByTestId("industrial-override-reason").first().fill(`Aprobado por QA ${id}`);
+  await wait(page);
 
   await modal.getByTestId("equipment-modal-save").click();
   await modal.waitFor({ state: "hidden", timeout: 30000 });

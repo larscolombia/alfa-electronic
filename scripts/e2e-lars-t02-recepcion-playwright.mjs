@@ -7,10 +7,8 @@
  *  3. Modal de equipos desde Trabajo > Recepción (/app/work-equipment-reception, botón 'Nuevo
  *     equipo'), asociando el prospecto por la combobox Empresa (catálogo Clientes + Prospectos).
  *  4. Wizard: Recepción (transportadora/guía/fecha) → Equipos (PLC Siemens, serie única,
- *     servicio, ubicación/estantería, falla impresora Heidelberg) → Preguntas
- *     (valor nuevo >2M: Sí, componentes electrónicos accesibles/falla electrónica: Sí,
- *     autorización jefe por equipo no industrial en modo manual) → Evidencia (identificador
- *     + frente/atrás/placa) → Cierre (guardar).
+ *     servicio, ubicación/estantería, falla impresora Heidelberg) → Evidencia
+ *     (identificador + frente/atrás/placa) → Cierre (gate industrial de autorización de jefe + guardar).
  *  5. Captura del código generado (record id + shortCode QR) vía API de verificación.
  *  6. Verificación: equipo listado en Trabajo > Equipos y hoja/etiqueta QR imprimible.
  *
@@ -75,7 +73,7 @@ const result = {
         equipmentModalOpened: false,
         receptionStepCompleted: false,
         equipmentDataEntered: false,
-        questionsAnswered: false,
+        // (el antiguo check 'questionsAnswered' se eliminó con el paso Preguntas del wizard)
         evidenceUploaded: false,
         receptionSaved: false,
         apiRecordVerified: false,
@@ -158,18 +156,6 @@ function receptionSelect(page, labelText) {
 
 function receptionInput(page, labelText) {
     return page.locator(`label.form-label:has-text("${labelText}") + input.form-control`).first();
-}
-
-async function answerQuestionYes(page, questionSnippet) {
-    const container = page
-        .locator(".question-card div.border.rounded.p-3.bg-light-subtle", { hasText: questionSnippet })
-        .first();
-    const toggle = container.locator("input.form-check-input").first();
-    await toggle.waitFor({ state: "visible", timeout: timeoutMs });
-    if (!(await toggle.isChecked())) {
-        await toggle.check({ timeout: timeoutMs });
-    }
-    return toggle.isChecked();
 }
 
 async function setRequiredFaceEvidence(page) {
@@ -417,49 +403,17 @@ try {
     await page.locator("label.form-label:has-text('Descripción de la falla') + textarea.form-control").first().fill(failureText);
 
     await screenshotStep(page, "03-equipment-step");
+
+    // Equipos -> Evidencia directo: el paso Preguntas fue eliminado del wizard.
+    // isVisible({timeout}) NO espera (retorna inmediato): tras el click a 'Siguiente' la
+    // vista nueva aún no está en DOM. Se usa waitFor: espera de verdad hasta que el input
+    // QR sea visible (determinista) o timeout real.
     await page.getByTestId("equipment-modal-next").click();
-    await page.waitForSelector(".question-card", { timeout: timeoutMs });
+    const scannerInput = page.locator("input[placeholder='QR, código de barras, serial o placa']").first();
+    await scannerInput.waitFor({ state: "visible", timeout: 20000 });
     result.checks.equipmentDataEntered = true;
 
-    console.log("STEP 4: paso Preguntas (>2M: Sí, electrónica: Sí, autorización jefe) …");
-    const costAnswer = await answerQuestionYes(page, "es superior a $ 2'000.000");
-    const electronicAnswer = await answerQuestionYes(page, "componentes electrónicos están accesibles");
-    result.checks.questionsAnswered = costAnswer && electronicAnswer;
-
-    // Equipo en modo manual => no industrial => el formato exige autorización de jefe
-    const overrideVisible = await page
-        .locator(".question-card", { hasText: "Bloqueo por filtro industrial" })
-        .first()
-        .isVisible({ timeout: 5000 })
-        .catch(() => false);
-    if (overrideVisible) {
-        result.observations.push(
-            "DATO: el equipo en modo manual quedó como 'No industrial' y el formato exigió autorización de jefe técnico (aunque el valor nuevo >2M = Sí). No existe pregunta literal de 'gama industrial' en el formato; el flag viene del catálogo.",
-        );
-        await page.locator(".question-card label.form-label.small:has-text('Autorizado por') + input.form-control").first().fill("Jefe técnico LARS t02");
-        await page.locator(".question-card label.form-label.small:has-text('Motivo de autorización') + input.form-control").first().fill("Recepción PLC modo manual no homologado, valor nuevo >2M");
-    }
-
-    await screenshotStep(page, "04-questions-step");
-    await page.getByTestId("equipment-modal-next").click();
-
-    // El paso Evidencia es el siguiente; si el flujo exige firma antes, se cubre aquí.
-    // isVisible({timeout}) NO espera (retorna inmediato): tras el click a 'Siguiente' la
-    // vista nueva aún no está en DOM y el probe caía al fallback equivocado. Se usa waitFor:
-    // espera de verdad hasta que el input QR sea visible (determinista) o timeout real.
-    const scannerInput = page.locator("input[placeholder='QR, código de barras, serial o placa']").first();
-    const reachedEvidenceStep = await scannerInput
-        .waitFor({ state: "visible", timeout: 20000 })
-        .then(() => true)
-        .catch(() => false);
-    if (!reachedEvidenceStep) {
-        // Fallback de robustez: paso intermedio de autorización/firma (no se ha observado
-        // en el flujo actual; si aparece, se completa y se avanza a Evidencia).
-        await page.locator("label.form-label.small:has-text('Autorizado por') + input.form-control").first().fill("Jefe técnico LARS t02");
-        await page.locator("label.form-label.small:has-text('Motivo de autorización') + input.form-control").first().fill("Autorización operativa t02");
-        await page.getByTestId("equipment-modal-next").click();
-        await scannerInput.waitFor({ state: "visible", timeout: timeoutMs });
-    }
+    console.log("STEP 4 (el antiguo paso Preguntas fue eliminado): Evidencia alcanzada …");
 
     console.log("STEP 5: paso Evidencia (identificador + frente/atrás/placa) …");
     await setRequiredFaceEvidence(page);
@@ -480,6 +434,7 @@ try {
     await screenshotStep(page, "05-evidence-step");
 
     await page.getByTestId("equipment-modal-next").click();
+    // Evidencia -> Cierre (paso Preguntas eliminado): el gate industrial vive aquí.
     await page.waitForSelector("#generateRepairProjectsOnSave", { timeout: timeoutMs });
 
     const generateProjectsSwitch = page.locator("#generateRepairProjectsOnSave").first();
@@ -492,6 +447,13 @@ try {
             }
         });
     }
+
+    // Gate industrial en Cierre (paso Preguntas eliminado): todo item exige autorización de jefe.
+    const gateBy = page.getByTestId("industrial-override-by").first();
+    if (await gateBy.count()) { await gateBy.fill("Jefe técnico LARS t02"); }
+    const gateReason = page.getByTestId("industrial-override-reason").first();
+    if (await gateReason.count()) { await gateReason.fill("Recepción PLC modo manual no homologado, valor nuevo >2M"); }
+    await page.waitForTimeout(300);
 
     console.log("STEP 6: Guardar recepción …");
     await screenshotStep(page, "06-signatures-step");
@@ -524,8 +486,9 @@ try {
         String(savedItem?.serie || "") === uniqueSerie &&
         String(savedItem?.receivedIdentifier || "") === equipmentCode &&
         String(savedItem?.failureDescription || "") === failureText &&
-        String(savedItem?.answers?.costAboveTwoMillion || "") === "Sí" &&
-        String(savedItem?.answers?.electronicsAccessible || "") === "Sí" &&
+        // El paso Preguntas fue eliminado: la autorización de jefe pasó a Cierre (gate industrial).
+        Boolean((savedItem?.industrialOverrideAuthorizedBy || "").trim()) &&
+        Boolean((savedItem?.industrialOverrideReason || "").trim()) &&
         Boolean(savedItem?.storageLocationName || savedItem?.storageLocationId) &&
         // 3 evidencias obligatorias actuales: FRENTE, ATRÁS y PLACA (requiredFaceEvidenceTypes).
         (savedItem?.evidencePhotos || []).length >= 3;

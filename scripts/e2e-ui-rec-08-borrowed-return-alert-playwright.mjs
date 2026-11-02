@@ -13,12 +13,13 @@ const result = { case: "REC-08", login: false, borrowedCode: "", codeFormatOk: f
 let browser;
 
 const PNG_1X1 = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "base64");
-const FACES = ["face-front", "face-back", "serial-plate"];
 const facePaths = ["front", "back", "serial-plate"].map(face => join(tmpdir(), `rec08-${face}-${id}.png`));
 for (const p of facePaths) writeFileSync(p, PNG_1X1);
 
+// Aligned with the rest of the REC battery (v39): respect PW_HEADLESS / PW_SLOW_MO_MS so we can run
+// in visible mode with 400ms between interactions for user review.
 try {
-  browser = await chromium.launch({ headless: false, slowMo: 500 });
+  browser = await chromium.launch({ headless: process.env.PW_HEADLESS !== "false", slowMo: Number(process.env.PW_SLOW_MO_MS || 0) });
   const page = await (await browser.newContext()).newPage();
   await page.goto(`${base}/auth/signin`, { waitUntil: "networkidle" });
   await page.locator("#emailadd").fill(process.env.PW_USER_EMAIL || "admin@alfa.com"); await wait(page);
@@ -39,36 +40,52 @@ try {
   await selectCustomModal(page, modal.locator("[data-testid^='equipment-modal-family-']").first(), { label: "CE - Tarjeta Electrónica" }); await wait(page);
   for (const [placeholder, value] of [["Marca del equipo", "Marca QA"], ["Tipo / referencia", "Multímetro"], ["Serie o referencia visible", `SER-${id}`]]) await modal.locator(`input[placeholder='${placeholder}']`).fill(value);
 
-  // REC-08: préstamo anclado con código BLD-XXXXXXXX. El <details> nace cerrado sin entradas → expandir primero.
-  const borrowedDetails = modal.locator("app-crm-equipment-borrowed-list details").first();
-  if (!(await borrowedDetails.evaluate(el => el.open))) await modal.locator("app-crm-equipment-borrowed-list summary").click();
+  // REC-08: préstamo anclado con código BLD-XXXXXXXX.
+  // La sección de préstamos vive dentro de *ngIf="expanded" (accessorios > 0 O préstamos > 0):
+  // en un equipo nuevo el <details> NO existe en DOM, así que primero se materializa agregando
+  // UN accesorio (patrón probado por REC-06 verde), se abre el summary y recién ahí el botón
+  // Agregar de préstamos es alcanzable. El accesorio se retira al final para no disparar la
+  // evidencia obligatoria de accesorios; el préstamo persiste porque `expanded` también lo cubre.
+  const accDraft = modal.locator("input[id^='accessory-draft-']").first();
+  await accDraft.fill("Cable USB de referencia"); await wait(page);
+  await modal.getByTestId("equipment-modal-add-accessory-0").click(); await wait(page);
+  // El <details> nace cerrado con entries.length === 0 → abrirlo por el summary.
+  const borrowedSummary = modal.locator("app-crm-equipment-borrowed-list summary");
+  if (!(await borrowedSummary.evaluate(el => el.parentElement.open))) await borrowedSummary.click();
   await wait(page);
+  // Agregar dos entradas de préstamo y quitar la segunda (add/remove works).
+  const borrowedRows = modal.locator("app-crm-equipment-borrowed-list .borrowed-equipment-repeater input[placeholder^='Ej.: Parlante']");
   await modal.getByTestId("equipment-modal-add-borrowed-0").click(); await wait(page);
   await modal.getByTestId("equipment-modal-add-borrowed-0").click(); await wait(page);
-  const removeBtn = modal.getByTestId("equipment-modal-remove-borrowed-0-1");
-  await removeBtn.click(); await wait(page);
-  result.removeWorks = (await modal.locator("app-crm-equipment-borrowed-list input[placeholder^='Ej.: Parlante']").count()) === 1;
-  await modal.locator("app-crm-equipment-borrowed-list input[placeholder^='Ej.: Parlante']").first().fill("Multímetro de referencia"); await wait(page);
-  const codeText = (await modal.locator("app-crm-equipment-borrowed-list .input-group-text").first().innerText()).trim();
+  if ((await borrowedRows.count()) !== 2) throw new Error(`Agregar no dejó 2 filas de préstamo: count=${await borrowedRows.count()}`);
+  await modal.getByTestId("equipment-modal-remove-borrowed-0-1").click(); await wait(page);
+  result.removeWorks = (await borrowedRows.count()) === 1;
+  if (!result.removeWorks) throw new Error(`El botón Quitar del préstamo no eliminó la fila: count=${await borrowedRows.count()}`);
+  // Describir la entrada restante y leer SU código BLD. El span de índice de accesorio también es
+  // .input-group-text; el del préstamo se distingue por [title='Código de préstamo ...'] (componente
+  // crm-equipment-borrowed-list, plantilla).
+  await borrowedRows.first().fill("Parlante activo de referencia"); await wait(page);
+  const codeText = (await modal.locator("app-crm-equipment-borrowed-list .input-group-text[title*='Código de préstamo']").first().innerText()).trim();
   result.borrowedCode = codeText;
   result.codeFormatOk = /^BLD-[A-Z2-9]{8}$/.test(codeText);
   if (!result.codeFormatOk) throw new Error(`Código de préstamo inválido: "${codeText}"`);
   if (!result.removeWorks) throw new Error("El botón Quitar del préstamo no eliminó la fila");
 
-  // Paso Preguntas: costo > 2M = Sí (libera gate REC-01) y software descartado = Sí.
-  await modal.getByTestId("equipment-modal-next").click(); await wait(page);
-  await modal.locator("input[id$='-costAboveTwoMillion']").check(); await wait(page);
-  await modal.locator("input[id$='-softwareIssueRuledOut']").check(); await wait(page);
+  // Quitar el accesorio temporal: sin él no se dispara la evidencia obligatoria de accesorios
+  // (contrato REC-06); expanded sigue true por el préstamo, la sección permanece visible.
+  await modal.getByTestId("equipment-modal-remove-accessory-0-0").click(); await wait(page);
 
-  // Paso Evidencia: UI actual (required-evidence-grid) — un input por evidencia obligatoria,
-  // id = 'evidence-face-' + item.id + '-' + faceType; el slot nace clasificado al subir
-  // (handleRequiredFaceEvidenceSelected fija photo.evidenceType), sin select posterior.
+  // Equipos → Evidencia directo: el paso "Preguntas" se eliminó del wizard (UN solo next).
   await modal.getByTestId("equipment-modal-next").click(); await wait(page);
+
+  // Paso Evidencia (patrón verde REC-01/REC-04): un input file oculto por cara obligatoria;
+  // al subir, handleRequiredFaceEvidenceSelected fija photo.evidenceType — sin clasificar.
   const faceSlotSuffixes = ["-face-front", "-face-back", "serial-plate"];
-  for (let i = 0; i < FACES.length; i += 1) {
+  for (let i = 0; i < facePaths.length; i += 1) {
     await modal.locator(`input[type='file'][accept='image/*'][id$="${faceSlotSuffixes[i]}"]`).setInputFiles(facePaths[i]);
     await wait(page);
   }
+  // El badge del resumen de tarjeta dice "Caras completas" cuando hasRequiredFaceEvidence(item).
   await modal.getByText("Caras completas", { exact: false }).first().waitFor({ state: "visible", timeout: 15000 });
 
   // Paso Cierre: badge de préstamo pendiente de devolución con el código.
@@ -77,6 +94,11 @@ try {
   result.badgeVisible = await badge.isVisible();
   result.badgeHasCode = result.badgeVisible && (await badge.innerText()).includes(result.borrowedCode);
   if (!result.badgeVisible || !result.badgeHasCode) throw new Error(`Badge de préstamo no visible o sin código (visible=${result.badgeVisible}, hasCode=${result.badgeHasCode})`);
+
+  // Gate industrial en Cierre (paso Preguntas eliminado): todo item exige autorización de jefe.
+  await modal.getByTestId("industrial-override-by").first().fill("Jefe QA");
+  await modal.getByTestId("industrial-override-reason").first().fill(`Aprobado por QA ${id}`);
+  await wait(page);
 
   // Guardar (upsert + finalize): éxito = el modal se cierra sin mensaje de validación.
   await modal.getByTestId("equipment-modal-save").click();

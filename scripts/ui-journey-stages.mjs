@@ -201,20 +201,8 @@ export function makeStages({ base, pause, data, stamp, snap, utils }) {
 
     await nextStep(page,w,"Siguiente equipo");
 
-    // ---- Paso Preguntas ------------------------------------------------------
-    // Marcar costo > $2'000.000 como "Sí" libera el guardado sin override de
-    // jefe (requiresIndustrialOverride() => false). La pregunta defaulta a No.
-    // Cada tarjeta de equipo trae SU PROPIA pregunta: con dos equipos en el
-    // wizard hay que marcar todas, no solo la primera.
-    const costBoxes=w.locator("input[type=checkbox][id$='-costAboveTwoMillion']");
-    await visible(costBoxes.first(),"No aparece la pregunta de costo superior a $ 2'000.000");
-    for(let i=0;i<await costBoxes.count();i++){
-      const box=costBoxes.nth(i);
-      if(!await box.isChecked().catch(()=>false)) await checkFocus(page,box);
-    }
-    if(await w.locator("input[placeholder='Nombre del jefe']").count()) throw new Error("El recuadro de autorización de jefe sigue visible con costo > 2M marcado en todas las tarjetas: la pregunta no se registró como Sí");
-    if(await w.getByText(/Posible falla de software/i).count()) throw new Error("Volvió a aparecer la alerta/validación retirada de posible falla de software");
-    await nextStep(page,w,"Siguiente preguntas");
+    // El paso Preguntas fue eliminado del wizard: Equipos -> Evidencia directo.
+    // El gate industrial (autorización de jefe) se diligencia en Cierre antes de guardar.
 
     // ---- Paso Evidencia ------------------------------------------------------
     // El Código interno se expone en este paso (input readonly por equipo).
@@ -244,17 +232,10 @@ export function makeStages({ base, pause, data, stamp, snap, utils }) {
     if(codeSeq(secondInternalCode)!==codeSeq(data.internalCode)+1) throw new Error(`El segundo equipo debería recibir ${data.internalCode}+1 y recibió ${secondInternalCode}`);
 
     // Vuelve a Equipos para eliminar el segundo (ahí vive su botón Eliminar):
-    // Evidencia -> Preguntas -> Equipos. El código asignado queda quemado:
-    // la verificación final espera +2 tras guardar.
+    // Evidencia -> Equipos directo (el paso Preguntas fue eliminado).
+    // El código asignado queda quemado: la verificación final espera +2 tras guardar.
     const prevBtn=w.locator("[data-testid=equipment-modal-previous]");
-    await click(page,prevBtn,"Volver del paso Evidencia al de Preguntas");
-
-    // La respuesta Sí al costo > 2M debió persistir al navegar hacia atrás.
-    const costBoxAgain=w.locator("input[type=checkbox][id$='-costAboveTwoMillion']").first();
-    await visible(costBoxAgain,"La pregunta de costo no aparece en el paso Preguntas tras volver");
-    if(!await costBoxAgain.isChecked().catch(()=>false)) throw new Error("El Sí al costo > 2M se perdió al navegar hacia atrás");
-
-    await click(page,prevBtn,"Volver del paso Preguntas al de Equipos");
+    await click(page,prevBtn,"Volver del paso Evidencia al de Equipos");
     const addAgain=w.locator("[data-testid=equipment-modal-add-item]").first();
     await visible(addAgain,"El botón 'Agregar equipo' no aparece en el paso Equipos tras volver");
     if(await w.locator(".equipment-card").count()!==2) throw new Error(`Se esperaban 2 tarjetas de equipos al volver y hay ${await w.locator(".equipment-card").count()}`);
@@ -264,11 +245,7 @@ export function makeStages({ base, pause, data, stamp, snap, utils }) {
     const serieInput=w.locator("input[placeholder='Serie o referencia visible']").first();
     if((await serieInput.inputValue().catch(()=>""))!==data.serie) throw new Error(`El equipo que se conserva perdió su serie (valor: "${await serieInput.inputValue().catch(()=>'(vacío)')}")`);
 
-    // Siguiente desde Equipos valida el paso y avanza a Preguntas.
-    await nextStep(page,w,"Siguiente a preguntas (tras eliminar equipo)");
-    if(!await costBoxAgain.isChecked().catch(()=>false)) throw new Error("El Sí al costo > 2M se perdió al avanzar de nuevo a Preguntas");
-
-    // Siguiente desde Preguntas valida la respuesta y avanza a Evidencia.
+    // Siguiente desde Equipos valida el paso y avanza directo a Evidencia.
     await nextStep(page,w,"Siguiente a evidencias (tras eliminar equipo)");
 
     // El primer equipo conserva su código original; el del segundo desapareció.
@@ -292,6 +269,14 @@ export function makeStages({ base, pause, data, stamp, snap, utils }) {
 
     const generate=w.locator("#generateRepairProjectsOnSave");
     await checkFocus(page,generate);
+
+    // Gate industrial en Cierre (paso Preguntas eliminado): todo item exige autorización de jefe.
+    const gateBy=w.getByTestId("industrial-override-by").first();
+    if(await gateBy.count()){ await gateBy.fill("Jefe QA journey"); }
+    const gateReason=w.getByTestId("industrial-override-reason").first();
+    if(await gateReason.count()){ await gateReason.fill(`Aprobado por QA ${data.serie}`); }
+    await page.waitForTimeout(pause || 300);
+
     await click(page,w.locator("[data-testid=equipment-modal-save]"),"Guardar recepción y generar proyecto");
 
     // Este host (work-equipment-reception) monta el wizard con
@@ -335,10 +320,8 @@ export function makeStages({ base, pause, data, stamp, snap, utils }) {
     // ngOnInit, pero solo es visible en Evidencia.
     const w2=await openWizard(page);
     await nextStep(page,w2,"Verificación: siguiente recepción");
+    // Equipos -> Evidencia directo (paso Preguntas eliminado): el código interno se expone en Evidencia.
     await nextStep(page,w2,"Verificación: siguiente equipos");
-    const costBox2=w2.locator("input[type=checkbox][id$='-costAboveTwoMillion']").first();
-    if(!await costBox2.isChecked().catch(()=>false)) await checkFocus(page,costBox2);
-    await nextStep(page,w2,"Verificación: siguiente preguntas");
     const nextCodeInput=w2.locator("[data-testid=equipment-internal-code-0]").first();
     await visible(nextCodeInput,"La recepción de verificación no expone el código interno en Evidencia");
     const expectedSeq=codeSeq(data.internalCode)+1+(multiEnabled?1:0);

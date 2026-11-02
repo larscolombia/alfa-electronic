@@ -75,19 +75,8 @@ try {
   result.customLocationCreated = await locationInput.inputValue() === locationName.toUpperCase();
   if (!result.customLocationCreated) throw new Error("La ubicación escrita no quedó en mayúsculas en el formulario");
   for (const [placeholder, value] of [["Marca del equipo", "Marca QA"], ["Tipo / referencia", "Tipo QA"], ["Serie o referencia visible", `SER-${id}`]]) await modal.locator(`input[placeholder='${placeholder}']`).fill(value);
-  await modal.getByTestId("equipment-modal-next").click(); await wait(page);
-  // Costo > $2'000.000 = Sí libera el filtro industrial (requiresIndustrialOverride → false en el
-  // componente). El ack de sospecha de software (software-suspicion-ack) ya NO existe en la UI:
-  // el flujo REC-12 fue refactorizado y hoy solo quedan previous-intervention-warning,
-  // failure-pending-badge y el override industrial, así que aquí no hay nada que aceptar.
-  const costSwitch = modal.locator("input[id$='-costAboveTwoMillion']");
-  await costSwitch.waitFor({ state: "visible" });
-  if (!(await costSwitch.isChecked())) { await costSwitch.click(); await wait(page); }
-  // Aserción positiva del gate: con costo > 2M el recuadro de override debe estar oculto.
-  const industrialOverrideBox = modal.getByText("Bloqueo por filtro industrial", { exact: false }).first();
-  if (await industrialOverrideBox.isVisible().catch(() => false)) {
-    throw new Error("El bloqueo por filtro industrial no se liberó con costo > $2'000.000 = Sí");
-  }
+  // Equipos → Evidencia directo: el paso "Preguntas" (costo > 2M / sospecha de software) se eliminó
+  // del wizard, así que aquí ya no hay nada que aceptar ni liberar.
   await modal.getByTestId("equipment-modal-next").click(); await wait(page);
   await modal.getByTestId("intake-format-file-input").setInputFiles(pdfPath); await wait(page);
   const removeBtn = modal.getByTestId("intake-format-remove-0");
@@ -108,6 +97,11 @@ try {
   // resumen la muestra en mayúsculas: comparar contra esa forma normalizada.
   result.summaryPreserved = ["A - Alimentacion", "Intercambio", locationName.toUpperCase()].every(value => summary.includes(value));
   if (!result.summaryPreserved) throw new Error(`El cierre no conservó familia, servicio y ubicación: ${summary.slice(-1800)}`);
+  // Gate industrial en Cierre (el paso Preguntas desapareció): con costo por defecto "No" todo item
+  // exige autorización de jefe antes de guardar.
+  await modal.getByTestId("industrial-override-by").first().fill("Jefe QA");
+  await modal.getByTestId("industrial-override-reason").first().fill(`Aprobado por QA ${id}`);
+  await wait(page);
   const saveBtn = modal.getByTestId("equipment-modal-save");
   await saveBtn.waitFor({ state: "visible" });
   await saveBtn.click();

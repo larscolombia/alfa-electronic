@@ -80,14 +80,38 @@ async function diagnoseAndQuote(page) {
   const row=form.locator("table tbody tr").first();
   const lineServiceSelect=row.locator("td").first().locator("select").first();
   // El catálogo de servicios puede no incluir el servicio de recepción
-  // ("Reparación"): como un usuario real, se elige si existe o la primera opción.
-  const lineServiceOptions=(await lineServiceSelect.locator("option").allInnerTexts()).map(o=>o.trim()).filter(Boolean);
+  // ("Reparación"): como un usuario real, se elige si existe o la primera opción
+  // REAL. El placeholder vacío (value="") queda excluido: ningún usuario lo elegiría.
+  const lineServiceOptEls=await lineServiceSelect.locator("option").all();
+  const lineServiceOptions=[];
+  for(const el of lineServiceOptEls){const v=(await el.getAttribute("value")).trim(); if(!v) continue; lineServiceOptions.push(((await el.innerText())||"").trim());}
   if(!lineServiceOptions.length) throw new Error("El select de servicio de la línea de cotización no tiene opciones disponibles");
   const lineService=lineServiceOptions.find(o=>o.toLowerCase().includes(data.serviceType.toLowerCase()))??lineServiceOptions[0];
   await selectFocus(page,lineServiceSelect,{label:lineService},{force:true});
   await fillFocus(page,row.locator("td").nth(2).locator("input[type=number]").first(),"10000000");
   await fillFocus(page,form.locator("textarea").nth(0),"Reparación aprobada de placa base."); await fillFocus(page,form.locator("textarea").nth(1),"Vigencia 15 días.");
-  await click(page,form.locator("button.dropdown-toggle").first(),"Opciones de guardado"); await snap("3a-menu-guardado-cotizacion"); await click(page,form.locator(".dropdown-menu button",{hasText:/Guardar y marcar como enviado/}).first(),"Guardar y enviar cotización"); await page.waitForTimeout(1500);
+  await click(page,form.locator("button.dropdown-toggle").first(),"Opciones de guardado"); await snap("3a-menu-guardado-cotizacion"); await click(page,form.locator(".dropdown-menu button",{hasText:/Guardar y marcar como enviado/}).first(),"Guardar y enviar cotización"); await page.waitForTimeout(1200);
+  // Si el formulario sigue abierto, el save fue rechazado: volcar el estado REAL
+  // de las líneas (DOM) + el error visible en vez de fallar criptográfico más abajo.
+  if(await form.isVisible().catch(()=>false)){
+    const rows=form.locator("table tbody tr"); const n=await rows.count(); const lines=[];
+    for(let i=0;i<n;i++){const r=rows.nth(i);lines.push({servicio:await r.locator("td").first().locator("select").first().inputValue().catch(()=>"ERR"),precio:await r.locator("td").nth(2).locator("input[type=number]").first().inputValue().catch(()=>"ERR")});}
+    const errText=(await form.locator(".alert-danger,.text-danger").allInnerTexts().catch(()=>[])).join(" | ");
+    // Dev build expone window.ng: leer el ESTADO REAL del componente (modelo Angular, no DOM).
+    let modelState="(sin devtools)";
+    try{
+      const rowEl=await rows.first().elementHandle();
+      modelState=await page.evaluate((el)=>{
+        const ng=window.ng; if(!ng||!ng.getComponent) return "(window.ng ausente)";
+        let node=el, comp=null;
+        while(node&&node!==document.body){ try{comp=ng.getComponent(node);}catch{} if(comp) break; node=node.parentElement; }
+        if(!comp) return "(componente no resuelto)";
+        const q=comp.quoteLines; 
+        return `comp=${comp.constructor&&comp.constructor.name} quoteLines=${JSON.stringify(q)} serviceOptions.len=${(comp.serviceOptions||[]).length}`;
+      },rowEl);
+    }catch(e){modelState=`(error: ${String(e)})`;} 
+    throw new Error(`La cotización no se guardó (formulario sigue abierto). Errores: ${errText||"(sin texto visible)"} | filas=${n} lines=${JSON.stringify(lines)} MODEL=${modelState}`);
+  }
 }
 async function order(page) {
   // La tabla de cotizaciones muestra la empresa (row.empresa), no el nombre del prospecto.

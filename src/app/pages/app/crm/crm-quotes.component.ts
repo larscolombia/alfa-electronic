@@ -362,7 +362,11 @@ type QuoteLine = {
                                     <tbody>
                                         <tr *ngFor="let line of quoteLines; let i = index">
                                             <td>
+                                                <!-- El placeholder vacío es obligatorio: sin él el navegador auto-selecciona la
+                                                     primera opción real y Choices.js deja de disparar 'change' al hacer clic.
+                                                     (mismo patrón que el select 'selectedServiceToAdd') -->
                                                 <select class="form-select mb-2" [(ngModel)]="line.servicio" [ngModelOptions]="{ standalone: true }">
+                                                    <option value="">Seleccionar servicio</option>
                                                     <option *ngFor="let service of serviceOptions" [value]="service">{{ service }}</option>
                                                 </select>
                                                 <input class="form-control" [(ngModel)]="line.descripcion" [ngModelOptions]="{ standalone: true }" placeholder="Descripcion del servicio" />
@@ -1289,8 +1293,10 @@ export class CrmQuotesComponent implements OnInit {
     }
 
     addQuoteLine(): void {
+        // Con el placeholder del select, la línea nace sin servicio y el usuario
+        // debe elegirlo explícitamente (la validación de save lo exige igual).
         this.quoteLines.push({
-            servicio: this.serviceOptions[0] ?? "",
+            servicio: "",
             descripcion: "",
             cantidad: 1,
             unidad: "Pcs",

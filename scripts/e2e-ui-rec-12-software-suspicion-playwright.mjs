@@ -42,17 +42,12 @@ try {
   await selectCustomModal(page, modal.locator("[data-testid^='equipment-modal-family-']").first(), { label: "CE - Tarjeta Electrónica" });
   for (const [placeholder, value] of [["Marca del equipo", "Marca QA"], ["Tipo / referencia", "Tarjeta de control industrial"], ["Serie o referencia visible", `SER-REC12-${id}`]]) await modal.locator(`input[placeholder='${placeholder}']`).fill(value);
 
-  // Paso Preguntas: costo > $2M (disparador histórico del gate REC-12).
-  // Solo este check: si el ack de sospecha de software aún existiera, "Next" quedaría bloqueado.
+  // Equipos → Evidencia directo: el paso "Preguntas" se eliminó del wizard (con él, los switches de costo/software).
   await modal.getByTestId("equipment-modal-next").click();
-  await modal.locator("input[id$='-costAboveTwoMillion']").check();
 
   // Aserción central REC-12: el gate de sospecha de software ya NO existe en la UI.
   result.warningGone = (await modal.getByTestId("software-suspicion-warning").count()) === 0;
   if (!result.warningGone) throw new Error("El gate de sospecha de software sigue presente en la UI (debería estar retirado)");
-
-  // Avance directo a Evidencia sin confirmación adicional.
-  await modal.getByTestId("equipment-modal-next").click();
   const evidenceInput = modal.locator(`input[type='file'][accept='image/*'][id$="-face-front"]`);
   await evidenceInput.waitFor({ state: "attached", timeout: 10000 });
   result.advanceDirect = true;
@@ -68,6 +63,11 @@ try {
   await modal.getByTestId("equipment-modal-next").click();
   result.goneInCierre = (await modal.getByTestId("software-suspicion-warning").count()) === 0;
   if (!result.goneInCierre) throw new Error("El warning de sospecha de software reapareció en Cierre");
+
+  // Gate industrial en Cierre (paso Preguntas eliminado): todo item exige autorización de jefe.
+  await modal.getByTestId("industrial-override-by").first().fill("Jefe QA");
+  await modal.getByTestId("industrial-override-reason").first().fill(`Aprobado por QA ${id}`);
+
   await modal.getByTestId("equipment-modal-save").click();
   await modal.waitFor({ state: "hidden", timeout: 60000 });
   result.saved = true;

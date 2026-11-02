@@ -68,19 +68,23 @@ try {
   // Familia pasó a select de catálogo (no bloquea el borrador): marca/tipo/serie libres bastan para hasItemContent.
   for (const [placeholder, value] of [["Marca del equipo", "Marca QA"], ["Tipo / referencia", "Multímetro"], ["Serie o referencia visible", serie]]) await modal.locator(`input[placeholder='${placeholder}']`).fill(value);
 
-  // Paso Preguntas: costo > 2M = Sí (libera gate REC-01) y software descartado = Sí.
+  // Equipos → Evidencia directo: el paso "Preguntas" se eliminó del wizard.
   await modal.getByTestId("equipment-modal-next").click(); await wait(page);
-  await modal.locator("input[id$='-costAboveTwoMillion']").check(); await wait(page);
-  await modal.locator("input[id$='-softwareIssueRuledOut']").check(); await wait(page);
 
-  // Paso Evidencia: SIN subir ninguna foto. Con la regla REC-09 el aviso no bloquea el avance.
-  await modal.getByTestId("equipment-modal-next").click(); await wait(page);
+  // Paso Evidencia: SIN subir ninguna foto. Con la regla REC-09 el aviso no bloquea el avance;
+  // Siguiente debe llegar al Cierre igualmente.
   await modal.getByTestId("equipment-modal-next").click(); await wait(page);
 
   // Paso Cierre: el botón de borrador solo existe aquí; llegamos sin fotos.
   const saveDraftBtn = modal.getByTestId("equipment-modal-save-draft");
   await saveDraftBtn.waitFor({ state: "visible", timeout: 15000 });
   result.reachedClosureWithoutPhotos = true;
+
+  // Gate industrial en Cierre (paso Preguntas eliminado): se llena ANTES del save para que el
+  // bloqueo esperado sea por caras faltantes y no por falta de autorización de jefe.
+  await modal.getByTestId("industrial-override-by").first().fill("Jefe QA");
+  await modal.getByTestId("industrial-override-reason").first().fill(`Aprobado por QA ${id}`);
+  await wait(page);
 
   // Guardar completo debe bloquearse por caras faltantes (oferta de borrador o mensaje).
   await modal.getByTestId("equipment-modal-save").click(); await wait(page);

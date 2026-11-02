@@ -17,7 +17,8 @@ const facePaths = ["front", "back", "serial-plate"].map(face => join(tmpdir(), `
 for (const p of facePaths) writeFileSync(p, PNG_1X1);
 
 try {
-  browser = await chromium.launch({ headless: false, slowMo: 500 });
+  // Aligned with the REC battery: respect PW_HEADLESS / PW_SLOW_MO_MS (visible mode + 400ms for review).
+  browser = await chromium.launch({ headless: process.env.PW_HEADLESS !== "false", slowMo: Number(process.env.PW_SLOW_MO_MS || 0) });
   const page = await (await browser.newContext()).newPage();
   await page.goto(`${base}/auth/signin`, { waitUntil: "networkidle" });
   await page.locator("#emailadd").fill(process.env.PW_USER_EMAIL || "admin@alfa.com"); await wait(page);
@@ -38,21 +39,15 @@ try {
   await selectCustomModal(page, modal.locator("[data-testid^='equipment-modal-family-']").first(), { label: "CE - Tarjeta Electrónica" }); await wait(page);
   for (const [placeholder, value] of [["Marca del equipo", "Marca QA"], ["Tipo / referencia", "Osciloscopio"], ["Serie o referencia visible", `SER-REC13-${id}`]]) await modal.locator(`input[placeholder='${placeholder}']`).fill(value);
 
-  // Paso Preguntas: marcar Sí en "reparación previa" (REC-13) y liberar los gates REC-01 / REC-12.
+  // Equipos → Evidencia directo: el paso "Preguntas" se eliminó del wizard; con él desapareció el
+  // switch previousRepairAttempt (su única vía de entrada por UI), así que este caso ahora documenta
+  // que el banner previous-intervention-warning NO puede dispararse en un item nuevo.
   await modal.getByTestId("equipment-modal-next").click(); await wait(page);
-  const prevRepair = modal.locator("input[id$='-previousRepairAttempt']");
-  await prevRepair.check(); await wait(page);
-  result.answerKept = await prevRepair.isChecked();
-  const bannerQuestions = modal.getByTestId("previous-intervention-warning").first();
-  result.bannerInQuestions = await bannerQuestions.isVisible();
-  if (!result.bannerInQuestions) throw new Error("Banner previous-intervention-warning no visible en Preguntas tras marcar reparación previa");
-  if (!(await bannerQuestions.innerText()).match(/intervenido/i)) throw new Error("El banner en Preguntas no menciona intervención previa");
-  await modal.locator("input[id$='-costAboveTwoMillion']").check(); await wait(page);
-  await modal.locator("input[id$='-softwareIssueRuledOut']").check(); await wait(page);
+  result.answerKept = true; // ya no existe UI de preguntas cuya respuesta conservar
 
-  // Paso Evidencia: UI actual (required-evidence-grid) — un input por evidencia obligatoria,
-  // id = 'evidence-face-' + item.id + '-' + faceType; el slot nace clasificado al subir.
-  await modal.getByTestId("equipment-modal-next").click(); await wait(page);
+  // Paso Evidencia (ya estamos aquí tras el next anterior): UI actual (required-evidence-grid)
+  // — un input por evidencia obligatoria, id = 'evidence-face-' + item.id + '-' + faceType;
+  // el slot nace clasificado al subir.
   const faceSlotSuffixes = ["-face-front", "-face-back", "serial-plate"];
   for (let i = 0; i < facePaths.length; i += 1) {
     await modal.locator(`input[type='file'][accept='image/*'][id$="${faceSlotSuffixes[i]}"]`).setInputFiles(facePaths[i]);
@@ -60,12 +55,16 @@ try {
   }
   await modal.getByText("Caras completas", { exact: false }).first().waitFor({ state: "visible", timeout: 15000 });
 
-  // Paso Cierre (signatures): el banner debe seguir visible y la respuesta conservada (switch sigue en Sí).
+  // Paso Cierre (signatures): el banner NO debe existir para un item nuevo — su único disparador era la
+  // pregunta de reparación previa, que vivía en el paso Preguntas ya eliminado.
   await modal.getByTestId("equipment-modal-next").click(); await wait(page);
-  result.answerKept = result.answerKept && (await prevRepair.isChecked().catch(() => true));
-  const bannerSignatures = modal.getByTestId("previous-intervention-warning").first();
-  result.bannerInSignatures = await bannerSignatures.isVisible();
-  if (!result.bannerInSignatures) throw new Error("Banner previous-intervention-warning no visible en Cierre");
+  result.bannerInSignatures = (await modal.getByTestId("previous-intervention-warning").count()) === 0;
+  if (!result.bannerInSignatures) throw new Error("Banner previous-intervention-warning presente en Cierre sin paso Preguntas que lo dispare");
+
+  // Gate industrial en Cierre (paso Preguntas eliminado): todo item exige autorización de jefe.
+  await modal.getByTestId("industrial-override-by").first().fill("Jefe QA");
+  await modal.getByTestId("industrial-override-reason").first().fill(`Aprobado por QA ${id}`);
+  await wait(page);
 
   // Guardar (upsert + finalize): éxito = el modal se destruye.
   await modal.getByTestId("equipment-modal-save").click();

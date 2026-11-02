@@ -7,8 +7,9 @@ const wait = page => page.waitForTimeout(500);
 // 2026-11-01 — Migrado al layout actual (entrada por /app/work-equipment-reception) y
 // extendido para verificar el breadcrumb de warnings en el header del modal ("Sin remisión").
 // 2026-11-02 — El warning inline "Formato/remisión pendiente..." fue RETIRADO de la UI por petición
-// explícita del usuario; esta suite ahora verifica que NO aparezca, que el chip "Sin remisión"
-// siga en el breadcrumb y que la recepción vacía no bloquee.
+// explícita del usuario; esta suite verifica que NO aparezca, que el chip "Sin remisión" siga en el
+// breadcrumb y que la recepción vacía no bloquee. Con la eliminación del paso "Preguntas", avanzar
+// desde Equipos lleva directo a Evidencia.
 const result = { case: "REC-02", login: false, inlineWarningAbsent: false, headerChipSinRemision: false, canContinue: false, error: "" };
 let browser;
 let modal;
@@ -44,12 +45,13 @@ try {
     const headerChip = modal.locator(".modal-header .equipment-warning-list .warning-chip", { hasText: "Sin remisión" });
     result.headerChipSinRemision = await headerChip.first().isVisible().catch(() => false);
 
-    // Aserción 3: la advertencia no bloquea — se puede continuar a Preguntas.
+    // Aserción 3: la advertencia no bloquea — se puede continuar a Evidencia (paso "Preguntas" eliminado).
     await modal.getByTestId("equipment-modal-next").click(); await wait(page);
-    result.canContinue = /Preguntas por equipo/.test(await modal.innerText());
+    const onEvidenceStep = await modal.locator("input[type='file'][accept='image/*']").first().isVisible().catch(() => false);
+    result.canContinue = onEvidenceStep || /Evidencia|Fotos obligatorias/i.test(await modal.innerText());
     if (!result.inlineWarningAbsent) throw new Error('El warning inline "Formato/remisión pendiente" sigue visible en la celda; debía estar eliminado');
     if (!result.headerChipSinRemision) throw new Error('El chip "Sin remisión" no aparece en el breadcrumb del header del modal');
-    if (!result.canContinue) throw new Error("La recepción sin formato fue bloqueada indebidamente: debía poder continuar a Preguntas");
+    if (!result.canContinue) throw new Error("La recepción sin formato fue bloqueada indebidamente: debía poder continuar a Evidencia");
 } catch (error) { result.error = String(error?.stack || error); }
 finally { if (browser) await browser.close(); }
 console.log(JSON.stringify(result)); process.exit(result.error ? 1 : 0);

@@ -72,16 +72,7 @@ try {
     // Marca/Tipo/Serie siguen siendo inputs con placeholder (verificados en rec-06).
     await selectCustomModal(page, modal.locator("[data-testid^='equipment-modal-family-']").first(), { label: "CE - Tarjeta Electrónica" });
     for (const [placeholder, value] of [["Marca del equipo", "Marca QA"], ["Tipo / referencia", "Tipo QA"], ["Serie o referencia visible", `SER-${id}`]]) await modal.locator(`input[placeholder='${placeholder}']`).fill(value);
-    await modal.getByTestId("equipment-modal-next").click(); await wait(page);
-
-    // Paso Preguntas: costo > 2M = Sí (evita el gate REC-01) y se descarta
-    // falla de software = Sí (evita el ack de sospecha de software).
-    const costSwitch = modal.locator("input[id$='-costAboveTwoMillion']");
-    if (!(await costSwitch.isChecked())) await costSwitch.check();
-    const softwareSwitch = modal.locator("input[id$='-softwareIssueRuledOut']");
-    if (!(await softwareSwitch.isChecked())) await softwareSwitch.check();
-    await wait(page);
-    result.industrialGatePassed = true;
+    // Equipos → Evidencia directo: el paso "Preguntas" se eliminó del wizard.
     await modal.getByTestId("equipment-modal-next").click(); await wait(page);
 
     // Paso Evidencia: 3 evidencias obligatorias (frente/atrás/placa).
@@ -93,7 +84,14 @@ try {
     result.facesReady = true;
     await modal.getByTestId("equipment-modal-next").click(); await wait(page);
 
-    // Paso Cierre: guardar (upsert + finalize). El modal se destruye al cerrar.
+    // Paso Cierre: gate industrial obligatorio antes de guardar (el paso Preguntas desapareció y
+    // con costo por defecto "No" todo item exige autorización de jefe).
+    await modal.getByTestId("industrial-override-by").first().fill("Jefe QA");
+    await modal.getByTestId("industrial-override-reason").first().fill(`Aprobado por QA ${id}`);
+    result.industrialGatePassed = true;
+    await wait(page);
+
+    // Guardar (upsert + finalize). El modal se destruye al cerrar.
     await modal.getByTestId("equipment-modal-save").click();
     await page.waitForSelector("app-crm-prospect-equipment-modal", { state: "detached", timeout: 60000 });
     result.saved = true;

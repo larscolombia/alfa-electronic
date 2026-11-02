@@ -489,19 +489,8 @@ try {
     result.checks.wizardDraftSurvivesRoundTrip = draftSurvives;
     await page.locator("[data-testid='equipment-modal-next']").click();
 
-    // Paso 3/5 Preguntas: marcar costo > 2M = Sí libera el gate industrial (patrón rec-06/rec-09).
-    const costCheckbox = wizard.locator("input[id$='-costAboveTwoMillion']").first();
-    if (await costCheckbox.count()) {
-        await costCheckbox.check({ timeout: 15000 });
-    } else if (await page.locator(".modal-body", { hasText: /Bloqueo por filtro industrial/i }).count()) {
-        // Fallback defensivo: si el checkbox cambió de id, diligenciar la autorización de jefe.
-        note("Checkbox costo>2M no encontrado; se diligencia autorización de jefe técnico (fallback).");
-        await wizard.locator("input[placeholder='Nombre del jefe']").fill("Jefe Taller PW t03");
-        await wizard.locator("input[placeholder='Justificación operativa']").fill("Equipo de prueba E2E t03, autorización de prueba.");
-    }
-    await page.locator("[data-testid='equipment-modal-next']").click();
-
-    // Paso 4/5 Evidencias: 3 evidencias obligatorias (frente/atrás/placa)
+    // Paso Evidencias: 3 evidencias obligatorias (frente/atrás/placa) — el paso Preguntas fue eliminado.
+    // El gate industrial se diligencia en Cierre antes de guardar.
     const fileInput = wizard.getByTestId("evidence-files-input");
     await fileInput.waitFor({ state: "visible", timeout: timeoutMs });
     const faceColors = [[214, 40, 40], [30, 120, 220], [20, 160, 90]];
@@ -535,6 +524,14 @@ try {
     const generateSwitch = page.locator("#generateRepairProjectsOnSave");
     if (!(await generateSwitch.isChecked())) await generateSwitch.check();
     await screenshot(page, "05-wizard-firmas");
+
+    // Gate industrial en Cierre (paso Preguntas eliminado): todo item exige autorización de jefe.
+    const gateBy = wizard.getByTestId("industrial-override-by").first();
+    if (await gateBy.count()) { await gateBy.fill("Jefe Taller PW t03"); }
+    const gateReason = wizard.getByTestId("industrial-override-reason").first();
+    if (await gateReason.count()) { await gateReason.fill("Equipo de prueba E2E t03, autorización de prueba."); }
+    await page.waitForTimeout(300);
+
     await page.locator("[data-testid='equipment-modal-save']").click();
 
     // Esperar cierre del wizard o navegación al tablero

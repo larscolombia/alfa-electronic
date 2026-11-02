@@ -29,8 +29,9 @@ const damagePath = join(tmpdir(), `rec10-damage-${id}.png`);
 writeFileSync(damagePath, PNG_1X1);
 const NOTES_PLACEHOLDER = "Golpe lateral, placa legible, caja sellada...";
 
+// Aligned with the REC battery: respect PW_HEADLESS / PW_SLOW_MO_MS (visible mode + 400ms for review).
 try {
-  browser = await chromium.launch({ headless: false, slowMo: 500 });
+  browser = await chromium.launch({ headless: process.env.PW_HEADLESS !== "false", slowMo: Number(process.env.PW_SLOW_MO_MS || 0) });
   const page = await (await browser.newContext()).newPage();
   await page.goto(`${base}/auth/signin`, { waitUntil: "networkidle" });
   await page.locator("#emailadd").fill(process.env.PW_USER_EMAIL || "admin@alfa.com"); await wait(page);
@@ -51,14 +52,12 @@ try {
   await selectCustomModal(page, modal.locator("[data-testid^='equipment-modal-family-']").first(), { label: "CE - Tarjeta Electrónica" }); await wait(page);
   for (const [placeholder, value] of [["Marca del equipo", "Marca QA"], ["Tipo / referencia", "Osciloscopio"], ["Serie o referencia visible", `SER-${id}`]]) await modal.locator(`input[placeholder='${placeholder}']`).fill(value);
 
-  // Paso Preguntas: costo > 2M = Sí (libera gate REC-01) y software descartado = Sí.
+  // Equipos → Evidencia directo: el paso "Preguntas" se eliminó del wizard (UN solo next).
   await modal.getByTestId("equipment-modal-next").click(); await wait(page);
-  await modal.locator("input[id$='-costAboveTwoMillion']").check(); await wait(page);
-  await modal.locator("input[id$='-softwareIssueRuledOut']").check(); await wait(page);
 
-  // Paso Evidencia: UI actual (required-evidence-grid) — un input por evidencia obligatoria,
-  // id = 'evidence-face-' + item.id + '-' + faceType; el slot nace clasificado al subir.
-  await modal.getByTestId("equipment-modal-next").click(); await wait(page);
+  // Paso Evidencia (patrón verde REC-01/REC-04): un input file oculto por cara obligatoria;
+  // id = 'evidence-face-' + item.id + '-' + faceType; al subir, handleRequiredFaceEvidenceSelected
+  // fija photo.evidenceType — el slot nace clasificado.
   const faceSlotSuffixes = ["-face-front", "-face-back", "serial-plate"];
   for (let i = 0; i < facePaths.length; i += 1) {
     await modal.locator(`input[type='file'][accept='image/*'][id$="${faceSlotSuffixes[i]}"]`).setInputFiles(facePaths[i]);
@@ -75,8 +74,14 @@ try {
   result.blockedAfterConfirm = await requiredAlert.isVisible();
   if (!result.blockedAfterConfirm) throw new Error("La alerta de evidencia desapareció sin haber subido foto de daño visible");
 
-  // Paso Cierre: Guardar completo debe bloquearse con el mensaje de daño visible.
+  // Paso Cierre: el guardado completo debe bloquearse SOLO por daño visible. El orden de
+  // validación del componente (L2609-2617) es: gate industrial PRIMERO y luego daño visible,
+  // así que primero se llena la autorización de jefe para no enmascarar el mensaje de daño.
   await modal.getByTestId("equipment-modal-next").click(); await wait(page);
+  await modal.getByTestId("industrial-override-by").first().fill("Jefe QA");
+  await modal.getByTestId("industrial-override-reason").first().fill(`Aprobado por QA ${id}`);
+  await wait(page);
+
   await modal.getByTestId("equipment-modal-save").click(); await wait(page);
   const validationMsg = await modal.getByTestId("equipment-modal-validation-message").innerText();
   result.saveBlockedWithMessage = /Daño visible reportado/i.test(validationMsg);

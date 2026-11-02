@@ -18,7 +18,6 @@ const faces = ["Cara frente", "Cara atrás", "Placa / serie"].map((label, i) => 
 const result = {
   case: "REC-11",
   login: false,
-  badgeVisibleInQuestions: false,
   badgeVisibleInClosure: false,
   advanceNotBlocked: false,
   saved: false,
@@ -27,7 +26,7 @@ const result = {
 let browser;
 
 try {
-  browser = await chromium.launch({ headless: false, slowMo: 500 });
+  browser = await chromium.launch({ headless: process.env.PW_HEADLESS !== "false", slowMo: Number(process.env.PW_SLOW_MO_MS || 0) });
   const page = await (await browser.newContext()).newPage();
   await page.goto(`${base}/auth/signin`, { waitUntil: "networkidle" });
   await page.locator("#emailadd").fill(process.env.PW_USER_EMAIL || "admin@alfa.com"); await wait(page);
@@ -51,18 +50,8 @@ try {
     ["Serie o referencia visible", `SER-${id}`],
   ]) await modal.locator(`input[placeholder='${placeholder}']`).fill(value);
   // REC-11: se omite a propósito la "Descripción de la falla" (failureDescription queda vacía).
-  await modal.getByTestId("equipment-modal-next").click(); await wait(page);
-
-  await modal.getByText("Preguntas por equipo").waitFor({ state: "visible" });
-  const badge = modal.getByTestId("failure-pending-badge");
-  await badge.waitFor({ state: "visible" });
-  result.badgeVisibleInQuestions = /Falla pendiente/i.test(await badge.innerText());
-
-  for (const questionKey of ["costAboveTwoMillion", "softwareIssueRuledOut"]) {
-    const switchInput = modal.locator(`input[id$='-${questionKey}']`);
-    if (!(await switchInput.isChecked())) await switchInput.click();
-    await wait(page);
-  }
+  // Equipos → Evidencia directo: el paso "Preguntas" se eliminó del wizard y con él la UI de
+  // switches; el badge de falla pendiente ahora solo existe en Cierre (aserción final).
   await modal.getByTestId("equipment-modal-next").click(); await wait(page);
 
   await modal.getByText("Tomar fotos / subir evidencia").waitFor({ state: "visible" });
@@ -78,11 +67,17 @@ try {
   await modal.getByTestId("failure-pending-badge").waitFor({ state: "visible" });
   result.badgeVisibleInClosure = /Falla pendiente/i.test(await modal.getByTestId("failure-pending-badge").innerText());
 
+  // Gate industrial en Cierre (paso Preguntas eliminado): todo item exige autorización de jefe.
+  await modal.getByTestId("industrial-override-by").first().fill("Jefe QA");
+  await modal.getByTestId("industrial-override-reason").first().fill(`Aprobado por QA ${id}`);
+  await wait(page);
+
   await modal.getByTestId("equipment-modal-save").click();
   await modal.waitFor({ state: "hidden", timeout: 60000 });
   result.saved = true;
 
-  if (!result.badgeVisibleInQuestions || !result.badgeVisibleInClosure || !result.saved) {
+  // El badge de falla pendiente solo existe en Cierre: el paso Preguntas se eliminó del wizard.
+  if (!result.badgeVisibleInClosure || !result.saved) {
     throw new Error(`REC-11 incompleto: ${JSON.stringify(result)}`);
   }
 } catch (error) { result.error = String(error?.stack || error); }

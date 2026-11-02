@@ -26,9 +26,7 @@ async function newProspectWithEquipment(page, suffix) {
   // Familia es un <select> nativo (STANDARD_EQUIPMENT_FAMILIES), no el input libre antiguo.
   await selectCustomModal(page, modal.locator("[data-testid^='equipment-modal-family-']").first(), { label: "CE - Tarjeta Electrónica" }); await wait(page);
   for (const [placeholder, value] of [["Marca del equipo", "Marca QA"], ["Tipo / referencia", "Multímetro"], ["Serie o referencia visible", `${DUP_IDENTIFIER}-${suffix}`]]) await modal.locator(`input[placeholder='${placeholder}']`).fill(value);
-  await modal.getByTestId("equipment-modal-next").click(); await wait(page);
-  await modal.locator("input[id$='-costAboveTwoMillion']").check(); await wait(page);
-  await modal.locator("input[id$='-softwareIssueRuledOut']").check(); await wait(page);
+  // Equipos → Evidencia directo: el paso "Preguntas" se eliminó del wizard (con él, los switches de costo/software).
   await modal.getByTestId("equipment-modal-next").click(); await wait(page);
   // Identificador recibido: entrada manual (sin testid; placeholder fijo).
   await modal.locator("input[placeholder='QR, código de barras, serial o placa']").fill(DUP_IDENTIFIER); await wait(page);
@@ -37,7 +35,10 @@ async function newProspectWithEquipment(page, suffix) {
   await modal.locator(".evidence-photo-card").nth(2).waitFor({ state: "visible", timeout: 30000 });
   for (let i = 0; i < FACE_LABELS.length; i++) await selectCustomModal(page, modal.locator(".evidence-photo-card").nth(i).getByTestId("equipment-modal-evidence-type"), { label: FACE_LABELS[i] });
   await wait(page);
+  // Cierre: gate industrial obligatorio (paso Preguntas eliminado) antes de devolver el modal al save.
   await modal.getByTestId("equipment-modal-next").click(); await wait(page);
+  await modal.getByTestId("industrial-override-by").first().fill("Jefe QA");
+  await modal.getByTestId("industrial-override-reason").first().fill(`Aprobado por QA ${id}`);
   return modal;
 }
 

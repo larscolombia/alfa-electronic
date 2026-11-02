@@ -40,7 +40,6 @@ import {
     ProspectEquipmentEvidencePhoto,
     ProspectEquipmentEvidenceType,
     ProspectEquipmentItem,
-    ProspectEquipmentQuestionDefinition,
     ProspectEquipmentRecord,
     ProspectEquipmentWarning,
     createEquipmentAnswers,
@@ -96,7 +95,7 @@ const FACE_EVIDENCE_LABELS: Record<ProspectEquipmentEvidenceType, string> = {
     "face-bottom": "Inferior",
 };
 
-type WizardStepKey = "reception" | "equipment" | "questions" | "evidence" | "signatures";
+type WizardStepKey = "reception" | "equipment" | "evidence" | "signatures";
 
 type WizardStepDefinition = {
     key: WizardStepKey;
@@ -719,109 +718,6 @@ type SoftwareBackupInfo = {
                             </div>
                         </ng-container>
 
-                        <ng-container *ngIf="currentWizardStep.key === 'questions'">
-                            <div class="border rounded overflow-hidden">
-                                <div class="p-3 border-bottom bg-light-subtle">
-                                    <h6 class="mb-1">Preguntas por equipo</h6>
-                                    <p class="text-secondary small mb-0">Activa el switch cuando la respuesta sea Sí. Para respuestas abiertas, escribe el detalle.</p>
-                                </div>
-                                <div class="p-3">
-                                    <div class="row gx-3 gy-3">
-                                        <div class="col-12 col-xl-12" *ngFor="let item of reviewItems; let i = index; trackBy: trackByItemId">
-                                            <div class="border rounded p-3 h-100 question-card">
-                                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-                                                    <div>
-                                                        <h6 class="mb-1">{{ equipmentCardTitle(item, i) }}</h6>
-                                                        <p class="text-secondary small mb-0">{{ item.serviceTypeName || "Sin tipo de servicio" }} · {{ item.storageLocationName || "Sin ubicación" }}</p>
-                                                    </div>
-                                                </div>
-
-                                                <app-crm-equipment-question-alerts [item]="item"></app-crm-equipment-question-alerts>
-
-                                                <div class="alert border border-warning bg-warning-subtle mb-3" *ngIf="requiresIndustrialOverride(item)">
-                                                    <div class="fw-semibold mb-1">Bloqueo por filtro industrial</div>
-                                                    <p class="small mb-2">
-                                                        Perfil actual: <strong>{{ resolveItemIndustrialLabel(item) }}</strong>. Para guardar debes registrar autorización de jefe técnico.
-                                                    </p>
-                                                    <div class="row gx-2 gy-2">
-                                                        <div class="col-12 col-lg-4">
-                                                            <label class="form-label small">Autorizado por</label>
-                                                            <input
-                                                                class="form-control form-control-sm"
-                                                                [ngModel]="item.industrialOverrideAuthorizedBy || ''"
-                                                                [ngModelOptions]="{ standalone: true }"
-                                                                (ngModelChange)="onIndustrialOverrideAuthorizedByChange(item, $event)"
-                                                                placeholder="Nombre del jefe" />
-                                                        </div>
-                                                        <div class="col-12 col-lg-8">
-                                                            <label class="form-label small">Motivo de autorización</label>
-                                                            <input
-                                                                class="form-control form-control-sm"
-                                                                [(ngModel)]="item.industrialOverrideReason"
-                                                                [ngModelOptions]="{ standalone: true }"
-                                                                placeholder="Justificación operativa" />
-                                                        </div>
-                                                    </div>
-                                                    <div class="small text-secondary mt-2" *ngIf="item.industrialOverrideAuthorizedAt">
-                                                        Autorización registrada: {{ formatEvidenceDate(item.industrialOverrideAuthorizedAt || '') }}
-                                                    </div>
-                                                </div>
-
-                                                <div class="vstack gap-3">
-                                                    <div class="border rounded p-3 bg-light-subtle" *ngFor="let question of questionDefinitions; trackBy: trackByQuestionKey">
-                                                        <div class="small fw-semibold mb-2">{{ question.label }}</div>
-
-                                                        <ng-container *ngIf="question.type === 'boolean'; else freeAnswerField">
-                                                            <ng-container *ngIf="question.key === priorityQuestionKey; else regularBooleanQuestion">
-                                                                <div class="priority-question" [class.priority-question-active]="isPriorityPaid(item)">
-                                                                    <div class="form-check form-switch switch-answer mb-0">
-                                                                        <input
-                                                                            class="form-check-input priority-check-input"
-                                                                            type="checkbox"
-                                                                            [id]="'question-' + item.id + '-' + question.key"
-                                                                            [checked]="isBooleanAnswerYes(item, question.key)"
-                                                                            (change)="toggleBooleanAnswer(item, question.key, $any($event.target).checked)" />
-                                                                        <label class="form-check-label small fw-semibold ms-2" [class.text-danger]="isPriorityPaid(item)" [for]="'question-' + item.id + '-' + question.key">
-                                                                            {{ isPriorityPaid(item) ? "Urgencia / prioridad ($)" : "Diagnóstico gratis" }}
-                                                                        </label>
-                                                                    </div>
-
-                                                                    <p class="small mb-0 mt-2" [class.text-danger]="isPriorityPaid(item)" [class.text-secondary]="!isPriorityPaid(item)">
-                                                                        {{ isPriorityPaid(item) ? "Se marca como atención prioritaria con costo adicional." : "Se mantiene en modalidad de diagnóstico gratis." }}
-                                                                    </p>
-                                                                </div>
-                                                            </ng-container>
-
-                                                            <ng-template #regularBooleanQuestion>
-                                                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                                                                    <span class="small text-secondary">No</span>
-                                                                    <div class="form-check form-switch switch-answer mb-0">
-                                                                        <input
-                                                                            class="form-check-input"
-                                                                            type="checkbox"
-                                                                            [id]="'question-' + item.id + '-' + question.key"
-                                                                            [checked]="isBooleanAnswerYes(item, question.key)"
-                                                                            (change)="toggleBooleanAnswer(item, question.key, $any($event.target).checked)" />
-                                                                        <label class="form-check-label small fw-semibold ms-2" [for]="'question-' + item.id + '-' + question.key">
-                                                                            {{ isBooleanAnswerYes(item, question.key) ? "Sí" : "No" }}
-                                                                        </label>
-                                                                    </div>
-                                                                </div>
-                                                            </ng-template>
-                                                        </ng-container>
-
-                                                        <ng-template #freeAnswerField>
-                                                            <input class="form-control form-control-sm" [(ngModel)]="item.answers[question.key]" [ngModelOptions]="{ standalone: true }" placeholder="Horas, días, meses" />
-                                                        </ng-template>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </ng-container>
-
                         <ng-container *ngIf="currentWizardStep.key === 'evidence'">
                             <div class="alert alert-info border mb-3">
                                 Desde el celular este paso puede abrir la cámara trasera para escanear o tomar fotos. El frontend lee EXIF, calcula el hash SHA-256 y conserva una miniatura; el backend en Go/Echo debe recibir luego el archivo original para consolidar la auditoría.
@@ -1125,6 +1021,72 @@ type SoftwareBackupInfo = {
                                             <p class="small mb-0 text-secondary" *ngIf="repairProjectsToCreateCount === 0">
                                                 No hay equipos con tipo de servicio reparación en esta recepción.
                                             </p>
+                                        </div>
+
+                                        <!-- 2026-11-02 — Migrado desde el paso 'Preguntas' (eliminado):
+                                             la pregunta de diagnóstico gratis/urgencia-prioridad es ahora la última
+                                             decisión por equipo antes de las firmas; junto con ella vive el gate
+                                             industrial (autorización de jefe) que libera el guardado. -->
+                                        <div class="border rounded p-3 mt-3" *ngIf="reviewItems.length > 0">
+                                            <h6 class="mb-1">Diagnóstico por equipo</h6>
+                                            <p class="text-secondary small mb-2">Última decisión antes de las firmas: modalidad de diagnóstico y autorización industrial si aplica.</p>
+
+                                            <div class="vstack gap-3">
+                                                <ng-container *ngFor="let item of reviewItems; let i = index; trackBy: trackByItemId">
+                                                    <div class="border rounded p-3 bg-light-subtle" data-testid="closure-diagnosis-item">
+                                                        <h6 class="mb-2 small">{{ equipmentCardTitle(item, i) }}</h6>
+
+                                                        <div class="priority-question mb-3" [class.priority-question-active]="isPriorityPaid(item)" data-testid="priority-question-closure">
+                                                            <div class="form-check form-switch switch-answer mb-0">
+                                                                <input
+                                                                    class="form-check-input priority-check-input"
+                                                                    type="checkbox"
+                                                                    id="closure-priority-{{ item.id }}"
+                                                                    [checked]="isPriorityPaid(item)"
+                                                                    (change)="toggleBooleanAnswer(item, priorityQuestionKey, $any($event.target).checked)" />
+                                                                <label class="form-check-label small fw-semibold ms-2" [class.text-danger]="isPriorityPaid(item)" for="closure-priority-{{ item.id }}">
+                                                                    {{ isPriorityPaid(item) ? "Urgencia / prioridad ($)" : "Diagnóstico gratis" }}
+                                                                </label>
+                                                            </div>
+
+                                                            <p class="small mb-0 mt-2" [class.text-danger]="isPriorityPaid(item)" [class.text-secondary]="!isPriorityPaid(item)">
+                                                                {{ isPriorityPaid(item) ? "Se marca como atención prioritaria con costo adicional." : "Se mantiene en modalidad de diagnóstico gratis." }}
+                                                            </p>
+                                                        </div>
+
+                                                        <div class="alert border border-warning bg-warning-subtle mb-0" *ngIf="requiresIndustrialOverride(item)" data-testid="industrial-override-closure">
+                                                            <div class="fw-semibold mb-1">Autorización industrial requerida</div>
+                                                            <p class="small mb-2">
+                                                                Perfil actual: <strong>{{ resolveItemIndustrialLabel(item) }}</strong>. Para guardar debes registrar autorización de jefe técnico.
+                                                            </p>
+                                                            <div class="row gx-2 gy-2">
+                                                                <div class="col-12 col-lg-4">
+                                                                    <label class="form-label small" for="closure-industrial-by-{{ item.id }}">Autorizado por</label>
+                                                                    <input
+                                                                        id="closure-industrial-by-{{ item.id }}"
+                                                                        class="form-control form-control-sm"
+                                                                        [ngModel]="item.industrialOverrideAuthorizedBy || ''"
+                                                                        [ngModelOptions]="{ standalone: true }"
+                                                                        (ngModelChange)="onIndustrialOverrideAuthorizedByChange(item, $event)"
+                                                                        placeholder="Nombre del jefe" data-testid="industrial-override-by" />
+                                                                </div>
+                                                                <div class="col-12 col-lg-8">
+                                                                    <label class="form-label small" for="closure-industrial-reason-{{ item.id }}">Motivo de autorización</label>
+                                                                    <input
+                                                                        id="closure-industrial-reason-{{ item.id }}"
+                                                                        class="form-control form-control-sm"
+                                                                        [(ngModel)]="item.industrialOverrideReason"
+                                                                        [ngModelOptions]="{ standalone: true }"
+                                                                        placeholder="Justificación operativa" data-testid="industrial-override-reason" />
+                                                                </div>
+                                                            </div>
+                                                            <div class="small text-secondary mt-2" *ngIf="item.industrialOverrideAuthorizedAt">
+                                                                Autorización registrada: {{ formatEvidenceDate(item.industrialOverrideAuthorizedAt || '') }}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </ng-container>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -1734,7 +1696,6 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy,
     readonly wizardSteps: readonly WizardStepDefinition[] = [
         { key: "reception", title: "Recepción", description: "Datos del cliente y la orden" },
         { key: "equipment", title: "Equipos", description: "Modelos, servicio y logística" },
-        { key: "questions", title: "Preguntas", description: "Diagnóstico por equipo" },
         { key: "evidence", title: "Evidencia", description: "Escaneo, fotos y EXIF" },
         { key: "signatures", title: "Cierre", description: "Resumen y firmas" },
     ];
@@ -1855,7 +1816,8 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy,
     creatingCompanyContact = false;
     companyContactCreateError = "";
     readonly companyContactCreateDraft = { name: "", role: "", email: "", phone: "" };
-    readonly questionDefinitions: readonly ProspectEquipmentQuestionDefinition[] = PROSPECT_EQUIPMENT_QUESTION_DEFINITIONS;
+    // 2026-11-02 — El paso 'Preguntas' del wizard se eliminó. Solo sobrevive la pregunta
+    // de diagnóstico gratis/urgencia-prioridad, ahora renderizada en Cierre (signatures).
     readonly priorityQuestionKey = "priorityPaidDiagnosis";
     readonly industrialCostQuestionKey = "costAboveTwoMillion";
     // Ventana de chips visibles: debe cubrir las 5 warnings que pueden anteceder a label-issue
@@ -3268,10 +3230,6 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy,
         return step.key;
     }
 
-    trackByQuestionKey(_: number, question: ProspectEquipmentQuestionDefinition): string {
-        return question.key;
-    }
-
     trackByEvidenceId(_: number, evidence: ProspectEquipmentEvidencePhoto): string {
         return evidence.id;
     }
@@ -4491,7 +4449,9 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy,
             return true;
         }
 
-        if (this.currentWizardStep.key === "questions") {
+        if (this.currentWizardStep.key === "signatures") {
+            // 2026-11-02 — El paso 'Preguntas' desapareció: el gate industrial se valida en Cierre,
+            // justo antes de las firmas. save() sigue validando también al persistir.
             if (!this.validateIndustrialOverrides(this.getMeaningfulItems())) {
                 return false;
             }
