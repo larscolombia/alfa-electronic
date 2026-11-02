@@ -9,12 +9,10 @@ import { catchError, take } from "rxjs/operators";
 import {
     EquipmentLocationRecord,
     EquipmentServiceTypeRecord,
-    IndustrialEquipmentModelRecord,
     ensureEquipmentCatalogLoaded,
     getEquipmentFamilyName,
     getEquipmentLocations,
     getEquipmentServiceTypes,
-    getIndustrialEquipmentModels,
     subscribeEquipmentCatalog,
     upsertEquipmentLocation,
 } from "../company/company-equipment-config.store";
@@ -22,10 +20,7 @@ import { buildEvidencePhotosFromFiles } from "./crm-prospect-equipment-evidence.
 import {
     getEvidenceRequirementsError,
     isAccessoriesEvidenceMissing,
-    isSerialPlateEvidenceMissing,
-    isSerieExceptionReasonMissing,
     isVisibleDamageSaveBlocked,
-    SERIE_EXCEPTION_REASON_ERROR,
     validateTransportadoraReception,
     VISIBLE_DAMAGE_ERROR,
 } from "./crm-prospect-equipment-intake-validation.util";
@@ -35,7 +30,6 @@ import { CrmEquipmentDuplicateDialogComponent, DuplicateIdentifierDialogData } f
 import { CrmEquipmentEvidenceDamageComponent } from "./crm-equipment-evidence-damage.component";
 import { CrmEquipmentQuestionAlertsComponent } from "./crm-equipment-question-alerts.component";
 import { CrmEquipmentSenderIncidentComponent } from "./crm-equipment-sender-incident.component";
-import { CrmEquipmentSerieExceptionComponent } from "./crm-equipment-serie-exception.component";
 import { CrmModalDateTimeComponent } from "./crm-modal-datetime.component";
 import { CrmModalSelectComponent, CrmModalSelectOption } from "./crm-modal-select.component";
 import {
@@ -47,7 +41,6 @@ import {
     ProspectEquipmentEvidenceType,
     ProspectEquipmentItem,
     ProspectEquipmentQuestionDefinition,
-    ProspectEquipmentRegistrationMode,
     ProspectEquipmentRecord,
     ProspectEquipmentWarning,
     createEquipmentAnswers,
@@ -190,7 +183,6 @@ type SoftwareBackupInfo = {
         CrmEquipmentEvidenceDamageComponent,
         CrmEquipmentQuestionAlertsComponent,
         CrmEquipmentSenderIncidentComponent,
-        CrmEquipmentSerieExceptionComponent,
         CrmModalDateTimeComponent,
         CrmModalSelectComponent,
     ],
@@ -202,6 +194,12 @@ type SoftwareBackupInfo = {
                         <div>
                             <h5 class="modal-title mb-1">Asociar equipo</h5>
                             <p class="text-secondary small mb-0">{{ prospect?.nombre || "Prospecto" }} · {{ prospect?.compania || "Sin compañía" }}</p>
+                        </div>
+                        <!-- 2026-11-01 — Breadcrumb dinámico de warnings operativos movido del paso Equipos al header:
+                             se mantiene visible a la derecha del título en todos los pasos del wizard. -->
+                        <div class="equipment-warning-list ms-auto me-2" *ngIf="headerWarningCount() > 0">
+                            <span class="badge warning-chip" *ngFor="let warning of headerVisibleWarnings(); trackBy: trackByItemWarningCode">{{ warning.label }}</span>
+                            <span class="badge text-bg-light" *ngIf="headerHiddenWarningCount() > 0">+{{ headerHiddenWarningCount() }}</span>
                         </div>
                         <button type="button" class="btn-close" aria-label="Cerrar" data-testid="equipment-modal-close" (click)="close()"></button>
                     </div>
@@ -485,10 +483,8 @@ type SoftwareBackupInfo = {
                                                     data-testid="equipment-backup-download">
                                                     <i class="bi bi-download me-1"></i>Descargar backup
                                                 </a>
-                                                <div class="equipment-warning-list mt-2" *ngIf="itemWarningCount(item) > 0">
-                                                    <span class="badge warning-chip" *ngFor="let warning of visibleItemWarnings(item); trackBy: trackByItemWarningCode">{{ warning.label }}</span>
-                                                    <span class="badge text-bg-light" *ngIf="hiddenItemWarningCount(item) > 0">+{{ hiddenItemWarningCount(item) }}</span>
-                                                </div>
+                                                <!-- 2026-11-01 — Los chips de warning se muestran en el header del modal (junto al título);
+                                                     la tarjeta solo conserva el borde de alerta (equipment-card-warning). -->
                                             </div>
                                             <button class="btn btn-sm btn-outline-danger" type="button" [attr.data-testid]="'equipment-modal-remove-item-' + i" (click)="removeEquipmentItem(i)" [disabled]="draft.items.length === 1">
                                                 Eliminar
@@ -496,32 +492,10 @@ type SoftwareBackupInfo = {
                                         </div>
 
                                         <div class="row gx-3 gy-3">
-                                            <div class="col-12 col-lg-4">
-                                                <label class="form-label">Ruta de registro</label>
-                                                <select
-                                                    class="form-control"
-                                                    [(ngModel)]="item.registrationMode"
-                                                    [ngModelOptions]="{ standalone: true }"
-                                                    [attr.data-testid]="'equipment-modal-registration-mode-' + i"
-                                                    (ngModelChange)="applyRegistrationMode(item, $event)">
-                                                    <option *ngFor="let option of registrationModeSelectOptions" [value]="option.value">{{ option.label }}</option>
-                                                </select>
-                                                <p class="small text-secondary mb-0 mt-2">
-                                                    {{ item.registrationMode === "manual" ? "Captura libre de familia, marca, tipo y serie aunque aún no exista en el maestro." : "Usa el maestro central para conservar la homologación del equipo." }}
-                                                </p>
-                                            </div>
-                                            <div class="col-12 col-lg-4">
-                                                <label class="form-label">Modelo industrial</label>
-                                                <app-crm-modal-select
-                                                    [options]="equipmentModelSelectOptions"
-                                                    [(ngModel)]="item.equipmentModelId"
-                                                    [ngModelOptions]="{ standalone: true }"
-                                                    [disabled]="item.registrationMode === 'manual'"
-                                                    (ngModelChange)="applyEquipmentModel(item, $event)">
-                                                </app-crm-modal-select>
-                                                <p class="small text-secondary mb-0 mt-2">{{ item.registrationMode === "manual" ? "El modo manual omite el catálogo y deja el equipo marcado para homologación." : "Si necesitas otro modelo, créalo antes en Config. Equipos." }}</p>
-                                            </div>
-                                            <div class="col-12 col-lg-2">
+                                            <!-- 2026-11-01 — Se eliminaron "Ruta de registro" y "Modelo industrial":
+                                                 ya no se liga el equipo al maestro central; marca/tipo/serie
+                                                 siempre se diligencian libres. -->
+                                            <div class="col-12 col-lg-3">
                                                 <label class="form-label">Familia</label>
                                                 <select
                                                     class="form-select"
@@ -562,69 +536,34 @@ type SoftwareBackupInfo = {
                                                 <label class="form-label">Marca</label>
                                                 <input
                                                     class="form-control"
-                                                    [class.bg-light]="item.registrationMode !== 'manual'"
                                                     [(ngModel)]="item.marca"
                                                     [ngModelOptions]="{ standalone: true }"
-                                                    [readonly]="item.registrationMode !== 'manual'"
                                                     (ngModelChange)="onItemModelChange(item)"
-                                                    [placeholder]="item.registrationMode === 'manual' ? 'Marca del equipo' : ''" />
+                                                    placeholder="Marca del equipo" />
                                             </div>
                                             <div class="col-12 col-lg-3">
                                                 <label class="form-label">Tipo</label>
                                                 <input
                                                     class="form-control"
-                                                    [class.bg-light]="item.registrationMode !== 'manual'"
                                                     [(ngModel)]="item.tipo"
                                                     [ngModelOptions]="{ standalone: true }"
-                                                    [readonly]="item.registrationMode !== 'manual'"
                                                     (ngModelChange)="onItemModelChange(item)"
-                                                    [placeholder]="item.registrationMode === 'manual' ? 'Tipo / referencia' : ''" />
+                                                    placeholder="Tipo / referencia" />
                                             </div>
                                             <div class="col-12 col-lg-3">
                                                 <label class="form-label">Serie</label>
                                                 <input
                                                     class="form-control"
-                                                    [class.bg-light]="item.registrationMode !== 'manual'"
                                                     [(ngModel)]="item.serie"
                                                     [ngModelOptions]="{ standalone: true }"
-                                                    [readonly]="item.registrationMode !== 'manual'"
-                                                    [placeholder]="item.registrationMode === 'manual' ? 'Serie o referencia visible' : ''" />
+                                                    placeholder="Serie o referencia visible" />
+                                                <!-- 2026-11-01 — Se eliminaron la caja "Warnings operativos de ingreso" y el flujo completo
+                                                     de "Motivo de excepción" (check de etiqueta + input de motivo + gates de frontend).
+                                                     El checkbox se retiró porque obligaba a un motivo que ya no puede escribirse:
+                                                     dejarlo huérfano dejaba registros guardados sin poder finalizar en backend.
+                                                     Los campos identifierLabelIssue/serieExceptionReason siguen existiendo en el modelo
+                                                     y la BD para datos históricos; la validación REC-06 de backend permanece como defensa API. -->
                                             </div>
-                                            <div class="col-12">
-                                                <div class="border rounded p-3 bg-light-subtle equipment-intake-flags">
-                                                    <div class="small fw-semibold mb-2">Warnings operativos de ingreso</div>
-                                                    <div class="row gx-3 gy-2">
-                                                        <div class="col-12 col-lg-4">
-                                                            <div class="form-check mb-0">
-                                                                <input class="form-check-input" type="checkbox" [id]="'pending-homologation-' + item.id" [(ngModel)]="item.pendingHomologation" [ngModelOptions]="{ standalone: true }" />
-                                                                <label class="form-check-label" [for]="'pending-homologation-' + item.id">Pendiente de homologación</label>
-                                                            </div>
-                                                        </div>
-                                                        <div class="col-12 col-lg-4">
-                                                            <div class="form-check mb-0">
-                                                                <input class="form-check-input" type="checkbox" [id]="'estimated-data-' + item.id" [(ngModel)]="item.estimatedData" [ngModelOptions]="{ standalone: true }" />
-                                                                <label class="form-check-label" [for]="'estimated-data-' + item.id">Datos estimados / por confirmar</label>
-                                                            </div>
-                                                        </div>
-                                                        <div class="col-12 col-lg-4">
-                                                            <div class="form-check mb-0">
-                                                                <input class="form-check-input" type="checkbox" [id]="'label-issue-' + item.id" [(ngModel)]="item.identifierLabelIssue" [ngModelOptions]="{ standalone: true }" />
-                                                                <label class="form-check-label" [for]="'label-issue-' + item.id">Equipo con Etiqueta rota, ilegible o sin etiqueta</label>
-                                                            </div>
-                                                        </div>
-                                                        <div class="col-12 col-lg-4">
-                                                            <div class="form-check mb-0">
-                                                                <input class="form-check-input" type="checkbox" [id]="'priority-billing-' + item.id" [(ngModel)]="item.priorityBilling" [ngModelOptions]="{ standalone: true }" data-testid="priority-billing-toggle" />
-                                                                <label class="form-check-label" [for]="'priority-billing-' + item.id">
-                                                                    <i class="bi bi-bell text-warning me-1"></i>Facturación urgente (priority billing)
-                                                                </label>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <p class="small text-secondary mb-0 mt-2">Estos warnings no bloquean el avance ni el guardado; quedan visibles para operación en el listado.</p>
-                                                </div>
-                                            </div>
-                                            <app-crm-equipment-serie-exception [item]="item"></app-crm-equipment-serie-exception>
                                             <div class="col-12 col-lg-3">
                                                 <label class="form-label">Remisión del cliente / guía</label>
                                                 <input class="form-control" [(ngModel)]="item.customerShipmentReference" [ngModelOptions]="{ standalone: true }" placeholder="BL o referencia de transporte" />
@@ -867,9 +806,6 @@ type SoftwareBackupInfo = {
                                             </div>
                                         </div>
 
-                                        <div class="alert alert-warning py-2 mb-3" *ngIf="isSerialPlateEvidenceMissing(item)" data-testid="serial-plate-evidence-required">
-                                            Placa o serie ilegible: sube una evidencia tipo "Placa / serie" y registra el motivo de excepción.
-                                        </div>
                                         <div class="alert alert-warning py-2 mb-3" *ngIf="isAccessoriesEvidenceMissing(item)" data-testid="accessories-evidence-required">
                                             El equipo tiene accesorios reportados: se requiere evidencia fotográfica de accesorios.
                                         </div>
@@ -1785,11 +1721,6 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy,
         { label: "Transportadora", value: "transportadora" },
     ];
 
-    readonly registrationModeSelectOptions: CrmModalSelectOption[] = [
-        { label: "Modelo del catálogo", value: "catalog" },
-        { label: "Manual / no homologado", value: "manual" },
-    ];
-
     get companyBranchSelectOptions(): CrmModalSelectOption[] {
         const placeholder = this.companyBranchOptions.length > 0 ? "Seleccionar sucursal" : "Sin sucursales registradas para esta empresa";
         return [
@@ -1813,13 +1744,6 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy,
                 label: `${option.name}${option.role ? " · " + option.role : ""}${option.sourceLabel ? " · " + option.sourceLabel : ""}`,
                 value: option.value,
             })),
-        ];
-    }
-
-    get equipmentModelSelectOptions(): CrmModalSelectOption[] {
-        return [
-            { label: "Seleccionar modelo del catálogo", value: "" },
-            ...this.activeEquipmentModels.map((model) => ({ label: this.equipmentModelLabel(model), value: model.id })),
         ];
     }
 
@@ -1908,9 +1832,6 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy,
      * respuesta). Son getters sobre la caché del store; la suscripción del
      * constructor repinta cuando el catálogo aterriza.
      */
-    get equipmentModels(): IndustrialEquipmentModelRecord[] {
-        return getIndustrialEquipmentModels();
-    }
     get equipmentServiceTypes(): EquipmentServiceTypeRecord[] {
         return getEquipmentServiceTypes();
     }
@@ -1963,10 +1884,6 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy,
         return this.currentStepIndex === this.wizardSteps.length - 1;
     }
 
-    get activeEquipmentModels(): IndustrialEquipmentModelRecord[] {
-        return this.equipmentModels.filter((model) => model.active);
-    }
-
     get activeEquipmentServiceTypes(): EquipmentServiceTypeRecord[] {
         return this.equipmentServiceTypes.filter((serviceType) => serviceType.active);
     }
@@ -1992,7 +1909,6 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy,
         return this.authService.getCurrentUserName() || "";
     }
 
-    readonly isSerialPlateEvidenceMissing = isSerialPlateEvidenceMissing;
     readonly isAccessoriesEvidenceMissing = isAccessoriesEvidenceMissing;
     readonly borrowedEntriesWithContent = borrowedEntriesWithContent;
 
@@ -2114,6 +2030,21 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy,
         }
     }
 
+    // 2026-11-01 — Breadcrumb del header: agrega warnings de todos los equipos del draft
+    // (con la regla de un solo equipo a la vez, equivale al único item).
+    headerWarningCount(): number {
+        return this.draft.items.reduce((sum, item) => sum + getProspectEquipmentWarnings(item).length, 0);
+    }
+
+    headerVisibleWarnings(): ProspectEquipmentWarning[] {
+        const all = this.draft.items.flatMap((item) => getProspectEquipmentWarnings(item));
+        return all.slice(0, this.maxVisibleItemWarnings);
+    }
+
+    headerHiddenWarningCount(): number {
+        return Math.max(0, this.headerWarningCount() - this.maxVisibleItemWarnings);
+    }
+
     visibleItemWarnings(item: ProspectEquipmentItem): ProspectEquipmentWarning[] {
         return getProspectEquipmentWarnings(item).slice(0, this.maxVisibleItemWarnings);
     }
@@ -2128,61 +2059,6 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy,
 
     trackByItemWarningCode(_: number, warning: ProspectEquipmentWarning): string {
         return warning.code;
-    }
-
-    applyRegistrationMode(item: ProspectEquipmentItem, registrationMode: ProspectEquipmentRegistrationMode): void {
-        item.registrationMode = registrationMode === "manual" ? "manual" : "catalog";
-
-        if (item.registrationMode === "manual") {
-            item.equipmentModelId = "";
-            item.familyId = "";
-            item.isIndustrial = false;
-            item.pendingHomologation = true;
-            return;
-        }
-
-        item.pendingHomologation = false;
-
-        if (item.equipmentModelId.trim()) {
-            this.applyEquipmentModel(item, item.equipmentModelId);
-            return;
-        }
-
-        item.familyId = "";
-        item.familyName = "";
-        item.marca = "";
-        item.tipo = "";
-        item.serie = "";
-    }
-
-    applyEquipmentModel(item: ProspectEquipmentItem, modelId: string): void {
-        const model = this.equipmentModels.find((entry) => entry.id === modelId);
-
-        if (!model) {
-            item.equipmentModelId = "";
-            item.familyId = "";
-            item.isIndustrial = false;
-
-            if (item.registrationMode !== "manual") {
-                item.familyName = "";
-                item.marca = "";
-                item.tipo = "";
-                item.serie = "";
-            }
-
-            return;
-        }
-
-        item.registrationMode = "catalog";
-        item.pendingHomologation = false;
-        item.equipmentModelId = model.id;
-        item.isIndustrial = model.isIndustrial !== false;
-        item.familyId = model.familyId;
-        item.familyName = getEquipmentFamilyName(model.familyId);
-        item.marca = model.brand;
-        item.tipo = model.type;
-        item.serie = model.series;
-        void this.refreshSoftwareBackup(item);
     }
 
     applyFamily(item: ProspectEquipmentItem, familyId: string): void {
@@ -2814,8 +2690,6 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy,
             sourceContext: this.draft.sourceContext,
             items: itemsToPersist.map((item) => ({
                 ...item,
-                registrationMode: item.registrationMode === "manual" ? "manual" : "catalog",
-                equipmentModelId: item.equipmentModelId,
                 isIndustrial: this.resolveItemIndustrialFlag(item),
                 serviceTypeId: item.serviceTypeId,
                 serviceTypeName: item.serviceTypeName.trim(),
@@ -2850,7 +2724,6 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy,
                 industrialOverrideAuthorizedAt: (item.industrialOverrideAuthorizedBy || "").trim()
                     ? (item.industrialOverrideAuthorizedAt || new Date().toISOString())
                     : "",
-                pendingHomologation: Boolean(item.pendingHomologation),
                 estimatedData: Boolean(item.estimatedData),
                 identifierLabelIssue: Boolean(item.identifierLabelIssue),
                 evidencePhotos: item.evidencePhotos.map((photo) => ({
@@ -3367,10 +3240,6 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy,
         return evidence.id;
     }
 
-    equipmentModelLabel(model: IndustrialEquipmentModelRecord): string {
-        return `${getEquipmentFamilyName(model.familyId)} · ${model.brand} · ${model.type} · ${model.series}`;
-    }
-
     equipmentCardTitle(item: ProspectEquipmentItem, index: number): string {
         const parts = [item.familyName, item.marca, item.tipo, item.serie].filter((value) => value.trim().length > 0);
         return parts.length > 0 ? `Equipo ${index + 1} · ${parts.join(" · ")}` : `Equipo ${index + 1}`;
@@ -3392,13 +3261,10 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy,
         return item.answers[questionKey] === "No";
     }
 
+    // 2026-11-01 — "Ruta de registro" y "Modelo industrial" eliminados del modal y de BD:
+    // el flag industrial ya no se deriva del catálogo; es dato propio del item.
     resolveItemIndustrialFlag(item: ProspectEquipmentItem): boolean {
-        if (typeof item.isIndustrial === "boolean") {
-            return item.isIndustrial;
-        }
-
-        const model = this.equipmentModels.find((entry) => entry.id === item.equipmentModelId);
-        return model?.isIndustrial ?? false;
+        return typeof item.isIndustrial === "boolean" ? item.isIndustrial : false;
     }
 
     resolveItemIndustrialLabel(item: ProspectEquipmentItem): string {
@@ -4453,8 +4319,7 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy,
     private buildItem(): ProspectEquipmentItem {
         return {
             id: this.buildId("item"),
-            registrationMode: "catalog",
-            equipmentModelId: "",
+            // 2026-11-01 — "Ruta de registro" y "Modelo industrial" eliminados (BD + UI).
             isIndustrial: false,
             serviceTypeId: "",
             serviceTypeName: "",
@@ -4485,7 +4350,6 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy,
             industrialOverrideAuthorizedBy: "",
             industrialOverrideReason: "",
             industrialOverrideAuthorizedAt: "",
-            pendingHomologation: false,
             estimatedData: false,
             identifierLabelIssue: false,
             evidencePhotos: [],
@@ -4529,12 +4393,6 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy,
         if (this.currentWizardStep.key === "equipment") {
             const items = this.getMeaningfulItems();
             if (!this.validateEquipmentItems(items)) {
-                return false;
-            }
-
-            const reasonlessItem = items.find((item) => isSerieExceptionReasonMissing(item));
-            if (reasonlessItem) {
-                this.validationMessage = SERIE_EXCEPTION_REASON_ERROR;
                 return false;
             }
 
@@ -4688,10 +4546,6 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy,
     }
 
     private hasItemContent(item: ProspectEquipmentItem): boolean {
-        if (item.equipmentModelId.trim()) {
-            return true;
-        }
-
         if ([
             item.serviceTypeName,
             item.storageLocationName,
@@ -4873,7 +4727,6 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy,
     private cloneRecord(record: ProspectEquipmentRecord): ProspectEquipmentRecord {
         const items: ProspectEquipmentItem[] = record.items.map((item) => ({
             ...item,
-            registrationMode: item.registrationMode === "manual" ? "manual" : item.equipmentModelId.trim() ? "catalog" : "manual",
             isIndustrial: typeof item.isIndustrial === "boolean" ? item.isIndustrial : this.resolveItemIndustrialFlag(item),
             borrowedEquipments: (item.borrowedEquipments ?? []).map((entry) => normalizeBorrowedEntry(entry)),
             senderUnknown: Boolean(item.senderUnknown),
@@ -4890,7 +4743,6 @@ export class CrmProspectEquipmentModalComponent implements OnChanges, OnDestroy,
             industrialOverrideAuthorizedBy: String(item.industrialOverrideAuthorizedBy ?? "").trim(),
             industrialOverrideReason: String(item.industrialOverrideReason ?? "").trim(),
             industrialOverrideAuthorizedAt: String(item.industrialOverrideAuthorizedAt ?? "").trim(),
-            pendingHomologation: Boolean(item.pendingHomologation) || item.registrationMode === "manual" || !item.equipmentModelId.trim(),
             estimatedData: Boolean(item.estimatedData),
             identifierLabelIssue: Boolean(item.identifierLabelIssue),
             evidencePhotos: item.evidencePhotos.map((photo) => ({ ...photo })),

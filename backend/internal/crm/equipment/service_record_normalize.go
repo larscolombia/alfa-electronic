@@ -55,8 +55,6 @@ func normalizeItems(items []Item) []Item {
 	for _, item := range items {
 		entry := item
 		entry.ID = strings.TrimSpace(entry.ID)
-		entry.RegistrationMode = normalizeRegistrationMode(entry.RegistrationMode)
-		entry.EquipmentModelID = strings.TrimSpace(entry.EquipmentModelID)
 		if entry.IsIndustrial == nil {
 			defaultIndustrial := true
 			entry.IsIndustrial = &defaultIndustrial
@@ -153,13 +151,6 @@ func normalizeIntakeMethod(value string) string {
 		return "transportadora"
 	}
 	return "personal"
-}
-
-func normalizeRegistrationMode(value string) string {
-	if strings.EqualFold(strings.TrimSpace(value), "manual") {
-		return "manual"
-	}
-	return "catalog"
 }
 
 func normalizeIdentifierSource(value string) string {

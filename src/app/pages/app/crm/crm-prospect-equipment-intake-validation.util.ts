@@ -2,10 +2,7 @@ import type { ProspectEquipmentItem, ProspectEquipmentRecord } from "./crm-prosp
 
 export const TRANSPORTADORA_RECEPTION_ERROR =
     "Recepción por transportadora exige transportadora, número de guía y fecha y hora de recibido.";
-export const SERIAL_PLATE_EVIDENCE_ERROR =
-    "Placa o serie ilegible: registra el motivo de excepción y sube una foto de placa / serie (tipo Placa / serie).";
-export const SERIE_EXCEPTION_REASON_ERROR =
-    "Equipo con Etiqueta rota, ilegible o sin etiqueta: registra el motivo de excepción antes de continuar.";
+
 export const ACCESSORIES_EVIDENCE_ERROR =
     "El equipo tiene accesorios reportados: se requiere evidencia fotográfica de accesorios.";
 export const VISIBLE_DAMAGE_ERROR =
@@ -30,23 +27,13 @@ export function hasEvidenceType(item: ProspectEquipmentItem, evidenceType: strin
     return item.evidencePhotos.some((photo) => String(photo.evidenceType ?? "").trim().toLowerCase() === normalizedType);
 }
 
-export function isSerialPlateEvidenceMissing(item: ProspectEquipmentItem): boolean {
-    return Boolean(item.identifierLabelIssue) && !hasEvidenceType(item, "serial-plate");
-}
-
-export function isSerieExceptionReasonMissing(item: ProspectEquipmentItem): boolean {
-    return Boolean(item.identifierLabelIssue) && !(item.serieExceptionReason || "").trim();
-}
-
 export function isAccessoriesEvidenceMissing(item: ProspectEquipmentItem): boolean {
     return Boolean(item.accessories?.trim()) && !hasEvidenceType(item, "accessories");
 }
 
 export function getEvidenceRequirementsError(item: ProspectEquipmentItem): string | null {
-    if (isSerialPlateEvidenceMissing(item)) {
-        return SERIAL_PLATE_EVIDENCE_ERROR;
-    }
-
+    // 2026-11-01 — El gate de placa/serie por "motivo de excepción" se retiró con la UI:
+    // la foto tipo "Placa / serie" ya es obligatoria para TODO equipo vía REQUIRED_FACE_EVIDENCE_TYPES.
     if (isAccessoriesEvidenceMissing(item)) {
         return ACCESSORIES_EVIDENCE_ERROR;
     }

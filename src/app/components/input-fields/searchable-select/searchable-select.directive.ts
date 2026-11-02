@@ -83,7 +83,7 @@ export class SearchableSelectDirective implements AfterViewInit, OnDestroy {
 
     /**
      * ngModel puede fijar un valor ANTES de que existan sus <option> (carga async,
-     * p.ej. "Empleado responsable" = usuario logueado mientras cargan los empleados)
+     * p.ej. "Comercial responsable" = usuario logueado mientras cargan los empleados)
      * o DESPUÉS de la última mutación de opciones sin que nada más dispare aquí:
      * en ambos casos el campo se vería vacío aunque el modelo tenga valor y lo
      * guardaría correctamente. refresh() reconstruye la lista desde el DOM pero NO

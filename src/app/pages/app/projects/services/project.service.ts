@@ -947,7 +947,7 @@ export class ProjectService {
       stageName: column?.name ?? getProjectWorkflowStatusLabel(nextStatus),
       repairabilityPercent: this.normalizeWholeNumber(normalizedProperties['repairabilityPercent'], 0),
       estimatedHours: this.normalizeWholeNumber(normalizedProperties['estimatedHours'], 0),
-      actualHours: this.normalizeWholeNumber(normalizedProperties['actualHours'], 0),
+      actualHours: this.normalizeNonNegativeNumber(normalizedProperties['actualHours'], 0),
       diagnosticNotes: String(normalizedProperties['diagnosticNotes'] ?? '').trim(),
       repairNotes: String(normalizedProperties['repairNotes'] ?? '').trim(),
       testType: String(normalizedProperties['testType'] ?? 'sin-pruebas').trim(),
@@ -986,5 +986,16 @@ export class ProjectService {
     }
 
     return Math.max(0, Math.round(numeric));
+  }
+
+  // Las horas reales NO se redondean a enteras: una sesion de minutos debe
+  // persistir tal cual (el tablero acumula y muestra HH:MM:SS).
+  private normalizeNonNegativeNumber(value: unknown, fallback: number): number {
+    const numeric = typeof value === 'number' ? value : Number(value);
+    if (!Number.isFinite(numeric)) {
+      return fallback;
+    }
+
+    return Math.max(0, numeric);
   }
 }

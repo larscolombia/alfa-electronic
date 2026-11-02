@@ -41,8 +41,7 @@ type Item struct {
 	// (serie CO + YY + MM + NNNN, contador mensual por empresa). Los registros
 	// antiguos no lo traen y los lectores derivan la serie legacy EQ-* del ID.
 	EquipmentCode                  string              `json:"equipmentCode"`
-	RegistrationMode               string              `json:"registrationMode"`
-	EquipmentModelID               string              `json:"equipmentModelId"`
+	// 2026-11-01 — "Ruta de registro" y "Modelo industrial" eliminados (BD + UI).
 	IsIndustrial                   *bool               `json:"isIndustrial,omitempty"`
 	ServiceTypeID                  string              `json:"serviceTypeId"`
 	ServiceTypeName                string              `json:"serviceTypeName"`
@@ -74,7 +73,6 @@ type Item struct {
 	AssignedToID                   string              `json:"assignedToId"`
 	AssignedAt                     string              `json:"assignedAt"`
 	AssignedBy                     string              `json:"assignedBy"`
-	PendingHomologation            bool                `json:"pendingHomologation"`
 	IndustrialOverrideAuthorizedBy string              `json:"industrialOverrideAuthorizedBy"`
 	IndustrialOverrideReason       string              `json:"industrialOverrideReason"`
 	IndustrialOverrideAt           string              `json:"industrialOverrideAuthorizedAt"`

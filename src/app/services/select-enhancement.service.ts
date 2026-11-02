@@ -5,7 +5,7 @@ import Choices from "choices.js";
 type EnhancedSelect = {
     choices: Choices;
     optionsObserver: MutationObserver;
-    onChange: () => void;
+    onChange: (event: Event) => void;
 };
 
 const ENHANCE_DEBOUNCE_MS = 50;
@@ -120,7 +120,31 @@ export class SelectEnhancementService {
         // Choices dispara el cambio desde la zona externa usada para decorar
         // el DOM. Volvemos a entrar a Angular para que ngModel y los selectores
         // dependientes (por ejemplo País → Ciudad) se rendericen de inmediato.
-        const onChange = () => this.zone.run(() => undefined);
+        //
+        // BUG RAÍZ (choices.js v11, verificado en _triggerChange L4253): el
+        // evento "change" viaja como CustomEvent con el valor en event.detail.value,
+        // pero para selects de una opción Choices NUNCA escribe select.value (solo
+        // lo hace en modo texto). ngModel lee event.target.value, queda "" y la
+        // validación posterior rechaza la línea aunque el widget muestre la opción.
+        // Fijamos select.value con el value del evento y re-dispatchamos un change
+        // nativo limpio para que ngModel vuelva a leer y sí actualice el modelo.
+        let resyncing = false;
+        const onChange = (event: Event) => {
+            if (!resyncing && event instanceof CustomEvent) {
+                const detailValue = (event.detail as { value?: unknown } | null)?.value;
+                const wanted = Array.isArray(detailValue) ? String((detailValue[0] ?? "")) : String(detailValue ?? "");
+                if (wanted && select.value !== wanted && Array.from(select.options).some((o) => o.value === wanted)) {
+                    resyncing = true;
+                    try {
+                        select.value = wanted;
+                        select.dispatchEvent(new Event("change", { bubbles: true }));
+                    } finally {
+                        resyncing = false;
+                    }
+                }
+            }
+            this.zone.run(() => undefined);
+        };
         select.addEventListener("change", onChange);
         this.enhanced.set(select, { choices, optionsObserver, onChange });
     }

@@ -1,4 +1,4 @@
-import { getEquipmentFamilyName, getEquipmentLocationById, getEquipmentServiceTypeById, getIndustrialEquipmentModelById } from "../company/company-equipment-config.store";
+import { getEquipmentFamilyName, getEquipmentLocationById, getEquipmentServiceTypeById } from "../company/company-equipment-config.store";
 import { normalizeBorrowedEquipments } from "./crm-prospect-equipment-borrowed.util";
 import { resolveEquipmentCode } from "./equipment-qr.util";
 
@@ -17,7 +17,6 @@ export type ProspectEquipmentEvidenceType =
     | "face-top"
     | "face-bottom";
 export type ProspectEquipmentIdentifierSource = "manual" | "camera-scan";
-export type ProspectEquipmentRegistrationMode = "catalog" | "manual";
 export type ProspectEquipmentIntakeMethod = "transportadora" | "personal";
 export type ProspectEquipmentRepairStatus =
     | "recibido"
@@ -92,8 +91,8 @@ export interface ProspectEquipmentItem {
     /** Código interno asignado al recepcionar (CO+YYMM+NNNN, contador mensual).
      * Ausente en registros antiguos: se deriva la serie legacy EQ-* del id. */
     equipmentCode?: string;
-    registrationMode?: ProspectEquipmentRegistrationMode;
-    equipmentModelId: string;
+    // 2026-11-01 — "Ruta de registro" y "Modelo industrial" eliminados (BD + UI).
+    // El flag industrial es dato propio del item; ya no se deriva del catálogo.
     isIndustrial?: boolean;
     serviceTypeId: string;
     serviceTypeName: string;
@@ -126,7 +125,6 @@ export interface ProspectEquipmentItem {
     industrialOverrideAuthorizedBy?: string;
     industrialOverrideReason?: string;
     industrialOverrideAuthorizedAt?: string;
-    pendingHomologation?: boolean;
     estimatedData?: boolean;
     identifierLabelIssue?: boolean;
     evidencePhotos: ProspectEquipmentEvidencePhoto[];
@@ -333,8 +331,6 @@ export function createEquipmentAnswers(): Record<string, string> {
 export function getProspectEquipmentWarnings(
     item: Pick<
         ProspectEquipmentItem,
-        | "registrationMode"
-        | "equipmentModelId"
         | "serviceTypeId"
         | "serviceTypeName"
         | "storageLocationId"
@@ -346,24 +342,13 @@ export function getProspectEquipmentWarnings(
         | "receivedIdentifier"
         | "customerShipmentReference"
         | "failureDescription"
-        | "pendingHomologation"
         | "estimatedData"
         | "identifierLabelIssue"
     >,
 ): ProspectEquipmentWarning[] {
     const warnings: ProspectEquipmentWarning[] = [];
-    const registrationMode = normalizeRegistrationMode(item.registrationMode, item.equipmentModelId);
     const hasService = Boolean(item.serviceTypeId?.trim() || item.serviceTypeName?.trim());
     const hasLocation = Boolean(item.storageLocationId?.trim() || item.storageLocationName?.trim());
-    const hasStructuredManualData = [item.familyName, item.marca, item.tipo].every((value) => (value ?? "").trim().length > 0);
-
-    if (registrationMode === "manual") {
-        warnings.push({ code: "manual-entry", label: "Manual" });
-    }
-
-    if (Boolean(item.pendingHomologation)) {
-        warnings.push({ code: "pending-homologation", label: "Pendiente homologación" });
-    }
 
     if (!hasService) {
         warnings.push({ code: "missing-service", label: "Sin servicio" });
@@ -395,10 +380,6 @@ export function getProspectEquipmentWarnings(
 
     if (Boolean(item.estimatedData)) {
         warnings.push({ code: "estimated-data", label: "Datos estimados" });
-    }
-
-    if (registrationMode === "manual" && !hasStructuredManualData) {
-        warnings.push({ code: "missing-format", label: "Sin formato" });
     }
 
     return warnings;
@@ -570,16 +551,15 @@ export function reassignProspectEquipmentLocation(oldLocationId: string, targetL
 function buildEquipmentSummaries(records: ProspectEquipmentRecord[]): ProspectEquipmentSummary[] {
     return records.flatMap((record) =>
         record.items.map((item) => {
-            const model = item.equipmentModelId ? getIndustrialEquipmentModelById(item.equipmentModelId) : undefined;
             const serviceType = item.serviceTypeId ? getEquipmentServiceTypeById(item.serviceTypeId) : undefined;
             const storageLocation = item.storageLocationId ? getEquipmentLocationById(item.storageLocationId) : undefined;
             const serviceTypeName = (item.serviceTypeName?.trim() || serviceType?.name || "").trim();
             const storageLocationId = (item.storageLocationId?.trim() || storageLocation?.id || "").trim();
             const storageLocationName = (storageLocation?.name || item.storageLocationName?.trim() || "").trim();
-            const familyName = (item.familyName?.trim() || (item.familyId ? getEquipmentFamilyName(item.familyId) : "") || (model ? getEquipmentFamilyName(model.familyId) : "")).trim();
-            const marca = (item.marca?.trim() || model?.brand || "").trim();
-            const tipo = (item.tipo?.trim() || model?.type || "").trim();
-            const serie = (item.serie?.trim() || model?.series || "").trim();
+            const familyName = (item.familyName?.trim() || (item.familyId ? getEquipmentFamilyName(item.familyId) : "")).trim();
+            const marca = (item.marca ?? "").trim();
+            const tipo = (item.tipo ?? "").trim();
+            const serie = (item.serie ?? "").trim();
             const repairStatus = normalizeRepairStatus(item.repairStatus);
 
             return {
@@ -643,20 +623,6 @@ function normalizeRepairStatus(value: unknown): ProspectEquipmentRepairStatus {
         default:
             return "recibido";
     }
-}
-
-function normalizeRegistrationMode(value: unknown, equipmentModelId: unknown): ProspectEquipmentRegistrationMode {
-    const normalized = String(value ?? "").trim().toLowerCase();
-
-    if (normalized === "manual") {
-        return "manual";
-    }
-
-    if (normalized === "catalog") {
-        return "catalog";
-    }
-
-    return String(equipmentModelId ?? "").trim() ? "catalog" : "manual";
 }
 
 function normalizeSearchValue(value: unknown): string {
@@ -783,14 +749,9 @@ function normalizeStoredRecord(record: Partial<ProspectEquipmentRecord>): Prospe
 }
 
 function normalizeStoredItem(item: Partial<ProspectEquipmentItem>): ProspectEquipmentItem {
-    const equipmentModelId = String(item.equipmentModelId ?? "").trim();
-    const registrationMode = normalizeRegistrationMode(item.registrationMode, equipmentModelId);
-
     return {
         id: String(item.id ?? "").trim(),
-        registrationMode,
-        equipmentModelId,
-        isIndustrial: typeof item.isIndustrial === "boolean" ? item.isIndustrial : Boolean(equipmentModelId),
+        isIndustrial: typeof item.isIndustrial === "boolean" ? item.isIndustrial : false,
         serviceTypeId: String(item.serviceTypeId ?? "").trim(),
         serviceTypeName: String(item.serviceTypeName ?? "").trim(),
         storageLocationId: String(item.storageLocationId ?? "").trim(),
@@ -822,7 +783,6 @@ function normalizeStoredItem(item: Partial<ProspectEquipmentItem>): ProspectEqui
         industrialOverrideAuthorizedBy: String(item.industrialOverrideAuthorizedBy ?? "").trim(),
         industrialOverrideReason: String(item.industrialOverrideReason ?? "").trim(),
         industrialOverrideAuthorizedAt: String(item.industrialOverrideAuthorizedAt ?? "").trim(),
-        pendingHomologation: Boolean(item.pendingHomologation) || registrationMode === "manual",
         estimatedData: Boolean(item.estimatedData),
         identifierLabelIssue: Boolean(item.identifierLabelIssue),
         evidencePhotos: Array.isArray(item.evidencePhotos) ? item.evidencePhotos.map((photo) => ({ ...photo })) : [],

@@ -54,8 +54,6 @@ func migrationStatementsCRMEquipmentAndQuotes() []string {
 			'[
 				{
 					"id": "seed-item-kayser-hmi-co260206",
-					"registrationMode": "manual",
-					"equipmentModelId": "",
 					"serviceTypeId": "service-reparacion",
 					"serviceTypeName": "Reparacion",
 					"storageLocationId": "interior-3",
@@ -73,7 +71,6 @@ func migrationStatementsCRMEquipmentAndQuotes() []string {
 					"accessories": "Sin accesorios",
 					"borrowedEquipments": [],
 					"failureDescription": "No enciende. Validar fuente y modulo de video.",
-					"pendingHomologation": false,
 					"estimatedData": false,
 					"identifierLabelIssue": false,
 					"evidencePhotos": [],
@@ -105,8 +102,6 @@ func migrationStatementsCRMEquipmentAndQuotes() []string {
 			'[
 				{
 					"id": "seed-item-kayser-hmi-co260245",
-					"registrationMode": "manual",
-					"equipmentModelId": "",
 					"serviceTypeId": "service-reparacion",
 					"serviceTypeName": "Reparacion",
 					"storageLocationId": "interior-3",
@@ -124,7 +119,6 @@ func migrationStatementsCRMEquipmentAndQuotes() []string {
 					"accessories": "Cable de energia",
 					"borrowedEquipments": [],
 					"failureDescription": "Pantalla congelada despues de 20 minutos. Revisar regulador de 5V y memoria.",
-					"pendingHomologation": false,
 					"estimatedData": false,
 					"identifierLabelIssue": false,
 					"evidencePhotos": [],
@@ -156,8 +150,6 @@ func migrationStatementsCRMEquipmentAndQuotes() []string {
 			'[
 				{
 					"id": "seed-item-kayser-hmi-co260312",
-					"registrationMode": "manual",
-					"equipmentModelId": "",
 					"serviceTypeId": "service-reparacion",
 					"serviceTypeName": "Reparacion",
 					"storageLocationId": "interior-2",
@@ -175,7 +167,6 @@ func migrationStatementsCRMEquipmentAndQuotes() []string {
 					"accessories": "Sin accesorios",
 					"borrowedEquipments": [],
 					"failureDescription": "No enciende tras pico de voltaje. Revisar linea primaria y protecciones de arranque.",
-					"pendingHomologation": false,
 					"estimatedData": false,
 					"identifierLabelIssue": false,
 					"evidencePhotos": [],

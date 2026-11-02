@@ -184,7 +184,7 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
 
                         <div class="col-12"><hr class="my-2"><h6 class="text-uppercase text-secondary small fw-bold my-3">Clasificación y responsable</h6></div>
                         <div class="col-12 col-lg-6 mb-2">
-                            <label class="form-label" for="prospect-owner">Empleado responsable</label>
+                            <label class="form-label" for="prospect-owner">Comercial responsable</label>
                             <select appSearchableSelect id="prospect-owner" class="form-select" [(ngModel)]="formEmpleado" name="formEmpleado">
                                 <option value="">--</option>
                                 <option *ngFor="let option of employeeOptions" [value]="option">{{ option }}</option>
