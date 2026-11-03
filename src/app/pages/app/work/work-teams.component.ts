@@ -77,6 +77,12 @@ const WORK_DIRECT_PROSPECT: ProspectRecord = {
                 flex-direction: column;
                 gap: 0.2rem;
             }
+
+            /* T24b (2026-11-03): el cliente pidió que la tabla recupere el ancho de pantalla:
+               solo 5% de padding a cada lado en vez del max-width de .container Bootstrap. */
+            .work-equipment-history-wrap {
+                padding-inline: 5%;
+            }
         `,
     ],
     template: `
@@ -100,7 +106,7 @@ const WORK_DIRECT_PROSPECT: ProspectRecord = {
         </div>
 
         @if (subview !== 'new') {
-            <div class="container mt-3" id="main-content">
+            <div class="container-fluid work-equipment-history-wrap mt-3" id="main-content">
                 @if (message) {
                     <div class="alert alert-success border mb-3">{{ message }}</div>
                 }
@@ -576,7 +582,7 @@ export class WorkTeamsComponent implements AfterViewInit, OnDestroy {
             autoWidth: false,
             responsive: true,
             lengthChange: false,
-            pageLength: 10,
+            pageLength: 5,
             order: [[1, "desc"]], // Fecha de recepción descendente por defecto.
             columnDefs: [
                 { orderable: false, targets: 4 },
