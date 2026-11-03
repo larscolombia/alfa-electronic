@@ -297,12 +297,22 @@ try {
     const equipmentCount = matchedCount(await messageAlert.innerText());
     assert.ok(equipmentCount >= 1, "equipos debe traer al menos 1 ítem");
 
-    // ── Entidad vacía: cotizaciones (0 registros) ────────────────────────
+    // ── Cotizaciones: estado vacío si el entorno no tiene datos, conteo consistente si los tiene ──
+    // (local: 0 registros → valida empty state + exports bloqueados; producción: N ≥ 1 → valida
+    // que la consulta reporta un conteo coherente X ≤ Y sin romper la UI)
     await chooseOption("extractionEntity", "Cotizaciones comerciales");
     await runAndExpectSuccess();
-    assert.match(await messageAlert.innerText(), /^0 de 0 registros/, "una entidad sin datos debe informar 0 de 0");
-    await emptyState.waitFor();
-    assert.ok((await exportCsvButton.isDisabled()) && (await exportXlsxButton.isDisabled()), "con 0 filas no se puede exportar");
+    const quotesText = (await messageAlert.innerText()).trim();
+    assert.match(quotesText, /^(\d+) de (\d+) registros/, `cotizaciones debe reportar un conteo: ${quotesText}`);
+    const quotesShown = Number(quotesText.match(/^(\d+) de/)[1]);
+    const quotesTotal = Number(quotesText.match(/^\d+ de (\d+)/)[1]);
+    assert.ok(quotesShown <= quotesTotal, "las filas mostradas no pueden exceder el total cargado");
+    if (quotesTotal === 0) {
+        await emptyState.waitFor();
+        assert.ok((await exportCsvButton.isDisabled()) && (await exportXlsxButton.isDisabled()), "con 0 filas no se puede exportar");
+    } else {
+        assert.ok(await exportCsvButton.isEnabled(), "con datos cargados la exportación debe estar habilitada");
+    }
 
     // ── Descargas reales (CSV y XLSX) con clientes ────────────────────────
     await chooseOption("extractionEntity", "Clientes y contactos");
