@@ -68,3 +68,6 @@ backend/ema-backend
 /scripts/playwright-artifacts/
 
 backend/.env
+
+# Bundles temporales del harness de lógica Extracciones
+.tmp-extracciones-logic-*/

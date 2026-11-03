@@ -2,269 +2,32 @@ import { CommonModule } from "@angular/common";
 import { Component, inject } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { RouterLink } from "@angular/router";
-import { CrmClientsApiService, CrmClientRecord } from "../../../services/crm-clients-api.service";
+import { Subscription } from "rxjs";
 
-interface ExtractionColumn {
-    key: string;
-    label: string;
+import { AppliedFilter, DataRow, ExtractionColumnDef, ExtractionEntityConfig, FilterOperator } from "./extractions.model";
+import { applyFilters, operatorLabel as describeOperator } from "./filter-engine";
+import { buildExportFileName, downloadCsv, downloadXlsx } from "./export-utils";
+import { createEntityRegistry } from "./entity-registry";
+
+import { CrmClientsApiService } from "../../../services/crm-clients-api.service";
+import { CrmEquipmentApiService } from "../../../services/crm-equipment-api.service";
+import { CrmQuotesApiService } from "../../../services/crm-quotes-api.service";
+import { InventoryApiService } from "../../../services/inventory-api.service";
+import { FinanceBillingApiService } from "../../../services/finance-billing-api.service";
+import { SuppliersApiService } from "../../../services/suppliers-api.service";
+import { FinancePaymentsApiService } from "../../../services/finance-payments-api.service";
+
+interface SelectableColumn extends ExtractionColumnDef {
     selected: boolean;
 }
+
+const moneyFormatter = new Intl.NumberFormat("es-CO", { maximumFractionDigits: 2 });
 
 @Component({
     selector: "app-extracciones",
     standalone: true,
     imports: [CommonModule, FormsModule, RouterLink],
-    template: `
-        <div class="container-fluid py-3 extraction-page">
-            <nav aria-label="breadcrumb" class="breadcrumb-theme rounded mb-3">
-                <ol class="breadcrumb mb-0">
-                    <li class="breadcrumb-item">
-                        <a routerLink="/app/main-menu">
-                            <i class="bi bi-house-door me-1"></i> Menú principal
-                        </a>
-                    </li>
-                    <li class="breadcrumb-item active" aria-current="page">Extracciones</li>
-                </ol>
-            </nav>
-
-            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
-                <div>
-                    <div class="d-flex align-items-center gap-2 mb-1">
-                        <span class="extraction-icon"><i class="bi bi-database-gear"></i></span>
-                        <h3 class="mb-0 fw-bold">Centro de extracciones</h3>
-                    </div>
-                    <p class="text-secondary mb-0">
-                        Construye consultas, selecciona campos y prepara tus reportes.
-                    </p>
-                </div>
-                <a routerLink="/app/main-menu" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left me-1"></i> Volver al menú
-                </a>
-            </div>
-
-            <div class="alert alert-info d-flex gap-2 align-items-start">
-                <i class="bi bi-info-circle-fill mt-1"></i>
-                <div>
-                    <strong>Consultas conectadas al sistema</strong>
-                    <div class="small">
-                        Clientes está conectado al CRM. Las demás entidades se habilitarán
-                        cuando integremos sus servicios correspondientes.
-                    </div>
-                </div>
-            </div>
-
-            <div class="card adminuiux-card mb-3">
-                <div class="card-body">
-                    <h5 class="fw-semibold mb-3">
-                        <i class="bi bi-grid me-2"></i>1. Seleccionar información
-                    </h5>
-
-                    <div class="row g-3">
-                        <div class="col-12 col-md-6 col-xl-4">
-                            <label for="extractionEntity" class="form-label">Módulo o entidad</label>
-                            <select id="extractionEntity" class="form-select"
-                                [(ngModel)]="entity" (ngModelChange)="onEntityChange()">
-                                <option value="clientes">Clientes y contactos</option>
-                                <option value="equipos">Equipos y servicios</option>
-                                <option value="cotizaciones">Cotizaciones comerciales</option>
-                                <option value="inventario">Inventario y stock</option>
-                                <option value="facturacion">Facturación electrónica</option>
-                                <option value="compras">Compras y proveedores</option>
-                                <option value="cartera">Cartera y pagos</option>
-                            </select>
-                        </div>
-                        <div class="col-12 col-md-6 col-xl-4">
-                            <label for="extractionName" class="form-label">Nombre de la consulta</label>
-                            <input id="extractionName" class="form-control"
-                                [(ngModel)]="queryName"
-                                placeholder="Ej. Clientes de Bogotá">
-                        </div>
-                        <div class="col-12 col-md-6 col-xl-4">
-                            <label class="form-label">Registros</label>
-                            <div class="form-control bg-body-secondary">
-                                {{ loading ? "Consultando..." : clients.length + " registros cargados" }}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row g-3">
-                <div class="col-12 col-xl-5">
-                    <div class="card adminuiux-card h-100">
-                        <div class="card-body">
-                            <h5 class="fw-semibold mb-3">
-                                <i class="bi bi-funnel me-2"></i>2. Filtros
-                            </h5>
-
-                            <div class="mb-3">
-                                <label for="filterField" class="form-label">Campo</label>
-                                <select id="filterField" class="form-select" [(ngModel)]="filterField">
-                                    <option value="ciudad">Ciudad</option>
-                                    <option value="fecha">Fecha</option>
-                                    <option value="estado">Estado</option>
-                                    <option value="cliente">Cliente</option>
-                                </select>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="filterOperator" class="form-label">Condición</label>
-                                <select id="filterOperator" class="form-select" [(ngModel)]="filterOperator">
-                                    <option value="equals">Es igual a</option>
-                                    <option value="contains">Contiene</option>
-                                    <option value="different">Es diferente de</option>
-                                </select>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="filterValue" class="form-label">Valor</label>
-                                <input id="filterValue" class="form-control"
-                                    [(ngModel)]="filterValue"
-                                    placeholder="Escribe el valor del filtro">
-                            </div>
-
-                            <button type="button" class="btn btn-outline-primary w-100"
-                                (click)="addFilter()" [disabled]="!filterValue.trim()">
-                                <i class="bi bi-plus-circle me-1"></i> Agregar filtro
-                            </button>
-
-                            <div class="mt-3" *ngIf="filters.length">
-                                <div class="small fw-semibold mb-2">Filtros agregados</div>
-                                <div class="d-flex flex-wrap gap-2">
-                                    <span class="badge rounded-pill text-bg-light border p-2"
-                                        *ngFor="let filter of filters; let i = index">
-                                        {{ filter.field }} · {{ filter.operator }} · {{ filter.value }}
-                                        <button type="button" class="btn-close ms-2"
-                                            aria-label="Eliminar filtro" (click)="removeFilter(i)">
-                                        </button>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-12 col-xl-7">
-                    <div class="card adminuiux-card h-100">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
-                                <h5 class="fw-semibold mb-0">
-                                    <i class="bi bi-layout-three-columns me-2"></i>3. Columnas
-                                </h5>
-                                <button type="button" class="btn btn-sm btn-outline-secondary"
-                                    (click)="selectAllColumns()">
-                                    Seleccionar todas
-                                </button>
-                            </div>
-
-                            <p class="small text-secondary">
-                                Elige los campos que deseas incluir en el reporte.
-                            </p>
-
-                            <div class="row g-2">
-                                <div class="col-12 col-sm-6" *ngFor="let column of columns">
-                                    <label class="column-option d-flex align-items-center gap-2 p-2 rounded border">
-                                        <input class="form-check-input mt-0"
-                                            type="checkbox" [(ngModel)]="column.selected">
-                                        <span>{{ column.label }}</span>
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div class="small text-secondary mt-3">
-                                {{ selectedColumns.length }} columnas seleccionadas
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card adminuiux-card mt-3">
-                <div class="card-body">
-                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-                        <div>
-                            <h5 class="fw-semibold mb-1">
-                                <i class="bi bi-table me-2"></i>4. Vista previa
-                            </h5>
-                            <p class="small text-secondary mb-0">
-                                Aquí aparecerán los resultados de la consulta.
-                            </p>
-                        </div>
-                        <span class="badge" [ngClass]="loading ? 'text-bg-warning' : hasExecutedQuery ? 'text-bg-success' : 'text-bg-secondary'">
-                            {{ loading ? "Consultando" : hasExecutedQuery ? "Datos del CRM" : "Esperando consulta" }}
-                        </span>
-                    </div>
-
-                    <div class="table-responsive border rounded">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead>
-                                <tr>
-                                    <th *ngFor="let column of selectedColumns">{{ column.label }}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr *ngFor="let client of clients">
-                                    <td *ngFor="let column of selectedColumns">
-                                        {{ getColumnValue(client, column.key) }}
-                                    </td>
-                                </tr>
-                                <tr *ngIf="!loading && hasExecutedQuery && clients.length === 0">
-                                    <td [attr.colspan]="selectedColumns.length || 1"
-                                        class="text-center py-5 text-secondary">
-                                        <i class="bi bi-search display-6 d-block mb-2"></i>
-                                        <strong>No se encontraron clientes</strong>
-                                        <div class="small mt-1">
-                                            Prueba con otros criterios de búsqueda.
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr *ngIf="!loading && !hasExecutedQuery">
-                                    <td [attr.colspan]="selectedColumns.length || 1"
-                                        class="text-center py-5 text-secondary">
-                                        <i class="bi bi-database display-6 d-block mb-2"></i>
-                                        <strong>Sin resultados para mostrar</strong>
-                                        <div class="small mt-1">
-                                            Prepara una consulta para cargar datos del CRM.
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr *ngIf="loading">
-                                    <td [attr.colspan]="selectedColumns.length || 1"
-                                        class="text-center py-4 text-secondary">
-                                        <span class="spinner-border spinner-border-sm me-2"></span>
-                                        Consultando clientes...
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div class="d-flex flex-wrap gap-2 mt-3">
-                        <button type="button" class="btn btn-theme"
-                            (click)="prepareQuery()" [disabled]="loading">
-                            <i class="bi bi-play-fill me-1"></i> Preparar consulta
-                        </button>
-                        <button type="button" class="btn btn-outline-secondary" (click)="clearFilters()">
-                            <i class="bi bi-eraser me-1"></i> Limpiar filtros
-                        </button>
-                        <button type="button" class="btn btn-outline-success" disabled>
-                            <i class="bi bi-file-earmark-excel me-1"></i> Exportar Excel
-                        </button>
-                        <button type="button" class="btn btn-outline-primary" disabled>
-                            <i class="bi bi-filetype-csv me-1"></i> Exportar CSV
-                        </button>
-                    </div>
-
-                    <div class="alert alert-warning mt-3 mb-0" *ngIf="message">
-                        <i class="bi bi-info-circle me-1"></i>{{ message }}
-                    </div>
-                    <div class="alert alert-danger mt-3 mb-0" *ngIf="errorMessage">
-                        <i class="bi bi-exclamation-triangle me-1"></i>{{ errorMessage }}
-                    </div>
-                </div>
-            </div>
-        </div>
-    `,
+    templateUrl: "./extracciones.component.html",
     styles: [`
         .extraction-page { min-width: 0; }
         .extraction-icon {
@@ -280,156 +43,212 @@ interface ExtractionColumn {
     `],
 })
 export class ExtraccionesComponent {
-    private readonly clientsApi = inject(CrmClientsApiService);
+    private readonly registry = createEntityRegistry({
+        clientsApi: inject(CrmClientsApiService),
+        equipmentApi: inject(CrmEquipmentApiService),
+        quotesApi: inject(CrmQuotesApiService),
+        inventoryApi: inject(InventoryApiService),
+        billingApi: inject(FinanceBillingApiService),
+        suppliersApi: inject(SuppliersApiService),
+        paymentsApi: inject(FinancePaymentsApiService),
+    });
 
-    clients: CrmClientRecord[] = [];
-    loading = false;
-    errorMessage = "";
-    hasExecutedQuery = false;
+    private querySubscription?: Subscription;
+    private readonly selectionByEntity = new Map<string, string[]>();
 
-    entity = "clientes";
+    entities: ExtractionEntityConfig[] = [];
+    activeConfig!: ExtractionEntityConfig;
+    columns: SelectableColumn[] = [];
+    entityId = "clientes";
     queryName = "";
-    filterField = "ciudad";
-    filterOperator = "equals";
+
+    filters: AppliedFilter[] = [];
+    filterFieldKey = "";
+    filterOperator: FilterOperator = "contains";
     filterValue = "";
+
+    rows: DataRow[] = [];
+    rawCount = 0;
+    loading = false;
+    hasExecutedQuery = false;
     message = "";
+    errorMessage = "";
 
-    filters: Array<{ field: string; operator: string; value: string }> = [];
+    constructor() {
+        this.entities = this.registry.list;
+        const initial = this.registry.byId.get("clientes") ?? this.entities.find(Boolean);
 
-    columns: ExtractionColumn[] = [
-        { key: "nombre", label: "Nombre / Razón social", selected: true },
-        { key: "nit", label: "NIT", selected: true },
-        { key: "city", label: "Ciudad", selected: true },
-        { key: "country", label: "País", selected: false },
-        { key: "address", label: "Dirección", selected: false },
-        { key: "correo", label: "Correo electrónico", selected: true },
-        { key: "billingEmail", label: "Correo de facturación", selected: false },
-        { key: "officePhone", label: "Teléfono", selected: false },
-        { key: "estado", label: "Estado", selected: false },
-        { key: "zona", label: "Zona", selected: false },
-        { key: "dv", label: "DV", selected: false },
-        { key: "postalCode", label: "Código postal", selected: false },
-    ];
+        if (!initial) {
+            throw new Error("El registro de extracciones no tiene ninguna entidad disponible.");
+        }
 
-    get selectedColumns(): ExtractionColumn[] {
+        this.activeConfig = initial;
+        this.filterFieldKey = initial.filterFields[0]?.key ?? "";
+        this.columns = this.buildColumns(initial, null);
+    }
+
+    get selectedColumns(): SelectableColumn[] {
         return this.columns.filter(column => column.selected);
     }
 
-    onEntityChange(): void {
-        this.filters = [];
-        this.clients = [];
-        this.hasExecutedQuery = false;
-        this.errorMessage = "";
-        this.message = this.entity === "clientes"
-            ? "Clientes está disponible para consulta."
-            : "Esta entidad todavía no está conectada al backend.";
+    get canExport(): boolean {
+        return this.hasExecutedQuery && !this.loading && this.rows.length > 0 && this.selectedColumns.length > 0;
+    }
+
+    switchEntity(): void {
+        const next = this.registry.byId.get(this.entityId);
+        if (!next || next === this.activeConfig) {
+            return;
+        }
+
+        this.saveCurrentSelection();
+        this.querySubscription?.unsubscribe();
+
+        this.activeConfig = next;
+        this.columns = this.buildColumns(next, null);
+        this.filterFieldKey = next.filterFields[0]?.key ?? "";
+        this.resetResults(`Ahora estás consultando ${next.label}. Prepara la consulta para cargar datos.`);
     }
 
     addFilter(): void {
         const value = this.filterValue.trim();
-        if (!value) return;
+        if (!value || !this.filterFieldKey) {
+            return;
+        }
 
-        this.filters.push({
-            field: this.filterField,
-            operator: this.filterOperator,
-            value,
-        });
+        this.filters.push({ fieldKey: this.filterFieldKey, operator: this.filterOperator, value });
         this.filterValue = "";
-        this.message = "Filtro agregado a la configuración. Aún no se ejecuta contra la base de datos.";
     }
 
     removeFilter(index: number): void {
         this.filters.splice(index, 1);
     }
 
+    clearFilters(): void {
+        this.filters = [];
+        this.filterValue = "";
+        this.resetResults("Se limpiaron los filtros y los resultados de la consulta anterior.");
+    }
+
     selectAllColumns(): void {
         this.columns.forEach(column => column.selected = true);
     }
 
-    clearFilters(): void {
-        this.filters = [];
-        this.filterValue = "";
-        this.clients = [];
-        this.hasExecutedQuery = false;
-        this.errorMessage = "";
-        this.message = "Se limpiaron los filtros y resultados de esta consulta.";
+    clearColumnSelection(): void {
+        this.columns.forEach(column => column.selected = false);
     }
 
-    getColumnValue(client: CrmClientRecord, key: string): string | number {
-        const value = (client as unknown as Record<string, unknown>)[key];
-        if (value === null || value === undefined || value === "") {
-            return "—";
-        }
-        if (typeof value === "boolean") {
-            return value ? "Sí" : "No";
-        }
-        return typeof value === "string" || typeof value === "number"
-            ? value
-            : "—";
-    }
-
-    prepareQuery(): void {
+    runQuery(): void {
         if (!this.selectedColumns.length) {
-            this.message = "Selecciona al menos una columna.";
+            this.message = "Selecciona al menos una columna antes de preparar la consulta.";
             return;
         }
 
-        if (this.entity !== "clientes") {
-            this.message = "Esta entidad todavía no está conectada. No se ejecutó ninguna consulta.";
-            return;
-        }
-
-        const searchFilters = this.filters.filter(filter => filter.field === "cliente");
-        const statusFilters = this.filters.filter(filter => filter.field === "estado");
-        const unsupportedFilters = this.filters.filter(
-            filter => filter.field !== "cliente" && filter.field !== "estado"
-        );
-
-        if (unsupportedFilters.length) {
-            this.message = "El backend actual no admite filtros por ciudad o fecha en el listado de clientes. Retíralos para ejecutar la consulta.";
-            return;
-        }
-
-        if (statusFilters.some(filter =>
-            filter.operator !== "equals" ||
-            !["activo", "inactivo"].includes(filter.value.trim().toLowerCase())
-        )) {
-            this.message = "Para filtrar por estado utiliza 'Es igual a' y escribe Activo o Inactivo.";
-            return;
-        }
-
-        const status = statusFilters.length
-            ? (statusFilters[statusFilters.length - 1].value.trim().toLowerCase() === "activo"
-                ? "Activo" as const
-                : "Inactivo" as const)
-            : undefined;
-
-        const search = searchFilters.map(filter => filter.value.trim()).filter(Boolean).join(" ");
-
+        const label = this.activeConfig.label;
         this.loading = true;
         this.errorMessage = "";
         this.message = "";
         this.hasExecutedQuery = false;
-        this.clients = [];
+        this.rows = [];
+        this.rawCount = 0;
 
-        this.clientsApi.listClients({
-            search: search || undefined,
-            status,
-            limit: 500,
-        }).subscribe({
+        this.querySubscription?.unsubscribe();
+        this.querySubscription = this.activeConfig.load().subscribe({
             next: (items) => {
-                this.clients = items;
+                const safeRows = Array.isArray(items) ? items : [];
+                this.rawCount = safeRows.length;
+                this.rows = applyFilters(safeRows, this.filters);
                 this.hasExecutedQuery = true;
-                this.message = `${items.length} clientes recibidos del CRM.`;
+                this.message = `${this.rows.length} de ${safeRows.length} registros cumplen la consulta.`;
             },
             error: (error: unknown) => {
-                this.errorMessage = error instanceof Error
-                    ? error.message
-                    : "No fue posible consultar los clientes.";
+                const detail = error instanceof Error && error.message ? ` (${error.message})` : "";
+                this.errorMessage = `No se pudieron cargar los datos de ${label}${detail}. Revisa tu conexión e inténtalo de nuevo.`;
             },
             complete: () => {
                 this.loading = false;
             },
         });
+    }
+
+    exportCsv(): void {
+        if (!this.canExport) {
+            return;
+        }
+
+        try {
+            const fileName = buildExportFileName(this.queryName, this.activeConfig.id, "csv");
+            downloadCsv(this.rows, this.selectedColumns, fileName);
+            this.message = `Archivo ${fileName} generado con ${this.rows.length} registros.`;
+        } catch (error: unknown) {
+            this.errorMessage = error instanceof Error && error.message
+                ? `No se pudo generar el CSV: ${error.message}`
+                : "No se pudo generar el archivo CSV. Inténtalo de nuevo.";
+        }
+    }
+
+    exportXlsx(): void {
+        if (!this.canExport) {
+            return;
+        }
+
+        try {
+            const fileName = buildExportFileName(this.queryName, this.activeConfig.id, "xlsx");
+            downloadXlsx(this.rows, this.selectedColumns, fileName);
+            this.message = `Archivo ${fileName} generado con ${this.rows.length} registros.`;
+        } catch (error: unknown) {
+            this.errorMessage = error instanceof Error && error.message
+                ? `No se pudo generar el Excel: ${error.message}`
+                : "No se pudo generar el archivo Excel. Inténtalo de nuevo.";
+        }
+    }
+
+    displayValue(row: DataRow, column: ExtractionColumnDef): string {
+        const value = row[column.key];
+
+        if (value === null || value === undefined || String(value).trim() === "") {
+            return "—";
+        }
+
+        if (typeof value === "boolean") {
+            return value ? "Sí" : "No";
+        }
+
+        if ((column.type === "money" || column.type === "number") && typeof value === "number") {
+            return moneyFormatter.format(value);
+        }
+
+        return String(value);
+    }
+
+    fieldLabel(key: string): string {
+        return this.activeConfig.filterFields.find(field => field.key === key)?.label ?? key;
+    }
+
+    operatorLabel(operator: FilterOperator): string {
+        return describeOperator(operator);
+    }
+
+    private buildColumns(config: ExtractionEntityConfig, savedKeys: string[] | null): SelectableColumn[] {
+        const preferred = savedKeys ?? config.defaultSelectedKeys;
+
+        return config.columns.map(column => ({ ...column, selected: preferred.includes(column.key) }));
+    }
+
+    private saveCurrentSelection(): void {
+        this.selectionByEntity.set(
+            this.activeConfig.id,
+            this.selectedColumns.map(column => column.key),
+        );
+    }
+
+    private resetResults(message: string): void {
+        this.querySubscription?.unsubscribe();
+        this.rows = [];
+        this.rawCount = 0;
+        this.loading = false;
+        this.hasExecutedQuery = false;
+        this.errorMessage = "";
+        this.message = message;
     }
 }

@@ -1,0 +1,228 @@
+<div class="container-fluid py-3 extraction-page">
+    <nav aria-label="breadcrumb" class="breadcrumb-theme rounded mb-3">
+        <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item">
+                <a routerLink="/app/main-menu">
+                    <i class="bi bi-house-door me-1"></i> Menú principal
+                </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">Extracciones</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="extraction-icon"><i class="bi bi-database-gear"></i></span>
+                <h3 class="mb-0 fw-bold">Centro de extracciones</h3>
+            </div>
+            <p class="text-secondary mb-0">
+                Construye consultas, selecciona campos y exporta tus reportes en CSV o Excel.
+            </p>
+        </div>
+        <a routerLink="/app/main-menu" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Volver al menú
+        </a>
+    </div>
+
+    <div class="alert alert-info d-flex gap-2 align-items-start">
+        <i class="bi bi-plug-fill mt-1"></i>
+        <div>
+            <strong>{{ activeConfig.label }}</strong> — {{ activeConfig.description }}
+        </div>
+    </div>
+
+    <div class="card adminuiux-card mb-3">
+        <div class="card-body">
+            <h5 class="fw-semibold mb-3">
+                <i class="bi bi-grid me-2"></i>1. Seleccionar información
+            </h5>
+
+            <div class="row g-3">
+                <div class="col-12 col-md-6 col-xl-4">
+                    <label for="extractionEntity" class="form-label">Módulo o entidad</label>
+                    <select id="extractionEntity" class="form-select" [(ngModel)]="entityId" (change)="switchEntity()">
+                        <option *ngFor="let entity of entities" [value]="entity.id">{{ entity.label }}</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-6 col-xl-4">
+                    <label for="extractionName" class="form-label">Nombre de la consulta</label>
+                    <input id="extractionName" class="form-control" [(ngModel)]="queryName"
+                        placeholder="Ej. Clientes activos de Bogotá (se usa en el nombre del archivo)">
+                </div>
+                <div class="col-12 col-md-6 col-xl-4">
+                    <label class="form-label d-inline-block mb-0">Registros</label>
+                    <div class="form-control bg-body-secondary" aria-live="polite">
+                        {{ loading ? "Consultando..." : hasExecutedQuery ? rows.length + " de " + rawCount + " registros" : "Aún no se ejecuta ninguna consulta" }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-12 col-xl-5">
+            <div class="card adminuiux-card h-100">
+                <div class="card-body d-flex flex-column">
+                    <h5 class="fw-semibold mb-3">
+                        <i class="bi bi-funnel me-2"></i>2. Filtros
+                    </h5>
+
+                    <p class="small text-secondary">
+                        Los filtros se aplican sobre los datos cargados y se combinan entre sí (deben cumplirse todos).
+                    </p>
+
+                    <div class="mb-3">
+                        <label for="filterField" class="form-label">Campo</label>
+                        <select id="filterField" class="form-select" [(ngModel)]="filterFieldKey">
+                            <option *ngFor="let field of activeConfig.filterFields" [value]="field.key">{{ field.label }}</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="filterOperator" class="form-label">Condición</label>
+                        <select id="filterOperator" class="form-select" [(ngModel)]="filterOperator">
+                            <option value="equals">Es igual a</option>
+                            <option value="contains">Contiene</option>
+                            <option value="different">Es diferente de</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="filterValue" class="form-label">Valor</label>
+                        <input id="filterValue" class="form-control" [(ngModel)]="filterValue" (keyup.enter)="addFilter()"
+                            placeholder="Escribe el valor del filtro" aria-describedby="filterHelp">
+                        <small id="filterHelp" class="text-secondary">La comparación no distingue mayúsculas de minúsculas.</small>
+                    </div>
+
+                    <button type="button" class="btn btn-outline-primary w-100 mt-1 mb-3"
+                        (click)="addFilter()" [disabled]="!filterValue.trim()">
+                        <i class="bi bi-plus-circle me-1"></i> Agregar filtro
+                    </button>
+
+                    <div class="mt-auto" *ngIf="filters.length">
+                        <div class="small fw-semibold mb-2 d-flex justify-content-between align-items-center">
+                            <span>Filtros agregados ({{ filters.length }})</span>
+                            <button type="button" class="btn btn-link btn-sm p-0" (click)="clearFilters()">Quitar todos</button>
+                        </div>
+                        <ul class="list-inline mb-0">
+                            <li class="list-inline-block me-2 mb-2" *ngFor="let filter of filters; let i = index">
+                                <span class="badge rounded-pill text-bg-light border p-2 d-flex align-items-center gap-1">
+                                    {{ fieldLabel(filter.fieldKey) }} · {{ operatorLabel(filter.operator) }} · {{ filter.value }}
+                                    <button type="button" class="btn-close btn-sm ms-1"
+                                        [attr.aria-label]="'Quitar filtro de ' + fieldLabel(filter.fieldKey)" (click)="removeFilter(i)">
+                                    </button>
+                                </span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-7">
+            <div class="card adminuiux-card h-100">
+                <div class="card-body">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                        <h5 class="fw-semibold mb-0">
+                            <i class="bi bi-layout-three-columns me-2"></i>3. Columnas del reporte
+                        </h5>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" (click)="selectAllColumns()">Seleccionar todas</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" (click)="clearColumnSelection()">Ninguna</button>
+                        </div>
+                    </div>
+
+                    <p class="small text-secondary">
+                        Elige los campos que aparecerán en la vista previa y en el archivo exportado.
+                    </p>
+
+                    <div class="row g-2">
+                        <div class="col-12 col-sm-6" *ngFor="let column of columns">
+                            <label class="column-option d-flex align-items-center gap-2 p-2 rounded border">
+                                <input class="form-check-input mt-0" type="checkbox" [(ngModel)]="column.selected">
+                                <span>{{ column.label }}</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="small text-secondary mt-3">
+                        {{ selectedColumns.length }} de {{ columns.length }} columnas seleccionadas
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card adminuiux-card mt-3">
+        <div class="card-body">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                <div>
+                    <h5 class="fw-semibold mb-1">
+                        <i class="bi bi-table me-2"></i>4. Vista previa y exportación
+                    </h5>
+                    <p class="small text-secondary mb-0" *ngIf="queryName.trim()">
+                        Consulta: <strong>{{ queryName }}</strong> · {{ activeConfig.label }}
+                    </p>
+                </div>
+                <span class="badge" [ngClass]="loading ? 'text-bg-warning' : hasExecutedQuery ? 'text-bg-success' : 'text-bg-secondary'" aria-live="polite">
+                    {{ loading ? "Consultando..." : hasExecutedQuery ? rows.length + " registros" : "Esperando consulta" }}
+                </span>
+            </div>
+
+            <div class="table-responsive border rounded" *ngIf="hasExecutedQuery || loading">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col" *ngFor="let column of selectedColumns">{{ column.label }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngIf="loading">
+                            <td [attr.colspan]="selectedColumns.length || 1" class="text-center py-4 text-secondary">
+                                <span class="spinner-border spinner-border-sm me-2"></span> Consultando datos...
+                            </td>
+                        </tr>
+                        <ng-container *ngIf="!loading">
+                            <tr *ngFor="let row of rows">
+                                <td *ngFor="let column of selectedColumns">{{ displayValue(row, column) }}</td>
+                            </tr>
+                            <tr *ngIf="rows.length === 0">
+                                <td [attr.colspan]="selectedColumns.length || 1" class="text-center py-5 text-secondary">
+                                    <i class="bi bi-search display-6 d-block mb-2"></i>
+                                    <strong>No se encontraron registros</strong>
+                                    <div class="small mt-1">Ajusta o quita filtros y vuelve a preparar la consulta.</div>
+                                </td>
+                            </tr>
+                        </ng-container>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2 mt-3">
+                <button type="button" class="btn btn-theme" (click)="runQuery()" [disabled]="loading || !selectedColumns.length">
+                    <span class="spinner-border spinner-border-sm me-1" *ngIf="loading"></span>
+                    <i class="bi bi-play-fill me-1" *ngIf="!loading"></i> Preparar consulta
+                </button>
+                <button type="button" class="btn btn-outline-secondary" (click)="clearFilters()" [disabled]="loading">
+                    <i class="bi bi-eraser me-1"></i> Limpiar filtros y resultados
+                </button>
+                <div class="ms-auto d-flex gap-2">
+                    <button type="button" class="btn btn-outline-success" (click)="exportXlsx()" [disabled]="!canExport || loading">
+                        <i class="bi bi-file-earmark-excel me-1"></i> Exportar Excel (.xlsx)
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" (click)="exportCsv()" [disabled]="!canExport || loading">
+                        <i class="bi bi-filetype-csv me-1"></i> Exportar CSV
+                    </button>
+                </div>
+            </div>
+
+            <div class="alert alert-warning mt-3 mb-0" *ngIf="message" role="status">
+                <i class="bi bi-info-circle me-1"></i>{{ message }}
+            </div>
+            <div class="alert alert-danger mt-3 mb-0" *ngIf="errorMessage" role="alert">
+                <i class="bi bi-exclamation-triangle me-1"></i>{{ errorMessage }}
+            </div>
+        </div>
+    </div>
+</div>
