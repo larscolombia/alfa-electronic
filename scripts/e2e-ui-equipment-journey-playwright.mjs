@@ -33,17 +33,20 @@ async function login(page) {
 }
 async function verifyReceptionAssignmentRoute(page) {
   await page.goto(`${base}/app/work-equipment-reception`,{waitUntil:"domcontentloaded"});
-  const equipmentLink=page.locator(".equipment-preview .btn").first();
-  await visible(equipmentLink,"La columna Equipos no muestra el enlace del equipo");
-  const equipmentTextStyle=await equipmentLink.evaluate((element) => ({
-    whiteSpace: getComputedStyle(element).whiteSpace,
-    overflowWrap: getComputedStyle(element).overflowWrap,
+  // T24: recepción = subvistas. Historial (por defecto) lista las recepciones en el datatable
+  // con la serie visible en la celda "Código del equipo" y acciones Editar + Asignar técnico.
+  const row=page.locator("tr[data-record-id]").filter({hasText:data.serie}).first();
+  await visible(row,"La fila del equipo recién recibido no aparece en el Historial de recepción");
+  const codeCell=row.locator("td").nth(0);
+  const cellStyle=await codeCell.evaluate((cell) => ({
+    whiteSpace: getComputedStyle(cell).whiteSpace,
+    overflowWrap: getComputedStyle(cell).overflowWrap,
   }));
-  if(equipmentTextStyle.whiteSpace !== "normal" || !["anywhere","break-word"].includes(equipmentTextStyle.overflowWrap)) {
-    throw new Error(`La columna Equipos aún no permite saltos de línea: ${JSON.stringify(equipmentTextStyle)}`);
+  if(!(cellStyle.whiteSpace === "normal" && ["anywhere","break-word"].includes(cellStyle.overflowWrap))) {
+    throw new Error(`La celda Código/serie no permite saltos de línea: ${JSON.stringify(cellStyle)}`);
   }
-  const assign=page.getByRole("button",{name:/Asignar técnico/i}).first();
-  await visible(assign,"La bandeja de recepción no expone la acción Asignar técnico");
+  const assign=row.getByRole("button",{name:/Asignar técnico/i});
+  await visible(assign,"El Historial de recepción no expone la acción Asignar técnico");
   await click(page,assign,"Ir a carga laboral para asignar técnico");
   await page.waitForURL(/\/app\/work-workload/,{timeout:30000});
   if(await page.locator(".modal-content",{hasText:/Asignar técnico/i}).count()) throw new Error("Asignar técnico abrió el modal retirado en vez de dirigir a Carga laboral");

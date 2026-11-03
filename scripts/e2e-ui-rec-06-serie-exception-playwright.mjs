@@ -11,8 +11,8 @@ const wait = page => page.waitForTimeout(500);
 // se RETIRÓ de la UI por decisión del usuario. Esta prueba ahora cubre:
 //   1. celda ACCESORIOS RECIBIDOS CON EL EQUIPO (add/edit/remove, botón y Enter),
 //   2. sección "Elementos prestados para prueba" operativa,
-//   3. VERIFICACIÓN DE RETIRO: ya no existe el checkbox de etiqueta ni la caja "Motivo de excepción",
-//      y el paso Equipos SÍ avanza sin motivo (antes se bloqueaba),
+//   3. T12: el ÚNICO checkbox "equipo con etiqueta roja, ilegible o sin etiqueta" existe junto a Serie,
+//      activa/desactiva (ligado a identifierLabelIssue) y NO trae sección ni input de motivo,
 //   4. override industrial por costo, evidencia obligatoria FRENTE/ATRÁS/PLACA y guardado completo.
 const result = {
   case: "REC-06",
@@ -28,9 +28,9 @@ const result = {
   reExpandedAfterAdd: false,
   finalCollapsedEmpty: false,
   borrowedAddRemoveWorks: false,
-  labelIssueCheckRemoved: false,
-  exceptionPromptRemoved: false,
-  reasonInputRemoved: false,
+  labelIssueCheckSinglePresent: false,
+  labelIssueToggleWorks: true,
+  exceptionSectionStillAbsent: false,
   advancedToQuestions: false,
   serialPlateEvidenceStillRequired: true,
   saved: false,
@@ -150,17 +150,25 @@ try {
     !(await modal.getByText("¿El cliente prestó algo para la prueba?").first().isVisible());
   if (!result.finalCollapsedEmpty) throw new Error(`Al final la celda no quedo vacia/colapsada`);
 
-  // VERIFICACIÓN DE RETIRO (2026-11-01): el checkbox de etiqueta y la caja "Motivo de excepción"
-  // ya no deben existir en NINGÚN paso del modal.
+  // T12 (2026-11-02): el paso Equipos conserva ÚNICO un checkbox de etiqueta junto al campo Serie,
+  // sin sección propia ni input de motivo. Se valida: existe exactamente una vez (un solo item
+  // en esta recepción), se activa y desactiva, y la caja "Motivo de excepción" sigue inexistente.
   const equipmentStepText = await modal.innerText();
-  result.labelIssueCheckRemoved =
-    (await modal.getByLabel(/Equipo con Etiqueta rota, ilegible o sin etiqueta/i).count()) === 0 &&
-    (await modal.getByTestId("equipment-label-issue-toggle").count()) === 0;
-  if (!result.labelIssueCheckRemoved) throw new Error(`El checkbox de etiqueta aun existe en el paso Equipos`);
+  const labelCheck = modal.getByTestId("equipment-modal-label-issue");
+  result.labelIssueCheckSinglePresent =
+    (await labelCheck.count()) === 1 &&
+    (await modal.locator("label", { hasText: /equipo con etiqueta roja, ilegible o sin etiqueta/i }).count()) >= 1;
+  if (!result.labelIssueCheckSinglePresent) throw new Error(`El checkbox unico de etiqueta falta o esta duplicado en el paso Equipos: count=${await labelCheck.count()}`);
 
-  result.exceptionPromptRemoved = !/Motivo de excepción/i.test(equipmentStepText);
-  result.reasonInputRemoved = (await modal.getByTestId("serie-exception-reason").count()) === 0;
-  if (!result.exceptionPromptRemoved || !result.reasonInputRemoved) throw new Error(`La caja "Motivo de excepción" aun existe en el paso Equipos`);
+  await labelCheck.check(); await wait(page);
+  result.labelIssueToggleWorks = (await labelCheck.isChecked()) === true;
+  await labelCheck.uncheck(); await wait(page);
+  if (!result.labelIssueToggleWorks || (await labelCheck.isChecked())) throw new Error(`El checkbox de etiqueta no activa/desactiva correctamente`);
+
+  result.exceptionSectionStillAbsent =
+    !/Motivo de excepción/i.test(equipmentStepText) &&
+    (await modal.getByTestId("serie-exception-reason").count()) === 0;
+  if (!result.exceptionSectionStillAbsent) throw new Error(`La caja "Motivo de excepción" reaparecio en el paso Equipos`);
 
   // El gate de motivo desapareció y el paso "Preguntas" se eliminó: Siguiente debe avanzar directo a Evidencia.
   await modal.getByTestId("equipment-modal-next").click(); await wait(page);

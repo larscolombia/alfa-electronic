@@ -63,3 +63,6 @@ backend/ema-backend
 "sed\" && "
 "tings\""
 "uccessful\" && "
+
+# Playwright E2E artifacts (scripts)
+/scripts/playwright-artifacts/

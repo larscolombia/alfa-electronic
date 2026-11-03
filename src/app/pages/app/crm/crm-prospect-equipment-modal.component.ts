@@ -557,12 +557,20 @@ type SoftwareBackupInfo = {
                                                     [(ngModel)]="item.serie"
                                                     [ngModelOptions]="{ standalone: true }"
                                                     placeholder="Serie o referencia visible" />
-                                                <!-- 2026-11-01 — Se eliminaron la caja "Warnings operativos de ingreso" y el flujo completo
-                                                     de "Motivo de excepción" (check de etiqueta + input de motivo + gates de frontend).
-                                                     El checkbox se retiró porque obligaba a un motivo que ya no puede escribirse:
-                                                     dejarlo huérfano dejaba registros guardados sin poder finalizar en backend.
-                                                     Los campos identifierLabelIssue/serieExceptionReason siguen existiendo en el modelo
-                                                     y la BD para datos históricos; la validación REC-06 de backend permanece como defensa API. -->
+                                                <!-- 2026-11-02 — T12 (petición del usuario): se conservó ÚNICO este check, sin sección
+                                                     propia y sin input de motivo. Se ligó al campo identifierLabelIssue que ya existe en el
+                                                     modelo y persiste a BD; la caja "Motivo de excepción" permanece retirada (serieExceptionReason
+                                                     sigue disponible para datos históricos). Suite de guardia: e2e-ui-rec-06. -->
+                                                <div class="form-check mt-2">
+                                                    <input
+                                                        class="form-check-input"
+                                                        type="checkbox"
+                                                        [id]="'label-issue-' + i"
+                                                        [(ngModel)]="item.identifierLabelIssue"
+                                                        [ngModelOptions]="{ standalone: true }"
+                                                        data-testid="equipment-modal-label-issue" />
+                                                    <label class="form-check-label small" [for]="'label-issue-' + i">Equipo con etiqueta roja, ilegible o sin etiqueta</label>
+                                                </div>
                                             </div>
                                             <div class="col-12 col-lg-3">
                                                 <label class="form-label">Remisión del cliente / guía</label>
@@ -2011,6 +2019,11 @@ export class CrmProspectEquipmentModalComponent implements AfterViewInit, OnChan
         this.signatureChangesSub = this.sigCanvases?.changes.subscribe(() => {
             this.syncVisibleSignatures();
         });
+        // Estado inicial: si el modal abrió DIRECTAMENTE en Cierre (borrador restaurado
+        // con currentStepIndex guardado), los canvases ya están en DOM y QueryList.changes
+        // NO emite la población inicial → sin esta llamada explícita, los listeners de
+        // Pointer Events nunca se registran y "le hago clic y no se dibuja la firma".
+        this.syncVisibleSignatures();
     }
 
     private initSignatureCanvas(canvas: HTMLCanvasElement): void {
