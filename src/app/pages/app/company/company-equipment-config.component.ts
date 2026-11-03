@@ -61,12 +61,7 @@ interface LocationDraft {
     imports: [CommonModule, FormsModule, RouterLink],
     template: `
         <div class="container-fluid py-3">
-            <div class="row gx-3 gx-lg-4 align-items-center page-title">
-                <div class="col col-sm mb-3 mb-sm-0">
-                    <h5 class="mb-0">Config. Equipos</h5>
-                    <p class="text-secondary small mb-0">Administra el catálogo de familias y modelos de equipos industriales para usarlo en CRM y cotizaciones.</p>
-                </div>
-            </div>
+            
 
             <nav aria-label="breadcrumb" class="breadcrumb-theme mt-3 rounded">
                 <ol class="breadcrumb mb-0">

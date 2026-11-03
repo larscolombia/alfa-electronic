@@ -59,6 +59,81 @@ import { AuthService } from "../../../services/auth.service";
                     </div>
                 }
 
+                @if (isWorkEquipmentReceptionPage) {
+                    <div class="pika-page-heading" style="display:flex; flex-direction:column; justify-content:center; gap:0; min-width:0; margin-left:0.5rem;">
+                        <h1 style="font-size:1rem; font-weight:600; line-height:1.25; margin:0;">Trabajo - Recepción de equipos</h1>
+                        <p class="text-secondary" style="font-size:0.75rem; line-height:1.25; margin:0;">Recepción y seguimiento operativo de equipos con el mismo flujo de CRM.</p>
+                    </div>
+                }
+
+                @if (isCompanyMenuPage) {
+                    <div class="pika-page-heading" style="display:flex; flex-direction:column; justify-content:center; gap:0; min-width:0; margin-left:0.5rem;">
+                        <h1 style="font-size:1rem; font-weight:600; line-height:1.25; margin:0;">Configuración</h1>
+                        <p class="text-secondary" style="font-size:0.75rem; line-height:1.25; margin:0;">Configuracion interna</p>
+                    </div>
+                }
+                @if (isCompanyCommercialConfigPage) {
+                    <div class="pika-page-heading" style="display:flex; flex-direction:column; justify-content:center; gap:0; min-width:0; margin-left:0.5rem;">
+                        <h1 style="font-size:1rem; font-weight:600; line-height:1.25; margin:0;">Config. Comercial</h1>
+                        <p class="text-secondary" style="font-size:0.75rem; line-height:1.25; margin:0;">Define reglas de comisiones comerciales por canal, línea y rango de venta.</p>
+                    </div>
+                }
+                @if (isCompanyEquipmentConfigPage) {
+                    <div class="pika-page-heading" style="display:flex; flex-direction:column; justify-content:center; gap:0; min-width:0; margin-left:0.5rem;">
+                        <h1 style="font-size:1rem; font-weight:600; line-height:1.25; margin:0;">Config. Equipos</h1>
+                        <p class="text-secondary" style="font-size:0.75rem; line-height:1.25; margin:0;">Administra el catálogo de familias y modelos de equipos industriales para usarlo en CRM y cotizaciones.</p>
+                    </div>
+                }
+
+                @if (isCompanyProjectsConfigPage) {
+                    <div class="pika-page-heading" style="display:flex; flex-direction:column; justify-content:center; gap:0; min-width:0; margin-left:0.5rem;">
+                        <h1 style="font-size:1rem; font-weight:600; line-height:1.25; margin:0;">Config. Proyectos</h1>
+                        <p class="text-secondary" style="font-size:0.75rem; line-height:1.25; margin:0;">Crea, edita y ordena las columnas del tablero de proyectos.</p>
+                    </div>
+                }
+
+                @if (isInboxPage) {
+                    <div class="pika-page-heading" style="display:flex; flex-direction:column; justify-content:center; gap:0; min-width:0; margin-left:0.5rem;">
+                        <h1 style="font-size:1rem; font-weight:600; line-height:1.25; margin:0;">Email Inbox</h1>
+                        <p class="text-secondary" style="font-size:0.75rem; line-height:1.25; margin:0;">Stay up to date with communication</p>
+                    </div>
+                }
+
+                @if (isExplorerPage) {
+                    <div class="pika-page-heading" style="display:flex; flex-direction:column; justify-content:center; gap:0; min-width:0; margin-left:0.5rem;">
+                        <h1 style="font-size:1rem; font-weight:600; line-height:1.25; margin:0;">File Explorer</h1>
+                        <p class="text-secondary" style="font-size:0.75rem; line-height:1.25; margin:0;">Manage Space with Files Management</p>
+                    </div>
+                }
+
+                @if (isCalendarPage) {
+                    <div class="pika-page-heading" style="display:flex; flex-direction:column; justify-content:center; gap:0; min-width:0; margin-left:0.5rem;">
+                        <h1 style="font-size:1rem; font-weight:600; line-height:1.25; margin:0;">Calendario</h1>
+                        <p class="text-secondary" style="font-size:0.75rem; line-height:1.25; margin:0;">Agenda y gestiona citas</p>
+                    </div>
+                }
+
+                @if (isProfessionalProfilePage) {
+                    <div class="pika-page-heading" style="display:flex; flex-direction:column; justify-content:center; gap:0; min-width:0; margin-left:0.5rem;">
+                        <h1 style="font-size:1rem; font-weight:600; line-height:1.25; margin:0;">Perfil profesional del empleado</h1>
+                        <p class="text-secondary" style="font-size:0.75rem; line-height:1.25; margin:0;">Vista corporativa con resumen ejecutivo y actualizacion integral del colaborador</p>
+                    </div>
+                }
+
+                @if (isAdvancedSecurityIpRestrictionsPage) {
+                    <div class="pika-page-heading" style="display:flex; flex-direction:column; justify-content:center; gap:0; min-width:0; margin-left:0.5rem;">
+                        <h1 style="font-size:1rem; font-weight:600; line-height:1.25; margin:0;">Restricción por IP</h1>
+                        <p class="text-secondary" style="font-size:0.75rem; line-height:1.25; margin:0;">Configura qué usuarios pueden ingresar solo desde IPs corporativas y quiénes pueden ingresar desde cualquier ubicación.</p>
+                    </div>
+                }
+
+                @if (isCompanyFollowupsConfigPage) {
+                    <div class="pika-page-heading" style="display:flex; flex-direction:column; justify-content:center; gap:0; min-width:0; margin-left:0.5rem;">
+                        <h1 style="font-size:1rem; font-weight:600; line-height:1.25; margin:0;">Config. Seguimientos</h1>
+                        <p class="text-secondary" style="font-size:0.75rem; line-height:1.25; margin:0;">Define reglas de seguimiento automatico para leads que no responden.</p>
+                    </div>
+                }
+
                 @if (isInventoryStockPage) {
     <div class="pika-page-heading" style="display:flex; flex-direction:column; justify-content:center; gap:0; min-width:0; margin-left:0.5rem;">
         <h1 style="font-size:1rem; font-weight:600; line-height:1.25; margin:0;">Inventario - Stock y fichas</h1>
@@ -713,7 +788,7 @@ export class MainHeaderComponent {
             }
 
             this.currentAppUrl = nextUrl;
-            this.changeDetector.markForCheck();
+            this.changeDetector.markForCheck()
         });
     }
 
@@ -722,12 +797,60 @@ export class MainHeaderComponent {
         return path.startsWith("/app/") && !path.startsWith("/app/main-menu");
     }
 
+    get isCompanyMenuPage(): boolean {
+        return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/main-menu/compania";
+    }
+
+    get isAdvancedSecurityIpRestrictionsPage(): boolean {
+        return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/advanced-security-ip-restrictions";
+    }
+
+
+    get isProfessionalProfilePage(): boolean {
+        return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/profile-professional";
+    }
+
+
+    get isCalendarPage(): boolean {
+        return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/calendar";
+    }
+
+
+    get isExplorerPage(): boolean {
+        return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/explorer";
+    }
+
+
+    get isInboxPage(): boolean {
+        return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/inbox";
+    }
+
+    get isCompanyCommercialConfigPage(): boolean {
+        return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/company-commercial-config";
+    }
+
+    get isCompanyEquipmentConfigPage(): boolean {
+        return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/company-equipment-config";
+    }
+
+    get isCompanyProjectsConfigPage(): boolean {
+        return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/company-projects-config";
+    }
+
+    get isCompanyFollowupsConfigPage(): boolean {
+        return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/company-followups-config";
+    }
+
     get isQuotesPage(): boolean {
         return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/crm-cotizaciones";
     }
 
     get isClientsPage(): boolean {
         return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/crm-clientes";
+    }
+
+    get isWorkEquipmentReceptionPage(): boolean {
+        return this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "") === "/app/work-equipment-reception";
     }
 
     get isRemissionsPage(): boolean {

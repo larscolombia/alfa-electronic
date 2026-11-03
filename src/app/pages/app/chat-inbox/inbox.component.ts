@@ -14,10 +14,7 @@ Dropzone.autoDiscover = false;
         <!-- page title -->
         <div class="container-fluid py-3">
             <div class="row align-items-center page-title">
-                <div class="col col-sm mb-3 mb-sm-0 order-1">
-                    <h5 class="mb-0">Email Inbox</h5>
-                    <p class="text-secondary small">Stay up to date with communication</p>
-                </div>
+                
                 <div class="col-12 col-sm-auto order-3 order-sm-2">
                     <div class="input-group input-group-md width-250">
                         <input type="text" class="form-control bg-transparent" placeholder="Search email, conract..." />

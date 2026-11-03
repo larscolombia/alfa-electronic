@@ -87,7 +87,7 @@ export class InternalLayoutComponent implements OnInit, AfterViewInit, OnDestroy
 
     private updateRouteScopedLayoutState(url: string) {
         this.hideMainFooter = url.includes("/app/profile-professional");
-        const noHeader = this.HEADER_HIDDEN_ROUTES.some((r) => url.startsWith(r));
+        const noHeader = this.HEADER_HIDDEN_ROUTES.some((r) => r === "/app/main-menu" ? url === r : url.startsWith(r));
         this.hideHeader = noHeader;
         if (noHeader) {
             // The header is removed via *ngIf so its padding-top must be cleared immediately;

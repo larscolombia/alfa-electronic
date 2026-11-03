@@ -51,10 +51,6 @@ interface AccessSimulationDraft {
     template: `
         <div class="container-fluid py-3">
             <div class="row gx-3 gx-lg-4 align-items-center page-title">
-                <div class="col col-sm mb-3 mb-sm-0">
-                    <h5 class="mb-0">Restriccion por IP</h5>
-                    <p class="text-secondary small mb-0">Configura que usuarios pueden ingresar solo desde IPs corporativas y quienes pueden ingresar desde cualquier ubicacion.</p>
-                </div>
                 <div class="col-12 col-sm-auto text-sm-end d-flex flex-wrap justify-content-sm-end gap-2">
                     <span class="badge rounded-pill text-bg-success">Accesos globales</span>
                     <span class="badge rounded-pill text-bg-primary">Accesos restringidos</span>

@@ -52,10 +52,7 @@ const COMMISSIONS_STORAGE_KEY = "adminux.company.commercial.commissions.v1";
     template: `
         <div class="container-fluid py-3">
             <div class="row gx-3 gx-lg-4 align-items-center page-title">
-                <div class="col col-sm mb-3 mb-sm-0">
-                    <h5 class="mb-0">Config. Comercial</h5>
-                    <p class="text-secondary small mb-0">Define reglas de comisiones comerciales por canal, linea y rango de venta.</p>
-                </div>
+
                 <div class="col-12 col-sm-auto text-sm-end">
                     @if (viewMode === "list") {
                         <button class="btn btn-theme" type="button" (click)="openCreateForm()"><i class="bi bi-plus-lg me-2"></i>Nueva regla</button>
