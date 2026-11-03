@@ -372,16 +372,18 @@ export class WorkTeamsComponent implements AfterViewInit, OnDestroy {
     }
 
     // ── Celdas del Historial (4 columnas fijas pedidas por el cliente) ───────
+    /** Código interno CO-YYMM-NNNN primero (mismo orden que detalle de prospecto,
+        remisiones y kanban: equipmentCode > receivedIdentifier/serie). */
     equipmentCode(record: ProspectEquipmentRecord): string {
         const codes = record.items
-            .map((item) => String(item.receivedIdentifier || item.serie || "").trim())
+            .map((item) => String(item.equipmentCode ?? "").trim() || String(item.receivedIdentifier || item.serie || "").trim())
             .filter(Boolean);
 
         if (codes.length > 0) {
             return Array.from(new Set(codes)).join(", ");
         }
 
-        // Sin serie/identificador: se usa el código de la recepción como referencia.
+        // Sin código interno ni serie/identificador: se usa el código de la recepción.
         return formatProspectEquipmentReception(record);
     }
 
