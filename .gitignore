@@ -66,3 +66,5 @@ backend/ema-backend
 
 # Playwright E2E artifacts (scripts)
 /scripts/playwright-artifacts/
+
+backend/.env

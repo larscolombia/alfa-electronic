@@ -25,10 +25,7 @@ interface ColumnDraft {
     template: `
         <div class="container-fluid py-3">
             <div class="row gx-3 gx-lg-4 align-items-center page-title">
-                <div class="col col-sm mb-3 mb-sm-0">
-                    <h5 class="mb-0">Config. Proyectos</h5>
-                    <p class="text-secondary small mb-0">Crea, edita y ordena las columnas del tablero de proyectos.</p>
-                </div>
+
                 <div class="col-12 col-sm-auto text-sm-end">
                     @if (viewMode === "list") {
                         <div class="d-flex flex-wrap justify-content-sm-end gap-2">

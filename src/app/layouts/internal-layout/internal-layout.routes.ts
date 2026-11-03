@@ -472,6 +472,10 @@ export const INTERNAL_ROUTES: Routes = [
                 loadComponent: () => import("../../pages/app/remissions/remissions.component").then((m) => m.RemissionsComponent),
             },
             {
+                path: "extracciones",
+                loadComponent: () => import("../../pages/app/extracciones/extracciones.component").then((m) => m.ExtraccionesComponent),
+            },
+            {
                 path: "documentation",
                 loadComponent: () => import("../../pages/app/documentation/documentation.component").then((m) => m.DocumentationComponent),
             },

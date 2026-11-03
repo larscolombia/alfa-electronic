@@ -92,10 +92,6 @@ function blankEmployeeProfile() {
     template: `
         <div class="container-fluid py-3">
             <div class="row gx-3 gx-lg-4 align-items-center page-title">
-                <div class="col col-sm mb-3 mb-sm-0">
-                    <h5 class="mb-0">Perfil profesional del empleado</h5>
-                    <p class="text-secondary small mb-0">Vista corporativa con resumen ejecutivo y actualizacion integral del colaborador</p>
-                </div>
                 <div class="col-12 col-sm-auto text-sm-end">
                     <button class="btn btn-outline-secondary me-2" type="button">Cancelar</button>
                     @if (loadedHrEmployeeId) {
