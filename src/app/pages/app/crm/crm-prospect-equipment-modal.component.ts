@@ -1125,7 +1125,10 @@ type SoftwareBackupInfo = {
                     <div class="modal-footer d-flex justify-content-between gap-2 flex-wrap">
                         <button type="button" class="btn btn-link" data-testid="equipment-modal-cancel" (click)="close()">Cancelar</button>
                         <div class="d-flex gap-2 flex-wrap">
-                            <button type="button" class="btn btn-outline-secondary" *ngIf="!isFirstStep" data-testid="equipment-modal-previous" (click)="previousStep()">Atrás</button>
+                            <span class="small text-secondary align-self-center" *ngIf="isLastStep" data-testid="equipment-modal-autosave-status">
+                                <i class="bi bi-cloud-check me-1" aria-hidden="true"></i>Progreso guardado automáticamente
+                            </span>
+                            <button type="button" class="btn btn-outline-secondary" *ngIf="!isFirstStep && !isLastStep" data-testid="equipment-modal-previous" (click)="previousStep()">Atrás</button>
                             <button type="button" class="btn btn-theme" *ngIf="!isLastStep" data-testid="equipment-modal-next" (click)="nextStep()">
                                 Siguiente <i class="bi bi-arrow-right ms-1"></i>
                             </button>
@@ -1136,12 +1139,6 @@ type SoftwareBackupInfo = {
                                 (click)="openReceptionPrint(initialRecord?.id || '')"
                                 [disabled]="creatingRepairProjects">
                                 <i class="bi bi-printer me-1"></i> Descargar formato
-                            </button>
-                            <button type="button" class="btn btn-outline-secondary" *ngIf="isLastStep" data-testid="equipment-modal-save-draft" (click)="saveDraft()" [disabled]="creatingRepairProjects || savingDraft">
-                                <i class="bi bi-save me-1"></i> {{ savingDraft ? "Guardando..." : "Guardar borrador" }}
-                            </button>
-                            <button type="button" class="btn btn-outline-secondary" *ngIf="isLastStep" (click)="save(true)" [disabled]="creatingRepairProjects">
-                                <i class="bi bi-printer me-1"></i> Guardar + formato
                             </button>
                             <button type="button" class="btn btn-theme" *ngIf="isLastStep" data-testid="equipment-modal-save" (click)="save(false)" [disabled]="creatingRepairProjects">
                                 <i class="bi bi-check2 me-1"></i> {{ creatingRepairProjects ? "Creando proyectos..." : "Guardar asociación" }}
