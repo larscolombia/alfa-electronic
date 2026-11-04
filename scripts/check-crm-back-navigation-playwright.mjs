@@ -29,8 +29,16 @@ function assertUrl(label, actual, expectedRe) {
 // aún no ha enganchado los listeners (pasa en carga directa tras domcontentloaded):
 // reintenta hasta que la URL efectivamente cambie.
 async function clickBackUntil(page, backLocator, expectedRe, label) {
-    for (let attempt = 1; attempt <= 5; attempt++) {
-        await backLocator.click({ timeout: 5000 });
+    for (let attempt = 1; attempt <= 6; attempt++) {
+        try {
+            // En prod la ficha puede estar cargando datos y re-renderizar el DOM
+            // (el boton se detacha); resolver + verificar estabilidad por intento.
+            await backLocator.waitFor({ state: "visible", timeout: 4000 });
+            await backLocator.click({ timeout: 5000 });
+        } catch { // El DOM re-renderizo a mitad del clic: reintenta de cero.
+            await page.waitForTimeout(300);
+            continue;
+        }
         await page.waitForTimeout(400);
         if (expectedRe.test(page.url())) break;
     }
@@ -81,7 +89,8 @@ try {
         const resultLink = page.locator('[data-testid="client-search-results"] a').first();
         await resultLink.waitFor({ state: "visible", timeout: 20000 });
         await resultLink.click();
-        await page.waitForURL(/\/app\/crm-clientes\/\d+/, { timeout: 20000 });
+        // El id puede ser numerico (BD local) o UUID (produccion): aceptar ambos.
+        await page.waitForURL(/\/app\/crm-clientes\/[^/?#]+/, { timeout: 20000 });
 
         // Botón de la ficha (no el del header): regresa al listado por el stack.
         const back = page.locator(".page-title button", { hasText: "Volver" }).first();
