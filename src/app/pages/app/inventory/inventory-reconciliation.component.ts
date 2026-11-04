@@ -1,7 +1,8 @@
 import { CommonModule } from "@angular/common";
-import { Component, OnInit } from "@angular/core";
+import { Component, inject, OnInit } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { RouterLink } from "@angular/router";
+import { AppBackNavigationService } from "../../../services/app-back-navigation.service";
 import { AuditEvent, CountSession, DiscrepancyRecord, InventoryRole, SessionStatus } from "../../../services/inventory-domain.models";
 import { InventoryRbacService } from "../../../services/inventory-rbac.service";
 import { InventoryWorkflowService } from "../../../services/inventory-workflow.service";
@@ -21,7 +22,7 @@ import { InvRoleHintComponent } from "./inv-role-hint.component";
                     
                 </div>
                 <div class="col-12 col-sm-auto text-sm-end">
-                    <a class="btn btn-outline-secondary" routerLink="/app/inventory-dashboard">Volver al panel</a>
+                    <button type="button" (click)="backNav.goBack('/app/inventory-dashboard')" class="btn btn-outline-secondary">Volver al panel</button>
                 </div>
             </div>
 
@@ -227,6 +228,9 @@ import { InvRoleHintComponent } from "./inv-role-hint.component";
     `,
 })
 export class InventoryReconciliationComponent implements OnInit {
+    // Botón "Volver al panel": misma pila de historial compartida por toda la app.
+    readonly backNav = inject(AppBackNavigationService);
+
     sessionDraft = {
         name: "",
         scope: "",

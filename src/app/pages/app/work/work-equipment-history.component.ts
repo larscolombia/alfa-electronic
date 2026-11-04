@@ -1,10 +1,11 @@
 import { CommonModule } from "@angular/common";
-import { ChangeDetectorRef, Component, OnInit } from "@angular/core";
+import { ChangeDetectorRef, Component, inject, OnInit } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { Router, RouterLink } from "@angular/router";
 import { firstValueFrom, of } from "rxjs";
 import { catchError, take, timeout } from "rxjs/operators";
 
+import { AppBackNavigationService } from "../../../services/app-back-navigation.service";
 import { CrmEquipmentApiService, EquipmentInsightResponse } from "../../../services/crm-equipment-api.service";
 import { InventoryApiService } from "../../../services/inventory-api.service";
 import { InventoryState, MovementRecord, PurchaseLine, ReservationRecord } from "../../../services/inventory-domain.models";
@@ -114,7 +115,7 @@ const SIMILARITY_STOPWORDS = new Set([
                     <p class="text-secondary small mb-0">Trazabilidad de intervenciones y repuestos usados por cada ocasión.</p>
                 </div>
                 <div class="col-12 col-sm-auto text-sm-end">
-                    <a class="btn btn-outline-secondary" routerLink="/app/work-projects">Volver a proyectos</a>
+                    <button type="button" class="btn btn-outline-secondary" (click)="backNav.goBack('/app/work-projects')">Volver a proyectos</button>
                 </div>
             </div>
 
@@ -599,6 +600,9 @@ const SIMILARITY_STOPWORDS = new Set([
     ],
 })
 export class WorkEquipmentHistoryComponent implements OnInit {
+    // Botón "Volver": misma pila de historial que el resto de la app.
+    readonly backNav = inject(AppBackNavigationService);
+
     loading = true;
     errorMessage = "";
 

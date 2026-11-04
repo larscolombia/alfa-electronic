@@ -1,7 +1,8 @@
 import { CommonModule } from "@angular/common";
-import { Component, OnDestroy, OnInit } from "@angular/core";
+import { Component, inject, OnDestroy, OnInit } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { RouterLink } from "@angular/router";
+import { AppBackNavigationService } from "../../../services/app-back-navigation.service";
 import { Subscription } from "rxjs";
 import { InventoryRole, ReservationRecord } from "../../../services/inventory-domain.models";
 import { InventoryRbacService } from "../../../services/inventory-rbac.service";
@@ -20,7 +21,7 @@ import { ReservationsTableComponent } from "./reservations-table.component";
         <div class="container-fluid py-3">
             <div class="row gx-3 gx-lg-4 align-items-center page-title">
                 <div class="col-12 col-sm-auto text-sm-end">
-                    <a class="btn btn-outline-secondary" routerLink="/app/inventory-dashboard">Volver al panel</a>
+                    <button type="button" (click)="backNav.goBack('/app/inventory-dashboard')" class="btn btn-outline-secondary">Volver al panel</button>
                 </div>
             </div>
 
@@ -196,6 +197,9 @@ import { ReservationsTableComponent } from "./reservations-table.component";
     `,
 })
 export class InventoryReservationsComponent implements OnInit, OnDestroy {
+    // Botón "Volver al panel": misma pila de historial compartida por toda la app.
+    readonly backNav = inject(AppBackNavigationService);
+
     private readonly subscriptions = new Subscription();
     maxReserveDays = 5;
 

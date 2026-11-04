@@ -1,8 +1,10 @@
 import { CommonModule } from "@angular/common";
-import { Component, OnDestroy } from "@angular/core";
+import { Component, inject, OnDestroy } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { ActivatedRoute, Router, RouterLink } from "@angular/router";
 import { firstValueFrom, take } from "rxjs";
+
+import { AppBackNavigationService } from "../../../services/app-back-navigation.service";
 
 import { FinanceAccount, FinanceAccountsStore } from "./finance-accounts.store";
 import {
@@ -126,7 +128,7 @@ interface InvoiceDraft {
             @if (loadError) {
                 <div class="alert alert-danger border">
                     {{ loadError }}
-                    <a routerLink="/app/finance-facturacion" class="alert-link d-block mt-2">Volver al listado de facturas</a>
+                    <button type="button" class="btn btn-link alert-link d-block mt-2 text-start border-0 px-0 bg-transparent" (click)="backNav.goBack('/app/finance-facturacion')">Volver al listado de facturas</button>
                 </div>
             }
 
@@ -134,7 +136,7 @@ interface InvoiceDraft {
                 <div class="alert alert-warning border">
                     <strong>La factura {{ blockedInvoiceCode }} ya fue emitida (estado: {{ blockedInvoice.status }}).</strong>
                     Una factura emitida no se edita ni se borra: la única reversa es una nota crédito desde el listado.
-                    <a routerLink="/app/finance-facturacion" class="alert-link d-block mt-2">Volver al listado de facturas</a>
+                    <button type="button" class="btn btn-link alert-link d-block mt-2 text-start border-0 px-0 bg-transparent" (click)="backNav.goBack('/app/finance-facturacion')">Volver al listado de facturas</button>
                 </div>
             }
 
@@ -400,6 +402,9 @@ interface InvoiceDraft {
     `,
 })
 export class FinanceInvoiceCreateComponent implements OnDestroy {
+    // Botón "Volver": misma pila de historial que el resto de la app.
+    readonly backNav = inject(AppBackNavigationService);
+
     // Como getter (no como campo) se re-lee cuando ensureLoaded() termina y
     // cuando la edición inyecta entradas históricas; capturado una sola vez
     // quedaría vacío o sin el cliente guardado de la factura.

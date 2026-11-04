@@ -1,7 +1,8 @@
 import { CommonModule } from "@angular/common";
-import { Component, OnDestroy, OnInit } from "@angular/core";
+import { Component, inject, OnDestroy, OnInit } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { RouterLink } from "@angular/router";
+import { AppBackNavigationService } from "../../../services/app-back-navigation.service";
 import { Subscription } from "rxjs";
 import {
     AdjustmentRequest,
@@ -29,7 +30,7 @@ import { ProjectService } from "../../app/projects/services/project.service";
                 <div>
                     
                 </div>
-                <a class="btn btn-sm btn-outline-secondary" routerLink="/app/inventory-dashboard">Volver al panel</a>
+                <button type="button" (click)="backNav.goBack('/app/inventory-dashboard')" class="btn btn-sm btn-outline-secondary">Volver al panel</button>
             </header>
 
             <details class="mb-2" *ngIf="showDemoRole">
@@ -201,6 +202,9 @@ import { ProjectService } from "../../app/projects/services/project.service";
     `],
 })
 export class InventoryMovementsComponent implements OnInit, OnDestroy {
+    // Botón "Volver al panel": misma pila de historial compartida por toda la app.
+    readonly backNav = inject(AppBackNavigationService);
+
     private readonly subscriptions = new Subscription();
     activeTab: "register" | "activity" | "bags" = "register";
     activityView: "history" | "requests" = "history";

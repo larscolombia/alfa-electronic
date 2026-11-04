@@ -9,6 +9,7 @@ import { applyFilters, operatorLabel as describeOperator } from "./filter-engine
 import { buildExportFileName, downloadCsv, downloadXlsx } from "./export-utils";
 import { createEntityRegistry } from "./entity-registry";
 
+import { AppBackNavigationService } from "../../../services/app-back-navigation.service";
 import { CrmClientsApiService } from "../../../services/crm-clients-api.service";
 import { CrmEquipmentApiService } from "../../../services/crm-equipment-api.service";
 import { CrmQuotesApiService } from "../../../services/crm-quotes-api.service";
@@ -43,6 +44,9 @@ const moneyFormatter = new Intl.NumberFormat("es-CO", { maximumFractionDigits: 2
     `],
 })
 export class ExtraccionesComponent {
+    // Botón "Volver al menú": misma pila de historial que el resto de la app.
+    readonly backNav = inject(AppBackNavigationService);
+
     private readonly registry = createEntityRegistry({
         clientsApi: inject(CrmClientsApiService),
         equipmentApi: inject(CrmEquipmentApiService),

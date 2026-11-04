@@ -20,9 +20,9 @@
                 Construye consultas, selecciona campos y exporta tus reportes en CSV o Excel.
             </p>
         </div>
-        <a routerLink="/app/main-menu" class="btn btn-outline-secondary">
+        <button type="button" (click)="backNav.goBack('/app/main-menu')" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left me-1"></i> Volver al menú
-        </a>
+        </button>
     </div>
 
     <div class="alert alert-info d-flex gap-2 align-items-start">

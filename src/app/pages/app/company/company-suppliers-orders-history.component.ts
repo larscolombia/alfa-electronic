@@ -1,7 +1,8 @@
-import { Component, HostListener, OnDestroy, OnInit } from "@angular/core";
+import { Component, HostListener, inject, OnDestroy, OnInit } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { ActivatedRoute, RouterLink } from "@angular/router";
 import { Subscription } from "rxjs";
+import { AppBackNavigationService } from "../../../services/app-back-navigation.service";
 import { SuppliersCatalogService } from "../../../services/suppliers-catalog.service";
 import { SuppliersApiService, SupplierOrder, SupplierOrderItem, SupplierOrderRequest } from "../../../services/suppliers-api.service";
 
@@ -135,7 +136,7 @@ interface OrderTraceRecord {
             <div class="row gx-3 gx-lg-4 align-items-center page-title">
                 <div class="col-12 col-sm-auto text-sm-end">
                     <a class="btn btn-outline-secondary me-2" routerLink="/app/suppliers-dashboard">Dashboard</a>
-                    <a class="btn btn-theme" routerLink="/app/suppliers-crud">Volver al CRUD</a>
+                    <button type="button" class="btn btn-theme" (click)="backNav.goBack('/app/suppliers-crud')">Volver al CRUD</button>
                 </div>
             </div>
 
@@ -504,6 +505,9 @@ interface OrderTraceRecord {
     `,
 })
 export class CompanySuppliersOrdersHistoryComponent implements OnInit, OnDestroy {
+    // Botón "Volver": misma pila de historial que el resto de la app.
+    readonly backNav = inject(AppBackNavigationService);
+
     private routeSub?: Subscription;
     private nextOrderSequence = 9;
     private nextOrderItemSequence = 1;

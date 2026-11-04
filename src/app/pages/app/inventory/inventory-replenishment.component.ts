@@ -1,9 +1,10 @@
 import * as XLSX from "xlsx";
 
 import { CommonModule } from "@angular/common";
-import { ChangeDetectorRef, Component, OnDestroy, OnInit } from "@angular/core";
+import { ChangeDetectorRef, Component, inject, OnDestroy, OnInit } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { RouterLink } from "@angular/router";
+import { AppBackNavigationService } from "../../../services/app-back-navigation.service";
 import { Subscription } from "rxjs";
 import {
     InventoryRole,
@@ -38,7 +39,7 @@ import { consumePurchaseWorkflowHandoff, PurchaseWorkflowHandoff } from "./purch
                     
                 </div>
                 <div class="col-12 col-sm-auto text-sm-end">
-                    <a class="btn btn-outline-secondary" routerLink="/app/inventory-dashboard">Volver al panel</a>
+                    <button type="button" (click)="backNav.goBack('/app/inventory-dashboard')" class="btn btn-outline-secondary">Volver al panel</button>
                 </div>
             </div>
 
@@ -416,6 +417,9 @@ import { consumePurchaseWorkflowHandoff, PurchaseWorkflowHandoff } from "./purch
     `,
 })
 export class InventoryReplenishmentComponent implements OnInit, OnDestroy {
+    // Botón "Volver al panel": misma pila de historial compartida por toda la app.
+    readonly backNav = inject(AppBackNavigationService);
+
     workflowHandoff: PurchaseWorkflowHandoff | null = null;
     sortMode: "antiguedad" | "intentos" | "criticidad" = "antiguedad";
     statusFilter: "" | ReplenishmentStatus = "";

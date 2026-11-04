@@ -2,6 +2,7 @@ import { Component, HostListener, OnInit, Renderer2, Inject, ChangeDetectorRef }
 import { DOCUMENT } from "@angular/common";
 import { NavigationEnd, Router, RouterLink } from "@angular/router";
 import { AuthService } from "../../../services/auth.service";
+import { AppBackNavigationService } from "../../../services/app-back-navigation.service";
 
 @Component({
     selector: "app-main-header",
@@ -761,34 +762,20 @@ export class MainHeaderComponent {
     htmlElement: any | null = null;
     buttonElement: any | null = null;
 
-    private appNavigationHistory: string[] = [];
-    private currentAppUrl = "";
-    private navigatingBack = false;
-
     constructor(
         private renderer: Renderer2,
         @Inject(DOCUMENT) private document: Document,
         private authService: AuthService,
         private router: Router,
-        private changeDetector: ChangeDetectorRef
+        private changeDetector: ChangeDetectorRef,
+        // El historial de navegacion lo lleva el servicio compartido: todos los
+        // botones "Volver" de la app (header, fichas, paneles) usan la misma pila.
+        private backNav: AppBackNavigationService
     ) {
         this.router.events.subscribe(event => {
-            if (!(event instanceof NavigationEnd)) return;
-
-            const nextUrl = event.urlAfterRedirects.split("?")[0].split("#")[0].replace(/\/$/, "");
-
-            if (!nextUrl.startsWith("/app/")) return;
-
-            if (this.currentAppUrl && this.currentAppUrl !== nextUrl) {
-                if (this.navigatingBack) {
-                    this.navigatingBack = false;
-                } else {
-                    this.appNavigationHistory.push(this.currentAppUrl);
-                }
+            if (event instanceof NavigationEnd) {
+                this.changeDetector.markForCheck()
             }
-
-            this.currentAppUrl = nextUrl;
-            this.changeDetector.markForCheck()
         });
     }
 
@@ -976,18 +963,8 @@ export class MainHeaderComponent {
 
     goBack(): void {
         // Prioriza el historial de navegacion interna; sin historial, destino determinista
-        // para que "Volver" nunca quede muerto (history.back() no hace nada en carga directa).
-        const previous = this.appNavigationHistory.pop();
-        if (previous) {
-            this.navigatingBack = true;
-            this.router.navigateByUrl(previous);
-            return;
-        }
-        const path = this.router.url.split("?")[0].split("#")[0].replace(/\/$/, "");
-        const destination = path === "/app/crm-prospectos" || path === "/app/crm-clientes" || path === "/app/crm-cotizaciones"
-            ? "/app/main-menu"
-            : "/app/dashboard";
-        this.router.navigateByUrl(destination);
+        // (la logica vive en AppBackNavigationService, compartida con los botones "Volver" de paginas).
+        this.backNav.goBack();
     }
 
     ngOnInit() {

@@ -8,6 +8,7 @@ import { CrmClientContactsComponent } from "./crm-client-contacts.component";
 import { CrmProspectsApiService, CrmProspectRecord } from "../../../services/crm-prospects-api.service";
 import { CrmFollowupsApiService, CrmProspectFollowup } from "../../../services/crm-followups-api.service";
 import { CrmAttachmentsApiService, ProspectAttachment } from "../../../services/crm-attachments-api.service";
+import { AppBackNavigationService } from "../../../services/app-back-navigation.service";
 
 type ClientDetailTab = "perfil" | "contactos" | "acciones" | "equipos" | "cotizacion" | "archivos" | "notas" | "sucursales" | "trazabilidad";
 type EditableClientField = "nombre" | "correo" | "empresa" | "nit" | "website" | "officePhone" | "country" | "city" | "address" | "zona";
@@ -26,7 +27,7 @@ type EditableClientFieldConfig = {
         <div class="container-fluid py-3">
             <div class="row gx-3 gx-lg-4 align-items-center page-title">
                 <div class="col mb-3 mb-sm-0 d-flex align-items-start gap-2">
-                    <a class="btn btn-outline-secondary" routerLink="/app/crm-clientes"><i class="bi bi-arrow-left me-1"></i>Volver</a>
+                    <button type="button" (click)="backNav.goBack('/app/crm-clientes')" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Volver</button>
                     <div>
                     <h5 class="mb-0">{{ client?.empresa || "Cliente" }}</h5>
                     <p class="text-secondary small mb-0">Ficha comercial del cliente.</p>
@@ -55,7 +56,7 @@ type EditableClientFieldConfig = {
                     <div class="card-body py-5 text-center">
                         <h6 class="mb-2">No encontramos el cliente solicitado.</h6>
                         <p class="text-secondary mb-3">Verifica el enlace o vuelve al listado de clientes.</p>
-                        <a class="btn btn-theme" routerLink="/app/crm-clientes">Volver a clientes</a>
+                        <button type="button" (click)="backNav.goBack('/app/crm-clientes')" class="btn btn-theme">Volver a clientes</button>
                     </div>
                 </div>
             } @else {
@@ -350,6 +351,9 @@ export class CrmClientDetailComponent {
     private readonly crmAttachmentsApi = inject(CrmAttachmentsApiService);
     private readonly cdr = inject(ChangeDetectorRef);
     private routeSub?: Subscription;
+
+    // Botones "Volver": misma pila de historial compartida por toda la app.
+    readonly backNav = inject(AppBackNavigationService);
 
     constructor(private readonly route: ActivatedRoute) {
         this.routeSub = this.route.paramMap.subscribe((params) => {

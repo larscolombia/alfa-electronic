@@ -1,7 +1,8 @@
 import { CommonModule } from "@angular/common";
-import { Component, OnDestroy, OnInit } from "@angular/core";
+import { Component, inject, OnDestroy, OnInit } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { RouterLink } from "@angular/router";
+import { AppBackNavigationService } from "../../../services/app-back-navigation.service";
 import { Subscription } from "rxjs";
 import { DuplicateReferenceCandidate, InventoryRole, ReservationRecord, StockReference } from "../../../services/inventory-domain.models";
 import { InventoryRbacService } from "../../../services/inventory-rbac.service";
@@ -25,7 +26,7 @@ import { StockCatalogTableComponent } from "./stock-catalog-table.component";
 
                 </div>
                 <div class="col-12 col-sm-auto text-sm-end">
-                    <a class="btn btn-outline-secondary" routerLink="/app/inventory-dashboard">Volver al panel</a>
+                    <button type="button" (click)="backNav.goBack('/app/inventory-dashboard')" class="btn btn-outline-secondary">Volver al panel</button>
                 </div>
             </div>
 
@@ -273,6 +274,9 @@ import { StockCatalogTableComponent } from "./stock-catalog-table.component";
     `,
 })
 export class InventoryStockWorkbenchComponent implements OnInit, OnDestroy {
+    // Botón "Volver al panel": misma pila de historial compartida por toda la app.
+    readonly backNav = inject(AppBackNavigationService);
+
     private readonly subscriptions = new Subscription();
     readonly roleOptions: InventoryRole[] = ["tecnico", "responsable", "administrativo", "compras", "auditor"];
 

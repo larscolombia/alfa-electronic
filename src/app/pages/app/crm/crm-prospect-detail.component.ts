@@ -8,6 +8,7 @@ import { ProspectEquipmentEvidencePhoto, ProspectEquipmentRecord, formatProspect
 import { CrmClientRecord, getCrmClients } from "./crm-clients.store";
 import { buildEquipmentMatchCriteria } from "./crm-prospect-equipment-match.logic";
 import { ProspectRecord, ProspectBranchRecord, getProspectById, getProspects, replaceProspects } from "./crm-prospects.store";
+import { AppBackNavigationService } from "../../../services/app-back-navigation.service";
 import { CrmEquipmentApiService } from "../../../services/crm-equipment-api.service";
 import { CrmFollowupsApiService, CrmProspectFollowup, UpsertCrmProspectFollowupRequest } from "../../../services/crm-followups-api.service";
 import { CrmProspectContact, CrmProspectsApiService, CrmUpsertProspectPayload } from "../../../services/crm-prospects-api.service";
@@ -134,7 +135,7 @@ type EditableProfileFieldConfig = {
                     <div class="card-body py-5 text-center">
                         <h6 class="mb-2">No encontramos el prospecto solicitado.</h6>
                         <p class="text-secondary mb-3">Verifica el enlace o vuelve al listado de prospectos.</p>
-                        <a class="btn btn-theme" routerLink="/app/crm-prospectos">Volver a prospectos</a>
+                        <button type="button" (click)="backNav.goBack('/app/crm-prospectos')" class="btn btn-theme">Volver a prospectos</button>
                     </div>
                 </div>
             } @else {
@@ -1023,6 +1024,9 @@ type EditableProfileFieldConfig = {
     `,
 })
 export class CrmProspectDetailComponent {
+    // Botón "Volver a prospectos": misma pila de historial compartida por toda la app.
+    readonly backNav = inject(AppBackNavigationService);
+
     readonly countryOptions = COUNTRY_OPTIONS;
     technicalAssignee = "";
     technicalSla = "";
