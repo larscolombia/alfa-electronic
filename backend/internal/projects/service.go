@@ -39,6 +39,7 @@ var allowedProjectStatuses = map[string]struct{}{
 	"recibido":                  {},
 	"diagnostico":               {},
 	"por-cotizar":               {},
+	"esperando-cliente":         {},
 	"pedir-repuestos":           {},
 	"esperando-proveedor":       {},
 	"reparacion":                {},

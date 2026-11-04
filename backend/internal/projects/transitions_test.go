@@ -28,6 +28,10 @@ func TestCanTransitionRules(t *testing.T) {
 		{"recibido a diagnostico", "recibido", "diagnostico", true},
 		{"diagnostico a recibido", "diagnostico", "recibido", true},
 		{"diagnostico a por-cotizar (cierre de diagnostico)", "diagnostico", "por-cotizar", true},
+		{"por-cotizar a esperando-cliente (cotizacion enviada)", "por-cotizar", "esperando-cliente", true},
+		{"esperando-cliente a pedir-repuestos (cliente aprueba)", "esperando-cliente", "pedir-repuestos", true},
+		{"esperando-cliente a reparacion (repuesto disponible)", "esperando-cliente", "reparacion", true},
+		{"esperando-cliente regresa a por-cotizar (ajuste solicitado)", "esperando-cliente", "por-cotizar", true},
 		{"por-cotizar a pedir-repuestos (OC vinculada)", "por-cotizar", "pedir-repuestos", true},
 		{"pedir-repuestos a esperando-proveedor", "pedir-repuestos", "esperando-proveedor", true},
 		{"esperando-proveedor a reparacion (llego el material)", "esperando-proveedor", "reparacion", true},
@@ -83,6 +87,13 @@ func TestNewTransitionErrorMessageListsLegalTargets(t *testing.T) {
 		if !strings.Contains(message, fragment) {
 			t.Fatalf("mensaje %q no menciona %q", message, fragment)
 		}
+	}
+}
+
+func TestEsperandoClienteIsAcceptedProjectStatus(t *testing.T) {
+	status, ok := normalizeStatus("  ESPERANDO-CLIENTE ")
+	if !ok || status != "esperando-cliente" {
+		t.Fatalf("normalizeStatus esperando-cliente = (%q, %v), se esperaba (esperando-cliente, true)", status, ok)
 	}
 }
 

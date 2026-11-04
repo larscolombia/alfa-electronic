@@ -22,6 +22,7 @@ export type ProspectEquipmentRepairStatus =
     | "recibido"
     | "diagnostico"
     | "por-cotizar"
+    | "esperando-cliente"
     | "pedir-repuestos"
     | "esperando-proveedor"
     | "reparacion"
@@ -314,6 +315,7 @@ const REPAIR_STATUS_LABELS: Record<ProspectEquipmentRepairStatus, string> = {
     recibido: "Recibido",
     diagnostico: "Diagnóstico",
     "por-cotizar": "Por cotizar",
+    "esperando-cliente": "Esperando Cliente",
     "pedir-repuestos": "Pedir componentes",
     "esperando-proveedor": "Esperando proveedor",
     reparacion: "En reparación",
@@ -605,6 +607,8 @@ function normalizeRepairStatus(value: unknown): ProspectEquipmentRepairStatus {
             return "diagnostico";
         case "pedir-repuestos":
             return "pedir-repuestos";
+        case "esperando-cliente":
+            return "esperando-cliente";
         case "esperando-proveedor":
             return "esperando-proveedor";
         case "reparacion":

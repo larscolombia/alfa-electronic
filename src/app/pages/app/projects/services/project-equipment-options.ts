@@ -7,6 +7,7 @@ export const PROJECT_REPAIR_STATUS_OPTIONS: ProjectRepairStatusOption[] = [
   { id: 'recibido', label: 'Recibido' },
   { id: 'diagnostico', label: 'Diagnostico' },
   { id: 'por-cotizar', label: 'Por cotizar' },
+  { id: 'esperando-cliente', label: 'Esperando Cliente' },
   { id: 'pedir-repuestos', label: 'Pedir componentes' },
   { id: 'esperando-proveedor', label: 'Esperando proveedor' },
   { id: 'reparacion', label: 'En reparacion' },

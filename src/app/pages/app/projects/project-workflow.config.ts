@@ -5,6 +5,7 @@ export type ProjectWorkflowStatusId =
   | 'recibido'
   | 'diagnostico'
   | 'por-cotizar'
+  | 'esperando-cliente'
   | 'pedir-repuestos'
   | 'esperando-proveedor'
   | 'reparacion'
@@ -50,6 +51,11 @@ export const PROJECT_WORKFLOW_STATUS_OPTIONS: ProjectWorkflowStatusOption[] = [
     id: 'por-cotizar',
     label: 'Por cotizar',
     description: 'Equipo diagnosticado pendiente de oferta comercial.',
+  },
+  {
+    id: 'esperando-cliente',
+    label: 'Esperando Cliente',
+    description: 'Cotizacion enviada; pendiente de respuesta o aprobacion del cliente.',
   },
   {
     id: 'pedir-repuestos',
@@ -171,10 +177,23 @@ export function buildTechnicalBoardColumns(): BoardColumn[] {
       trackAging: true,
     },
     {
+      id: 'esperando-cliente',
+      name: 'Esperando Cliente',
+      color: '#d97706',
+      order: 4,
+      description: 'Cotizacion enviada; se espera la respuesta o aprobacion del cliente.',
+      equipmentStatusId: 'esperando-cliente',
+      equipmentStatusLabel: 'Esperando Cliente',
+      greenDays: 3,
+      yellowDays: 2,
+      includeInWorkload: false,
+      trackAging: true,
+    },
+    {
       id: 'pedir-repuestos',
       name: 'Pedir componentes',
       color: '#0891b2',
-      order: 4,
+      order: 5,
       description: 'Position 0.5. Equipo aprobado para listar y solicitar componentes.',
       equipmentStatusId: 'pedir-repuestos',
       equipmentStatusLabel: 'Pedir componentes',
@@ -187,7 +206,7 @@ export function buildTechnicalBoardColumns(): BoardColumn[] {
       id: 'esperando-proveedor',
       name: 'Esperando proveedor',
       color: '#6366f1',
-      order: 5,
+      order: 6,
       description: 'Position 11. Material solicitado y pendiente de arribo.',
       equipmentStatusId: 'esperando-proveedor',
       equipmentStatusLabel: 'Esperando proveedor',
@@ -200,7 +219,7 @@ export function buildTechnicalBoardColumns(): BoardColumn[] {
       id: 'reparacion',
       name: 'Reparacion',
       color: '#7c3aed',
-      order: 6,
+      order: 7,
       description: 'Intervencion tecnica y consumo de componentes.',
       equipmentStatusId: 'reparacion',
       equipmentStatusLabel: 'En reparacion',
@@ -305,6 +324,8 @@ export function mapLegacyProjectStatus(status: string): ProjectWorkflowStatusId 
       return 'pedir-repuestos';
     case 'por-cotizar':
       return 'por-cotizar';
+    case 'esperando-cliente':
+      return 'esperando-cliente';
     case 'esperando-proveedor':
       return 'esperando-proveedor';
     case 'garantia':

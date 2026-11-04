@@ -85,6 +85,20 @@ interface StagePreview {
         display: inline-block;
         margin-right: 0.25rem;
       }
+      .workload-status-summary {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+      .workload-status-summary__item {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.4rem 0.65rem;
+        border: 1px solid rgba(var(--bs-body-color-rgb), 0.12);
+        border-radius: 0.6rem;
+        background: var(--bs-body-bg);
+      }
       .matrix-note {
         font-size: 0.78rem;
       }
@@ -164,6 +178,22 @@ interface StagePreview {
           </button>
         </div>
       }
+      <section class="card adminuiux-card mb-3" data-testid="workload-status-summary">
+        <div class="card-body py-2">
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <strong class="small">Equipos por estado</strong>
+            <div class="workload-status-summary">
+              @for (entry of workflowSummary; track entry.stage.id) {
+                <span class="workload-status-summary__item">
+                  <span class="stage-dot mb-0" [style.background]="entry.stage.color"></span>
+                  <span class="small">{{ entry.stage.name }}</span>
+                  <span class="badge rounded-pill" [style.background]="entry.stage.color">{{ entry.count }}</span>
+                </span>
+              }
+            </div>
+          </div>
+        </div>
+      </section>
       <nav class="affectation-tabs d-flex gap-1 mb-3" role="tablist">
         <button
           class="affectation-tab"
@@ -604,6 +634,7 @@ export class WorkWorkloadComponent implements OnInit, OnDestroy {
   records: ProspectEquipmentRecord[] = [];
   projects: Project[] = [];
   stages: BoardColumn[] = [];
+  summaryStages: BoardColumn[] = [];
   selectedItem: EquipmentQueueItem | null = null;
   candidates: CandidateRow[] = [];
   queueFilter = "";
@@ -637,6 +668,7 @@ export class WorkWorkloadComponent implements OnInit, OnDestroy {
         this.projectService.board$,
       ]).subscribe(([projects, board]) => {
         this.projects = projects;
+        this.summaryStages = board?.columns ?? [];
         this.stages = (board?.columns ?? []).filter(
           (column) => column.includeInWorkload,
         );
@@ -657,6 +689,12 @@ export class WorkWorkloadComponent implements OnInit, OnDestroy {
         receivedAt: record.intakeReceivedAt || record.createdAt || "",
       })),
     );
+  }
+  get workflowSummary(): Array<{ stage: BoardColumn; count: number }> {
+    return this.summaryStages.map((stage) => ({
+      stage,
+      count: this.projects.filter((project) => project.status === stage.id).length,
+    }));
   }
   get pendingItems(): EquipmentQueueItem[] {
     return this.flattenedItems.filter(

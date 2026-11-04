@@ -147,7 +147,7 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
           <small>Filtra por audiencia sin borrar informacion del caso.</small>
         </div>
 
-        <div class="board-audience-toolbar__chips" role="group" aria-label="Filtro de audiencia del tablero">
+        <div class="board-audience-toolbar__chips" role="group" aria-label="Filtro de audiencia del tablero" *ngIf="!isTechnicianUser()">
           <button
             type="button"
             class="board-audience-chip"
@@ -184,7 +184,7 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
       </div>
 
       <div class="kanban-board d-flex flex-nowrap overflow-x-auto pb-3 gap-3" *ngIf="!detailRouteMode">
-        <section class="kanban-column flex-shrink-0" style="width: 320px;" *ngFor="let column of getVisibleBoardColumns(board.columns)">
+        <section class="kanban-column flex-shrink-0" style="width: 220px;" *ngFor="let column of getVisibleBoardColumns(board.columns)">
           @let columnProjects = getProjectsByColumn(column.id);
           <header class="column-header">
             <div class="board-column-header d-flex justify-content-between align-items-center px-2 py-1" [attr.data-testid]="'column-header-' + column.id">
@@ -196,8 +196,7 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
               </div>
 
               <div class="d-flex align-items-center gap-1">
-                <span class="badge bg-secondary rounded-pill ms-1" [attr.data-testid]="'column-count-' + column.id">{{ columnProjects.length }}</span>
-                <span class="project-count badge" [style.background]="getColumnBadgeColor(column.color)">
+                <span class="project-count badge" [style.background]="getColumnBadgeColor(column.color)" [attr.data-testid]="'column-count-' + column.id">
                   {{ columnProjects.length }}
                 </span>
               </div>
@@ -322,7 +321,7 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
               <div class="project-status-row mb-4">
                 <button
                   type="button"
-                  *ngFor="let status of board.columns"
+                  *ngFor="let status of getVisibleBoardColumns(board.columns)"
                   class="status-chip"
                   [class.is-active]="detailProject.status === status.id"
                   [style.borderColor]="getStatusBorder(status.color, detailProject.status === status.id)"
@@ -350,93 +349,21 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
 
             <ng-container *ngIf="activeDetailTab === 'equipo'">
               <section class="project-detail-section mt-3">
-                <div class="section-heading">
-                  <div>
-                    <h4>Equipo en reparacion</h4>
-                  <p>Consulta el equipo ya asociado por código interno, identificador recibido o QR; luego sincroniza su ubicación.</p>
-                </div>
-              </div>
-
-              <div class="project-form-grid project-form-grid--2">
-                <label class="project-detail-field">
-                  <span class="project-detail-field__label">Equipo recibido</span>
-                  <select
-                    class="project-detail-field__input"
-                    [ngModel]="selectedEquipmentReference"
-                    (ngModelChange)="selectLinkedEquipment($event)">
-                    <option value="">Selecciona un equipo recibido</option>
-                    <option *ngFor="let equipment of equipmentOptions" [value]="equipment.reference">
-                      {{ equipment.displayName }} · {{ equipment.prospectName }} · {{ equipment.equipmentCode || 'Sin código interno' }}
-                    </option>
-                  </select>
-                </label>
-
-                <div class="project-detail-field project-detail-field--workflow">
-                  <span class="project-detail-field__label">Lectura QR / codigo</span>
-
-                  <div class="equipment-linked-code" *ngIf="linkedEquipment; else equipmentIdentifierSearch">
-                    <strong>{{ linkedEquipment.equipmentCode || equipmentIdentifierDraft }}</strong>
-                    <button type="button" class="btn btn-outline-secondary btn-sm" (click)="selectLinkedEquipment('')">Cambiar equipo</button>
-                  </div>
-
-                  <ng-template #equipmentIdentifierSearch><div class="equipment-scan-row">
-                    <input
-                      type="text"
-                      class="project-detail-field__input"
-                      [(ngModel)]="equipmentIdentifierDraft"
-                      placeholder="Ejemplo: QR-ABC-001"
-                      (keydown.enter)="searchEquipmentByIdentifier()" />
-
-                    <button
-                      type="button"
-                      class="btn btn-theme btn-sm"
-                      (click)="searchEquipmentByIdentifier()"
-                      [disabled]="!equipmentIdentifierDraft.trim()">
-                      Buscar equipo
-                    </button>
-
-                    <button
-                      type="button"
-                      class="btn btn-outline-secondary btn-sm"
-                      (click)="openEquipmentScanner()"
-                      [disabled]="!cameraScannerSupported">
-                      Escanear QR
-                    </button>
-                  </div></ng-template>
-
-                  <small class="text-secondary" *ngIf="!cameraScannerSupported">
-                    El navegador actual no permite lectura continua por camara. Puedes usar el campo manual.
-                  </small>
-                </div>
-              </div>
-
-              <div class="equipment-qr-preview" *ngIf="equipmentQrDataUrl; else equipmentQrPlaceholder">
-                <img [src]="equipmentQrDataUrl" alt="QR del equipo vinculado" />
-                <div class="equipment-qr-preview__meta">
-                  <span class="project-detail-field__label">QR del equipo vinculado</span>
-                  <strong>{{ detailProject.properties['equipmentDisplayName'] || 'Equipo vinculado' }}</strong>
-                  <small>Código interno: {{ detailProject.properties['equipmentCode'] || 'Sin código interno' }}</small>
-                </div>
-              </div>
-
-              <ng-template #equipmentQrPlaceholder>
-                <div class="helper-box equipment-qr-placeholder">Vincula un equipo para ver su QR dentro del detalle del proyecto.</div>
-              </ng-template>
-
-              <div class="alert alert-warning mt-3 mb-0" *ngIf="equipmentQrError">{{ equipmentQrError }}</div>
-
               <div class="equipment-linked-box" *ngIf="linkedEquipment as equipment; else equipmentNotLinked">
                 <div class="equipment-linked-box__header">
-                  <strong>{{ equipment.displayName }}</strong>
-                  <span class="badge text-bg-light">{{ equipment.prospectName }}</span>
+                  <div>
+                    <strong>{{ equipment.displayName }}</strong>
+                    <span class="badge text-bg-light ms-2">{{ equipment.prospectName }}</span>
+                  </div>
+                  <img class="equipment-linked-box__qr" *ngIf="equipmentQrDataUrl" [src]="equipmentQrDataUrl" alt="QR del equipo vinculado" />
                 </div>
 
                 <div class="equipment-linked-box__grid">
                   <span><strong>Código interno:</strong> {{ equipment.equipmentCode || 'Sin código interno' }}</span>
-                  <span><strong>Serie:</strong> {{ equipment.serie || '--' }}</span>
                   <span><strong>Servicio:</strong> {{ equipment.serviceTypeName || '--' }}</span>
-                  <span><strong>Recepcion:</strong> {{ equipment.receptionLabel }}</span>
                   <span><strong>Falla:</strong> {{ equipment.failureDescription || 'Sin detalle' }}</span>
+                  <span><strong>Serie:</strong> {{ equipment.serie || '--' }}</span>
+                  <span><strong>Recepcion:</strong> {{ equipment.receptionLabel }}</span>
                   <span><strong>Evidencias:</strong> {{ equipment.evidenceCount }}</span>
                 </div>
 
@@ -479,36 +406,8 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
               </div>
 
               <ng-template #equipmentNotLinked>
-                <div class="helper-box">Aun no hay un equipo recibido vinculado a este proyecto.</div>
+                <div class="helper-box">Aun no hay un equipo vinculado a este proyecto.</div>
               </ng-template>
-
-              <div class="project-form-grid mt-3">
-                <label class="project-detail-field">
-                  <span class="project-detail-field__label">Ubicacion actual</span>
-                  <select class="project-detail-field__input" [(ngModel)]="equipmentLocationIdDraft" data-testid="equipment-location-select">
-                    <option value="">Selecciona una ubicacion</option>
-                    <option *ngFor="let location of equipmentLocationOptions" [value]="location.id">{{ location.name }}</option>
-                  </select>
-                </label>
-              </div>
-
-              <div class="equipment-workflow-actions">
-                <button
-                  type="button"
-                  class="btn btn-theme btn-sm"
-                  (click)="updateLinkedEquipmentWorkflow()"
-                  data-testid="equipment-update-location-btn"
-                  [disabled]="!canUpdateEquipmentWorkflow()">
-                  Actualizar ubicación
-                </button>
-
-                <small class="text-secondary" *ngIf="detailProject.properties['equipmentLastWorkflowUpdate']">
-                  Ultima sincronizacion {{ detailProject.properties['equipmentLastWorkflowUpdate'] | date:'dd/MM/yyyy HH:mm' }}
-                </small>
-              </div>
-
-              <div class="alert alert-success mt-3 mb-0" *ngIf="equipmentWorkflowMessage">{{ equipmentWorkflowMessage }}</div>
-              <div class="alert alert-danger mt-3 mb-0" *ngIf="equipmentWorkflowError">{{ equipmentWorkflowError }}</div>
 
               <div class="border rounded-4 p-3 mt-4 bg-light-subtle" *ngIf="canShowDispatchPanel()">
                 <div class="section-heading mb-3">
@@ -750,7 +649,7 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
                 </div>
               </div>
 
-              <label class="project-detail-field" *ngIf="detailProject.status === 'diagnostico'">
+              <label class="project-detail-field project-detail-field--wide" *ngIf="detailProject.status === 'diagnostico'">
                 <span class="project-detail-field__label">Memo diagnostico</span>
                 <textarea
                   class="project-detail-field__textarea"
@@ -781,7 +680,7 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
               </label>
             </div>
 
-            <div class="project-form-grid project-form-grid--2 mb-3">
+            <div class="project-form-grid project-form-grid--2 diagnosis-estimates-grid mb-3">
               <label class="project-detail-field">
                 <span class="project-detail-field__label">Horas hombre estimadas</span>
                 <input
@@ -2104,7 +2003,7 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
 
     .kanban-column {
       min-height: 18rem;
-      padding: 1rem;
+      padding: 0.75rem;
       border-radius: 1.25rem;
       background: linear-gradient(180deg, rgba(var(--bs-body-bg-rgb), 0.94), rgba(var(--adminuiux-theme-1-rgb), 0.04));
       border: 1px solid rgba(var(--adminuiux-theme-1-rgb), 0.08);
@@ -2145,8 +2044,8 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
     }
 
     .project-count {
-      min-width: 2.25rem;
-      min-height: 2.25rem;
+      min-width: 1.875rem;
+      min-height: 1.875rem;
       display: grid;
       place-items: center;
       border-radius: 0.85rem;
@@ -2504,6 +2403,14 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
+    .project-detail-field--wide {
+      grid-column: 1 / -1;
+    }
+
+    .diagnosis-estimates-grid {
+      grid-template-columns: repeat(2, minmax(0, 15rem));
+    }
+
     .project-detail-field {
       display: flex;
       flex-direction: column;
@@ -2781,6 +2688,15 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
       justify-content: space-between;
       gap: 0.75rem;
       margin-bottom: 0.75rem;
+    }
+
+    .equipment-linked-box__qr {
+      width: 5.5rem;
+      height: 5.5rem;
+      object-fit: contain;
+      border-radius: 0.5rem;
+      background: #fff;
+      padding: 0.25rem;
     }
 
     .equipment-linked-box__grid {
@@ -3481,6 +3397,9 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
   ) { }
 
   ngOnInit(): void {
+    if (this.isTechnicianUser()) {
+      this.boardAudience = 'tecnico';
+    }
     this.projectsWithTasksSubscription = this.projectService.projectsWithTasks$.subscribe((projects) => {
       const nextProjectsByColumn = new Map<string, Project[]>();
 
@@ -3710,12 +3629,17 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
   }
 
   setBoardAudience(audience: BoardAudience): void {
+    if (this.isTechnicianUser()) return;
     this.boardAudience = audience;
     this.invalidateBoardProjection();
   }
 
   getVisibleBoardColumns(columns: BoardColumn[]): BoardColumn[] {
-    return visibleBoardColumns(columns, this.boardAudience);
+    return visibleBoardColumns(columns, this.isTechnicianUser() ? 'tecnico' : this.boardAudience);
+  }
+
+  isTechnicianUser(): boolean {
+    return this.authService.getCurrentUser()?.role?.trim().toLowerCase() === 'tecnico';
   }
 
   toggleOnlyMyProjects(): void {
@@ -5957,15 +5881,7 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
         : [];
     }
 
-    if (this.boardAudience === 'todos' || !filtered.length) {
-      return filtered;
-    }
-
-    if (this.boardAudience === 'tecnico') {
-      return filtered.filter((project) => !this.isDiagnosisClosed(project));
-    }
-
-    return filtered.filter((project) => this.isDiagnosisClosed(project));
+    return filtered;
   }
 
   private isDiagnosisClosed(project: Project): boolean {

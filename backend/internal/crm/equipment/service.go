@@ -26,6 +26,7 @@ var repairStatusLabels = map[string]string{
 	"recibido":            "Recibido",
 	"diagnostico":         "Diagnóstico",
 	"por-cotizar":         "Por cotizar",
+	"esperando-cliente":   "Esperando Cliente",
 	"pedir-repuestos":     "Pedir componentes",
 	"esperando-proveedor": "Esperando proveedor",
 	"reparacion":          "En reparación",

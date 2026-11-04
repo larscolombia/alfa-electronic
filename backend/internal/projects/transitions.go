@@ -19,7 +19,7 @@ import (
 //
 // Evidencia de las reglas codificadas:
 //  - Flujo principal bidireccional entre columnas adyacentes:
-//    recibido -> diagnostico -> por-cotizar -> pedir-repuestos ->
+//    recibido -> diagnostico -> por-cotizar -> esperando-cliente -> pedir-repuestos ->
 //    esperando-proveedor -> reparacion -> listo-entrega.
 //    La etapa "pruebas" (QA) se elimino del flujo: el cierre directo
 //    reparacion -> listo-entrega queda cubierto por la regla de transicion
@@ -44,7 +44,8 @@ import (
 var legalProjectTransitions = map[string][]string{
 	"recibido":    {"diagnostico", "prestamo"},
 	"diagnostico": {"recibido", "por-cotizar", "pedir-repuestos", "reparacion", "prestamo"},
-	"por-cotizar": {"diagnostico", "pedir-repuestos", "reparacion", "prestamo"},
+	"por-cotizar":       {"diagnostico", "esperando-cliente", "pedir-repuestos", "reparacion", "prestamo"},
+	"esperando-cliente": {"por-cotizar", "pedir-repuestos", "reparacion", "prestamo"},
 	// 'reparacion' desde pedir-repuestos: equipo con OC aprobada (Pos 05) que solo
 	// requiere stock; la reserva activa habilita la reparacion (COMPR-02).
 	// Compras externas siguen bloqueadas por materials_gate, no por esta tabla.
@@ -55,7 +56,7 @@ var legalProjectTransitions = map[string][]string{
 	"entregado":                 {"listo-entrega", "garantia", "prestamo"},
 	"garantia":                  {"entregado", "esperando-proveedor", "garantia-espera-repuestos", "prestamo"},
 	"garantia-espera-repuestos": {"garantia", "esperando-proveedor", "reparacion", "prestamo"},
-	"prestamo":                  {"recibido", "diagnostico", "por-cotizar", "pedir-repuestos", "esperando-proveedor", "reparacion", "listo-entrega", "entregado", "garantia", "garantia-espera-repuestos"},
+	"prestamo":                  {"recibido", "diagnostico", "por-cotizar", "esperando-cliente", "pedir-repuestos", "esperando-proveedor", "reparacion", "listo-entrega", "entregado", "garantia", "garantia-espera-repuestos"},
 }
 
 // canTransition reporta si mover un proyecto desde fromStatus hacia toStatus
