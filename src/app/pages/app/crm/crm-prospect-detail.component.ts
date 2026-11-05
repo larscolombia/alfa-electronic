@@ -662,7 +662,7 @@ type EditableProfileFieldConfig = {
                             <div class="card-header border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
                                 <div>
                                     <h5 class="mb-1">Sucursales</h5>
-                                    <p class="text-secondary small mb-0">Sedes registradas para {{ prospect.compania || prospect.nombre }}. {{ prospect.branches.length }} sucursal(es).</p>
+                                    <p class="text-secondary small mb-0">Sedes registradas para {{ prospect.compania || prospect.nombre }}. {{ prospect.branches?.length ?? 0 }} sucursal(es).</p>
                                 </div>
                                 <button class="btn btn-theme btn-sm" type="button" (click)="openBranchForm()">
                                     <i class="bi bi-plus-lg me-1"></i> Agregar sucursal
@@ -734,13 +734,13 @@ type EditableProfileFieldConfig = {
                             }
 
                             <div class="card-body">
-                                @if (prospect.branches.length === 0) {
+                                @if ((prospect.branches?.length ?? 0) === 0) {
                                     <div class="border rounded p-4 text-center text-secondary">
                                         No hay sucursales registradas. Usa "Agregar sucursal" para crear la primera.
                                     </div>
                                 } @else {
                                     <div class="row gx-3 gy-3">
-                                        @for (branch of prospect.branches; track $index; let branchIdx = $index) {
+                                        @for (branch of prospect.branches ?? []; track $index; let branchIdx = $index) {
                                             <div class="col-12 col-xl-6">
                                                 <div class="border rounded p-3 h-100">
                                                     <div class="d-flex justify-content-between align-items-start mb-2">

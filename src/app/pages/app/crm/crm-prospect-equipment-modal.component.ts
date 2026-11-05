@@ -646,7 +646,7 @@ type SoftwareBackupInfo = {
                                                             <div class="col-12 col-lg-4" *ngIf="false">
                                                                 <div class="small text-secondary">Registro de asignación</div>
                                                                 <div class="fw-semibold">{{ item.assignedBy || '--' }}</div>
-                                                                <div class="small text-secondary">{{ item.assignedAt ? formatEvidenceDate(item.assignedAt) : 'Sin fecha' }}</div>
+                                                                <div class="small text-secondary">{{ item.assignedAt ? formatEvidenceDate(item.assignedAt || '') : 'Sin fecha' }}</div>
                                                             </div>
                                                         </div>
                                                     </div>
