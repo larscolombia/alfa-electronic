@@ -270,7 +270,7 @@ type EditableClientFieldConfig = {
                         </div>
                     }
 
-                    @if (false) {
+                    @if (client && false) {
                         <div class="row gx-3 gx-lg-4">
                             <div class="col-12 col-xl-5 mb-3 mb-xl-0">
                                 <div class="card adminuiux-card h-100">
