@@ -41,6 +41,7 @@
     "test:kanban-compact-columns": "node scripts/test-kanban-compact-columns.mjs",
     "test:technician-workflow-visibility": "node scripts/test-technician-workflow-visibility.mjs",
     "test:reception-assignment-ux": "node scripts/test-reception-assignment-ux.mjs",
+    "test:reception-no-manager-gate": "node scripts/test-reception-no-manager-gate.mjs",
     "test:workload-status-summary": "node scripts/test-workload-status-summary.mjs",
     "test:remission-logic": "node scripts/test-remission-logic.mjs",
     "test:remission-features": "node scripts/test-remission-features-logic.mjs",

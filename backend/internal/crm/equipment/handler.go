@@ -5,14 +5,11 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/labstack/echo/v4"
 	"pika.software.net.co/backend/internal/platform/company"
 	"pika.software.net.co/backend/internal/platform/mailer"
 )
-
-var errIndustrialOverrideRequired = errors.New("autorizacion de jefe obligatoria para equipos no industriales con costo <= 2M")
 
 type Handler struct {
 	service *Service
@@ -125,11 +122,6 @@ func (h *Handler) upsertRecord(c echo.Context) error {
 
 	if recordID := strings.TrimSpace(c.Param("recordID")); recordID != "" {
 		req.ID = recordID
-	}
-
-	applyIndustrialOverrideTimestamps(req.Items)
-	if err := validateIndustrialOverrides(req.Items); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
 
 	item, err := h.service.UpsertRecord(companyID, req)
@@ -397,50 +389,4 @@ func parseBool(raw string) bool {
 	default:
 		return false
 	}
-}
-
-func applyIndustrialOverrideTimestamps(items []Item) {
-	now := time.Now().UTC().Format(time.RFC3339)
-
-	for index := range items {
-		authorizedBy := strings.TrimSpace(items[index].IndustrialOverrideAuthorizedBy)
-		if authorizedBy == "" {
-			continue
-		}
-
-		if strings.TrimSpace(items[index].IndustrialOverrideAt) == "" {
-			items[index].IndustrialOverrideAt = now
-		}
-	}
-}
-
-func validateIndustrialOverrides(items []Item) error {
-	for _, item := range items {
-		if !requiresIndustrialOverride(item) {
-			continue
-		}
-
-		if strings.TrimSpace(item.IndustrialOverrideAuthorizedBy) == "" || strings.TrimSpace(item.IndustrialOverrideReason) == "" {
-			return errIndustrialOverrideRequired
-		}
-	}
-
-	return nil
-}
-
-func requiresIndustrialOverride(item Item) bool {
-	if item.Answers == nil {
-		return false
-	}
-
-	costAnswer := strings.ToLower(strings.TrimSpace(item.Answers["costAboveTwoMillion"]))
-	if costAnswer != "no" {
-		return false
-	}
-
-	if item.IsIndustrial == nil {
-		return false
-	}
-
-	return !*item.IsIndustrial
 }
