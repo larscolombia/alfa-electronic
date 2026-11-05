@@ -160,6 +160,10 @@ export const INTERNAL_ROUTES: Routes = [
                 loadComponent: () => import("../../pages/app/company/company-commercial-config.component").then((m) => m.CompanyCommercialConfigComponent),
             },
             {
+                path: "company-quote-settings",
+                loadComponent: () => import("../../pages/app/company/company-quote-settings.component").then((m) => m.CompanyQuoteSettingsComponent),
+            },
+            {
                 path: "company-followups-config",
                 loadComponent: () => import("../../pages/app/company/company-followups-config.component").then((m) => m.CompanyFollowupsConfigComponent),
             },

@@ -18,7 +18,9 @@ import { CrmProspectRecord, CrmProspectsApiService } from "../../../services/crm
 import { CrmQuoteRecord, CrmQuotesApiService } from "../../../services/crm-quotes-api.service";
 import { EmailsApiService } from "../../../services/emails-api.service";
 import { FinanceBillingApiService } from "../../../services/finance-billing-api.service";
+import { FinanceSettingsApiService } from "../../../services/finance-settings-api.service";
 import { FormDraftService } from "../../../services/form-draft.service";
+import { QUOTE_COMMENT_LINES_KEY, QuoteCommentLine } from "../company/company-quote-settings.component";
 import { setPurchaseWorkflowHandoff } from "../inventory/purchase-workflow-handoff.store";
 
 const CRM_QUOTES_FORM_DRAFT_KEY = "app.crm.quotes.form";
@@ -401,6 +403,10 @@ type QuoteLine = {
 
                         <div class="col-12 col-lg-6 mt-3">
                             <label class="form-label">Nota Para El Destinatario</label>
+                            <select class="form-select mb-2" (change)="applyCommentLine($any($event.target).value)" aria-label="Agregar línea de comentario configurada">
+                                <option value="">Agregar línea de comentario…</option>
+                                <option *ngFor="let comment of quoteCommentLines" [value]="comment.id">{{ comment.text }}</option>
+                            </select>
                             <textarea class="form-control" rows="4" [(ngModel)]="recipientNote"></textarea>
                         </div>
 
@@ -636,6 +642,7 @@ export class CrmQuotesComponent implements OnInit {
     discountValue = 0;
     discountType: "%" | "COP" = "%";
     recipientNote = "";
+    quoteCommentLines: QuoteCommentLine[] = [];
     termsAndConditions = "Gracias por confiar en nuestros servicios.";
 
     private quoteIdByToken: Record<string, string> = {};
@@ -661,6 +668,7 @@ export class CrmQuotesComponent implements OnInit {
         private readonly router: Router,
         private readonly cdr: ChangeDetectorRef,
         private readonly formDraftService: FormDraftService,
+        private readonly financeSettingsApi: FinanceSettingsApiService,
         // Fase 5c: correo transaccional de la cotización.
         private readonly emailsApi: EmailsApiService,
     ) {}
@@ -732,11 +740,25 @@ export class CrmQuotesComponent implements OnInit {
         this.loadProspectsFromApi();
         this.loadCatalogsFromApi();
         this.loadQuotesFromApi();
+        this.loadQuoteCommentLines();
         this.handleProspectChange(this.selectedProspecto);
     }
 
     ngOnDestroy(): void {
         this.stopDraftWatch();
+    }
+
+    applyCommentLine(id: string): void {
+        const text = this.quoteCommentLines.find((line) => line.id === id)?.text?.trim();
+        if (!text) return;
+        this.recipientNote = [this.recipientNote.trim(), text].filter(Boolean).join("\n");
+    }
+
+    private loadQuoteCommentLines(): void {
+        this.financeSettingsApi.getSetting<QuoteCommentLine[]>(QUOTE_COMMENT_LINES_KEY).subscribe({
+            next: (lines) => this.quoteCommentLines = Array.isArray(lines) ? lines.filter((line) => line?.text?.trim()) : [],
+            error: () => this.quoteCommentLines = [],
+        });
     }
 
     get filteredQuoteRows(): QuoteRow[] {

@@ -125,7 +125,7 @@ interface DiagnosisInspection {
   faultIdentified: boolean;
 }
 
-type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | 'notas';
+type ProjectDetailTab = 'equipo' | 'repuestos' | 'adjuntos' | 'memo' | 'chat' | 'reporte-intervencion';
 
 @Component({
   selector: 'app-kanban-view',
@@ -333,16 +333,22 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
 
               <ul class="nav nav-tabs">
                 <li class="nav-item">
-                  <a class="nav-link" style="cursor:pointer;" [class.active]="activeDetailTab === 'equipo'" (click)="setActiveDetailTab('equipo')">Equipo técnico</a>
+                  <a class="nav-link" style="cursor:pointer;" [class.active]="activeDetailTab === 'equipo'" (click)="setActiveDetailTab('equipo')">Información del equipo</a>
                 </li>
                 <li class="nav-item">
-                  <a class="nav-link" style="cursor:pointer;" [class.active]="activeDetailTab === 'materiales'" (click)="setActiveDetailTab('materiales')">Materiales</a>
+                  <a class="nav-link" style="cursor:pointer;" [class.active]="activeDetailTab === 'repuestos'" (click)="setActiveDetailTab('repuestos')">Repuestos</a>
                 </li>
                 <li class="nav-item">
-                  <a class="nav-link" style="cursor:pointer;" [class.active]="activeDetailTab === 'identidad'" (click)="setActiveDetailTab('identidad')">Identidad</a>
+                  <a class="nav-link" style="cursor:pointer;" [class.active]="activeDetailTab === 'adjuntos'" (click)="setActiveDetailTab('adjuntos')">Adjuntos</a>
                 </li>
                 <li class="nav-item">
-                  <a class="nav-link" style="cursor:pointer;" [class.active]="activeDetailTab === 'planeacion'" (click)="setActiveDetailTab('planeacion')">Planeacion y notas</a>
+                  <a class="nav-link" style="cursor:pointer;" [class.active]="activeDetailTab === 'memo'" (click)="setActiveDetailTab('memo')">Memo</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" style="cursor:pointer;" [class.active]="activeDetailTab === 'chat'" (click)="setActiveDetailTab('chat')">Chat</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" style="cursor:pointer;" [class.active]="activeDetailTab === 'reporte-intervencion'" (click)="setActiveDetailTab('reporte-intervencion')">Reporte de intervención</a>
                 </li>
               </ul>
             </section>
@@ -359,12 +365,17 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
                 </div>
 
                 <div class="equipment-linked-box__grid">
-                  <span><strong>Código interno:</strong> {{ equipment.equipmentCode || 'Sin código interno' }}</span>
-                  <span><strong>Servicio:</strong> {{ equipment.serviceTypeName || '--' }}</span>
-                  <span><strong>Falla:</strong> {{ equipment.failureDescription || 'Sin detalle' }}</span>
-                  <span><strong>Serie:</strong> {{ equipment.serie || '--' }}</span>
-                  <span><strong>Recepcion:</strong> {{ equipment.receptionLabel }}</span>
-                  <span><strong>Evidencias:</strong> {{ equipment.evidenceCount }}</span>
+                  <span><strong>Marca</strong><br>{{ equipment.marca || '--' }}</span>
+                  <span><strong>Tipo</strong><br>{{ equipment.tipo || '--' }}</span>
+                  <span><strong>Serie</strong><br>{{ equipment.serie || '--' }}</span>
+                  <span><strong>Familia</strong><br>{{ equipment.familyName || '--' }}</span>
+                  <span><strong>Código CO</strong><br>{{ equipment.equipmentCode || 'Sin código interno' }}</span>
+                  <span><strong>Código QR</strong><br>{{ equipment.receivedIdentifier || equipment.equipmentCode || '--' }}</span>
+                  <span><strong>Falla detectada</strong><br>{{ equipment.failureDescription || 'Sin detalle' }}</span>
+                  <span><strong>Fecha de recepción</strong><br>{{ equipment.receptionLabel || '--' }}</span>
+                  <span><strong>Técnico asignado</strong><br>{{ detailProject.properties['assignee'] || '--' }}</span>
+                  <span><strong>Plazo de reparación (días)</strong><br>{{ detailProject.properties['repairDeadlineDays'] || '--' }}</span>
+                  <span><strong>Fecha de entrega programada</strong><br>{{ toDateInputValue(detailProject.properties['scheduledDeliveryDate']) || '--' }}</span>
                 </div>
 
                 <div class="project-form-grid project-form-grid--2 mt-3">
@@ -751,11 +762,11 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
           </section>
         </ng-container>
 
-        <ng-container *ngIf="activeDetailTab === 'materiales'">
+        <ng-container *ngIf="activeDetailTab === 'repuestos'">
           <section class="project-detail-section mt-3">
             <div class="section-heading">
               <div>
-                <h4>Materiales y repuestos</h4>
+                <h4>Repuestos</h4>
                 <p>Solicita repuestos desde inventario para esta reparacion y deja registrado un estimado manual de materia prima para la cotizacion.</p>
               </div>
             </div>
@@ -1283,11 +1294,11 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
           </section>
         </ng-container>
 
-        <ng-container *ngIf="activeDetailTab === 'identidad'">
+        <ng-container *ngIf="activeDetailTab === 'adjuntos'">
           <section class="project-detail-section mt-3">
             <div class="section-heading">
               <div>
-                <h4>Identidad</h4>
+                <h4>Adjuntos</h4>
                   <p>Lo minimo necesario para ubicar el proyecto y comunicarlo dentro del equipo.</p>
                 </div>
               </div>
@@ -1320,6 +1331,12 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
                   [(ngModel)]="detailProject.description"
                   placeholder="Describe alcance, objetivo y resultado esperado"
                 ></textarea>
+              </label>
+
+              <label class="project-detail-field">
+                <span class="project-detail-field__label">Enlace de video o imagen</span>
+                <input type="url" class="project-detail-field__input" [(ngModel)]="detailProject.properties['videoLink']" placeholder="https://youtube.com/... o URL de imagen" />
+                <small class="text-secondary">Los videos se registran mediante un enlace; los demás formatos se cargan como archivo.</small>
               </label>
             </section>
 
@@ -1418,13 +1435,65 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
 
           </ng-container>
 
-          <ng-container *ngIf="activeDetailTab === 'planeacion'">
+          <ng-container *ngIf="activeDetailTab === 'chat'">
             <section class="project-detail-section mt-3">
               <div class="section-heading">
                 <div>
-                  <h4>Planeacion</h4>
-                  <p>Fechas, area responsable, cliente y nivel de prioridad.</p>
+                  <h4>Chat</h4>
+                  <p>Centraliza aquí las conversaciones relacionadas con la reparación.</p>
                 </div>
+              </div>
+              <div class="border rounded p-2 mb-2" *ngIf="getTechnicalChat().length; else emptyTechnicalChat">
+                <article class="border-bottom py-2" *ngFor="let message of getTechnicalChat()">
+                  <strong>{{ message.author }}</strong>
+                  <span class="text-secondary small ms-2">{{ message.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                  <div>{{ message.text }}</div>
+                </article>
+              </div>
+              <ng-template #emptyTechnicalChat><div class="helper-box mb-2">Aún no hay mensajes en este caso.</div></ng-template>
+              <div class="input-group input-group-sm">
+                <input class="form-control" [(ngModel)]="technicalChatDraft" (keyup.enter)="sendTechnicalChat()" placeholder="Escribe un mensaje para el equipo">
+                <button class="btn btn-theme" type="button" [disabled]="!technicalChatDraft.trim()" (click)="sendTechnicalChat()">Enviar</button>
+              </div>
+            </section>
+          </ng-container>
+
+          <ng-container *ngIf="activeDetailTab === 'reporte-intervencion'">
+            <section class="project-detail-section mt-3">
+              <div class="section-heading">
+                <div>
+                  <h4>Reporte de intervención</h4>
+                  <p>Consulta o imprime el reporte técnico de las intervenciones realizadas.</p>
+                </div>
+              </div>
+              <button type="button" class="btn btn-outline-theme" [disabled]="!canPrintTechnicalReport()" (click)="openTechnicalReport()">
+                Abrir reporte de intervención
+              </button>
+              <div class="row g-3 mt-1">
+                <fieldset class="col-md-4"><legend class="fs-6">Ubicación de la falla</legend><label class="form-check" *ngFor="let item of interventionLocations"><input class="form-check-input" type="checkbox" [(ngModel)]="getInterventionChecks('location')[item]"><span class="form-check-label">{{ item }}</span></label></fieldset>
+                <fieldset class="col-md-4"><legend class="fs-6">Causa de disfuncionamiento</legend><label class="form-check" *ngFor="let item of interventionCauses"><input class="form-check-input" type="checkbox" [(ngModel)]="getInterventionChecks('cause')[item]"><span class="form-check-label">{{ item }}</span></label></fieldset>
+                <fieldset class="col-md-4"><legend class="fs-6">Pruebas realizadas</legend><label class="form-check" *ngFor="let item of interventionTests"><input class="form-check-input" type="checkbox" [(ngModel)]="getInterventionChecks('tests')[item]"><span class="form-check-label">{{ item }}</span></label></fieldset>
+              </div>
+            </section>
+          </ng-container>
+
+          <ng-container *ngIf="activeDetailTab === 'memo'">
+            <section class="project-detail-section mt-3">
+              <div class="section-heading">
+                <div>
+                  <h4>Memo</h4>
+                  <p>Diagnóstico, reparación y cotización del caso.</p>
+                </div>
+              </div>
+
+              <div class="row g-2 mb-2">
+                <label class="col-md-6 project-detail-field"><span class="project-detail-field__label">Anotaciones del diagnóstico</span><textarea class="project-detail-field__textarea" rows="4" [(ngModel)]="detailProject.properties['diagnosticNotes']" placeholder="Hallazgos del diagnóstico"></textarea></label>
+                <label class="col-md-6 project-detail-field"><span class="project-detail-field__label">Anotaciones de la reparación</span><textarea class="project-detail-field__textarea" rows="4" [(ngModel)]="detailProject.properties['repairNotes']" placeholder="Acciones realizadas"></textarea></label>
+              </div>
+              <div class="row g-2 mb-3">
+                <label class="col-4 project-detail-field"><span class="project-detail-field__label small">Cotización repuestos (USD)</span><input type="number" min="0" class="project-detail-field__input form-control-sm" [(ngModel)]="detailProject.properties['partsBudgetUsd']"></label>
+                <label class="col-4 project-detail-field"><span class="project-detail-field__label small">Horas de trabajo</span><input type="number" min="0" class="project-detail-field__input form-control-sm" [(ngModel)]="detailProject.properties['estimatedHours']"></label>
+                <label class="col-4 project-detail-field"><span class="project-detail-field__label small">Reparabilidad %</span><input type="number" min="0" max="100" class="project-detail-field__input form-control-sm" [(ngModel)]="detailProject.properties['repairabilityPercent']"></label>
               </div>
 
               <div class="project-form-grid project-form-grid--3">
@@ -3297,6 +3366,10 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
   draftDescription = '';
   detailProject: Project | null = null;
   activeDetailTab: ProjectDetailTab = 'equipo';
+  technicalChatDraft = '';
+  readonly interventionLocations = ['Alimentación', 'Proceso CPU', 'Potencia', 'Protección externa', 'Entrada', 'Salida', 'Control', 'Comunicación', 'Otro'];
+  readonly interventionCauses = ['Sobretensión', 'Sobrecarga', 'Entorno', 'Envejecimiento', 'Error de conexión', 'Error de parámetros', 'Choque mecánico', 'Otros'];
+  readonly interventionTests = ['Sobre banco de prueba', 'Verificar en sitio'];
   showOtherDetails = true;
   newMemberName = '';
   saving = false;
@@ -3748,6 +3821,26 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
 
     this.activeDetailTab = tab;
     this.scrollProjectDetailBodyToTop();
+  }
+
+  getTechnicalChat(): Array<{ author: string; text: string; createdAt: string }> {
+    const chat = this.detailProject?.properties['technicalChat'];
+    return Array.isArray(chat) ? chat : [];
+  }
+
+  sendTechnicalChat(): void {
+    const text = this.technicalChatDraft.trim();
+    if (!this.detailProject || !text) return;
+    this.detailProject.properties['technicalChat'] = [...this.getTechnicalChat(), {
+      author: 'Usuario actual', text, createdAt: new Date().toISOString(),
+    }];
+    this.technicalChatDraft = '';
+  }
+
+  getInterventionChecks(group: 'location' | 'cause' | 'tests'): Record<string, boolean> {
+    if (!this.detailProject) return {};
+    const report = this.detailProject.properties['interventionReport'] ??= {};
+    return report[group] ??= {};
   }
 
   selectLinkedEquipment(reference: string): void {
@@ -4752,6 +4845,7 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
     this.detailProject.attachments = attachments;
     input.value = '';
   }
+
 
   removeAttachment(attachmentId: string): void {
     if (!this.detailProject) {

@@ -202,20 +202,11 @@ interface StagePreview {
           [class.is-active]="activeTab === 'pending'"
           (click)="setTab('pending')"
         >
-          Pendientes de afectación
+          Matriz de decisión
           <span class="badge text-bg-warning ms-1">{{
             pendingItems.length
           }}</span></button
         ><button
-          class="affectation-tab"
-          type="button"
-          data-testid="workload-tab-history"
-          [class.is-active]="activeTab === 'history'"
-          (click)="setTab('history')"
-        >
-          Histórico
-        </button>
-        <button
           class="affectation-tab"
           type="button"
           data-testid="workload-tab-queue"
@@ -225,95 +216,20 @@ interface StagePreview {
           Cola de afectación
           <span class="badge text-bg-warning ms-1">{{ pendingItems.length }}</span>
         </button>
+        <button
+          class="affectation-tab"
+          type="button"
+          data-testid="workload-tab-history"
+          [class.is-active]="activeTab === 'history'"
+          (click)="setTab('history')"
+        >
+          Histórico
+        </button>
       </nav>
       @if (activeTab === "pending") {
-        <section data-testid="workload-queue-panel">
+        <section data-testid="workload-decision-panel">
           <div class="row g-3">
-            <div class="col-12 col-xl-4">
-              <div class="card adminuiux-card">
-                <div
-                  class="card-header d-flex flex-wrap gap-2 justify-content-between align-items-center"
-                >
-                  <div>
-                    <h6 class="mb-0">Cola de afectación</h6>
-                    <p class="small text-secondary mb-0">
-                      Equipos recibidos aún sin técnico.
-                    </p>
-                  </div>
-                  <input
-                    class="form-control form-control-sm"
-                    style="max-width:15rem"
-                    type="search"
-                    placeholder="Código, cliente o equipo"
-                    [(ngModel)]="queueFilter"
-                  />
-                </div>
-                <div class="card-body p-0 affectation-region">
-                  <table class="table align-middle mb-0">
-                    <thead>
-                      <tr>
-                        <th>Equipo</th>
-                        <th>Cliente</th>
-                        <th>Tipo / servicio</th>
-                        <th>Falla</th>
-                        <th>Recepción</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      @for (
-                        entry of filteredPendingItems;
-                        track entry.item.id
-                      ) {
-                        <tr
-                          class="queue-row"
-                          [class.is-selected]="
-                            selectedItem &&
-                            selectedItem.item.id === entry.item.id
-                          "
-                          (click)="selectItem(entry)"
-                          [attr.data-testid]="
-                            'affectation-queue-' + entry.item.id
-                          "
-                        >
-                          <td>
-                            <strong>{{ equipmentLabel(entry) }}</strong
-                            ><small class="d-block text-secondary"
-                              >{{ entry.item.marca || "Sin marca" }} ·
-                              {{ entry.item.serie || "Sin serie" }}</small
-                            >
-                          </td>
-                          <td>
-                            {{
-                              entry.record.companyName ||
-                                entry.record.prospectName ||
-                                "Sin cliente"
-                            }}
-                          </td>
-                          <td>{{ itemSpeciality(entry.item) }}</td>
-                          <td class="text-truncate" style="max-width:10rem">
-                            {{
-                              entry.item.failureDescription ||
-                                "Sin falla reportada"
-                            }}
-                          </td>
-                          <td>{{ entry.receivedAt | date: "dd/MM/yy" }}</td>
-                        </tr>
-                      } @empty {
-                        <tr>
-                          <td
-                            colspan="5"
-                            class="text-center text-secondary py-4"
-                          >
-                            No hay equipos pendientes de afectación.
-                          </td>
-                        </tr>
-                      }
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-            <div class="col-12 col-xl-8">
+            <div class="col-12">
               <div
                 class="card adminuiux-card h-100"
                 data-testid="affectation-decision-panel"
@@ -855,11 +771,7 @@ export class WorkWorkloadComponent implements OnInit, OnDestroy {
   }
   equipmentLabel(entry: EquipmentQueueItem): string {
     return String(
-      entry.item.equipmentCode ||
-        entry.item.receivedIdentifier ||
-        entry.item.serie ||
-        entry.item.customerShipmentReference ||
-        entry.item.id,
+      entry.item.equipmentCode || "Sin código CO",
     ).trim();
   }
   itemSpeciality(item: ProspectEquipmentItem): string {
@@ -943,7 +855,7 @@ export class WorkWorkloadComponent implements OnInit, OnDestroy {
           ) ??
           this.pendingItems.find(
             (candidate) => candidate.record.id === reception,
-          );
+          ) ?? this.pendingItems[0];
         if (entry) this.selectItem(entry);
       },
       error: () =>
