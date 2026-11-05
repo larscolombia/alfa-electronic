@@ -145,6 +145,8 @@ func (h *Handler) createQuote(c echo.Context) error {
 			errors.Is(err, errPurchaseOrderDateInvalid),
 			errors.Is(err, errPurchaseOrderUploadedAtInvalid):
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+		case errors.Is(err, errQuoteLockedByRepair):
+			return c.JSON(http.StatusConflict, map[string]string{"error": err.Error()})
 		default:
 			log.Printf("quotes: create failed for company %q (codigo=%q): %v", companyID, strings.TrimSpace(req.Codigo), err)
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "no se pudo crear la cotizacion"})
@@ -181,6 +183,8 @@ func (h *Handler) updateQuote(c echo.Context) error {
 			errors.Is(err, errPurchaseOrderDateInvalid),
 			errors.Is(err, errPurchaseOrderUploadedAtInvalid):
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+		case errors.Is(err, errQuoteLockedByRepair):
+			return c.JSON(http.StatusConflict, map[string]string{"error": err.Error()})
 		default:
 			log.Printf("quotes: update failed for company %q quoteID %q (codigo=%q): %v", companyID, quoteID, strings.TrimSpace(req.Codigo), err)
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "no se pudo actualizar la cotizacion"})
@@ -198,6 +202,9 @@ func (h *Handler) deleteQuote(c echo.Context) error {
 	if err != nil {
 		if errors.Is(err, errQuoteIDRequired) {
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+		}
+		if errors.Is(err, errQuoteLockedByRepair) {
+			return c.JSON(http.StatusConflict, map[string]string{"error": err.Error()})
 		}
 		log.Printf("quotes: delete failed for company %q quoteID %q: %v", companyID, quoteID, err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "no se pudo eliminar la cotizacion"})

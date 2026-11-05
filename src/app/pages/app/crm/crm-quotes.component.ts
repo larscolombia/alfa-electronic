@@ -345,6 +345,7 @@ type EquipmentQuoteDetail = {
                                 <div><h6 class="mb-0">Detalle de reparación por equipo</h6><small class="text-secondary">Costo, precio y rentabilidad se calculan por cada equipo.</small></div>
                                 <span class="badge text-bg-light">Hora Colombia: {{ hourlyRate | number: '1.0-0' }} COP</span>
                             </div>
+                            <div class="alert alert-warning border" *ngIf="quoteHasRepairingEquipment">Esta cotización no puede editarse porque uno de sus equipos ya está en reparación.</div>
                             <div class="card border mb-3" *ngFor="let equipment of selectedQuoteEquipmentItems">
                                 <div class="card-header d-flex justify-content-between align-items-center gap-2">
                                     <div><strong>{{ equipment.displayName }}</strong><small class="d-block text-secondary">Código: {{ equipment.equipmentCode || 'Sin código' }} · Serial: {{ equipment.serie || 'Sin serial' }}</small></div>
@@ -487,11 +488,11 @@ type EquipmentQuoteDetail = {
                 </div>
                 <div class="card-footer d-flex gap-2 flex-wrap align-items-center">
                     <div class="btn-group" role="group">
-                        <button class="btn btn-theme" type="button" [disabled]="isSavingQuote" (click)="saveDraft()">
+                        <button class="btn btn-theme" type="button" [disabled]="isSavingQuote || quoteHasRepairingEquipment" (click)="saveDraft()">
                             <span *ngIf="isSavingQuote" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
                             {{ isSavingQuote ? 'Guardando...' : 'Guardar' }}
                         </button>
-                        <button type="button" class="btn btn-theme dropdown-toggle dropdown-toggle-split" [disabled]="isSavingQuote" data-bs-toggle="dropdown" aria-expanded="false">
+                        <button type="button" class="btn btn-theme dropdown-toggle dropdown-toggle-split" [disabled]="isSavingQuote || quoteHasRepairingEquipment" data-bs-toggle="dropdown" aria-expanded="false">
                             <span class="visually-hidden">Opciones</span>
                         </button>
                         <ul class="dropdown-menu">
@@ -1334,6 +1335,10 @@ export class CrmQuotesComponent implements OnInit {
     get selectedQuoteEquipmentItems(): ProspectEquipmentSummary[] {
         const selected = new Set(this.selectedQuoteEquipmentIds);
         return this.availableQuoteEquipmentItems.filter((item) => selected.has(item.itemId));
+    }
+
+    get quoteHasRepairingEquipment(): boolean {
+        return !canModifyQuote(this.selectedQuoteEquipmentItems.map((item) => item.repairStatus));
     }
 
     equipmentDetail(itemId: string): EquipmentQuoteDetail {
