@@ -265,6 +265,13 @@ func defaultModules() []Module {
 				"Notas de desempeno",
 			},
 		},
+		{
+			id:          "mod-extracciones",
+			slug:        "extracciones",
+			name:        "Modulo de extracciones",
+			description: "Consulta transversal: combina tablas de varios modulos con sus relaciones reales, sin replicar datos.",
+			fields:      []string{},
+		},
 	}
 
 	modules := make([]Module, 0, len(seeds))

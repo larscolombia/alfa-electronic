@@ -1,0 +1,222 @@
+<div class="custom-extraction">
+    <div class="alert alert-danger" *ngIf="catalogError" role="alert">
+        <i class="bi bi-exclamation-triangle me-1"></i>{{ catalogError }}
+    </div>
+    <div class="text-secondary py-3" *ngIf="loadingCatalog">
+        <span class="spinner-border spinner-border-sm me-2"></span> Cargando módulos y tablas disponibles...
+    </div>
+
+    <ng-container *ngIf="!loadingCatalog && !catalogError">
+        <div class="card adminuiux-card mb-3">
+            <div class="card-body">
+                <h5 class="fw-semibold mb-1"><i class="bi bi-grid me-2"></i>1. Módulos y tablas</h5>
+                <p class="small text-secondary">Elige uno o varios módulos y luego las tablas que quieres combinar.
+                    Solo se combinan tablas con relaciones reales; si no existe relación, la consulta te lo avisará.</p>
+
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    <button type="button" *ngFor="let module of catalog; trackBy: trackByModule" class="btn btn-sm"
+                        [class.btn-primary]="selectedModules.has(module.slug)"
+                        [class.btn-outline-secondary]="!selectedModules.has(module.slug)"
+                        (click)="toggleModule(module.slug)">
+                        {{ module.label }}
+                    </button>
+                </div>
+
+                <div class="row g-2" *ngIf="moduleTables.length">
+                    <div class="col-12 col-md-6" *ngFor="let table of moduleTables; trackBy: trackByTable">
+                        <label class="column-option d-flex align-items-center gap-2 p-2 rounded border">
+                            <input class="form-check-input mt-0" type="checkbox" [checked]="selectedTables.has(table.name)"
+                                (change)="toggleTable(table.name)">
+                            <span>
+                                <strong>{{ table.label }}</strong>
+                                <small class="d-block text-secondary">{{ table.name }}</small>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+                <p class="small text-secondary mb-0 mt-2" *ngIf="!moduleTables.length">
+                    Selecciona un módulo para ver sus tablas.
+                </p>
+            </div>
+        </div>
+
+        <div class="card adminuiux-card mb-3" *ngIf="selectedTables.size">
+            <div class="card-body">
+                <h5 class="fw-semibold mb-1"><i class="bi bi-layout-three-columns me-2"></i>2. Columnas del reporte</h5>
+                <p class="small text-secondary">Cada campo muestra su tabla y módulo de origen para evitar confusiones
+                    entre columnas con el mismo nombre.</p>
+                <div class="row g-2">
+                    <div class="col-12 col-sm-6 col-xl-4" *ngFor="let option of columnOptions; trackBy: trackByColumn">
+                        <label class="column-option d-flex align-items-center gap-2 p-2 rounded border">
+                            <input class="form-check-input mt-0" type="checkbox" [checked]="selectedColumns.has(option.table + '.' + option.column)"
+                                (change)="toggleColumn(option.table + '.' + option.column)">
+                            <span>
+                                {{ option.label }}
+                                <small class="d-block text-secondary">{{ option.tableLabel }} · {{ option.moduleLabel }}</small>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="mt-3" *ngIf="numericOptions.length">
+                    <h6 class="fw-semibold">Totales sobre los resultados</h6>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="button" *ngFor="let option of numericOptions; trackBy: trackByColumn" class="btn btn-sm"
+                            [class.btn-success]="selectedTotals.has(option.table + '.' + option.column)"
+                            [class.btn-outline-secondary]="!selectedTotals.has(option.table + '.' + option.column)"
+                            (click)="toggleTotal(option.table + '.' + option.column)">
+                            Σ {{ option.tableLabel }} · {{ option.label }}
+                        </button>
+                    </div>
+                    <small class="text-secondary">Los totales respetan los filtros y evitan duplicar valores por efecto de las relaciones entre tablas.</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="card adminuiux-card mb-3" *ngIf="selectedTables.size">
+            <div class="card-body">
+                <h5 class="fw-semibold mb-1"><i class="bi bi-funnel me-2"></i>3. Filtros</h5>
+                <div class="row g-2 align-items-end">
+                    <div class="col-12 col-md-5">
+                        <label class="form-label" for="customFilterField">Campo</label>
+                        <select id="customFilterField" class="form-select" [(ngModel)]="draftFilterKey">
+                            <option value="">Selecciona un campo…</option>
+                            <option *ngFor="let option of columnOptions" [value]="option.table + '.' + option.column">
+                                {{ option.tableLabel }} · {{ option.label }}
+                            </option>
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <label class="form-label" for="customFilterOp">Condición</label>
+                        <select id="customFilterOp" class="form-select" [(ngModel)]="draftOp">
+                            <option value="equals">Es igual a</option>
+                            <option value="contains">Contiene</option>
+                            <option value="different">Es diferente de</option>
+                            <option value="between">Entre fechas</option>
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-3" *ngIf="draftOp !== 'between'">
+                        <label class="form-label" for="customFilterValue">Valor</label>
+                        <input id="customFilterValue" class="form-control" [(ngModel)]="draftValue" (keyup.enter)="addFilter()">
+                    </div>
+                    <ng-container *ngIf="draftOp === 'between'">
+                        <div class="col-3 col-md-2">
+                            <label class="form-label" for="customFilterFrom">Desde</label>
+                            <input id="customFilterFrom" type="date" class="form-control" [(ngModel)]="draftFrom">
+                        </div>
+                        <div class="col-3 col-md-2">
+                            <label class="form-label" for="customFilterTo">Hasta</label>
+                            <input id="customFilterTo" type="date" class="form-control" [(ngModel)]="draftTo">
+                        </div>
+                    </ng-container>
+                    <div class="col-auto">
+                        <button type="button" class="btn btn-outline-primary" (click)="addFilter()" [disabled]="!canAddFilter">
+                            <i class="bi bi-plus-circle me-1"></i> Agregar
+                        </button>
+                    </div>
+                </div>
+                <ul class="list-inline mt-3 mb-0" *ngIf="filters.length">
+                    <li class="list-inline-item me-2 mb-2" *ngFor="let filter of filters; let i = index">
+                        <span class="badge rounded-pill text-bg-light border p-2 d-inline-flex align-items-center gap-1">
+                            {{ filterLabel(filter) }}
+                            <button type="button" class="btn-close btn-sm" [attr.aria-label]="'Quitar filtro'" (click)="removeFilter(i)"></button>
+                        </span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card adminuiux-card mb-3">
+            <div class="card-body">
+                <h5 class="fw-semibold mb-1"><i class="bi bi-bookmark me-2"></i>4. Consultas guardadas</h5>
+                <p class="small text-secondary">Se guardan en este navegador, sin tocar la base de datos.</p>
+                <div class="d-flex flex-wrap gap-2 mb-2">
+                    <input class="form-control" style="max-width: 320px" [(ngModel)]="queryName"
+                        placeholder="Nombre de la consulta (también se usa en el archivo)">
+                    <button type="button" class="btn btn-outline-primary" (click)="saveCurrentQuery()"
+                        [disabled]="!queryName.trim() || !selectedTables.size">
+                        <i class="bi bi-save me-1"></i> Guardar consulta
+                    </button>
+                </div>
+                <ul class="list-group" *ngIf="savedQueries.length">
+                    <li class="list-group-item d-flex align-items-center gap-2" *ngFor="let saved of savedQueries">
+                        <span class="flex-grow-1">
+                            <strong>{{ saved.name }}</strong>
+                            <small class="d-block text-secondary">{{ saved.tables.length }} tabla(s) · {{ saved.columns.length }} columna(s) · guardada {{ saved.savedAt | date: 'dd/MM/yyyy HH:mm' }}</small>
+                        </span>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" (click)="loadQuery(saved)">Cargar</button>
+                        <button type="button" class="btn btn-sm btn-outline-danger" (click)="removeSavedQuery(saved.id)">Eliminar</button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card adminuiux-card mb-3">
+            <div class="card-body">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                    <h5 class="fw-semibold mb-0"><i class="bi bi-table me-2"></i>5. Resultados</h5>
+                    <span class="badge" [ngClass]="loading ? 'text-bg-warning' : hasRun ? 'text-bg-success' : 'text-bg-secondary'" aria-live="polite">
+                        {{ loading ? "Consultando..." : hasRun ? rowCount + " registros" : "Esperando consulta" }}
+                    </span>
+                </div>
+
+                <div class="table-responsive border rounded" *ngIf="hasRun || loading">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th scope="col" *ngFor="let column of resultColumns">{{ exportLabel(column.name) }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngIf="loading">
+                                <td [attr.colspan]="resultColumns.length || 1" class="text-center py-4 text-secondary">
+                                    <span class="spinner-border spinner-border-sm me-2"></span> Consultando datos...
+                                </td>
+                            </tr>
+                            <ng-container *ngIf="!loading">
+                                <tr *ngFor="let row of rows">
+                                    <td *ngFor="let column of resultColumns">{{ row[column.name] ?? "—" }}</td>
+                                </tr>
+                                <tr *ngIf="rows.length === 0">
+                                    <td [attr.colspan]="resultColumns.length || 1" class="text-center py-5 text-secondary">
+                                        <i class="bi bi-search display-6 d-block mb-2"></i>
+                                        <strong>No se encontraron registros</strong>
+                                    </td>
+                                </tr>
+                            </ng-container>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="d-flex flex-wrap gap-3 mt-3" *ngIf="totals.length && !loading">
+                    <div class="border rounded p-2 px-3" *ngFor="let total of totals">
+                        <small class="text-secondary d-block">Total · {{ exportLabel(total.table + '.' + total.column) }}</small>
+                        <strong class="fs-5">{{ formatTotal(total) }}</strong>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                    <button type="button" class="btn btn-theme" (click)="run()" [disabled]="!canRun">
+                        <span class="spinner-border spinner-border-sm me-1" *ngIf="loading"></span>
+                        <i class="bi bi-play-fill me-1" *ngIf="!loading"></i> Preparar consulta
+                    </button>
+                    <div class="ms-auto d-flex gap-2">
+                        <button type="button" class="btn btn-outline-success" (click)="exportXlsx()" [disabled]="!canExport">
+                            <i class="bi bi-file-earmark-excel me-1"></i> Exportar Excel (.xlsx)
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" (click)="exportCsv()" [disabled]="!canExport">
+                            <i class="bi bi-filetype-csv me-1"></i> Exportar CSV
+                        </button>
+                    </div>
+                </div>
+
+                <div class="alert alert-warning mt-3 mb-0" *ngIf="infoMessage" role="status">
+                    <i class="bi bi-info-circle me-1"></i>{{ infoMessage }}
+                </div>
+                <div class="alert alert-danger mt-3 mb-0" *ngIf="errorMessage" role="alert">
+                    <i class="bi bi-exclamation-triangle me-1"></i>{{ errorMessage }}
+                </div>
+            </div>
+        </div>
+    </ng-container>
+</div>

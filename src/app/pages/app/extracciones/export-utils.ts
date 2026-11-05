@@ -1,10 +1,12 @@
 import * as XLSX from "xlsx";
 
 import { DataRow, ExtractionColumnDef } from "./extractions.model";
+import { formatDate } from "./row-format.util";
 
-/** Valor de celda normalizado para exportar (booleanos legibles, vacíos limpios). */
-export function cellValue(row: DataRow, key: string): string | number {
-    const value = row[key];
+/** Valor de celda normalizado para exportar (booleanos legibles, fechas
+ * formateadas, vacíos limpios). */
+export function cellValue(row: DataRow, column: ExtractionColumnDef): string | number {
+    const value = row[column.key];
     if (value === null || value === undefined) {
         return "";
     }
@@ -13,6 +15,9 @@ export function cellValue(row: DataRow, key: string): string | number {
     }
     if (typeof value === "number") {
         return Number.isFinite(value) ? value : "";
+    }
+    if (column.type === "date") {
+        return formatDate(String(value));
     }
     return String(value);
 }
@@ -31,7 +36,7 @@ function escapeCsvField(field: string): string {
 export function buildCsv(rows: DataRow[], columns: ExtractionColumnDef[]): string {
     const header = columns.map(column => escapeCsvField(column.label)).join(",");
     const lines = rows.map(row =>
-        columns.map(column => escapeCsvField(String(cellValue(row, column.key)))).join(","),
+        columns.map(column => escapeCsvField(String(cellValue(row, column)))).join(","),
     );
 
     return `\uFEFF${[header, ...lines].join("\r\n")}\r\n`;
@@ -76,7 +81,7 @@ export function buildXlsxWorkbook(rows: DataRow[], columns: ExtractionColumnDef[
     }
 
     const header = columns.map(column => column.label);
-    const body = rows.map(row => columns.map(column => cellValue(row, column.key)));
+    const body = rows.map(row => columns.map(column => cellValue(row, column)));
 
     const sheet = XLSX.utils.aoa_to_sheet([header, ...body]);
     sheet["!cols"] = columns.map(() => ({ wch: 24 }));

@@ -19,6 +19,7 @@ function toRow(client: CrmClientRecord): DataRow {
         correoFacturacion: client.billingEmail ?? "",
         codigoPostal: client.postalCode ?? "",
         granContribuyente: yesNo(client.grandContributor),
+        fechaRegistro: client.creado ?? "",
     };
 }
 
@@ -41,6 +42,7 @@ export function createClientesEntity(clientsApi: CrmClientsApiService): Extracti
             { key: "correoFacturacion", label: "Correo de facturación" },
             { key: "codigoPostal", label: "Código postal" },
             { key: "granContribuyente", label: "Gran contribuyente" },
+            { key: "fechaRegistro", label: "Fecha de registro", type: "date" },
         ],
         defaultSelectedKeys: ["nombre", "nit", "empresa", "correo", "ciudad", "estado"],
         filterFields: [
@@ -52,6 +54,7 @@ export function createClientesEntity(clientsApi: CrmClientsApiService): Extracti
             { key: "pais", label: "País" },
             { key: "zona", label: "Zona" },
             { key: "estado", label: "Estado" },
+            { key: "fechaRegistro", label: "Fecha de registro de la empresa", kind: "date" },
         ],
         load(): Observable<DataRow[]> {
             return clientsApi.listClients({ limit: 500 }).pipe(map(items => items.map(toRow)));

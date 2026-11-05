@@ -6,8 +6,10 @@ import { Subscription } from "rxjs";
 
 import { AppliedFilter, DataRow, ExtractionColumnDef, ExtractionEntityConfig, FilterOperator } from "./extractions.model";
 import { applyFilters, operatorLabel as describeOperator } from "./filter-engine";
+import { formatDate } from "./row-format.util";
 import { buildExportFileName, downloadCsv, downloadXlsx } from "./export-utils";
 import { createEntityRegistry } from "./entity-registry";
+import { CustomExtractionComponent } from "./custom/custom-extraction.component";
 
 import { AppBackNavigationService } from "../../../services/app-back-navigation.service";
 import { CrmClientsApiService } from "../../../services/crm-clients-api.service";
@@ -27,7 +29,7 @@ const moneyFormatter = new Intl.NumberFormat("es-CO", { maximumFractionDigits: 2
 @Component({
     selector: "app-extracciones",
     standalone: true,
-    imports: [CommonModule, FormsModule, RouterLink],
+    imports: [CommonModule, FormsModule, RouterLink, CustomExtractionComponent],
     templateUrl: "./extracciones.component.html",
     styles: [`
         .extraction-page { min-width: 0; }
@@ -65,11 +67,14 @@ export class ExtraccionesComponent {
     columns: SelectableColumn[] = [];
     entityId = "clientes";
     queryName = "";
+    modality: "independent" | "custom" = "independent";
 
     filters: AppliedFilter[] = [];
     filterFieldKey = "";
     filterOperator: FilterOperator = "contains";
     filterValue = "";
+    filterFrom = "";
+    filterTo = "";
 
     rows: DataRow[] = [];
     rawCount = 0;
@@ -99,6 +104,18 @@ export class ExtraccionesComponent {
         return this.hasExecutedQuery && !this.loading && this.rows.length > 0 && this.selectedColumns.length > 0;
     }
 
+    /** El campo de filtro activo es de fecha: la UI muestra rango Desde/Hasta. */
+    get isDateFilterField(): boolean {
+        return this.activeConfig.filterFields.find(field => field.key === this.filterFieldKey)?.kind === "date";
+    }
+
+    get canAddFilter(): boolean {
+        if (this.isDateFilterField) {
+            return Boolean(this.filterFrom.trim() || this.filterTo.trim());
+        }
+        return Boolean(this.filterValue.trim());
+    }
+
     switchEntity(): void {
         const next = this.registry.byId.get(this.entityId);
         if (!next || next === this.activeConfig) {
@@ -115,8 +132,24 @@ export class ExtraccionesComponent {
     }
 
     addFilter(): void {
+        if (!this.filterFieldKey) {
+            return;
+        }
+
+        if (this.isDateFilterField) {
+            const from = this.filterFrom.trim();
+            const to = this.filterTo.trim();
+            if (!from && !to) {
+                return;
+            }
+            this.filters.push({ fieldKey: this.filterFieldKey, operator: "between", value: "", from, to });
+            this.filterFrom = "";
+            this.filterTo = "";
+            return;
+        }
+
         const value = this.filterValue.trim();
-        if (!value || !this.filterFieldKey) {
+        if (!value) {
             return;
         }
 
@@ -131,6 +164,8 @@ export class ExtraccionesComponent {
     clearFilters(): void {
         this.filters = [];
         this.filterValue = "";
+        this.filterFrom = "";
+        this.filterTo = "";
         this.resetResults("Se limpiaron los filtros y los resultados de la consulta anterior.");
     }
 
@@ -218,11 +253,28 @@ export class ExtraccionesComponent {
             return value ? "Sí" : "No";
         }
 
+        if (column.type === "date") {
+            return formatDate(String(value)) || "—";
+        }
+
         if ((column.type === "money" || column.type === "number") && typeof value === "number") {
             return moneyFormatter.format(value);
         }
 
         return String(value);
+    }
+
+    /** Texto del badge: rango legible para "between", valor crudo en otro caso. */
+    filterSummary(filter: AppliedFilter): string {
+        if (filter.operator !== "between") {
+            return filter.value;
+        }
+
+        const parts = [
+            filter.from?.trim() ? `desde ${formatDate(filter.from)}` : "",
+            filter.to?.trim() ? `hasta ${formatDate(filter.to)}` : "",
+        ].filter(Boolean);
+        return parts.join(" ") || "—";
     }
 
     fieldLabel(key: string): string {

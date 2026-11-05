@@ -17,6 +17,7 @@ import (
 	crmquotes "pika.software.net.co/backend/internal/crm/quotes"
 	"pika.software.net.co/backend/internal/docs"
 	equipmentcatalog "pika.software.net.co/backend/internal/equipmentcatalog"
+	"pika.software.net.co/backend/internal/extractions"
 	"pika.software.net.co/backend/internal/finance"
 	"pika.software.net.co/backend/internal/hr"
 	"pika.software.net.co/backend/internal/inventory"
@@ -79,6 +80,12 @@ func main() {
 
 	aclService := acl.NewService(db)
 	aclHandler := acl.NewHandler(aclService)
+
+	// Extracción personalizada transversal: consulta de solo lectura sobre las
+	// tablas existentes de los módulos. El doble chequeo de permisos (módulo
+	// "extracciones" + módulo origen de cada tabla) se resuelve con CanViewModule.
+	extractionsService := extractions.NewService(db, aclService.CanViewModule)
+	extractionsHandler := extractions.NewHandler(extractionsService)
 
 	hrService := hr.NewService(db)
 	hrHandler := hr.NewHandler(hrService)
@@ -239,6 +246,7 @@ func main() {
 	documentationHandler.RegisterRoutes(protectedAPI.Group("/documentation"))
 	settingsHandler.RegisterAdminRoutes(protectedAPI.Group("", requireAdminModule)) // PUT /api/v1/company-settings
 	worktimeHandler.RegisterRoutes(protectedAPI.Group("/worktime", aclService.RequireModule("registro-horas")))
+	extractionsHandler.RegisterRoutes(protectedAPI.Group("/extractions", aclService.RequireModule("extracciones")))
 
 	// Fase 5c: correos transaccionales.
 	//

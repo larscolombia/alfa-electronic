@@ -28,10 +28,27 @@
     <div class="alert alert-info d-flex gap-2 align-items-start">
         <i class="bi bi-plug-fill mt-1"></i>
         <div>
-            <strong>{{ activeConfig.label }}</strong> — {{ activeConfig.description }}
+            <strong>{{ modality === "custom" ? "Extracción personalizada" : activeConfig.label }}</strong> —
+            {{ modality === "custom"
+                ? "Combina tablas de varios módulos con sus relaciones reales, elige columnas, filtros y totales."
+                : activeConfig.description }}
         </div>
     </div>
 
+    <div class="btn-group mb-3" role="group" aria-label="Modalidad de extracción">
+        <button type="button" class="btn" [class.btn-primary]="modality === 'independent'"
+            [class.btn-outline-secondary]="modality !== 'independent'" (click)="modality = 'independent'">
+            <i class="bi bi-database me-1"></i> Extracción independiente
+        </button>
+        <button type="button" class="btn" [class.btn-primary]="modality === 'custom'"
+            [class.btn-outline-secondary]="modality !== 'custom'" (click)="modality = 'custom'">
+            <i class="bi bi-diagram-3 me-1"></i> Extracción personalizada
+        </button>
+    </div>
+
+    <app-custom-extraction *ngIf="modality === 'custom'"></app-custom-extraction>
+
+    <ng-container *ngIf="modality === 'independent'">
     <div class="card adminuiux-card mb-3">
         <div class="card-body">
             <h5 class="fw-semibold mb-3">
@@ -79,7 +96,7 @@
                         </select>
                     </div>
 
-                    <div class="mb-3">
+                    <div class="mb-3" *ngIf="!isDateFilterField">
                         <label for="filterOperator" class="form-label">Condición</label>
                         <select id="filterOperator" class="form-select" [(ngModel)]="filterOperator">
                             <option value="equals">Es igual a</option>
@@ -88,15 +105,31 @@
                         </select>
                     </div>
 
-                    <div class="mb-3">
+                    <div class="mb-3" *ngIf="!isDateFilterField">
                         <label for="filterValue" class="form-label">Valor</label>
                         <input id="filterValue" class="form-control" [(ngModel)]="filterValue" (keyup.enter)="addFilter()"
                             placeholder="Escribe el valor del filtro" aria-describedby="filterHelp">
                         <small id="filterHelp" class="text-secondary">La comparación no distingue mayúsculas de minúsculas.</small>
                     </div>
 
+                    <div class="mb-3" *ngIf="isDateFilterField">
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label for="filterFrom" class="form-label">Desde</label>
+                                <input id="filterFrom" type="date" class="form-control" [(ngModel)]="filterFrom">
+                            </div>
+                            <div class="col-6">
+                                <label for="filterTo" class="form-label">Hasta</label>
+                                <input id="filterTo" type="date" class="form-control" [(ngModel)]="filterTo">
+                            </div>
+                        </div>
+                        <small id="filterDateHelp" class="text-secondary">
+                            Filtra por rango de fechas; ambos límites son opcionales e inclusivos.
+                        </small>
+                    </div>
+
                     <button type="button" class="btn btn-outline-primary w-100 mt-1 mb-3"
-                        (click)="addFilter()" [disabled]="!filterValue.trim()">
+                        (click)="addFilter()" [disabled]="!canAddFilter">
                         <i class="bi bi-plus-circle me-1"></i> Agregar filtro
                     </button>
 
@@ -108,7 +141,7 @@
                         <ul class="list-inline mb-0">
                             <li class="list-inline-block me-2 mb-2" *ngFor="let filter of filters; let i = index">
                                 <span class="badge rounded-pill text-bg-light border p-2 d-flex align-items-center gap-1">
-                                    {{ fieldLabel(filter.fieldKey) }} · {{ operatorLabel(filter.operator) }} · {{ filter.value }}
+                                    {{ fieldLabel(filter.fieldKey) }} · {{ operatorLabel(filter.operator) }} · {{ filterSummary(filter) }}
                                     <button type="button" class="btn-close btn-sm ms-1"
                                         [attr.aria-label]="'Quitar filtro de ' + fieldLabel(filter.fieldKey)" (click)="removeFilter(i)">
                                     </button>
@@ -225,4 +258,5 @@
             </div>
         </div>
     </div>
+    </ng-container>
 </div>

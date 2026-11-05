@@ -1,7 +1,14 @@
-/** Convierte un ISO a dd/mm/aaaa; si no es fecha válida lo devuelve tal cual. */
+/** Convierte un ISO a dd/mm/aaaa; si no es fecha válida lo devuelve tal cual.
+ * Los valores solo-fecha (YYYY-MM-DD) se formatean por partes para no
+ * desplazar el día según la zona horaria del navegador. */
 export function formatDate(iso?: string | null): string {
     if (!iso) {
         return "";
+    }
+
+    const dateOnly = String(iso).trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (dateOnly) {
+        return `${dateOnly[3]}/${dateOnly[2]}/${dateOnly[1]}`;
     }
 
     const date = new Date(iso);
