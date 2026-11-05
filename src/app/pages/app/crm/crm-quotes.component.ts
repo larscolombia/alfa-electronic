@@ -22,6 +22,9 @@ import { FinanceSettingsApiService } from "../../../services/finance-settings-ap
 import { FormDraftService } from "../../../services/form-draft.service";
 import { QUOTE_COMMENT_LINES_KEY, QuoteCommentLine } from "../company/company-quote-settings.component";
 import { setPurchaseWorkflowHandoff } from "../inventory/purchase-workflow-handoff.store";
+import { canModifyQuote, laborCost, normalizeCommentLines, profitMargin, totalCost } from "./quote-equipment-costing.logic";
+import { WorkEquipmentHistoryContextService } from "../../../services/work-equipment-history-context.service";
+import { FINANCE_HOURLY_RATE_KEY } from "../../../services/finance-settings-api.service";
 
 const CRM_QUOTES_FORM_DRAFT_KEY = "app.crm.quotes.form";
 
@@ -50,6 +53,16 @@ type QuoteLine = {
     unidad: string;
     precioUnitario: number;
     impuesto: number;
+};
+
+type EquipmentQuoteDetail = {
+    itemId: string;
+    comments: string[];
+    estimatedHours: number;
+    partsCost: number;
+    salePrice: number;
+    hasWarranty: boolean;
+    warrantyMonths: number;
 };
 
 @Component({
@@ -326,6 +339,33 @@ type QuoteLine = {
                             <label class="form-label">Descripción</label>
                             <textarea class="form-control" rows="3" [(ngModel)]="quoteDescription" placeholder="Describe condiciones generales de la cotización..."></textarea>
                         </div>
+
+                        <section class="col-12 mb-3" *ngIf="selectedQuoteEquipmentIds.length" data-testid="quote-equipment-costs">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div><h6 class="mb-0">Detalle de reparación por equipo</h6><small class="text-secondary">Costo, precio y rentabilidad se calculan por cada equipo.</small></div>
+                                <span class="badge text-bg-light">Hora Colombia: {{ hourlyRate | number: '1.0-0' }} COP</span>
+                            </div>
+                            <div class="card border mb-3" *ngFor="let equipment of selectedQuoteEquipmentItems">
+                                <div class="card-header d-flex justify-content-between align-items-center gap-2">
+                                    <div><strong>{{ equipment.displayName }}</strong><small class="d-block text-secondary">Código: {{ equipment.equipmentCode || 'Sin código' }} · Serial: {{ equipment.serie || 'Sin serial' }}</small></div>
+                                    <button class="btn btn-sm btn-outline-secondary" type="button" (click)="openTechnicalHistory(equipment)" title="Incluye las fotografías asociadas"><i class="bi bi-clock-history me-1"></i>Historial técnico completo</button>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row g-3">
+                                        <div class="col-12 col-md-4"><label class="form-label">Horas-hombre estimadas</label><input class="form-control" type="number" min="0" step=".25" [(ngModel)]="equipmentDetail(equipment.itemId).estimatedHours" /></div>
+                                        <div class="col-12 col-md-4"><label class="form-label">Costo repuestos</label><input class="form-control" type="number" min="0" step="1000" [(ngModel)]="equipmentDetail(equipment.itemId).partsCost" /></div>
+                                        <div class="col-12 col-md-4"><label class="form-label">Valor a cobrar</label><input class="form-control" type="number" min="0" step="1000" [(ngModel)]="equipmentDetail(equipment.itemId).salePrice" /></div>
+                                        <div class="col-6 col-md-3"><small class="text-secondary d-block">Mano de obra</small><strong>{{ equipmentLaborCost(equipment.itemId) | number: '1.0-0' }}</strong></div>
+                                        <div class="col-6 col-md-3"><small class="text-secondary d-block">Costo total</small><strong>{{ equipmentTotalCost(equipment.itemId) | number: '1.0-0' }}</strong></div>
+                                        <div class="col-12 col-md-3"><small class="text-secondary d-block">Utilidad</small><strong>{{ equipmentProfit(equipment.itemId) | number: '1.0-0' }}</strong></div>
+                                        <div class="col-12 col-md-3"><small class="text-secondary d-block">Margen</small><strong [class.text-danger]="equipmentMargin(equipment.itemId) < 0">{{ equipmentMargin(equipment.itemId) | number: '1.0-2' }}%</strong></div>
+                                        <div class="col-12"><label class="form-label">Comentarios (máximo 5)</label><div class="input-group mb-2"><select class="form-select" #commentSelect><option value="">Elegir comentario configurado…</option><option *ngFor="let comment of quoteCommentLines" [value]="comment.text">{{ comment.text }}</option></select><button class="btn btn-outline-secondary" type="button" (click)="addEquipmentComment(equipment.itemId, commentSelect.value); commentSelect.value = ''">Agregar</button></div><div class="input-group mb-2" *ngFor="let comment of equipmentDetail(equipment.itemId).comments; let commentIndex = index"><input class="form-control" [(ngModel)]="equipmentDetail(equipment.itemId).comments[commentIndex]" [attr.aria-label]="'Comentario ' + (commentIndex + 1)" /><button class="btn btn-outline-danger" type="button" (click)="removeEquipmentComment(equipment.itemId, commentIndex)">Quitar</button></div><button class="btn btn-sm btn-link px-0" type="button" [disabled]="equipmentDetail(equipment.itemId).comments.length >= 5" (click)="addEquipmentComment(equipment.itemId, '')">Agregar comentario manual</button></div>
+                                        <div class="col-12 col-md-4"><div class="form-check mt-2"><input class="form-check-input" [id]="'warranty-' + equipment.itemId" type="checkbox" [(ngModel)]="equipmentDetail(equipment.itemId).hasWarranty" /><label class="form-check-label" [for]="'warranty-' + equipment.itemId">Incluye garantía</label></div></div>
+                                        <div class="col-12 col-md-4" *ngIf="equipmentDetail(equipment.itemId).hasWarranty"><label class="form-label">Garantía (meses)</label><input class="form-control" type="number" min="1" [(ngModel)]="equipmentDetail(equipment.itemId).warrantyMonths" /></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
 
                         <div class="col-12 mb-3">
                             <div class="form-check">
@@ -606,6 +646,8 @@ export class CrmQuotesComponent implements OnInit {
     quoteDescription = "";
     signatureRequired = true;
     selectedQuoteEquipmentIds: string[] = [];
+    hourlyRate = 0;
+    equipmentDetails: Record<string, EquipmentQuoteDetail> = {};
 
     quotesLoadErrorMessage = "";
     prospectsLoadErrorMessage = "";
@@ -669,6 +711,7 @@ export class CrmQuotesComponent implements OnInit {
         private readonly cdr: ChangeDetectorRef,
         private readonly formDraftService: FormDraftService,
         private readonly financeSettingsApi: FinanceSettingsApiService,
+        private readonly equipmentHistoryContext: WorkEquipmentHistoryContextService,
         // Fase 5c: correo transaccional de la cotización.
         private readonly emailsApi: EmailsApiService,
     ) {}
@@ -741,6 +784,7 @@ export class CrmQuotesComponent implements OnInit {
         this.loadCatalogsFromApi();
         this.loadQuotesFromApi();
         this.loadQuoteCommentLines();
+        this.loadHourlyRate();
         this.handleProspectChange(this.selectedProspecto);
     }
 
@@ -758,6 +802,13 @@ export class CrmQuotesComponent implements OnInit {
         this.financeSettingsApi.getSetting<QuoteCommentLine[]>(QUOTE_COMMENT_LINES_KEY).subscribe({
             next: (lines) => this.quoteCommentLines = Array.isArray(lines) ? lines.filter((line) => line?.text?.trim()) : [],
             error: () => this.quoteCommentLines = [],
+        });
+    }
+
+    private loadHourlyRate(): void {
+        this.financeSettingsApi.getSetting<number>(FINANCE_HOURLY_RATE_KEY).subscribe({
+            next: (value) => this.hourlyRate = Math.max(0, Number(value) || 0),
+            error: () => this.hourlyRate = 0,
         });
     }
 
@@ -1276,6 +1327,39 @@ export class CrmQuotesComponent implements OnInit {
         return this.availableQuoteEquipmentItems.filter((item) => selectedIds.has(item.itemId)).map((item) => item.displayName);
     }
 
+    get selectedQuoteEquipmentItems(): ProspectEquipmentSummary[] {
+        const selected = new Set(this.selectedQuoteEquipmentIds);
+        return this.availableQuoteEquipmentItems.filter((item) => selected.has(item.itemId));
+    }
+
+    equipmentDetail(itemId: string): EquipmentQuoteDetail {
+        if (!this.equipmentDetails[itemId]) {
+            this.equipmentDetails[itemId] = { itemId, comments: [], estimatedHours: 0, partsCost: 0, salePrice: 0, hasWarranty: false, warrantyMonths: 0 };
+        }
+        return this.equipmentDetails[itemId];
+    }
+
+    equipmentLaborCost(itemId: string): number { return laborCost(this.equipmentDetail(itemId).estimatedHours, this.hourlyRate); }
+    equipmentTotalCost(itemId: string): number { return totalCost(this.equipmentDetail(itemId), this.hourlyRate); }
+    equipmentProfit(itemId: string): number { return this.equipmentDetail(itemId).salePrice - this.equipmentTotalCost(itemId); }
+    equipmentMargin(itemId: string): number { return profitMargin(this.equipmentDetail(itemId).salePrice, this.equipmentTotalCost(itemId)); }
+
+    addEquipmentComment(itemId: string, value: string): void {
+        const detail = this.equipmentDetail(itemId);
+        if (detail.comments.length >= 5) return;
+        detail.comments = [...detail.comments, value.trim()];
+    }
+
+    removeEquipmentComment(itemId: string, index: number): void {
+        const detail = this.equipmentDetail(itemId);
+        detail.comments = detail.comments.filter((_, current) => current !== index);
+    }
+
+    openTechnicalHistory(equipment: ProspectEquipmentSummary): void {
+        this.equipmentHistoryContext.setContext({ reference: equipment.equipmentCode, identifier: equipment.serie || equipment.itemId, origin: "cotizaciones" });
+        void this.router.navigate(["/app/work-equipment-history"]);
+    }
+
     handleProspectChange(prospectName: string): void {
         this.selectedProspecto = prospectName;
         this.loadEquipmentForSelectedProspect();
@@ -1292,6 +1376,7 @@ export class CrmQuotesComponent implements OnInit {
         if (checked) {
             if (!this.selectedQuoteEquipmentIds.includes(itemId)) {
                 this.selectedQuoteEquipmentIds = [...this.selectedQuoteEquipmentIds, itemId];
+                this.equipmentDetail(itemId);
             }
             return;
         }
