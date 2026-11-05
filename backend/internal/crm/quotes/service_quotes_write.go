@@ -15,6 +15,11 @@ import (
 
 func (s *Service) UpsertQuote(companyID string, quote Quote) (Quote, error) {
 	ctx := context.Background()
+	if quote.ID != "" {
+		locked, lockErr := s.quoteHasRepairingEquipment(ctx, companyID, quote.ID)
+		if lockErr != nil { return Quote{}, lockErr }
+		if locked { return Quote{}, errQuoteLockedByRepair }
+	}
 	normalized, err := normalizeQuote(quote)
 	if err != nil {
 		return Quote{}, err
@@ -29,6 +34,8 @@ func (s *Service) UpsertQuote(companyID string, quote Quote) (Quote, error) {
 	if err != nil {
 		return Quote{}, err
 	}
+	equipmentDetailsRaw, err := json.Marshal(normalized.EquipmentDetails)
+	if err != nil { return Quote{}, err }
 
 	var purchaseOrderUploadedAt any
 	if normalized.PurchaseOrderUploadedAt != "" {
@@ -64,7 +71,7 @@ INSERT INTO crm_quotes (
 	firmante_correo, lugar_firma, firma_base64,
 	descripcion, tax_mode, zone, signature_required, selected_equipment_ids_json,
 	subtotal, tax_total, total,
-	purchase_order_number, purchase_order_file_name, purchase_order_file_data_url, purchase_order_date, purchase_order_uploaded_at,
+	purchase_order_number, purchase_order_file_name, purchase_order_file_data_url, purchase_order_date, purchase_order_uploaded_at, equipment_details_json,
 	soft_delete, created_at, updated_at
 )
 VALUES (
@@ -74,7 +81,7 @@ VALUES (
 	$22, $23, $24,
 	$25, $26, $27, $28, $29,
 	$30, $31, $32,
-	$33, $34, $35, $36, $37,
+	$33, $34, $35, $36, $37, $38,
 	false, NOW(), NOW()
 )
 ON CONFLICT (company_id, id)
@@ -114,6 +121,7 @@ DO UPDATE SET
 	purchase_order_file_data_url = EXCLUDED.purchase_order_file_data_url,
 	purchase_order_date = EXCLUDED.purchase_order_date,
 	purchase_order_uploaded_at = EXCLUDED.purchase_order_uploaded_at,
+	equipment_details_json = EXCLUDED.equipment_details_json,
 	soft_delete = false,
 	updated_at = NOW();
 `,
@@ -154,6 +162,7 @@ DO UPDATE SET
 		normalized.PurchaseOrderFileDataURL,
 		normalized.PurchaseOrderDate,
 		purchaseOrderUploadedAt,
+		equipmentDetailsRaw,
 	); err != nil {
 		return Quote{}, err
 	}
@@ -184,6 +193,9 @@ func (s *Service) DeleteQuote(companyID, quoteID string) (bool, error) {
 	if normalizedID == "" {
 		return false, errQuoteIDRequired
 	}
+	locked, lockErr := s.quoteHasRepairingEquipment(ctx, companyID, normalizedID)
+	if lockErr != nil { return false, lockErr }
+	if locked { return false, errQuoteLockedByRepair }
 
 	result, err := s.db.ExecContext(ctx, `
 UPDATE crm_quotes

@@ -233,6 +233,7 @@ func migrationStatementsCRMEquipmentAndQuotes() []string {
 		`ALTER TABLE crm_quotes ADD COLUMN IF NOT EXISTS purchase_order_file_data_url TEXT NOT NULL DEFAULT '';`,
 		`ALTER TABLE crm_quotes ADD COLUMN IF NOT EXISTS purchase_order_date VARCHAR(10) NOT NULL DEFAULT '';`,
 		`ALTER TABLE crm_quotes ADD COLUMN IF NOT EXISTS purchase_order_uploaded_at TIMESTAMPTZ NULL;`,
+		`ALTER TABLE crm_quotes ADD COLUMN IF NOT EXISTS equipment_details_json JSONB NOT NULL DEFAULT '[]'::jsonb;`,
 		`ALTER TABLE crm_equipment_records ADD COLUMN IF NOT EXISTS intake_method VARCHAR(20) NOT NULL DEFAULT 'personal';`,
 		`ALTER TABLE crm_equipment_records ADD COLUMN IF NOT EXISTS intake_carrier VARCHAR(160) NOT NULL DEFAULT '';`,
 		`ALTER TABLE crm_equipment_records ADD COLUMN IF NOT EXISTS intake_tracking_number VARCHAR(160) NOT NULL DEFAULT '';`,

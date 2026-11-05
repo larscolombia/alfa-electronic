@@ -9,6 +9,16 @@ type Line struct {
 	Impuesto       float64 `json:"impuesto"`
 }
 
+type EquipmentDetail struct {
+	ItemID         string   `json:"itemId"`
+	Comments       []string `json:"comments"`
+	EstimatedHours float64  `json:"estimatedHours"`
+	PartsCost      float64  `json:"partsCost"`
+	SalePrice      float64  `json:"salePrice"`
+	HasWarranty    bool     `json:"hasWarranty"`
+	WarrantyMonths int      `json:"warrantyMonths"`
+}
+
 type Quote struct {
 	ID                       string   `json:"id"`
 	Token                    string   `json:"token"`
@@ -38,6 +48,7 @@ type Quote struct {
 	Zone                     string   `json:"zone"`
 	SignatureRequired        bool     `json:"signatureRequired"`
 	SelectedEquipmentIDs     []string `json:"selectedEquipmentIds"`
+	EquipmentDetails         []EquipmentDetail `json:"equipmentDetails"`
 	Subtotal                 float64  `json:"subtotal"`
 	TaxTotal                 float64  `json:"taxTotal"`
 	Total                    float64  `json:"total"`
@@ -70,6 +81,7 @@ func (q Quote) Public() Quote {
 	pub.Zone = ""
 	pub.SignatureRequired = false
 	pub.SelectedEquipmentIDs = nil
+	pub.EquipmentDetails = nil
 	pub.PurchaseOrderNumber = ""
 	pub.PurchaseOrderFileName = ""
 	pub.PurchaseOrderFileDataURL = ""

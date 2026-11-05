@@ -14,6 +14,7 @@ func scanQuote(scanner interface{ Scan(dest ...any) error }) (Quote, error) {
 		item                    Quote
 		rawLines                []byte
 		rawSelectedEquipment    []byte
+		rawEquipmentDetails     []byte
 		purchaseOrderUploadedAt sql.NullTime
 		invoicedAt              sql.NullTime
 		createdAt               time.Time
@@ -49,6 +50,7 @@ func scanQuote(scanner interface{ Scan(dest ...any) error }) (Quote, error) {
 		&item.Zone,
 		&item.SignatureRequired,
 		&rawSelectedEquipment,
+		&rawEquipmentDetails,
 		&item.Subtotal,
 		&item.TaxTotal,
 		&item.Total,
@@ -97,6 +99,9 @@ func scanQuote(scanner interface{ Scan(dest ...any) error }) (Quote, error) {
 	} else {
 		item.SelectedEquipmentIDs = []string{}
 	}
+	if len(rawEquipmentDetails) > 0 {
+		if err := json.Unmarshal(rawEquipmentDetails, &item.EquipmentDetails); err != nil { return Quote{}, err }
+	} else { item.EquipmentDetails = []EquipmentDetail{} }
 
 	return item, nil
 }

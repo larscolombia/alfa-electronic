@@ -935,6 +935,10 @@ export class CrmQuotesComponent implements OnInit {
                 this.quoteDescription = quote.descripcion ?? "";
                 this.signatureRequired = quote.signatureRequired ?? true;
                 this.selectedQuoteEquipmentIds = [...(quote.selectedEquipmentIds ?? [])];
+                this.equipmentDetails = (quote.equipmentDetails ?? []).reduce<Record<string, EquipmentQuoteDetail>>((details, item) => {
+                    details[item.itemId] = { ...item, comments: normalizeCommentLines(item.comments ?? []) };
+                    return details;
+                }, {});
                 this.discountValue = quote.descuentoValor ?? 0;
                 this.discountType = (quote.descuentoTipo as "%" | "COP") || "%";
                 this.recipientNote = quote.nota ?? "";
@@ -1782,6 +1786,10 @@ export class CrmQuotesComponent implements OnInit {
             zone: this.selectedQuoteZone,
             signatureRequired: this.signatureRequired,
             selectedEquipmentIds: [...this.selectedQuoteEquipmentIds],
+            equipmentDetails: this.selectedQuoteEquipmentIds.map((itemId) => {
+                const detail = this.equipmentDetail(itemId);
+                return { ...detail, comments: normalizeCommentLines(detail.comments) };
+            }),
             subtotal: this.subtotal,
             taxTotal: this.taxTotal,
             total: this.total,

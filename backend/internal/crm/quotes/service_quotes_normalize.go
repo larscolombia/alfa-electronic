@@ -65,6 +65,17 @@ func normalizeQuote(input Quote) (Quote, error) {
 	normalized.PurchaseOrderDate = strings.TrimSpace(normalized.PurchaseOrderDate)
 	normalized.PurchaseOrderUploadedAt = strings.TrimSpace(normalized.PurchaseOrderUploadedAt)
 	normalized.SelectedEquipmentIDs = normalizeStringSlice(normalized.SelectedEquipmentIDs)
+	if normalized.EquipmentDetails == nil { normalized.EquipmentDetails = []EquipmentDetail{} }
+	for i := range normalized.EquipmentDetails {
+		detail := &normalized.EquipmentDetails[i]
+		detail.ItemID = strings.TrimSpace(detail.ItemID)
+		detail.EstimatedHours = clampNonNegative(detail.EstimatedHours)
+		detail.PartsCost = clampNonNegative(detail.PartsCost)
+		detail.SalePrice = clampNonNegative(detail.SalePrice)
+		if detail.WarrantyMonths < 0 { detail.WarrantyMonths = 0 }
+		if len(detail.Comments) > 5 { detail.Comments = detail.Comments[:5] }
+		for j := range detail.Comments { detail.Comments[j] = strings.TrimSpace(detail.Comments[j]) }
+	}
 	if normalized.Lineas == nil {
 		normalized.Lineas = []Line{}
 	}

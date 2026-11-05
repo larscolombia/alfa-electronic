@@ -15,7 +15,7 @@ const (
 	quoteSelectColumns = `id, token, codigo, prospecto, prospect_id, empresa, correo, movil, fecha, valido_hasta,
 	estado, moneda, descuento_tipo, descuento_valor, lineas_json,
 	nota, terminos, estado_cliente, fecha_decision, firmado_por, firmante_correo, lugar_firma, firma_base64,
-	descripcion, tax_mode, zone, signature_required, selected_equipment_ids_json,
+	descripcion, tax_mode, zone, signature_required, selected_equipment_ids_json, equipment_details_json,
 	subtotal, tax_total, total,
 	purchase_order_number, purchase_order_file_name, purchase_order_file_data_url, purchase_order_date, purchase_order_uploaded_at,
 	created_at, updated_at, invoice_id, invoiced_at`

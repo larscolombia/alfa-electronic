@@ -15,6 +15,16 @@ export interface CrmQuoteLine {
     impuesto: number;
 }
 
+export interface CrmQuoteEquipmentDetail {
+    itemId: string;
+    comments: string[];
+    estimatedHours: number;
+    partsCost: number;
+    salePrice: number;
+    hasWarranty: boolean;
+    warrantyMonths: number;
+}
+
 export interface CrmQuoteRecord {
     id: string;
     token: string;
@@ -44,6 +54,7 @@ export interface CrmQuoteRecord {
     zone?: string;
     signatureRequired?: boolean;
     selectedEquipmentIds?: string[];
+    equipmentDetails?: CrmQuoteEquipmentDetail[];
     subtotal?: number;
     taxTotal?: number;
     total?: number;
