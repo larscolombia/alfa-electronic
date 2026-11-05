@@ -102,6 +102,7 @@ export class ProjectEquipmentService {
     repairStatus: ProspectEquipmentRepairStatus,
     locationId: string,
     updatedBy: string,
+    locationName?: string,
   ): ProjectEquipmentOption | null {
     const parsedReference = this.parseReference(reference);
     if (!parsedReference) {
@@ -109,19 +110,17 @@ export class ProjectEquipmentService {
     }
 
     const location = this.getLocations().find((entry) => entry.id === locationId);
-    if (!location) {
+    const resolvedLocationName = locationName?.trim() || location?.name || '';
+    if (!resolvedLocationName) {
       return null;
     }
 
-    const updated = updateProspectEquipmentWorkflow({
-      recordId: parsedReference.recordId,
-      itemId: parsedReference.itemId,
-      repairStatus,
-      storageLocationId: locationId,
-      updatedBy,
-    });
+    const updated = location ? updateProspectEquipmentWorkflow({
+      recordId: parsedReference.recordId, itemId: parsedReference.itemId,
+      repairStatus, storageLocationId: locationId, updatedBy,
+    }) : null;
 
-    this.syncWorkflowToApi(parsedReference.recordId, parsedReference.itemId, repairStatus, location.id, location.name, updatedBy);
+    this.syncWorkflowToApi(parsedReference.recordId, parsedReference.itemId, repairStatus, locationId, resolvedLocationName, updatedBy);
     this.refreshEquipmentOptionsFromApi(true);
 
     if (updated) {
@@ -135,8 +134,8 @@ export class ProjectEquipmentService {
 
     const optimistic: ProjectEquipmentOption = {
       ...cached,
-      storageLocationId: location.id,
-      storageLocationName: location.name,
+      storageLocationId: locationId,
+      storageLocationName: resolvedLocationName,
       repairStatus,
       repairStatusLabel: this.repairStatusOptions.find((option) => option.id === repairStatus)?.label ?? cached.repairStatusLabel,
       repairStatusUpdatedAt: new Date().toISOString(),

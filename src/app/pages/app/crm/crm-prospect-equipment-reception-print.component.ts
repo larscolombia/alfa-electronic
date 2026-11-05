@@ -21,9 +21,12 @@ import { ProspectEquipmentAttachment, ProspectEquipmentItem, ProspectEquipmentRe
 
             <article class="reception-sheet" *ngIf="!loading && record as currentRecord">
                 <header class="reception-sheet__header">
-                    <h1>Formato de recepción de equipos</h1>
-                    <div class="small text-secondary">Registro: {{ currentRecord.id }}</div>
-                    <div class="small text-secondary">Generado: {{ formatDate(nowISO) }}</div>
+                    <img class="reception-sheet__logo" src="assets/img/logo.svg" alt="Alfa Electronics" />
+                    <div>
+                        <h1>Reporte de recepción de equipos</h1>
+                        <div class="small text-secondary">Registro: {{ currentRecord.id }}</div>
+                        <div class="small text-secondary">Generado: {{ formatDate(nowISO) }}</div>
+                    </div>
                 </header>
 
                 <section class="reception-sheet__section">
@@ -117,7 +120,12 @@ import { ProspectEquipmentAttachment, ProspectEquipmentItem, ProspectEquipmentRe
                 border-bottom: 1px solid #e5e7eb;
                 margin-bottom: 1rem;
                 padding-bottom: 0.75rem;
+                display: flex;
+                align-items: center;
+                gap: 1rem;
             }
+
+            .reception-sheet__logo { width: 10rem; height: auto; object-fit: contain; }
 
             .reception-sheet__header h1 {
                 font-size: 1.35rem;

@@ -155,6 +155,11 @@ func (s *Service) AssignItemTechnician(companyID, recordID, itemID string, req A
 		item.AssignedTo = technician.Name
 		item.AssignedAt = assignedAt
 		item.AssignedBy = assignedBy
+		if item.RepairStatus == "" || item.RepairStatus == "recibido" {
+			item.RepairStatus = "diagnostico"
+			item.RepairStatusUpdatedAt = assignedAt
+			item.RepairStatusUpdatedBy = assignedBy
+		}
 		record.Items[index] = item
 		record.AssignedTo = technician.Name
 		updated = true

@@ -10,7 +10,7 @@ import { CrmFollowupsApiService, CrmProspectFollowup } from "../../../services/c
 import { CrmAttachmentsApiService, ProspectAttachment } from "../../../services/crm-attachments-api.service";
 import { AppBackNavigationService } from "../../../services/app-back-navigation.service";
 
-type ClientDetailTab = "perfil" | "contactos" | "acciones" | "equipos" | "cotizacion" | "archivos" | "notas" | "sucursales" | "trazabilidad";
+type ClientDetailTab = "perfil" | "contactos" | "acciones" | "equipos" | "cotizacion" | "archivos" | "notas" | "trazabilidad";
 type EditableClientField = "nombre" | "correo" | "empresa" | "nit" | "website" | "officePhone" | "country" | "city" | "address" | "zona";
 
 type EditableClientFieldConfig = {
@@ -76,7 +76,6 @@ type EditableClientFieldConfig = {
                     <li class="nav-item"><button class="nav-link" role="tab" type="button" [class.active]="activeTab === 'cotizacion'" (click)="activeTab = 'cotizacion'">Cotización</button></li>
                     <li class="nav-item"><button class="nav-link" role="tab" type="button" [class.active]="activeTab === 'archivos'" (click)="activeTab = 'archivos'">Archivos</button></li>
                     <li class="nav-item"><button class="nav-link" role="tab" type="button" [class.active]="activeTab === 'notas'" (click)="activeTab = 'notas'">Notas</button></li>
-                    <li class="nav-item"><button class="nav-link" role="tab" type="button" [class.active]="activeTab === 'sucursales'" (click)="activeTab = 'sucursales'">Sucursales</button></li>
                     <li class="nav-item"><button class="nav-link" role="tab" type="button" [class.active]="activeTab === 'trazabilidad'" (click)="activeTab = 'trazabilidad'">Trazabilidad</button></li>
                 </ul>
 
@@ -271,7 +270,7 @@ type EditableClientFieldConfig = {
                         </div>
                     }
 
-                    @if (activeTab === 'sucursales') {
+                    @if (false) {
                         <div class="row gx-3 gx-lg-4">
                             <div class="col-12 col-xl-5 mb-3 mb-xl-0">
                                 <div class="card adminuiux-card h-100">

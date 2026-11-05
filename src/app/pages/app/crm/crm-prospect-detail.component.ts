@@ -21,7 +21,7 @@ import { AuthService } from "../../../services/auth.service";
 import { HrPeoplePickerService } from "../../../services/hr-people-picker.service";
 import { COUNTRY_OPTIONS, citiesForCountry } from "./country-city.dataset";
 
-type DetailTab = "perfil" | "contactos-relacionados" | "acciones-comerciales" | "equipos" | "cotizacion" | "archivos" | "notas" | "trazabilidad" | "sucursales";
+type DetailTab = "perfil" | "contactos-relacionados" | "acciones-comerciales" | "equipos" | "cotizacion" | "archivos" | "notas" | "trazabilidad";
 type ActivityTab = "actividad" | "notas" | "correos" | "llamadas" | "tareas" | "reuniones";
 
 type RelatedContactType = "Prospecto" | "Cliente" | "Contacto";
@@ -162,7 +162,6 @@ type EditableProfileFieldConfig = {
                         <button class="nav-link" role="tab" type="button" [class.active]="activeTab === 'notas'" [attr.aria-selected]="activeTab === 'notas'" (click)="activeTab = 'notas'">Notas</button>
                     </li>
                     <li class="nav-item">
-                        <button class="nav-link" role="tab" type="button" [class.active]="activeTab === 'sucursales'" [attr.aria-selected]="activeTab === 'sucursales'" (click)="activeTab = 'sucursales'">Sucursales</button>
                     </li>
                     <li class="nav-item">
                         <button class="nav-link" role="tab" type="button" [class.active]="activeTab === 'trazabilidad'" [attr.aria-selected]="activeTab === 'trazabilidad'" (click)="activeTab = 'trazabilidad'">Trazabilidad</button>
@@ -658,7 +657,7 @@ type EditableProfileFieldConfig = {
                         </div>
                     }
 
-                    @if (activeTab === "sucursales") {
+                    @if (false) {
                         <div class="card adminuiux-card">
                             <div class="card-header border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
                                 <div>

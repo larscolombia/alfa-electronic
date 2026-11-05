@@ -18,7 +18,7 @@ import { ProjectsApiService } from '../../../services/projects-api.service';
 import { EmailsApiService } from '../../../services/emails-api.service';
 import { WorktimeApiService } from '../../../services/worktime-api.service';
 import { buildCommercialDocumentCode } from '../company/company-commercial-settings.store';
-import { buildEquipmentQrShortCode, generateEquipmentQrDataUrl } from '../crm/equipment-qr.util';
+import { EquipmentQrPayload, generateEquipmentQrDataUrl } from '../crm/equipment-qr.util';
 import { QuotePrefillFromProject, setQuotePrefill } from '../crm/quote-prefill.store';
 import { ProspectEquipmentAttachment, ProspectEquipmentEvidencePhoto, ProspectEquipmentItem, ProspectEquipmentRepairStatus } from '../crm/crm-prospect-equipment.store';
 import { Attachment, BoardColumn, Project, ProjectBoard } from './models';
@@ -365,6 +365,16 @@ type ProjectDetailTab = 'equipo' | 'materiales' | 'identidad' | 'planeacion' | '
                   <span><strong>Serie:</strong> {{ equipment.serie || '--' }}</span>
                   <span><strong>Recepcion:</strong> {{ equipment.receptionLabel }}</span>
                   <span><strong>Evidencias:</strong> {{ equipment.evidenceCount }}</span>
+                </div>
+
+                <div class="project-form-grid project-form-grid--2 mt-3">
+                  <label class="project-detail-field">
+                    <span class="project-detail-field__label">Ubicación actual</span>
+                    <input class="project-detail-field__input" [(ngModel)]="equipmentLocationNameDraft" placeholder="Escribe la ubicación actual" data-testid="equipment-current-location" />
+                  </label>
+                  <div class="d-flex align-items-end">
+                    <button type="button" class="btn btn-outline-theme" [disabled]="!canUpdateEquipmentWorkflow()" (click)="updateLinkedEquipmentWorkflow()">Actualizar ubicación</button>
+                  </div>
                 </div>
 
                 <div class="equipment-evidence-section mt-3">
@@ -3324,6 +3334,7 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
   equipmentIdentifierDraft = '';
   equipmentRepairStatusDraft: ProspectEquipmentRepairStatus = 'recibido';
   equipmentLocationIdDraft = '';
+  equipmentLocationNameDraft = '';
   equipmentWorkflowMessage = '';
   equipmentWorkflowError = '';
   showEquipmentScanner = false;
@@ -3807,7 +3818,7 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
   }
 
   canUpdateEquipmentWorkflow(): boolean {
-    return Boolean(this.detailProject && this.selectedEquipmentReference && this.equipmentLocationIdDraft.trim());
+    return Boolean(this.detailProject && this.selectedEquipmentReference && this.equipmentLocationNameDraft.trim());
   }
 
   updateLinkedEquipmentWorkflow(): void {
@@ -3819,8 +3830,8 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
       return;
     }
 
-    if (!this.equipmentLocationIdDraft.trim()) {
-      this.equipmentWorkflowError = 'Selecciona una ubicacion valida para el equipo.';
+    if (!this.equipmentLocationNameDraft.trim()) {
+      this.equipmentWorkflowError = 'Indica la ubicación actual del equipo.';
       return;
     }
 
@@ -3830,6 +3841,7 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
       this.equipmentRepairStatusDraft,
       this.equipmentLocationIdDraft,
       assignee,
+      this.equipmentLocationNameDraft,
     );
 
     if (!updatedEquipment) {
@@ -5201,6 +5213,7 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
       this.clearLinkedEquipmentEvidenceContext();
       this.equipmentIdentifierDraft = '';
       this.equipmentLocationIdDraft = '';
+      this.equipmentLocationNameDraft = '';
       this.equipmentRepairStatusDraft = 'recibido';
       this.equipmentQrDataUrl = '';
       return;
@@ -5211,6 +5224,7 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
 
     this.equipmentRepairStatusDraft = status;
     this.equipmentLocationIdDraft = String(properties['equipmentLocationId'] ?? '').trim();
+    this.equipmentLocationNameDraft = String(properties['equipmentLocationName'] ?? '').trim();
     this.equipmentIdentifierDraft = String(properties['equipmentIdentifier'] ?? '').trim();
 
     const reference = this.buildEquipmentReferenceFromProject(properties);
@@ -5284,6 +5298,7 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
     this.linkedEquipment = equipment;
     this.equipmentIdentifierDraft = equipment.equipmentCode || this.equipmentIdentifierDraft;
     this.equipmentLocationIdDraft = equipment.storageLocationId;
+    this.equipmentLocationNameDraft = equipment.storageLocationName;
     this.equipmentRepairStatusDraft = equipment.repairStatus;
 
     properties['equipmentRecordId'] = equipment.recordId;
@@ -5343,6 +5358,7 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
 
     this.equipmentIdentifierDraft = '';
     this.equipmentLocationIdDraft = '';
+    this.equipmentLocationNameDraft = '';
     this.equipmentRepairStatusDraft = 'recibido';
     this.clearLinkedEquipmentEvidenceContext();
     this.syncMaterialDraftContext();
@@ -5503,27 +5519,24 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
     return runs.filter((run): run is WorkTestBatchRun => typeof run === 'object' && run !== null).slice(0, 5);
   }
 
-  private buildEquipmentQrPayload(): string {
+  private buildEquipmentQrPayload(): EquipmentQrPayload | null {
     if (!this.detailProject) {
-      return '';
+      return null;
     }
 
     const properties = this.detailProject.properties;
     const identifier = String(properties['equipmentIdentifier'] ?? '').trim();
     if (!identifier) {
-      return '';
+      return null;
     }
 
-    const recordID = String(properties['equipmentRecordId'] ?? '').trim();
-    const itemID = String(properties['equipmentItemId'] ?? '').trim();
-    const shortCode = String(properties['shortCode'] ?? '').trim() || buildEquipmentQrShortCode(recordID || this.detailProject.id, itemID || this.detailProject.id);
-
-    return JSON.stringify({
-      recordId: recordID,
-      itemId: itemID,
-      identifier,
-      shortCode,
-    });
+    return {
+      equipmentCode: identifier,
+      receptionDate: String(properties['receptionDate'] ?? this.detailProject.createdAt ?? '').trim(),
+      companyName: String(properties['client'] ?? properties['clientName'] ?? '').trim(),
+      identification: String(properties['clientNit'] ?? properties['nit'] ?? '').trim(),
+      description: String(properties['equipmentDescription'] ?? this.detailProject.title ?? '').trim(),
+    };
   }
 
   private refreshEquipmentQrPreview(): void {
@@ -5536,21 +5549,7 @@ export class KanbanViewComponent implements AfterViewInit, OnDestroy, OnInit {
       return;
     }
 
-    let parsedPayload: { recordId?: string; itemId?: string; identifier?: string; shortCode?: string };
-    try {
-      parsedPayload = JSON.parse(payload) as { recordId?: string; itemId?: string; identifier?: string; shortCode?: string };
-    } catch {
-      this.equipmentQrDataUrl = '';
-      this.equipmentQrError = 'No fue posible generar el QR del equipo vinculado.';
-      return;
-    }
-
-    void generateEquipmentQrDataUrl({
-      recordId: String(parsedPayload.recordId ?? '').trim(),
-      itemId: String(parsedPayload.itemId ?? '').trim(),
-      identifier: String(parsedPayload.identifier ?? '').trim(),
-      shortCode: String(parsedPayload.shortCode ?? '').trim(),
-    })
+    void generateEquipmentQrDataUrl(payload)
       .then((dataUrl) => {
         if (generationToken !== this.equipmentQrGenerationToken) {
           return;

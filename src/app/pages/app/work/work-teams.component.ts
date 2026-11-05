@@ -15,11 +15,12 @@ import { CrmEquipmentApiService } from "../../../services/crm-equipment-api.serv
 //   • Historial    : SOLO datatable — 4 columnas (Código / Fecha recepción / Empresa / Servicio),
 //                    rango de fechas preestablecido y acciones Editar + Asignar técnico.
 // Cero métricas, fichas, SLA, warnings o filtros de estado: el cliente pidió la vista mínima.
-type ReceptionSubview = "new" | "history";
+type ReceptionSubview = "landing" | "new" | "history";
 
-type HistoryRangeKey = "esta-semana" | "ultimos-15-dias" | "ultimo-mes" | "tres-meses";
+type HistoryRangeKey = "hoy" | "esta-semana" | "ultimos-15-dias" | "ultimo-mes" | "tres-meses";
 
 const HISTORY_RANGE_OPTIONS: { value: HistoryRangeKey; label: string }[] = [
+    { value: "hoy", label: "Hoy" },
     { value: "esta-semana", label: "Esta semana" },
     { value: "ultimos-15-dias", label: "Últimos 15 días" },
     { value: "ultimo-mes", label: "Último mes" },
@@ -92,9 +93,6 @@ const WORK_DIRECT_PROSPECT: ProspectRecord = {
                     <h5 class="mb-0">{{ pageTitle }}</h5>
                     <p class="text-secondary small mb-0">{{ pageSubtitle }}</p>
                 </div>
-                <div class="col-12 col-sm-auto text-sm-end">
-                    <a class="btn btn-outline-secondary me-2" routerLink="/app/work-projects">Ver proyectos</a>
-                </div>
             </div>
 
             <nav aria-label="breadcrumb" class="breadcrumb-theme mt-3 rounded">
@@ -105,7 +103,7 @@ const WORK_DIRECT_PROSPECT: ProspectRecord = {
             </nav>
         </div>
 
-        @if (subview !== 'new') {
+        @if (subview === 'history') {
             <div class="container-fluid work-equipment-history-wrap mt-3" id="main-content">
                 @if (message) {
                     <div class="alert alert-success border mb-3">{{ message }}</div>
@@ -135,7 +133,7 @@ const WORK_DIRECT_PROSPECT: ProspectRecord = {
                         <div class="row gx-3 gy-2 align-items-center">
                             <div class="col-12 col-lg">
                                 <h6 class="mb-0">Historial de recepciones</h6>
-                                <p class="small text-secondary mb-0">Por defecto muestra los equipos recibidos esta semana.</p>
+                                <p class="small text-secondary mb-0">Por defecto muestra los equipos recibidos hoy.</p>
                             </div>
                             <div class="col-12 col-lg-auto">
                                 <label class="d-flex align-items-center gap-2 small text-secondary mb-0" for="history-range-select">Rango de fechas</label>
@@ -215,7 +213,7 @@ const WORK_DIRECT_PROSPECT: ProspectRecord = {
                     (closed)="closeEditor()"
                     (saved)="handleSaved()"></app-crm-prospect-equipment-modal>
             }
-        } @else {
+        } @else if (subview === 'new') {
             <!-- T24 — "Nuevo equipo": el modal asociar-equipo embebido COMO VISTA COMPLETA.
                  Es un overlay full-screen con backdrop (el clic fuera cierra = cancelar);
                  al guardar/cancelar regresa a Historial vía (closed). -->
@@ -224,7 +222,17 @@ const WORK_DIRECT_PROSPECT: ProspectRecord = {
                 [navigateToProjectsOnSave]="false"
                 [allowMultipleEquipment]="allowMultipleEquipmentReception"
                 (saved)="handleSaved()"
-                (closed)="goToHistory()"></app-crm-prospect-equipment-modal>
+                (closed)="goToLanding()"></app-crm-prospect-equipment-modal>
+        } @else {
+            <main class="container-fluid mt-3" id="main-content">
+                <section class="card adminuiux-card p-4" aria-label="Acciones de recepción">
+                    <div class="d-flex flex-column flex-sm-row flex-wrap gap-2">
+                        <a class="btn btn-outline-secondary" routerLink="/app/work-projects">Ver proyecto</a>
+                        <button class="btn btn-theme" type="button" data-testid="work-equipment-create" (click)="openCreateEditor()">Nuevo equipo</button>
+                        <button class="btn btn-outline-theme" type="button" data-testid="work-equipment-history-tab" (click)="openHistory()">Historial</button>
+                    </div>
+                </section>
+            </main>
         }
 
     `,
@@ -233,11 +241,8 @@ export class WorkTeamsComponent implements AfterViewInit, OnDestroy {
     @ViewChild("recordsTable") private readonly recordsTableRef?: ElementRef<HTMLTableElement>;
 
     // ── Estado de subvistas (T24) ─────────────────────────────────────────────
-    // Landing por defecto = Historial: el cliente pidió que la vista principal sea el
-    // datatable ("por defecto muestre los equipos de esta semana"). Para hacer default
-    // "Nuevo equipo", cambia este valor a "new" (una sola línea).
-    subview: ReceptionSubview = "history";
-    historyRange: HistoryRangeKey = "esta-semana";
+    subview: ReceptionSubview = "landing";
+    historyRange: HistoryRangeKey = "hoy";
     readonly historyRangeOptions = HISTORY_RANGE_OPTIONS;
 
     records: ProspectEquipmentRecord[] = [];
@@ -299,15 +304,15 @@ export class WorkTeamsComponent implements AfterViewInit, OnDestroy {
         this.subview = "new";
     }
 
-    goToHistory(): void {
-        const returningFromNewView = this.subview === "new";
+    openHistory(): void {
         this.subview = "history";
+        this.scheduleTableRefresh();
+    }
 
-        // Al volver de la vista Nuevo equipo (guardar/cancelar) el DataTable aún no existe:
-        // se re-dispara el ciclo de render para que el Historial pinte con los datos frescos.
-        if (returningFromNewView) {
-            this.scheduleTableRefresh();
-        }
+    goToLanding(): void {
+        this.subview = "landing";
+
+        this.destroyTable();
     }
 
     setHistoryRange(value: string): void {
@@ -328,7 +333,7 @@ export class WorkTeamsComponent implements AfterViewInit, OnDestroy {
     }
 
     currentRangeLabel(): string {
-        return HISTORY_RANGE_OPTIONS.find((option) => option.value === this.historyRange)?.label ?? "Esta semana";
+        return HISTORY_RANGE_OPTIONS.find((option) => option.value === this.historyRange)?.label ?? "Hoy";
     }
 
     private rangeStartMs(): number {
@@ -336,6 +341,8 @@ export class WorkTeamsComponent implements AfterViewInit, OnDestroy {
         const DAY_MS = 24 * 60 * 60 * 1000;
 
         switch (this.historyRange) {
+            case "hoy":
+                return new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
             case "ultimos-15-dias":
                 return now.getTime() - 15 * DAY_MS;
             case "ultimo-mes":

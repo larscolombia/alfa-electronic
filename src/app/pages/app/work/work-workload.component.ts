@@ -14,7 +14,7 @@ import {
 import { BoardColumn, Project } from "../projects/models";
 import { ProjectService } from "../projects/services";
 
-type WorkloadTab = "queue" | "history";
+type WorkloadTab = "pending" | "queue" | "history";
 interface EquipmentQueueItem {
   record: ProspectEquipmentRecord;
   item: ProspectEquipmentItem;
@@ -198,9 +198,9 @@ interface StagePreview {
         <button
           class="affectation-tab"
           type="button"
-          data-testid="workload-tab-queue"
-          [class.is-active]="activeTab === 'queue'"
-          (click)="setTab('queue')"
+          data-testid="workload-tab-pending"
+          [class.is-active]="activeTab === 'pending'"
+          (click)="setTab('pending')"
         >
           Pendientes de afectación
           <span class="badge text-bg-warning ms-1">{{
@@ -215,8 +215,18 @@ interface StagePreview {
         >
           Histórico
         </button>
+        <button
+          class="affectation-tab"
+          type="button"
+          data-testid="workload-tab-queue"
+          [class.is-active]="activeTab === 'queue'"
+          (click)="setTab('queue')"
+        >
+          Cola de afectación
+          <span class="badge text-bg-warning ms-1">{{ pendingItems.length }}</span>
+        </button>
       </nav>
-      @if (activeTab === "queue") {
+      @if (activeTab === "pending") {
         <section data-testid="workload-queue-panel">
           <div class="row g-3">
             <div class="col-12 col-xl-4">
@@ -587,6 +597,45 @@ interface StagePreview {
           </div>
         </section>
       }
+      @if (activeTab === "queue") {
+        <section class="row g-3" data-testid="workload-queue-panel">
+          <div class="col-12 col-xl-5">
+            <div class="card adminuiux-card">
+              <div class="card-header"><h6 class="mb-0">Cola de afectación</h6></div>
+              <div class="card-body p-0 affectation-region">
+                <div class="list-group list-group-flush">
+                  @for (entry of filteredPendingItems; track entry.item.id) {
+                    <button type="button" class="list-group-item list-group-item-action" (click)="selectItem(entry)">
+                      <strong>{{ equipmentLabel(entry) }}</strong>
+                      <span class="d-block small text-secondary">{{ entry.record.companyName || entry.record.prospectName || 'Sin cliente' }} · {{ entry.item.failureDescription || 'Sin falla reportada' }}</span>
+                    </button>
+                  } @empty { <p class="text-center text-secondary p-4 mb-0">No hay equipos en cola.</p> }
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-12 col-xl-7">
+            <article class="card adminuiux-card" data-testid="affectation-queue-detail">
+              <div class="card-header"><h6 class="mb-0">Información completa del equipo</h6></div>
+              @if (selectedItem) {
+                <div class="card-body">
+                  <h5>{{ equipmentLabel(selectedItem) }}</h5>
+                  <p class="mb-1"><strong>Cliente:</strong> {{ selectedItem.record.companyName || selectedItem.record.prospectName || 'Sin cliente' }}</p>
+                  <p class="mb-1"><strong>Serie:</strong> {{ selectedItem.item.serie || 'Sin serie' }} · <strong>Falla:</strong> {{ selectedItem.item.failureDescription || 'Sin falla reportada' }}</p>
+                  <p class="mb-3"><strong>Accesorios:</strong> {{ selectedItem.item.accessories || 'Sin accesorios reportados' }}</p>
+                  <h6>Evidencias de recepción</h6>
+                  <div class="d-flex flex-wrap gap-2" *ngIf="selectedItem.item.evidencePhotos?.length; else noEvidence">
+                    @for (photo of selectedItem.item.evidencePhotos; track photo.id) {
+                      <a [href]="photo.thumbnailDataUrl" target="_blank" rel="noopener"><img [src]="photo.thumbnailDataUrl" [alt]="photo.evidenceType || 'Evidencia de recepción'" style="width:7rem;height:5rem;object-fit:cover" class="rounded border" /></a>
+                    }
+                  </div>
+                  <ng-template #noEvidence><p class="text-secondary mb-0">Este equipo no tiene fotos registradas.</p></ng-template>
+                </div>
+              } @else { <p class="card-body text-secondary mb-0">Seleccione un equipo para consultar su recepción.</p> }
+            </article>
+          </div>
+        </section>
+      }
       @if (stagePreview) {
         <aside
           class="stage-preview"
@@ -630,7 +679,7 @@ interface StagePreview {
   `,
 })
 export class WorkWorkloadComponent implements OnInit, OnDestroy {
-  activeTab: WorkloadTab = "queue";
+  activeTab: WorkloadTab = "pending";
   records: ProspectEquipmentRecord[] = [];
   projects: Project[] = [];
   stages: BoardColumn[] = [];
@@ -659,7 +708,7 @@ export class WorkWorkloadComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.route.queryParamMap.subscribe((params) => {
       const tab = params.get("tab");
-      if (tab === "queue" || tab === "history") this.activeTab = tab;
+      if (tab === "pending" || tab === "queue" || tab === "history") this.activeTab = tab;
     });
     this.projectService.loadProjects("board-1").subscribe();
     this.subscription.add(

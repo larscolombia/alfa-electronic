@@ -274,7 +274,7 @@ interface ClientDraft {
                             <input class="form-control" type="number" min="0" step="1" [(ngModel)]="draft.paymentTermDays" name="paymentTermDays" />
                         </div>
 
-                        <div class="col-12 mb-3">
+                        <div class="col-12 mb-3" *ngIf="false">
                             <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
                                 <label class="form-label mb-0">Sucursales del cliente</label>
                                 <button class="btn btn-sm btn-outline-theme" type="button" (click)="addBranch()">

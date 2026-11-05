@@ -1,11 +1,7 @@
 import * as QRCode from "qrcode";
+import { buildEquipmentQrPayload, EquipmentQrPayload } from "./equipment-qr-payload.util";
 
-export interface EquipmentQrPayload {
-    recordId: string;
-    itemId: string;
-    identifier: string;
-    shortCode: string;
-}
+export { buildEquipmentQrPayload, EquipmentQrPayload } from "./equipment-qr-payload.util";
 
 /** Código interno legacy (registros antiguos): derivado del ID aleatorio.
  * Se conserva solo como fallback para ítems sin código asignado. */
@@ -24,21 +20,6 @@ export function resolveEquipmentCode(item: { id?: unknown; equipmentCode?: unkno
     return buildInternalEquipmentCode(String(item?.id ?? ""));
 }
 
-export function buildEquipmentQrShortCode(recordId: string, itemId: string): string {
-    const recordPart = String(recordId ?? "").trim().slice(-6).toUpperCase();
-    const itemPart = String(itemId ?? "").trim().slice(-4).toUpperCase();
-    return [recordPart, itemPart].filter((part) => part.length > 0).join("-");
-}
-
-export function buildEquipmentQrPayload(payload: EquipmentQrPayload): string {
-    return JSON.stringify({
-        recordId: String(payload.recordId ?? "").trim(),
-        itemId: String(payload.itemId ?? "").trim(),
-        identifier: String(payload.identifier ?? "").trim(),
-        shortCode: String(payload.shortCode ?? "").trim(),
-    });
-}
-
 export async function generateEquipmentQrDataUrl(payload: EquipmentQrPayload): Promise<string> {
     return QRCode.toDataURL(buildEquipmentQrPayload(payload), {
         margin: 1,
@@ -50,6 +31,7 @@ export async function generateEquipmentQrDataUrl(payload: EquipmentQrPayload): P
         },
     });
 }
+
 
 export function estimateDataUrlBinarySize(dataUrl: string): number {
     const raw = String(dataUrl ?? "");

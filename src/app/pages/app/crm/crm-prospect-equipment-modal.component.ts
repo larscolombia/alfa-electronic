@@ -3,7 +3,7 @@ import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, EventEmitter, 
 import { FormsModule } from "@angular/forms";
 import { Router } from "@angular/router";
 import { BrowserMultiFormatReader } from "@zxing/browser";
-import { Subscription, firstValueFrom, forkJoin, of } from "rxjs";
+import { Observable, Subscription, firstValueFrom, forkJoin, of } from "rxjs";
 import { catchError, take } from "rxjs/operators";
 
 import {
@@ -46,7 +46,7 @@ import {
     getProspectEquipmentWarnings,
 } from "./crm-prospect-equipment.store";
 import { COUNTRY_OPTIONS, citiesForCountry } from "./country-city.dataset";
-import { buildEquipmentQrShortCode, estimateDataUrlBinarySize, generateEquipmentQrDataUrl, resolveEquipmentCode } from "./equipment-qr.util";
+import { estimateDataUrlBinarySize, generateEquipmentQrDataUrl, resolveEquipmentCode } from "./equipment-qr.util";
 import { resolveEquipmentProspectId } from "./crm-prospect-equipment-match.logic";
 import { setQuotePrefill } from "./quote-prefill.store";
 import { ProspectRecord } from "./crm-prospects.store";
@@ -206,14 +206,8 @@ type SoftwareBackupInfo = {
 
                     <div class="modal-body">
                         <div class="alert alert-warning border mb-3" *ngIf="validationMessage" data-testid="equipment-modal-validation-message">{{ validationMessage }}</div>
-                        <div class="alert alert-success border mb-3" *ngIf="saveDraftSuccess" data-testid="save-draft-success">
-                            <i class="bi bi-check-circle me-1"></i>Borrador guardado: la recepción quedó en estado "recibido" sin finalizar.
-                        </div>
                         <div class="alert alert-warning border mb-3" *ngIf="finalizeMissingFacesOffer" data-testid="finalize-faces-missing-offer">
-                            Faltan evidencias por cara obligatorias: no se pudo finalizar. Guarda el borrador y completa las fotos después.
-                            <button type="button" class="btn btn-sm btn-outline-theme ms-2" data-testid="equipment-modal-save-draft-offer" (click)="saveDraft()">
-                                <i class="bi bi-save me-1"></i>Guardar borrador
-                            </button>
+                            Faltan evidencias por cara obligatorias. Completa las fotos requeridas antes de guardar la recepción.
                         </div>
 
                         <div class="wizard-steps-grid mb-3" aria-label="Secciones de la asociación de equipo">
@@ -308,7 +302,7 @@ type SoftwareBackupInfo = {
                                             (ngModelChange)="setReceptionDate($event)"
                                             aria-label="Fecha de recepción" />
                                     </div>
-                                    <div class="col-12 col-lg-5 reception-branch">
+                                    <div class="col-12 col-lg-5 reception-branch" *ngIf="false">
                                         <label class="form-label">Sucursal de envío</label>
                                         <app-crm-modal-select
                                             [options]="companyBranchSelectOptions"
@@ -631,7 +625,7 @@ type SoftwareBackupInfo = {
                                                         </button>
                                                     </div>
 
-                                                    <!-- Opción 2: Asignación técnica — bloque actual intacto (select + "Asignado por"). -->
+                                                    <!-- Opción 2: Asignación técnica. -->
                                                     <div *ngIf="destinationFor(item) === 'tech-assignment'" data-testid="equipment-modal-tech-panel">
                                                         <div class="row gx-3 gy-2 align-items-end mt-2">
                                                             <div class="col-12 col-lg-8">
@@ -649,8 +643,8 @@ type SoftwareBackupInfo = {
                                                                     Incidencia de custodia: identifica empresa/contacto antes de asignar técnico.
                                                                 </div>
                                                             </div>
-                                                            <div class="col-12 col-lg-4">
-                                                                <div class="small text-secondary">Asignado por</div>
+                                                            <div class="col-12 col-lg-4" *ngIf="false">
+                                                                <div class="small text-secondary">Registro de asignación</div>
                                                                 <div class="fw-semibold">{{ item.assignedBy || '--' }}</div>
                                                                 <div class="small text-secondary">{{ item.assignedAt ? formatEvidenceDate(item.assignedAt) : 'Sin fecha' }}</div>
                                                             </div>
@@ -728,7 +722,7 @@ type SoftwareBackupInfo = {
 
                         <ng-container *ngIf="currentWizardStep.key === 'evidence'">
                             <div class="alert alert-info border mb-3">
-                                Desde el celular este paso puede abrir la cámara trasera para escanear o tomar fotos. El frontend lee EXIF, calcula el hash SHA-256 y conserva una miniatura; el backend en Go/Echo debe recibir luego el archivo original para consolidar la auditoría.
+                                Evidencias del equipo recibido.
                             </div>
 
                             <div class="row gx-3 gy-3">
@@ -821,7 +815,6 @@ type SoftwareBackupInfo = {
 
                                                     <label class="form-label">Tomar fotos / subir evidencia</label>
                                                     <input class="form-control" type="file" accept="image/*" capture="environment" multiple data-testid="evidence-files-input" (change)="handleEvidenceFilesSelected(item, $event)" />
-                                                    <p class="small text-secondary mb-3 mt-2">En móvil, el atributo capture intenta abrir la cámara trasera. Puedes cargar tantas fotos como necesites.</p>
 
                                                     <label class="form-label">Formato físico firmado (cualquier documento)</label>
                                                     <input
@@ -993,8 +986,6 @@ type SoftwareBackupInfo = {
                                                 </div>
                                                 <app-crm-equipment-question-alerts class="d-block mt-2" [item]="item"></app-crm-equipment-question-alerts>
                                                 <div class="small text-secondary">Técnico: {{ item.assignedTo || 'Sin asignar' }} {{ item.assignedAt ? '· ' + formatEvidenceDate(item.assignedAt) : '' }}</div>
-                                                <div class="small text-secondary">Override industrial: {{ hasIndustrialOverrideAuthorization(item) ? 'Autorizado' : 'No aplica / pendiente' }}</div>
-
                                                 <div class="d-flex align-items-center gap-2 flex-wrap mt-2" *ngIf="getItemQrAttachment(item) as qrAttachment">
                                                     <img [src]="qrAttachment.dataUrl" alt="QR equipo" class="reception-qr-thumb rounded border" />
                                                     <button class="btn btn-sm btn-outline-theme" type="button" (click)="downloadItemQr(item, i)">Descargar QR PNG</button>
@@ -1004,7 +995,7 @@ type SoftwareBackupInfo = {
                                             </div>
                                         </div>
 
-                                        <div class="border rounded p-3 mt-3 bg-light-subtle">
+                                        <div class="border rounded p-3 mt-3 bg-light-subtle" *ngIf="false">
                                             <div class="form-check form-switch mb-2">
                                                 <input
                                                     class="form-check-input"
@@ -1013,7 +1004,7 @@ type SoftwareBackupInfo = {
                                                     [(ngModel)]="generateRepairProjectsOnSave"
                                                     [ngModelOptions]="{ standalone: true }" />
                                                 <label class="form-check-label fw-semibold" for="generateRepairProjectsOnSave">
-                                                    Generar proyectos de reparación al guardar
+                                                    Generar proyectos al guardar
                                                 </label>
                                             </div>
 
@@ -1025,13 +1016,9 @@ type SoftwareBackupInfo = {
                                             </p>
                                         </div>
 
-                                        <!-- 2026-11-02 — Migrado desde el paso 'Preguntas' (eliminado):
-                                             la pregunta de diagnóstico gratis/urgencia-prioridad es ahora la última
-                                             decisión por equipo antes de las firmas; junto con ella vive el gate
-                                             industrial (autorización de jefe) que libera el guardado. -->
                                         <div class="border rounded p-3 mt-3" *ngIf="reviewItems.length > 0">
                                             <h6 class="mb-1">Diagnóstico por equipo</h6>
-                                            <p class="text-secondary small mb-2">Última decisión antes de las firmas: modalidad de diagnóstico y autorización industrial si aplica.</p>
+                                            <p class="text-secondary small mb-2">Última decisión antes de las firmas: modalidad de diagnóstico.</p>
 
                                             <div class="vstack gap-3">
                                                 <ng-container *ngFor="let item of reviewItems; let i = index; trackBy: trackByItemId">
@@ -1056,36 +1043,6 @@ type SoftwareBackupInfo = {
                                                             </p>
                                                         </div>
 
-                                                        <div class="alert border border-warning bg-warning-subtle mb-0" *ngIf="requiresIndustrialOverride(item)" data-testid="industrial-override-closure">
-                                                            <div class="fw-semibold mb-1">Autorización industrial requerida</div>
-                                                            <p class="small mb-2">
-                                                                Perfil actual: <strong>{{ resolveItemIndustrialLabel(item) }}</strong>. Para guardar debes registrar autorización de jefe técnico.
-                                                            </p>
-                                                            <div class="row gx-2 gy-2">
-                                                                <div class="col-12 col-lg-4">
-                                                                    <label class="form-label small" for="closure-industrial-by-{{ item.id }}">Autorizado por</label>
-                                                                    <input
-                                                                        id="closure-industrial-by-{{ item.id }}"
-                                                                        class="form-control form-control-sm"
-                                                                        [ngModel]="item.industrialOverrideAuthorizedBy || ''"
-                                                                        [ngModelOptions]="{ standalone: true }"
-                                                                        (ngModelChange)="onIndustrialOverrideAuthorizedByChange(item, $event)"
-                                                                        placeholder="Nombre del jefe" data-testid="industrial-override-by" />
-                                                                </div>
-                                                                <div class="col-12 col-lg-8">
-                                                                    <label class="form-label small" for="closure-industrial-reason-{{ item.id }}">Motivo de autorización</label>
-                                                                    <input
-                                                                        id="closure-industrial-reason-{{ item.id }}"
-                                                                        class="form-control form-control-sm"
-                                                                        [(ngModel)]="item.industrialOverrideReason"
-                                                                        [ngModelOptions]="{ standalone: true }"
-                                                                        placeholder="Justificación operativa" data-testid="industrial-override-reason" />
-                                                                </div>
-                                                            </div>
-                                                            <div class="small text-secondary mt-2" *ngIf="item.industrialOverrideAuthorizedAt">
-                                                                Autorización registrada: {{ formatEvidenceDate(item.industrialOverrideAuthorizedAt || '') }}
-                                                            </div>
-                                                        </div>
                                                     </div>
                                                 </ng-container>
                                             </div>
@@ -1138,10 +1095,10 @@ type SoftwareBackupInfo = {
                                 *ngIf="isLastStep && initialRecord?.id"
                                 (click)="openReceptionPrint(initialRecord?.id || '')"
                                 [disabled]="creatingRepairProjects">
-                                <i class="bi bi-printer me-1"></i> Descargar formato
+                                <i class="bi bi-printer me-1"></i> Descargar reporte
                             </button>
                             <button type="button" class="btn btn-theme" *ngIf="isLastStep" data-testid="equipment-modal-save" (click)="save(false)" [disabled]="creatingRepairProjects">
-                                <i class="bi bi-check2 me-1"></i> {{ creatingRepairProjects ? "Creando proyectos..." : "Guardar asociación" }}
+                                <i class="bi bi-check2 me-1"></i> {{ creatingRepairProjects ? "Creando proyectos..." : "Guardar" }}
                             </button>
                         </div>
                     </div>
@@ -1808,7 +1765,7 @@ export class CrmProspectEquipmentModalComponent implements AfterViewInit, OnChan
     }
 
     draft: ProspectEquipmentRecord = this.buildDraft();
-    generateRepairProjectsOnSave = true;
+    generateRepairProjectsOnSave = false;
     creatingRepairProjects = false;
     currentStepIndex = 0;
     evidenceLoadingItemId: string | null = null;
@@ -1865,6 +1822,7 @@ export class CrmProspectEquipmentModalComponent implements AfterViewInit, OnChan
     techniciansAll: EquipmentTechnicianOption[] = [];
     techniciansBySpeciality = new Map<string, EquipmentTechnicianOption[]>();
     private companyProspectsByKey = new Map<string, CrmProspectRecord[]>();
+    private companyClientsByKey = new Map<string, CrmClientRecord[]>();
     private companyBranchesByKey = new Map<string, CompanyBranchOption[]>();
     private readonly companyContactsByCompanyKey = new Map<string, CompanyContactOption[]>();
     private readonly barcodeReader = new BrowserMultiFormatReader();
@@ -1950,7 +1908,7 @@ export class CrmProspectEquipmentModalComponent implements AfterViewInit, OnChan
     ngOnChanges(changes: SimpleChanges): void {
         if (changes["prospect"] || changes["initialRecord"]) {
             this.draft = this.buildDraft();
-            this.generateRepairProjectsOnSave = true;
+            this.generateRepairProjectsOnSave = false;
             this.creatingRepairProjects = false;
             this.currentStepIndex = 0;
             this.evidenceLoadingItemId = null;
@@ -2847,7 +2805,7 @@ export class CrmProspectEquipmentModalComponent implements AfterViewInit, OnChan
             return;
         }
 
-        if (!this.validateIndustrialOverrides(itemsToPersist) || !this.validateEvidenceFaces(itemsToPersist)) {
+        if (!this.validateEvidenceFaces(itemsToPersist)) {
             return;
         }
 
@@ -3150,11 +3108,11 @@ export class CrmProspectEquipmentModalComponent implements AfterViewInit, OnChan
     }
 
     get canCreateCompanyContact(): boolean {
-        return this.resolveContactTargetProspectId() !== "";
+        return this.resolveContactTargetClientId() !== "" || this.resolveContactTargetProspectId() !== "";
     }
 
     get companyContactCreateHint(): string {
-        return "Para crear un contacto desde aquí, la empresa debe existir como prospecto en el CRM.";
+        return "Selecciona una empresa registrada para crear su contacto.";
     }
 
     openCompanyContactCreate(): void {
@@ -3176,9 +3134,10 @@ export class CrmProspectEquipmentModalComponent implements AfterViewInit, OnChan
     }
 
     saveNewCompanyContact(): void {
+        const clientId = this.resolveContactTargetClientId();
         const prospectId = this.resolveContactTargetProspectId();
         const name = this.companyContactCreateDraft.name.trim();
-        if (!prospectId || !name) {
+        if ((!clientId && !prospectId) || !name) {
             this.companyContactCreateError = "El nombre del contacto es obligatorio.";
             return;
         }
@@ -3193,7 +3152,10 @@ export class CrmProspectEquipmentModalComponent implements AfterViewInit, OnChan
 
         this.creatingCompanyContact = true;
         this.companyContactCreateError = "";
-        this.crmProspectsApi.createProspectContact(prospectId, payload).subscribe({
+        const saveContact: Observable<{ id: string }> = clientId
+            ? this.crmClientsApi.createClientContact(clientId, payload)
+            : this.crmProspectsApi.createProspectContact(prospectId, payload);
+        saveContact.subscribe({
             next: (contact) => {
                 this.creatingCompanyContact = false;
                 this.showCompanyContactCreate = false;
@@ -3206,7 +3168,7 @@ export class CrmProspectEquipmentModalComponent implements AfterViewInit, OnChan
                 if (companyKey) {
                     const contactId = String(contact?.id ?? "").trim();
                     const newOption: CompanyContactOption = {
-                        value: `crm:${prospectId}:${contactId || name}`,
+                        value: `crm:${clientId || prospectId}:${contactId || name}`,
                         name,
                         role: payload.role,
                         email: payload.email,
@@ -3247,6 +3209,11 @@ export class CrmProspectEquipmentModalComponent implements AfterViewInit, OnChan
         }
 
         return "";
+    }
+
+    private resolveContactTargetClientId(): string {
+        const companyKey = this.normalizeCompanyKey(this.draft.companyName);
+        return String((this.companyClientsByKey.get(companyKey) ?? [])[0]?.id ?? "").trim();
     }
 
     isCompanyOptionSelected(option: CompanyCatalogOption): boolean {
@@ -3399,10 +3366,8 @@ export class CrmProspectEquipmentModalComponent implements AfterViewInit, OnChan
     private pendingRecordId = "";
 
     private finalizeAfterBackendSave(record: ProspectEquipmentRecord, openPrintAfterSave = false): void {
-        if (!this.generateRepairProjectsOnSave) {
-            this.finalizeSave([], record.id, openPrintAfterSave);
-            return;
-        }
+        this.finalizeSave([], record.id, openPrintAfterSave);
+        return;
 
         const repairItems = record.items.filter((item) => this.isRepairServiceItem(item));
         if (repairItems.length === 0) {
@@ -3450,7 +3415,7 @@ export class CrmProspectEquipmentModalComponent implements AfterViewInit, OnChan
                     this.pendingRecordId = record.id;
                     this.validationMessage =
                         `La recepción quedó guardada, pero ${failedProjects.length} proyecto(s) de reparación NO se pudieron crear y no llegarán al tablero: ${failedProjects.join(" | ")}. ` +
-                        `Pulsa "Guardar asociación" para cerrar de forma segura (no volverá a guardar).`;
+                        `Pulsa "Guardar" para cerrar de forma segura (no volverá a guardar).`;
                     return;
                 }
 
@@ -3500,35 +3465,6 @@ export class CrmProspectEquipmentModalComponent implements AfterViewInit, OnChan
     // el flag industrial ya no se deriva del catálogo; es dato propio del item.
     resolveItemIndustrialFlag(item: ProspectEquipmentItem): boolean {
         return typeof item.isIndustrial === "boolean" ? item.isIndustrial : false;
-    }
-
-    resolveItemIndustrialLabel(item: ProspectEquipmentItem): string {
-        return this.resolveItemIndustrialFlag(item) ? "Industrial" : "No industrial";
-    }
-
-    requiresIndustrialOverride(item: ProspectEquipmentItem): boolean {
-        // Costo > $2'000.000 justifica el ingreso sin filtro industrial,
-        // pase lo que pase con la bandera del catálogo: oculta el recuadro y libera el guardado.
-        if (this.isBooleanAnswerYes(item, this.industrialCostQuestionKey)) {
-            return false;
-        }
-
-        return !this.resolveItemIndustrialFlag(item) || this.isBooleanAnswerNo(item, this.industrialCostQuestionKey);
-    }
-
-    hasIndustrialOverrideAuthorization(item: ProspectEquipmentItem): boolean {
-        return Boolean((item.industrialOverrideAuthorizedBy || "").trim() && (item.industrialOverrideReason || "").trim());
-    }
-
-    onIndustrialOverrideAuthorizedByChange(item: ProspectEquipmentItem, value: string): void {
-        item.industrialOverrideAuthorizedBy = String(value ?? "");
-
-        if ((item.industrialOverrideAuthorizedBy || "").trim()) {
-            item.industrialOverrideAuthorizedAt = item.industrialOverrideAuthorizedAt || new Date().toISOString();
-            return;
-        }
-
-        item.industrialOverrideAuthorizedAt = "";
     }
 
     onIntakeMethodChange(value: string): void {
@@ -3709,9 +3645,10 @@ export class CrmProspectEquipmentModalComponent implements AfterViewInit, OnChan
                 <head>
                     <title>Etiqueta QR</title>
                     <style>
-                        body { font-family: Arial, sans-serif; margin: 0; padding: 24px; text-align: center; }
-                        img { width: 240px; height: 240px; object-fit: contain; }
-                        .meta { margin-top: 8px; color: #374151; font-size: 12px; }
+                        @page { size: 1.5cm 1.5cm; margin: 0; }
+                        html, body { width: 1.5cm; height: 1.5cm; margin: 0; padding: 0; overflow: hidden; }
+                        img { display: block; width: 1.5cm; height: 1.5cm; object-fit: contain; }
+                        .meta { display: none; }
                     </style>
                 </head>
                 <body>
@@ -3747,8 +3684,7 @@ export class CrmProspectEquipmentModalComponent implements AfterViewInit, OnChan
         return "";
     }
 
-    private async ensureQrAttachmentsForItems(items: ProspectEquipmentItem[], recordID: string): Promise<void> {
-        const normalizedRecordID = String(recordID ?? "").trim();
+    private async ensureQrAttachmentsForItems(items: ProspectEquipmentItem[], _recordID: string): Promise<void> {
         const uploadedBy = this.authService.getCurrentUserName() || "recepcion";
 
         for (const item of items) {
@@ -3759,12 +3695,12 @@ export class CrmProspectEquipmentModalComponent implements AfterViewInit, OnChan
                 continue;
             }
 
-            const shortCode = buildEquipmentQrShortCode(normalizedRecordID, item.id) || item.id.slice(0, 8).toUpperCase();
             const qrDataUrl = await generateEquipmentQrDataUrl({
-                recordId: normalizedRecordID,
-                itemId: item.id,
-                identifier,
-                shortCode,
+                equipmentCode: identifier,
+                receptionDate: this.draft.intakeReceivedAt || this.draft.createdAt || new Date().toISOString(),
+                companyName: this.draft.companyName,
+                identification: this.draft.nit,
+                description: [item.familyName, item.marca, item.tipo].filter(Boolean).join(" ") || item.failureDescription,
             });
 
             const existingAttachments = item.attachments ?? [];
@@ -3775,11 +3711,11 @@ export class CrmProspectEquipmentModalComponent implements AfterViewInit, OnChan
             const qrAttachment: ProspectEquipmentAttachment = {
                 id: existingQr?.id || `qr-${item.id}`,
                 attachmentType: "qr-label",
-                fileName: `${shortCode || item.id}.png`,
+                fileName: `${identifier}.png`,
                 mimeType: "image/png",
                 sizeBytes: estimateDataUrlBinarySize(qrDataUrl),
                 dataUrl: qrDataUrl,
-                notes: `Etiqueta QR ${identifier}`,
+                notes: "Etiqueta QR: código, fecha, empresa, identificación y descripción.",
                 uploadedAt: nowISO,
                 uploadedBy,
                 sha256: await this.sha256Hex(qrDataUrl),
@@ -3907,6 +3843,7 @@ export class CrmProspectEquipmentModalComponent implements AfterViewInit, OnChan
                 this.equipmentRecordsCache = records;
                 this.companyOptions = this.buildCompanyOptions(clients, prospects, records);
                 this.companyProspectsByKey = this.buildProspectsByCompanyMap(prospects);
+                this.companyClientsByKey = this.buildClientsByCompanyMap(clients);
                 this.companyBranchesByKey = this.buildCompanyBranchesMap(clients, prospects);
                 this.companyContactsByCompanyKey.clear();
                 this.syncCompanySelectionWithDraft();
@@ -3917,6 +3854,7 @@ export class CrmProspectEquipmentModalComponent implements AfterViewInit, OnChan
                 this.companyCatalogError = "No se pudo cargar el catálogo de empresas.";
                 this.companyOptions = [];
                 this.companyProspectsByKey.clear();
+                this.companyClientsByKey.clear();
                 this.companyBranchesByKey.clear();
                 this.companyContactsByCompanyKey.clear();
                 this.selectedCompanyBranchOption = "";
@@ -4252,6 +4190,16 @@ export class CrmProspectEquipmentModalComponent implements AfterViewInit, OnChan
             byCompany.set(key, existing);
         });
 
+        return byCompany;
+    }
+
+    private buildClientsByCompanyMap(clients: CrmClientRecord[]): Map<string, CrmClientRecord[]> {
+        const byCompany = new Map<string, CrmClientRecord[]>();
+        clients.forEach((client) => {
+            const key = this.normalizeCompanyKey(client.empresa);
+            if (!key || !client.id) return;
+            byCompany.set(key, [...(byCompany.get(key) ?? []), client]);
+        });
         return byCompany;
     }
 
@@ -4690,15 +4638,6 @@ export class CrmProspectEquipmentModalComponent implements AfterViewInit, OnChan
             return true;
         }
 
-        if (this.currentWizardStep.key === "signatures") {
-            // 2026-11-02 — El paso 'Preguntas' desapareció: el gate industrial se valida en Cierre,
-            // justo antes de las firmas. save() sigue validando también al persistir.
-            if (!this.validateIndustrialOverrides(this.getMeaningfulItems())) {
-                return false;
-            }
-            return true;
-        }
-
         if (this.currentWizardStep.key === "evidence") {
             const evidenceItems = this.getMeaningfulItems();
             const evidenceBlockedItem = evidenceItems.find((item) => getEvidenceRequirementsError(item));
@@ -4736,16 +4675,6 @@ export class CrmProspectEquipmentModalComponent implements AfterViewInit, OnChan
         }
 
         return true;
-    }
-
-    private validateIndustrialOverrides(items: ProspectEquipmentItem[]): boolean {
-        const blockedItem = items.find((item) => this.requiresIndustrialOverride(item) && !this.hasIndustrialOverrideAuthorization(item));
-        if (!blockedItem) {
-            return true;
-        }
-
-        this.validationMessage = "Falta autorización de jefe para un equipo no industrial o marcado con costo <= 2M.";
-        return false;
     }
 
     hasRequiredFaceEvidence(item: ProspectEquipmentItem): boolean {

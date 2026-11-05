@@ -199,7 +199,7 @@ const CRM_PROSPECT_FORM_DRAFT_KEY = "app.crm.prospects.form";
                             </select>
                         </div>
 
-                        <div class="col-12 mb-2">
+                        <div class="col-12 mb-2" *ngIf="false">
                             <label class="form-label d-block">Zona</label>
                             <div class="d-flex flex-wrap gap-3">
                                 @for (zone of zoneOptions; track zone.id) {
