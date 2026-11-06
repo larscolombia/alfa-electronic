@@ -86,6 +86,18 @@ func TestBuildJoinPlanCrossModuleChain(t *testing.T) {
 	}
 }
 
+func TestBuildJoinPlanClientsProspectsByEmpresa(t *testing.T) {
+	// La relación real Clientes↔Prospectos es empresa=company (1 paso);
+	// la FK prospect_id no se usa porque ningún flujo la escribe.
+	plan, err := buildJoinPlan(newRegistry(), []string{"crm_clients", "crm_prospects"})
+	if err != nil {
+		t.Fatalf("clientes/prospectos por empresa: %v", err)
+	}
+	if len(plan.steps) != 1 || !plan.steps[0].edge.NormalizeText {
+		t.Fatalf("se esperaba 1 paso por la arista de empresa normalizada: %+v", plan.steps)
+	}
+}
+
 func TestBuildJoinPlanAccountsProspectsLegacyBridge(t *testing.T) {
 	// Cuentas y prospectos se conectan por el puente real crm_account_legacy_ids.
 	plan, err := buildJoinPlan(newRegistry(), []string{"crm_accounts", "crm_prospects", "crm_account_contacts"})

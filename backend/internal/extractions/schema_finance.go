@@ -162,10 +162,12 @@ func financeEdges() []RelationEdge {
 		{
 			From: "inventory_purchase_lines", FromCols: []string{"company_id", "supplier"},
 			To: "suppliers", ToCols: []string{"company_id", "legal_name"},
+			NormalizeText: true,
 		},
 		{
 			From: "purchase_requests", FromCols: []string{"company_id", "supplier"},
 			To: "suppliers", ToCols: []string{"company_id", "legal_name"},
+			NormalizeText: true,
 		},
 	}
 }

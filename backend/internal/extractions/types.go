@@ -40,17 +40,53 @@ type EdgeConst struct {
 	Value string
 }
 
+// EquivalentField vincula dos columnas de dos fuentes distintas que
+// representan la misma información de negocio (nombre distinto en cada tabla).
+// La recuperación bidireccional solo se aplica cuando las dos fuentes están
+// unidas directamente en el plan de joins, garantizando que el valor tomado
+// del otro lado pertenece a la misma entidad (misma empresa/company_id).
+type EquivalentField struct {
+	TableA  string
+	ColumnA string
+	TableB  string
+	ColumnB string
+}
+
+// IdentityCriterion es un criterio de identificación adicional entre registros
+// de la MISMA entidad (NIT, correo, nombre) que permite emparejarlos aunque su
+// empresa tenga nombres distintos. Reglas de seguridad: el valor debe ser no
+// vacío e igual en ambos lados; cada valor debe ser ÚNICO dentro de su tabla
+// pre-filtrada (company_id + bajas), de modo que un criterio nunca produce
+// fan-out ni emparejamientos ambiguos; Contradictions bloquea el emparejamiento
+// si ambos lados tienen valores no vacíos y distintos en las columnas
+// declaradas (p. ej. dos NIT que no coinciden).
+type IdentityCriterion struct {
+	LeftCol  string // columna del lado From de la arista
+	RightCol string // columna del lado To de la arista
+	FullText bool   // true: normalización completa para nombres (tildes, puntuación); false: lower(trim())
+	// Contradictions: pares de columnas (From, To) que bloquean el emparejamiento
+	// si ambos lados tienen valores no vacíos y distintos.
+	Contradictions [][2]string
+}
+
 // RelationEdge es una relación real y conocida entre dos tablas existentes.
 // Los pares de columnas se igualan en el JOIN junto con company_id; Const
 // agrega condiciones constantes (puentes como legacy_ids) sobre la tabla
 // ConstTable (el lado To declarado; lo rellena el planificador al orientar).
+// NormalizeText compara pares de texto con lower(trim()) en ambos lados y
+// NULLIF(...,'') para que vacíos no se emparejen entre sí (relación
+// empresa/company que usa el propio producto en ConvertProspectToClient).
+// IdentityCriteria agrega criterios de identidad seguros (NIT/correo/nombre)
+// como alternativas OR al par principal, solo para fuentes seleccionadas.
 type RelationEdge struct {
-	From       string
-	FromCols   []string
-	To         string
-	ToCols     []string
-	Const      []EdgeConst
-	ConstTable string
+	From             string
+	FromCols         []string
+	To               string
+	ToCols           []string
+	Const            []EdgeConst
+	ConstTable       string
+	NormalizeText    bool
+	IdentityCriteria []IdentityCriterion
 }
 
 // FieldRef referencia una columna concreta de una tabla.

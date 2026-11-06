@@ -126,13 +126,35 @@ func edgeTowards(edge RelationEdge, from string, visited map[string]bool) (strin
 		return edge.To, oriented, true
 	}
 	if edge.To == from && !visited[edge.From] {
-		return edge.From, RelationEdge{
-			From: edge.To, FromCols: edge.ToCols,
-			To: edge.From, ToCols: edge.FromCols,
-			Const: edge.Const, ConstTable: edge.To,
-		}, true
+		return edge.From, invertEdge(edge), true
 	}
 	return "", RelationEdge{}, false
+}
+
+// invertEdge devuelve la arista orientada To -> From: intercambia los pares de
+// columnas y los criterios de identidad para que sigan apuntando a las tablas
+// correctas tras la inversión.
+func invertEdge(edge RelationEdge) RelationEdge {
+	inverted := RelationEdge{
+		From: edge.To, FromCols: edge.ToCols,
+		To: edge.From, ToCols: edge.FromCols,
+		Const: edge.Const, ConstTable: edge.To,
+		NormalizeText: edge.NormalizeText,
+	}
+	if len(edge.IdentityCriteria) > 0 {
+		inverted.IdentityCriteria = make([]IdentityCriterion, 0, len(edge.IdentityCriteria))
+		for _, crit := range edge.IdentityCriteria {
+			swapped := IdentityCriterion{LeftCol: crit.RightCol, RightCol: crit.LeftCol, FullText: crit.FullText}
+			if len(crit.Contradictions) > 0 {
+				swapped.Contradictions = make([][2]string, 0, len(crit.Contradictions))
+				for _, pair := range crit.Contradictions {
+					swapped.Contradictions = append(swapped.Contradictions, [2]string{pair[1], pair[0]})
+				}
+			}
+			inverted.IdentityCriteria = append(inverted.IdentityCriteria, swapped)
+		}
+	}
+	return inverted
 }
 
 func reconstructPath(prev map[string]prevEdge, sources []string, target string) []RelationEdge {

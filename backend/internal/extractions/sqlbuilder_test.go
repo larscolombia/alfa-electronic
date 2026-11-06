@@ -14,6 +14,36 @@ func mustPlan(t *testing.T, tables ...string) *joinPlan {
 	return plan
 }
 
+// hasTopLevelWhere indica si existe un WHERE a nivel de sentencia (fuera de
+// subconsultas): un WHERE así rompería el FULL OUTER JOIN descartando las filas
+// no emparejadas. Los WHERE dentro de IN (SELECT ...) del ON son legítimos.
+func hasTopLevelWhere(sql string) bool {
+	depth := 0
+	inStr := false
+	for i := 0; i < len(sql); i++ {
+		c := sql[i]
+		if inStr {
+			if c == '\'' {
+				inStr = false
+			}
+			continue
+		}
+		switch c {
+		case '\'':
+			inStr = true
+		case '(':
+			depth++
+		case ')':
+			depth--
+		default:
+			if depth == 0 && strings.HasPrefix(sql[i:], " WHERE ") {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func TestBuildSelectSQLUsesAliasesAndPreFilteredSources(t *testing.T) {
 	reg := newRegistry()
 	plan := mustPlan(t, "crm_accounts", "crm_account_contacts")
@@ -71,22 +101,52 @@ func TestClientsAndProspectsFullOuterKeepsBothSources(t *testing.T) {
 		t.Fatalf("buildSelectSQL: %v", err)
 	}
 
-	// Ambas fuentes proyectadas y el FULL OUTER JOIN preserva clientes sin
-	// prospecto y prospectos huérfanos (filas no emparejadas de ambos lados).
+	// Ambas fuentes proyectadas y el FULL OUTER JOIN preserva no emparejadas.
+	// La relación real es empresa=company (la FK prospect_id está sin datos).
+	// Con las dos fuentes unidas, cada columna equivalente se proyecta con
+	// recuperación bidireccional: COALESCE(propia, equivalente) ignorando
+	// vacíos; si ambos lados tienen valor, cada fuente conserva el suyo.
+	// El centinela exige que las PK de AMBOS lados sean no-NULL: la
+	// recuperación solo ocurre en filas realmente emparejadas. Una fila sin
+	// match en el FULL OUTER tiene todo un lado NULL y cae al ELSE con su
+	// propio valor (o NULL si ese lado no existe), sin cruce de datos.
 	checks := []string{
-		`t0."nombre" AS "crm_clients.nombre"`,
-		`t1."name" AS "crm_prospects.name"`,
+		`CASE WHEN t0."company_id" IS NOT NULL AND t1."id" IS NOT NULL THEN COALESCE(NULLIF(trim(t0."nombre"::text), ''), NULLIF(trim(t1."name"::text), '')) ELSE t0."nombre" END AS "crm_clients.nombre"`,
+		`CASE WHEN t1."id" IS NOT NULL AND t0."company_id" IS NOT NULL THEN COALESCE(NULLIF(trim(t1."name"::text), ''), NULLIF(trim(t0."nombre"::text), '')) ELSE t1."name" END AS "crm_prospects.name"`,
 		`FROM (SELECT * FROM "crm_clients" WHERE company_id = $1 AND soft_delete = false) AS t0`,
-		`FULL OUTER JOIN (SELECT * FROM "crm_prospects" WHERE company_id = $1 AND soft_delete = false) AS t1 ON t0."prospect_id" = t1."id"`,
+		// El ON conserva la relación empresa/company como criterio principal y
+		// agrega los criterios de identidad seguros (NIT/correo/nombre únicos)
+		// como alternativas OR dentro del mismo tenant.
+		`FULL OUTER JOIN (SELECT * FROM "crm_prospects" WHERE company_id = $1 AND soft_delete = false) AS t1 ON t0."company_id" = t1."company_id" AND (NULLIF(lower(trim(t0."empresa"::text)), '') = NULLIF(lower(trim(t1."company"::text)), '') OR `,
 	}
 	for _, check := range checks {
 		if !strings.Contains(sql, check) {
 			t.Fatalf("el SQL no contiene %q:\n%s", check, sql)
 		}
 	}
-	outer := sql[strings.LastIndex(sql, " ON "):]
-	if strings.Contains(outer, " WHERE ") {
-		t.Fatalf("el WHERE externo filtraría las filas no emparejadas del FULL OUTER:\n%s", sql)
+	if hasTopLevelWhere(sql) {
+		t.Fatalf("un WHERE a nivel de sentencia filtraría las filas no emparejadas del FULL OUTER:\n%s", sql)
+	}
+}
+
+// Sin la otra fuente en el plan no hay recuperación: proyección simple.
+func TestSingleSourceHasNoBidirectionalRecovery(t *testing.T) {
+	reg := newRegistry()
+	plan := mustPlan(t, "crm_clients")
+	req := QueryRequest{
+		Tables: []string{"crm_clients"},
+		Columns: []FieldRef{{Table: "crm_clients", Column: "nombre"}},
+	}
+
+	sql, _, err := buildSelectSQL(reg, plan, req, defaultRowLimit)
+	if err != nil {
+		t.Fatalf("buildSelectSQL: %v", err)
+	}
+	if !strings.Contains(sql, `t0."nombre" AS "crm_clients.nombre"`) {
+		t.Fatalf("con una sola fuente debe proyectar la columna simple:\n%s", sql)
+	}
+	if strings.Contains(sql, "COALESCE") {
+		t.Fatalf("no se esperaba COALESCE sin la fuente equivalente en el plan:\n%s", sql)
 	}
 }
 
@@ -253,12 +313,68 @@ func TestJoinedSoftDeleteGoesInJoinOnNotWhere(t *testing.T) {
 
 	// Prospectos es fuente seleccionada: va en subconsulta pre-filtrada con
 	// FULL OUTER JOIN; el WHERE no debe referenciarla (la descartaría).
-	if !strings.Contains(sql, `FULL OUTER JOIN (SELECT * FROM "crm_prospects" WHERE company_id = $1 AND soft_delete = false) AS t1 ON t0."prospect_id" = t1."id"`) {
-		t.Fatalf("el FULL OUTER JOIN pre-filtrado no aparece:\n%s", sql)
+	if !strings.Contains(sql, `FULL OUTER JOIN (SELECT * FROM "crm_prospects" WHERE company_id = $1 AND soft_delete = false) AS t1 ON t0."company_id" = t1."company_id" AND (NULLIF(lower(trim(t0."empresa"::text)), '') = NULLIF(lower(trim(t1."company"::text)), '') OR `) {
+		t.Fatalf("el FULL OUTER JOIN pre-filtrado no aparece con la relación empresa/company:\n%s", sql)
 	}
-	outer := sql[strings.LastIndex(sql, " ON "):]
-	if strings.Contains(outer, " WHERE ") {
-		t.Fatalf("sin filtros del usuario no debe haber WHERE externo:\n%s", sql)
+	if hasTopLevelWhere(sql) {
+		t.Fatalf("sin filtros del usuario no debe haber WHERE a nivel de sentencia:\n%s", sql)
+	}
+}
+
+// Los criterios de identidad (NIT/correo/nombre) solo emparejan valores
+// únicos en ambas tablas pre-filtradas y bloquean contradicciones: sin esto,
+// un NIT o nombre repetido produciría fan-out o mezclaría entidades distintas.
+func TestIdentityCriteriaRequireUniquenessAndBlockContradictions(t *testing.T) {
+	reg := newRegistry()
+	plan := mustPlan(t, "crm_clients", "crm_prospects")
+	req := QueryRequest{
+		Tables: []string{"crm_clients", "crm_prospects"},
+		Columns: []FieldRef{
+			{Table: "crm_clients", Column: "nombre"},
+			{Table: "crm_prospects", Column: "name"},
+		},
+	}
+
+	sql, _, err := buildSelectSQL(reg, plan, req, defaultRowLimit)
+	if err != nil {
+		t.Fatalf("buildSelectSQL: %v", err)
+	}
+
+	checks := []string{
+		// C2 NIT: igualdad exacta normalizada...
+		`NULLIF(lower(trim(t0."nit"::text)), '') IS NOT NULL AND NULLIF(lower(trim(t0."nit"::text)), '') = NULLIF(lower(trim(t1."nit"::text)), '')`,
+		// ...y unicidad en CADA tabla pre-filtrada (empresa + bajas).
+		`NULLIF(lower(trim(t0."nit"::text)), '') IN (SELECT NULLIF(lower(trim("nit"::text)), '') FROM "crm_clients" WHERE company_id = $1 AND trim(coalesce("nit"::text, '')) <> '' AND soft_delete = false GROUP BY NULLIF(lower(trim("nit"::text)), '') HAVING count(*) = 1)`,
+		`NULLIF(lower(trim(t1."nit"::text)), '') IN (SELECT NULLIF(lower(trim("nit"::text)), '') FROM "crm_prospects" WHERE company_id = $1 AND trim(coalesce("nit"::text, '')) <> '' AND soft_delete = false GROUP BY NULLIF(lower(trim("nit"::text)), '') HAVING count(*) = 1)`,
+		// C3 correo: misma exigencia de unicidad.
+		`NULLIF(lower(trim(t0."correo"::text)), '') IN (SELECT NULLIF(lower(trim("correo"::text)), '') FROM "crm_clients" WHERE company_id = $1 AND trim(coalesce("correo"::text, '')) <> '' AND soft_delete = false GROUP BY NULLIF(lower(trim("correo"::text)), '') HAVING count(*) = 1)`,
+		`NULLIF(lower(trim(t1."email"::text)), '') IN (SELECT NULLIF(lower(trim("email"::text)), '') FROM "crm_prospects" WHERE company_id = $1 AND trim(coalesce("email"::text, '')) <> '' AND soft_delete = false GROUP BY NULLIF(lower(trim("email"::text)), '') HAVING count(*) = 1)`,
+		// C5 nombre: unicidad sobre el nombre normalizado completo.
+		`HAVING count(*) = 1) AND NOT (NULLIF(lower(trim(t0."nit"::text)), '') IS NOT NULL AND NULLIF(lower(trim(t1."nit"::text)), '') IS NOT NULL AND NULLIF(lower(trim(t0."nit"::text)), '') <> NULLIF(lower(trim(t1."nit"::text)), ''))`,
+		// C5 nombre: normalización completa (tildes/puntuación)...
+		`NULLIF(trim(both ' ' from regexp_replace(regexp_replace(translate(lower(t0."nombre"::text)`,
+		`NULLIF(trim(both ' ' from regexp_replace(regexp_replace(translate(lower(t1."name"::text)`,
+		// ...y bloqueo de contradicciones: NIT y correo distintos impiden el par.
+		`NOT (NULLIF(lower(trim(t0."nit"::text)), '') IS NOT NULL AND NULLIF(lower(trim(t1."nit"::text)), '') IS NOT NULL AND NULLIF(lower(trim(t0."nit"::text)), '') <> NULLIF(lower(trim(t1."nit"::text)), ''))`,
+		`NOT (NULLIF(lower(trim(t0."correo"::text)), '') IS NOT NULL AND NULLIF(lower(trim(t1."email"::text)), '') IS NOT NULL AND NULLIF(lower(trim(t0."correo"::text)), '') <> NULLIF(lower(trim(t1."email"::text)), ''))`,
+	}
+	for _, check := range checks {
+		if !strings.Contains(sql, check) {
+			t.Fatalf("el SQL no contiene el criterio de identidad %q:\n%s", check, sql)
+		}
+	}
+
+	// Las demás aristas (FK reales) NO deben recibir criterios de identidad.
+	otherPlan := mustPlan(t, "crm_accounts", "crm_account_contacts")
+	otherSQL, _, err := buildSelectSQL(reg, otherPlan, QueryRequest{
+		Tables:  []string{"crm_accounts", "crm_account_contacts"},
+		Columns: []FieldRef{{Table: "crm_accounts", Column: "name"}},
+	}, defaultRowLimit)
+	if err != nil {
+		t.Fatalf("buildSelectSQL (cuentas): %v", err)
+	}
+	if strings.Contains(otherSQL, `HAVING count(*) = 1)`) {
+		t.Fatalf("las aristas sin IdentityCriteria no deben emitir subconsultas de unicidad:\n%s", otherSQL)
 	}
 }
 

@@ -31,6 +31,68 @@ func selectExpression(alias string, table TableDef, column ColumnDef) string {
 	return fmt.Sprintf("%s.%s AS %s", alias, quotedColumn(column), quoteAlias(table.Name+"."+column.Name))
 }
 
+// fallbackExpr implementa la recuperación bidireccional: si la columna tiene
+// un equivalente declarado en otra fuente Y ambas fuentes están unidas
+// directamente en el plan, la proyección es
+// COALESCE(propia, equivalente) ignorando vacíos/espacios. El propio valor
+// siempre va primero: si ambos lados tienen información se conservan ambos
+// originales en sus columnas respectivas.
+//
+// El CASE WHEN exige que las PK de AMBOS lados sean no-NULL (una columna PK
+// nunca es NULL, así que esto equivale a "existe fila de cada lado"): la
+// recuperación solo ocurre en filas REALMENTE emparejadas por el JOIN. En un
+// FULL OUTER, una fila sin match tiene todo un lado NULL y cae al ELSE con su
+// propio valor (o NULL si ese lado no existe): sin relación válida no se
+// rellenan campos con datos de registros no relacionados. Solo aplica a
+// columnas de texto o fecha; los numéricos no tienen equivalencias declaradas.
+func fallbackExpr(r *registry, plan *joinPlan, tableName string, column ColumnDef) (string, bool) {
+	if column.Kind != KindText && column.Kind != KindDate {
+		return "", false
+	}
+	pair, ok := r.equivalent(tableName, column.Name)
+	if !ok {
+		return "", false
+	}
+	otherTable, otherColumn := equivalentOther(pair, tableName, column.Name)
+	otherAlias, joined := directlyJoined(plan, tableName, otherTable)
+	if !joined {
+		return "", false
+	}
+	_, otherDef, ok := r.column(otherTable, otherColumn)
+	if !ok {
+		return "", false
+	}
+	otherTableDef := r.tables[otherTable]
+	rawOwn := aliasOf(plan, tableName) + "." + quotedColumn(column)
+	own := rawOwn
+	if column.Kind == KindDate {
+		// Mantener ambas ramas del CASE en texto para no mezclar tipos.
+		own = rawOwn + "::text"
+	}
+	other := otherAlias + "." + quotedColumn(otherDef)
+	recovered := "COALESCE(NULLIF(trim(" + rawOwn + "::text), ''), NULLIF(trim(" + other + "::text), ''))"
+	// Centinela de relación válida: ambas filas deben existir en la fila del
+	// JOIN. Verificar solo el otro lado fallaría para una fila que existe en
+	// esta tabla pero no tiene match (rellenaría con datos ajenos).
+	sentinel := aliasOf(plan, tableName) + "." + quoteIdent(r.tables[tableName].PrimaryKey[0]) + " IS NOT NULL AND " + otherAlias + "." + quoteIdent(otherTableDef.PrimaryKey[0]) + " IS NOT NULL"
+	expr := "CASE WHEN " + sentinel + " THEN " + recovered + " ELSE " + own + " END"
+	return expr, true
+}
+
+// directlyJoined indica si dos tablas del plan están unidas por un paso
+// directo (en cualquier dirección).
+func directlyJoined(plan *joinPlan, a, b string) (string, bool) {
+	for _, step := range plan.steps {
+		if step.fromTable == a && step.toTable == b {
+			return aliasOf(plan, b), true
+		}
+		if step.fromTable == b && step.toTable == a {
+			return aliasOf(plan, b), true
+		}
+	}
+	return "", false
+}
+
 func quoteAlias(value string) string {
 	return `"` + strings.ReplaceAll(value, `"`, `""`) + `"`
 }
@@ -48,6 +110,10 @@ func buildSelectSQL(r *registry, plan *joinPlan, req QueryRequest, limit int) (s
 		}
 		if i > 0 {
 			sb.WriteString(", ")
+		}
+		if expr, recovered := fallbackExpr(r, plan, table.Name, column); recovered {
+			sb.WriteString(expr + " AS " + quoteAlias(table.Name+"."+column.Name))
+			continue
 		}
 		sb.WriteString(selectExpression(aliasOf(plan, table.Name), table, column))
 	}
@@ -140,10 +206,18 @@ func writeJoins(sb *strings.Builder, r *registry, plan *joinPlan) {
 	for _, step := range plan.steps {
 		to := r.tables[step.toTable]
 		on := make([]string, 0, len(step.edge.FromCols)+len(step.edge.Const))
+		// company_id = company_id se extrae del OR solo cuando hay criterios de
+		// identidad (debe seguir exigiéndose en cada alternativa); sin ellos el
+		// par permanece en `on` como siempre.
+		hasIdentity := len(step.edge.IdentityCriteria) > 0
+		var tenant string
 		for i, fromCol := range step.edge.FromCols {
-			on = append(on, fmt.Sprintf("%s.%s = %s.%s",
-				aliasOf(plan, step.fromTable), quoteIdent(fromCol),
-				aliasOf(plan, step.toTable), quoteIdent(step.edge.ToCols[i])))
+			eq := joinPairEquality(plan, step, fromCol, i)
+			if hasIdentity && fromCol == "company_id" && step.edge.ToCols[i] == "company_id" {
+				tenant = eq
+				continue
+			}
+			on = append(on, eq)
 		}
 		constAlias := aliasOf(plan, step.toTable)
 		if step.edge.ConstTable != "" {
@@ -152,6 +226,23 @@ func writeJoins(sb *strings.Builder, r *registry, plan *joinPlan) {
 		for _, constant := range step.edge.Const {
 			on = append(on, fmt.Sprintf("%s.%s = %s", constAlias,
 				quoteIdent(constant.Col), quoteLiteral(constant.Value)))
+		}
+		// Criterios de identidad seguros (NIT/correo/nombre): se agregan como
+		// alternativas OR al par principal, siempre dentro del mismo tenant.
+		if len(step.edge.IdentityCriteria) > 0 {
+			alts := make([]string, 0, len(step.edge.IdentityCriteria))
+			for _, crit := range step.edge.IdentityCriteria {
+				alts = append(alts, identityCriterionExpr(r, plan, step, crit))
+			}
+			base := strings.Join(on, " AND ")
+			if base == "" {
+				on = []string{strings.Join(alts, " OR ")}
+			} else {
+				on = []string{"(" + base + " OR " + strings.Join(alts, " OR ") + ")"}
+			}
+			if tenant != "" {
+				on = append([]string{tenant}, on...)
+			}
 		}
 		if step.fullOuter {
 			sb.WriteString(fmt.Sprintf(" FULL OUTER JOIN (SELECT * FROM %s WHERE company_id = $1",
@@ -177,6 +268,75 @@ func writeJoins(sb *strings.Builder, r *registry, plan *joinPlan) {
 		sb.WriteString(fmt.Sprintf(" LEFT JOIN %s AS %s ON %s",
 			quoteIdent(to.Name), aliasOf(plan, to.Name), strings.Join(on, " AND ")))
 	}
+}
+
+// identityCriterionExpr construye una condición de identificación adicional de
+// la MISMA entidad (NIT, correo, nombre): empareja registros aunque su empresa
+// tenga nombres distintos, pero solo si el valor es no vacío e igual en ambos
+// lados y ÚNICO dentro de cada tabla pre-filtrada (HAVING count(*)=1), de modo
+// que nunca produce fan-out ni emparejamientos ambiguos. Contradictions bloquea
+// el emparejamiento si ambos lados tienen valores no vacíos y distintos.
+func identityCriterionExpr(r *registry, plan *joinPlan, step joinStep, crit IdentityCriterion) string {
+	left := aliasOf(plan, step.fromTable) + "." + quoteIdent(crit.LeftCol)
+	right := aliasOf(plan, step.toTable) + "." + quoteIdent(crit.RightCol)
+	normLeft := identityNorm(left, crit.FullText)
+	normRight := identityNorm(right, crit.FullText)
+	parts := []string{normLeft + " IS NOT NULL AND " + normLeft + " = " + normRight}
+	parts = append(parts, uniqueValuePredicate(aliasOf(plan, step.fromTable), r.tables[step.fromTable], crit.LeftCol, crit.FullText))
+	parts = append(parts, uniqueValuePredicate(aliasOf(plan, step.toTable), r.tables[step.toTable], crit.RightCol, crit.FullText))
+	for _, pair := range crit.Contradictions {
+		contradLeft := identityNorm(aliasOf(plan, step.fromTable)+"."+quoteIdent(pair[0]), false)
+		contradRight := identityNorm(aliasOf(plan, step.toTable)+"."+quoteIdent(pair[1]), false)
+		parts = append(parts, "NOT ("+contradLeft+" IS NOT NULL AND "+contradRight+
+			" IS NOT NULL AND "+contradLeft+" <> "+contradRight+")")
+	}
+	return "(" + strings.Join(parts, " AND ") + ")"
+}
+
+// identityNorm normaliza un valor para comparación de identidad: lower(trim())
+// para NIT/correo (la puntuación es significativa) o normalización completa
+// (tildes, puntuación, espacios) para nombres. Los vacíos se convierten en NULL
+// para que nunca se emparejen entre sí.
+func identityNorm(expr string, fullText bool) string {
+	if fullText {
+		return "NULLIF(" + normalizedText(expr) + ", '')"
+	}
+	return "NULLIF(lower(trim(" + expr + "::text)), '')"
+}
+
+// uniqueValuePredicate exige que el valor de `column` sea único dentro de la
+// tabla pre-filtrada (company_id=$1 y bajas): si aparece más de una vez, el
+// criterio no aplica a ningún registro con ese valor (los registros ambiguos
+// nunca se emparejan automáticamente). El lado izquierdo del IN va calificado
+// con el alias del JOIN porque ambas tablas pueden tener la misma columna.
+func uniqueValuePredicate(alias string, table TableDef, column string, fullText bool) string {
+	col := quoteIdent(column)
+	cond := "company_id = $1 AND trim(coalesce(" + col + "::text, '')) <> ''"
+	if table.SoftDelete {
+		cond += " AND soft_delete = false"
+	}
+	if table.Archived {
+		cond += " AND archived = false"
+	}
+	normOuter := identityNorm(alias+"."+col, fullText)
+	normInner := identityNorm(col, fullText)
+	return normOuter + " IN (SELECT " + normInner + " FROM " + quoteIdent(table.Name) +
+		" WHERE " + cond + " GROUP BY " + normInner + " HAVING count(*) = 1)"
+}
+
+// joinPairEquality construye la igualdad de un par de columnas del JOIN. Con
+// NormalizeText compara texto de negocio (empresa/company, supplier/legal_name)
+// con lower(trim()) en ambos lados; NULLIF(...,'') evita que valores vacíos se
+// emparejen entre sí. company_id siempre es comparación exacta (tenant).
+func joinPairEquality(plan *joinPlan, step joinStep, fromCol string, index int) string {
+	toCol := step.edge.ToCols[index]
+	left := aliasOf(plan, step.fromTable) + "." + quoteIdent(fromCol)
+	right := aliasOf(plan, step.toTable) + "." + quoteIdent(toCol)
+	if step.edge.NormalizeText && fromCol != "company_id" && toCol != "company_id" {
+		left = "NULLIF(lower(trim(" + left + "::text)), '')"
+		right = "NULLIF(lower(trim(" + right + "::text)), '')"
+	}
+	return left + " = " + right
 }
 
 // quoteLiteral escapa un valor como literal SQL de texto (simple comilla).

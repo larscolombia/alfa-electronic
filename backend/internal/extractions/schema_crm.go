@@ -24,7 +24,6 @@ func crmTables() []TableDef {
 				{Name: "country", Label: "País", Kind: KindText},
 				{Name: "email", Label: "Correo", Kind: KindText},
 				{Name: "office_phone", Label: "Teléfono", Kind: KindText},
-				{Name: "source", Label: "Fuente", Kind: KindText},
 				{Name: "service", Label: "Servicio de interés", Kind: KindText},
 				{Name: "assigned_employee", Label: "Empleado asignado", Kind: KindText},
 				{Name: "prospect_value", Label: "Valor del prospecto", Kind: KindMoney},
@@ -68,10 +67,15 @@ func crmTables() []TableDef {
 				{Name: "name", Label: "Nombre", Kind: KindText},
 				{Name: "company", Label: "Empresa", Kind: KindText},
 				{Name: "nit", Label: "NIT", Kind: KindText},
+				{Name: "email", Label: "Correo", Kind: KindText},
+				{Name: "mobile", Label: "Teléfono", Kind: KindText},
 				{Name: "status", Label: "Estado", Kind: KindText},
 				{Name: "zone", Label: "Zona", Kind: KindText},
 				{Name: "city", Label: "Ciudad", Kind: KindText},
-				{Name: "source", Label: "Fuente", Kind: KindText},
+				{Name: "country", Label: "País", Kind: KindText},
+				{Name: "website", Label: "Sitio web", Kind: KindText},
+				{Name: "office_phone", Label: "Teléfono oficina", Kind: KindText},
+				{Name: "address", Label: "Dirección", Kind: KindText},
 				{Name: "service", Label: "Servicio de interés", Kind: KindText},
 				{Name: "prospect_value", Label: "Valor del prospecto", Kind: KindMoney},
 				{Name: "quotations", Label: "Cotizaciones", Kind: KindNumber},
@@ -102,6 +106,10 @@ func crmTables() []TableDef {
 				{Name: "estado", Label: "Estado", Kind: KindText},
 				{Name: "zona", Label: "Zona", Kind: KindText},
 				{Name: "city", Label: "Ciudad", Kind: KindText},
+				{Name: "country", Label: "País", Kind: KindText},
+				{Name: "website", Label: "Sitio web", Kind: KindText},
+				{Name: "office_phone", Label: "Teléfono oficina", Kind: KindText},
+				{Name: "address", Label: "Dirección", Kind: KindText},
 				{Name: "created_at", Label: "Fecha de registro", Kind: KindDate},
 			},
 		},
@@ -133,13 +141,55 @@ func crmTables() []TableDef {
 	}
 }
 
-// crmEdges relaciones reales del dominio CRM (FK declaradas o índices existentes).
+// crmEquivalents declara los campos equivalentes entre Clientes y Prospectos:
+// la misma información de negocio con distinto nombre físico en cada tabla.
+// La recuperación bidireccional (COALESCE) solo aplica cuando ambas fuentes
+// están unidas en el plan por su relación real (empresa + company_id), así
+// que nunca se mezcla información de empresas distintas.
+func crmEquivalents() []EquivalentField {
+	return []EquivalentField{
+		{TableA: "crm_clients", ColumnA: "nombre", TableB: "crm_prospects", ColumnB: "name"},
+		{TableA: "crm_clients", ColumnA: "empresa", TableB: "crm_prospects", ColumnB: "company"},
+		{TableA: "crm_clients", ColumnA: "nit", TableB: "crm_prospects", ColumnB: "nit"},
+		{TableA: "crm_clients", ColumnA: "correo", TableB: "crm_prospects", ColumnB: "email"},
+		{TableA: "crm_clients", ColumnA: "estado", TableB: "crm_prospects", ColumnB: "status"},
+		{TableA: "crm_clients", ColumnA: "zona", TableB: "crm_prospects", ColumnB: "zone"},
+		{TableA: "crm_clients", ColumnA: "city", TableB: "crm_prospects", ColumnB: "city"},
+		{TableA: "crm_clients", ColumnA: "country", TableB: "crm_prospects", ColumnB: "country"},
+		{TableA: "crm_clients", ColumnA: "website", TableB: "crm_prospects", ColumnB: "website"},
+		{TableA: "crm_clients", ColumnA: "office_phone", TableB: "crm_prospects", ColumnB: "office_phone"},
+		{TableA: "crm_clients", ColumnA: "address", TableB: "crm_prospects", ColumnB: "address"},
+		{TableA: "crm_clients", ColumnA: "created_at", TableB: "crm_prospects", ColumnB: "created_at"},
+	}
+}
+
+// crmEdges relaciones reales del dominio CRM. La relación Clientes↔Prospectos
+// es por empresa (case-insensitive): prospect_id existe como FK pero ningún
+// flujo lo escribe (insertClientWithProspect solo recibe ""), mientras que
+// ConvertProspectToClient/findClientByEmpresa/ListClientRelatedContacts
+// relacionan ambas tablas exactamente por LOWER(empresa)=LOWER(company).
 func crmEdges() []RelationEdge {
 	return []RelationEdge{
 		{From: "crm_account_contacts", FromCols: []string{"account_id"}, To: "crm_accounts", ToCols: []string{"id"}},
 		{From: "crm_account_branches", FromCols: []string{"account_id"}, To: "crm_accounts", ToCols: []string{"id"}},
 		{From: "crm_prospect_contacts", FromCols: []string{"prospect_id"}, To: "crm_prospects", ToCols: []string{"id"}},
-		{From: "crm_clients", FromCols: []string{"prospect_id"}, To: "crm_prospects", ToCols: []string{"id"}},
+		{
+			From: "crm_clients", FromCols: []string{"company_id", "empresa"},
+			To: "crm_prospects", ToCols: []string{"company_id", "company"},
+			NormalizeText: true,
+			// Identificación inteligente (jerarquía C2–C5): además de empresa=company,
+			// empareja registros de la MISMA entidad aunque su empresa tenga nombres
+			// distintos, por NIT exacto o correo exacto —cada uno único en ambas
+			// tablas— o por nombre completo normalizado si es único en ambos lados y
+			// no hay contradicción de NIT/correo. Los valores ambiguos (repetidos en
+			// una tabla) nunca se emparejan automáticamente; solo cambia la condición
+			// del JOIN, sin alterar los datos originales.
+			IdentityCriteria: []IdentityCriterion{
+				{LeftCol: "nit", RightCol: "nit"},
+				{LeftCol: "correo", RightCol: "email"},
+				{LeftCol: "nombre", RightCol: "name", FullText: true, Contradictions: [][2]string{{"nit", "nit"}, {"correo", "email"}}},
+			},
+		},
 		{From: "crm_equipment_records", FromCols: []string{"prospect_id"}, To: "crm_prospects", ToCols: []string{"id"}},
 		// Puente legacy real: prospectos y clientes antiguos se importaron a
 		// cuentas mediante crm_account_legacy_ids (legacy_type diferencia el

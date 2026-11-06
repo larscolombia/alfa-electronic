@@ -319,6 +319,12 @@ export class CustomExtractionComponent implements OnInit {
         });
         this.selectedModules = modules;
         this.refreshDerived();
+        // Descarta columnas, totales y filtros que ya no existen en el catálogo
+        // actual (p. ej. campos retirados del backend): evita consultas rotas.
+        const validKeys = new Set(this.columnOptions.map((option) => fieldKey(option)));
+        this.selectedColumns = new Set([...this.selectedColumns].filter((key) => validKeys.has(key)));
+        this.selectedTotals = new Set([...this.selectedTotals].filter((key) => validKeys.has(key)));
+        this.filters = this.filters.filter((filter) => validKeys.has(filter.table + "." + filter.column));
         this.infoMessage = `Consulta "${saved.name}" cargada. Prepara la consulta para ver resultados.`;
     }
 

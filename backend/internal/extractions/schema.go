@@ -10,8 +10,9 @@ import (
 // registry es el catálogo declarativo en memoria: tablas existentes y las
 // relaciones conocidas entre ellas. No hay esquema nuevo en la base de datos.
 type registry struct {
-	tables map[string]TableDef
-	edges  []RelationEdge
+	tables      map[string]TableDef
+	edges       []RelationEdge
+	equivalents []EquivalentField
 }
 
 func newRegistry() *registry {
@@ -28,7 +29,24 @@ func newRegistry() *registry {
 	r.edges = append(r.edges, crmEdges()...)
 	r.edges = append(r.edges, inventoryEdges()...)
 	r.edges = append(r.edges, financeEdges()...)
+	r.equivalents = validEquivalents(r, crmEquivalents())
 	return r
+}
+
+// validEquivalents conserva solo pares cuyas columnas existen en el catálogo
+// de ambas tablas: el registro es la fuente de verdad de las equivalencias.
+func validEquivalents(r *registry, pairs []EquivalentField) []EquivalentField {
+	valid := make([]EquivalentField, 0, len(pairs))
+	for _, pair := range pairs {
+		if _, _, ok := r.column(pair.TableA, pair.ColumnA); !ok {
+			continue
+		}
+		if _, _, ok := r.column(pair.TableB, pair.ColumnB); !ok {
+			continue
+		}
+		valid = append(valid, pair)
+	}
+	return valid
 }
 
 func (r *registry) table(name string) (TableDef, bool) {
@@ -48,6 +66,28 @@ func (r *registry) column(tableName, columnName string) (TableDef, ColumnDef, bo
 		}
 	}
 	return TableDef{}, ColumnDef{}, false
+}
+
+// equivalent devuelve el par de equivalencia que contiene la columna dada,
+// sin importar el lado (busca en A y en B). Orden-independiente.
+func (r *registry) equivalent(tableName, columnName string) (EquivalentField, bool) {
+	for _, pair := range r.equivalents {
+		if pair.TableA == tableName && pair.ColumnA == columnName {
+			return pair, true
+		}
+		if pair.TableB == tableName && pair.ColumnB == columnName {
+			return pair, true
+		}
+	}
+	return EquivalentField{}, false
+}
+
+// equivalentOther devuelve tabla y columna del otro lado del par.
+func equivalentOther(pair EquivalentField, tableName, columnName string) (string, string) {
+	if pair.TableA == tableName && pair.ColumnA == columnName {
+		return pair.TableB, pair.ColumnB
+	}
+	return pair.TableA, pair.ColumnA
 }
 
 // modulesGroup lista los módulos (slug + label) con al menos una tabla.
